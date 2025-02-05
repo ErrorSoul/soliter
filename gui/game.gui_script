@@ -1,0 +1,134 @@
+-- gui/game.gui_script
+
+function init(self)
+	-- Инициализация размеров экрана для адаптивности
+	self.width = tonumber(sys.get_config("display.width"))
+	self.height = tonumber(sys.get_config("display.height"))
+
+	-- Сохраняем все элементы интерфейса
+	self.elements = {
+		-- Группируем элементы по типам для удобства
+		free_cells = {
+			gui.get_node("free_cell_1"),
+			gui.get_node("free_cell_2"),
+			gui.get_node("free_cell_3")
+		},
+		dragon_buttons = {
+			gui.get_node("dragon_button_1"),
+			gui.get_node("dragon_button_2"),
+			gui.get_node("dragon_button_3")
+		},
+		foundation_slots = {
+			gui.get_node("foundation_1"),
+			gui.get_node("foundation_2"),
+			gui.get_node("foundation_3")
+		},
+		flower_slot = gui.get_node("flower_slot")
+	}
+
+	-- Сохраняем начальные позиции всех элементов для масштабирования
+	self.initial_positions = {
+		free_cells = {
+			{x = 50, y = 490},
+			{x = 120, y = 490},
+			{x = 190, y = 490}
+		},
+		dragon_buttons = {
+			{x = 300, y = 490},
+			{x = 360, y = 490},
+			{x = 420, y = 490}
+		},
+		foundation_slots = {
+			{x = 700, y = 490},
+			{x = 770, y = 490},
+			{x = 840, y = 490}
+		},
+		flower_slot = {x = 480, y = 490}
+	}
+
+	-- Состояния кнопок драконов
+	self.dragon_states = {
+		{enabled = false, collected = false},
+		{enabled = false, collected = false},
+		{enabled = false, collected = false}
+	}
+
+	-- Применяем адаптивность сразу после инициализации
+	self:adjust_layout()
+end
+
+function adjust_layout(self)
+	-- Расчёт масштаба для адаптивности
+	local scale_x = self.width / 960
+	local scale_y = self.height / 540
+	local scale = math.min(scale_x, scale_y)
+
+	-- Масштабируем все элементы с сохранением пропорций
+
+	-- Масштабируем free cells
+	for i, node in ipairs(self.elements.free_cells) do
+		local pos = self.initial_positions.free_cells[i]
+		local new_pos = vmath.vector3(pos.x * scale, self.height - (pos.y * scale), 0)
+		gui.set_position(node, new_pos)
+		gui.set_scale(node, vmath.vector3(scale, scale, 1))
+	end
+
+	-- Масштабируем кнопки драконов
+	for i, node in ipairs(self.elements.dragon_buttons) do
+		local pos = self.initial_positions.dragon_buttons[i]
+		local new_pos = vmath.vector3(pos.x * scale, self.height - (pos.y * scale), 0)
+		gui.set_position(node, new_pos)
+		gui.set_scale(node, vmath.vector3(scale, scale, 1))
+	end
+
+	-- Масштабируем foundation slots
+	for i, node in ipairs(self.elements.foundation_slots) do
+		local pos = self.initial_positions.foundation_slots[i]
+		local new_pos = vmath.vector3(pos.x * scale, self.height - (pos.y * scale), 0)
+		gui.set_position(node, new_pos)
+		gui.set_scale(node, vmath.vector3(scale, scale, 1))
+	end
+
+	-- Масштабируем слот для цветка
+	local flower_pos = self.initial_positions.flower_slot
+	local new_flower_pos = vmath.vector3(flower_pos.x * scale, self.height - (flower_pos.y * scale), 0)
+	gui.set_position(self.elements.flower_slot, new_flower_pos)
+	gui.set_scale(self.elements.flower_slot, vmath.vector3(scale, scale, 1))
+end
+
+function update(self, dt)
+	-- Обновляем состояние кнопок драконов
+	self:update_dragon_buttons()
+end
+
+function update_dragon_buttons(self)
+	-- Обновляем внешний вид кнопок драконов
+	for i, button in ipairs(self.elements.dragon_buttons) do
+		local state = self.dragon_states[i]
+		if state.enabled then
+			gui.set_alpha(button, 1.0)
+		else
+			gui.set_alpha(button, 0.5)
+		end
+	end
+end
+
+function on_input(self, action_id, action)
+	if action_id == hash("touch") and action.pressed then
+		-- Преобразуем координаты касания с учётом масштаба
+		local scale_x = self.width / 960
+		local scale_y = self.height / 540
+		local scale = math.min(scale_x, scale_y)
+
+		-- Проверяем нажатие на кнопки драконов
+		for i, button in ipairs(self.elements.dragon_buttons) do
+			if gui.pick_node(button, action.x, action.y) then
+				if self.dragon_states[i].enabled then
+					print("Dragon button " .. i .. " pressed!")
+					-- Здесь будет логика сбора драконов
+				end
+				return true
+			end
+		end
+	end
+end

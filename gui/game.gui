@@ -1,0 +1,405 @@
+fonts {
+  name: "default"
+  font: "/builtins/fonts/default.font"
+}
+nodes {
+  position {
+    x: 76.0
+    y: 472.0
+  }
+  size {
+    x: 60.0
+    y: 90.0
+  }
+  color {
+    x: 0.8
+    y: 0.8
+    z: 0.8
+  }
+  type: TYPE_BOX
+  id: "free_cell_1"
+  xanchor: XANCHOR_LEFT
+  yanchor: YANCHOR_TOP
+  layer: "cards"
+  alpha: 0.5
+  enabled: false
+  visible: false
+}
+nodes {
+  position {
+    x: 146.0
+    y: 472.0
+  }
+  size {
+    x: 60.0
+    y: 90.0
+  }
+  color {
+    x: 0.8
+    y: 0.8
+    z: 0.8
+  }
+  type: TYPE_BOX
+  id: "free_cell_2"
+  xanchor: XANCHOR_LEFT
+  yanchor: YANCHOR_TOP
+  layer: "cards"
+  alpha: 0.5
+  enabled: false
+  visible: false
+}
+nodes {
+  position {
+    x: 216.0
+    y: 472.0
+  }
+  size {
+    x: 60.0
+    y: 90.0
+  }
+  color {
+    x: 0.8
+    y: 0.8
+    z: 0.8
+  }
+  type: TYPE_BOX
+  id: "free_cell_3"
+  xanchor: XANCHOR_LEFT
+  yanchor: YANCHOR_TOP
+  layer: "cards"
+  alpha: 0.5
+  enabled: false
+  visible: false
+}
+nodes {
+  position {
+    x: 431.0
+    y: 472.0
+  }
+  size {
+    x: 50.0
+    y: 50.0
+  }
+  color {
+    y: 0.0
+    z: 0.0
+  }
+  type: TYPE_BOX
+  id: "dragon_button_1"
+  xanchor: XANCHOR_LEFT
+  yanchor: YANCHOR_TOP
+  layer: "buttons"
+  alpha: 0.7
+}
+nodes {
+  position {
+    x: 491.0
+    y: 472.0
+  }
+  size {
+    x: 50.0
+    y: 50.0
+  }
+  color {
+    x: 0.0
+    z: 0.0
+  }
+  type: TYPE_BOX
+  id: "dragon_button_2"
+  xanchor: XANCHOR_LEFT
+  yanchor: YANCHOR_TOP
+  layer: "buttons"
+  alpha: 0.7
+}
+nodes {
+  position {
+    x: 551.0
+    y: 472.0
+  }
+  size {
+    x: 50.0
+    y: 50.0
+  }
+  color {
+    x: 0.0
+    y: 0.0
+  }
+  type: TYPE_BOX
+  id: "dragon_button_3"
+  xanchor: XANCHOR_LEFT
+  yanchor: YANCHOR_TOP
+  layer: "buttons"
+  alpha: 0.7
+}
+nodes {
+  position {
+    x: 611.0
+    y: 472.0
+  }
+  size {
+    x: 60.0
+    y: 90.0
+  }
+  color {
+    z: 0.8
+  }
+  type: TYPE_BOX
+  id: "flower_slot"
+  xanchor: XANCHOR_LEFT
+  yanchor: YANCHOR_TOP
+  layer: "cards"
+  alpha: 0.5
+}
+nodes {
+  position {
+    x: 726.0
+    y: 472.0
+  }
+  size {
+    x: 60.0
+    y: 90.0
+  }
+  color {
+    x: 0.8
+    y: 0.8
+    z: 0.8
+  }
+  type: TYPE_BOX
+  id: "foundation_1"
+  xanchor: XANCHOR_LEFT
+  yanchor: YANCHOR_TOP
+  layer: "cards"
+  alpha: 0.5
+}
+nodes {
+  position {
+    x: 796.0
+    y: 472.0
+  }
+  size {
+    x: 60.0
+    y: 90.0
+  }
+  color {
+    x: 0.8
+    y: 0.8
+    z: 0.8
+  }
+  type: TYPE_BOX
+  id: "foundation_2"
+  xanchor: XANCHOR_LEFT
+  yanchor: YANCHOR_TOP
+  layer: "cards"
+  alpha: 0.5
+}
+nodes {
+  position {
+    x: 866.0
+    y: 472.0
+  }
+  size {
+    x: 60.0
+    y: 90.0
+  }
+  color {
+    x: 0.8
+    y: 0.8
+    z: 0.8
+  }
+  type: TYPE_BOX
+  id: "foundation_3"
+  xanchor: XANCHOR_LEFT
+  yanchor: YANCHOR_TOP
+  layer: "cards"
+  alpha: 0.5
+}
+nodes {
+  position {
+    x: 76.0
+    y: 300.0
+  }
+  size {
+    x: 60.0
+    y: 90.0
+  }
+  color {
+    x: 0.8
+    y: 0.8
+    z: 0.8
+  }
+  type: TYPE_BOX
+  id: "tableau_1"
+  xanchor: XANCHOR_LEFT
+  yanchor: YANCHOR_TOP
+  layer: "cards"
+  alpha: 0.5
+  enabled: false
+}
+nodes {
+  position {
+    x: 146.0
+    y: 300.0
+  }
+  size {
+    x: 60.0
+    y: 90.0
+  }
+  color {
+    x: 0.8
+    y: 0.8
+    z: 0.8
+  }
+  type: TYPE_BOX
+  id: "tableau_2"
+  xanchor: XANCHOR_LEFT
+  yanchor: YANCHOR_TOP
+  layer: "cards"
+  alpha: 0.5
+  enabled: false
+}
+nodes {
+  position {
+    x: 216.0
+    y: 300.0
+  }
+  size {
+    x: 60.0
+    y: 90.0
+  }
+  color {
+    x: 0.8
+    y: 0.8
+    z: 0.8
+  }
+  type: TYPE_BOX
+  id: "tableau_3"
+  xanchor: XANCHOR_LEFT
+  yanchor: YANCHOR_TOP
+  layer: "cards"
+  alpha: 0.5
+  enabled: false
+}
+nodes {
+  position {
+    x: 286.0
+    y: 300.0
+  }
+  size {
+    x: 60.0
+    y: 90.0
+  }
+  color {
+    x: 0.8
+    y: 0.8
+    z: 0.8
+  }
+  type: TYPE_BOX
+  id: "tableau_4"
+  xanchor: XANCHOR_LEFT
+  yanchor: YANCHOR_TOP
+  layer: "cards"
+  alpha: 0.5
+  enabled: false
+}
+nodes {
+  position {
+    x: 356.0
+    y: 300.0
+  }
+  size {
+    x: 60.0
+    y: 90.0
+  }
+  color {
+    x: 0.8
+    y: 0.8
+    z: 0.8
+  }
+  type: TYPE_BOX
+  id: "tableau_5"
+  xanchor: XANCHOR_LEFT
+  yanchor: YANCHOR_TOP
+  layer: "cards"
+  alpha: 0.5
+  enabled: false
+}
+nodes {
+  position {
+    x: 426.0
+    y: 300.0
+  }
+  size {
+    x: 60.0
+    y: 90.0
+  }
+  color {
+    x: 0.8
+    y: 0.8
+    z: 0.8
+  }
+  type: TYPE_BOX
+  id: "tableau_6"
+  xanchor: XANCHOR_LEFT
+  yanchor: YANCHOR_TOP
+  layer: "cards"
+  alpha: 0.5
+  enabled: false
+}
+nodes {
+  position {
+    x: 496.0
+    y: 300.0
+  }
+  size {
+    x: 60.0
+    y: 90.0
+  }
+  color {
+    x: 0.8
+    y: 0.8
+    z: 0.8
+  }
+  type: TYPE_BOX
+  id: "tableau_7"
+  xanchor: XANCHOR_LEFT
+  yanchor: YANCHOR_TOP
+  layer: "cards"
+  alpha: 0.5
+  enabled: false
+}
+nodes {
+  position {
+    x: 566.0
+    y: 300.0
+  }
+  size {
+    x: 60.0
+    y: 90.0
+  }
+  color {
+    x: 0.8
+    y: 0.8
+    z: 0.8
+  }
+  type: TYPE_BOX
+  id: "tableau_8"
+  xanchor: XANCHOR_LEFT
+  yanchor: YANCHOR_TOP
+  layer: "cards"
+  alpha: 0.5
+  enabled: false
+}
+layers {
+  name: "background"
+}
+layers {
+  name: "cards"
+}
+layers {
+  name: "buttons"
+}
+layers {
+  name: "layer"
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

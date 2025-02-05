@@ -1,0 +1,79 @@
+function init(self)
+	-- Значения карты, будут переданы при создании
+	self.value = 2      -- Значение карты (2-9)
+	self.suit = "red"   -- Масть карты ("red", "blue", и т.д.)
+	self.is_face_up = false -- Видна ли карта лицом вверх
+	self.is_dragon = false  -- Это дракон?
+	self.is_flower = false  -- Это цветок?
+	self.flying = false
+	msg.post("#collisionobject", "disable")
+	--msg.post(".", "acquire_input_focus")
+end
+
+function set_card(self, value, suit, is_dragon, is_flower)
+	self.value = value
+	self.suit = suit
+	self.is_dragon = is_dragon or false
+	self.is_flower = is_flower or false
+
+	-- Меняем текстуру спрайта карты
+	local sprite_id = tostring(value) .. "_" .. suit   -- Например, "hearts_1"
+	msg.post("#sprite", "play_animation", {id = hash(sprite_id)})
+end
+
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("start_drag") then
+		self.is_dragging = true
+		-- Отключаем коллизии во время перетаскивания
+		msg.post("#collisionobject", "disable")
+
+	elseif message_id == hash("drag_update") and self.is_dragging then
+		go.set_position(message.position + vmath.vector3(0, 0, 0.1))
+
+	elseif message_id == hash("drop_success") then
+		self.is_dragging = false
+		go.set_position(message.position)
+		msg.post("#collisionobject", "enable")
+
+	elseif message_id == hash("drop_failed") then
+		self.is_dragging = false
+		-- Анимируем возврат карты на исходную позицию
+		go.animate(".", "position", go.PLAYBACK_ONCE_FORWARD, message.position, go.EASING_OUTQUAD, 0.3)
+		-- msg.post("#collisionobject", "enable")
+		timer.delay(0.3, false, function() 
+			msg.post("#collisionobject", "enable")
+		end)
+		
+
+	elseif message_id == hash("set_card") then
+		set_card(self, message.data.value, message.data.suit, 
+		message.data.is_dragon, message.data.is_flower)
+	end
+end
+
+-- function on_message(self, message_id, message, sender)
+-- 	if message_id == hash("card_selected") then
+-- 		self.flying = true
+-- 		self.cursor = sender
+-- 	end
+-- 	if message_id == hash("set_card") then
+-- 		-- Устанавливаем данные карты
+-- 		set_card(self, message.data.value, message.data.suit, message.data.is_dragon, message.data.is_flower)
+-- 	end
+-- end
+
+-- function on_input(self, action_id, action)
+-- 	if self.flying then
+-- 		go.set_position(vmath.vector3(action.x, action.y, 0.1), ".")
+-- 	end
+-- end
+
+function update(self, dt)
+	if self.flying then
+		local pos = go.get_position(self.cursor)
+		print("cursor_pos", pos)
+		go.set_position(pos)
+	end
+	
+end

@@ -1,0 +1,81 @@
+-- Основной класс игры
+local Game = {}
+Game.__index = Game
+
+-- Конструктор
+function Game.new()
+	local self = setmetatable({}, Game)
+	-- Инициализация базовых состояний игры
+	self.states = {
+		INIT = "init",        -- Начальное состояние
+		PLAYING = "playing",  -- Игра идет
+		PAUSED = "paused",    -- Пауза
+		WIN = "win",          -- Победа
+		GAME_OVER = "gameover" -- Конец игры
+	}
+	self.currentState = self.states.INIT
+	self.cards = {}          -- Все карты в игре
+	self.dragonPiles = {}    -- Стопки драконов
+	self.foundation = {}     -- Верхние стопки для построения последовательностей
+	self.tableau = {}        -- Основное игровое поле
+	self.freeCells = {}      -- Свободные ячейки слева сверху
+	self.flowerCell = nil    -- Ячейка для цветка
+	return self
+end
+
+-- Класс для карт
+local Card = {}
+Card.__index = Card
+
+function Card.new(value, suit, isDragon, isFlower)
+	local self = setmetatable({}, Card)
+	self.value = value       -- Значение карты (1-9 или nil для дракона/цветка)
+	self.suit = suit         -- Масть карты
+	self.isDragon = isDragon or false
+	self.isFlower = isFlower or false
+	self.visible = false     -- Видима ли карта
+	return self
+end
+
+-- Методы для проверки правил игры
+function Game:canMoveCard(sourceCard, targetCard)
+	-- Нельзя перемещать драконов и цветок
+	if sourceCard.isDragon or sourceCard.isFlower then
+		return false
+	end
+
+	-- Если целевая карта не существует (пустая стопка)
+	if not targetCard then
+		return true
+	end
+
+	-- Проверка последовательности и масти
+	return sourceCard.value == targetCard.value - 1 
+	and sourceCard.suit ~= targetCard.suit
+end
+
+-- Проверка победы
+function Game:checkWin()
+	for _, foundation in ipairs(self.foundation) do
+		if #foundation ~= 9 then
+			return false
+		end
+		-- Проверка правильной последовательности
+		for i = 1, 9 do
+			if foundation[i].value ~= i then
+				return false
+			end
+		end
+	end
+	return true
+end
+
+-- Инициализация игры
+function Game:init()
+	self:createDeck()
+	self:shuffle()
+	self:deal()
+	self.currentState = self.states.PLAYING
+end
+
+return Game

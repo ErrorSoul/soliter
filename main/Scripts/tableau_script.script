@@ -1,0 +1,79 @@
+function init(self)
+	-- Add initialization code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+	msg.post("#collisionobject", "disable")
+end
+
+local function is_valid_sequence(top_card, bottom_card)
+	-- Если одна из карт цветок, последовательность невозможна
+	if top_card.is_flower or bottom_card.is_flower then
+		return false
+	end
+
+	-- Если обе карты драконы
+	if top_card.is_dragon and bottom_card.is_dragon then
+		return top_card.suit ~= bottom_card.suit
+	end
+
+	-- Если одна карта дракон, а другая нет - последовательность невозможна
+	if top_card.is_dragon or bottom_card.is_dragon then
+		return false
+	end
+
+	-- Для обычных карт: должны идти в нисходящем порядке и быть разных мастей
+	if top_card.value ~= bottom_card.value + 1 then
+		return false
+	end
+
+	return (top_card.suit ~= bottom_card.suit)
+end
+
+local function contains(stack, card)
+	for _, c in ipairs(stack) do
+		if c.id == card.id then
+			return true
+		end
+	end
+	return false
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("update_stack") then
+		self.stack = message.stack
+		update_visible_cards(self)
+	end
+end
+
+function update_visible_cards(self)
+	local visible_cards = {}
+
+	-- Проверяем стопку с конца
+	for i = #self.stack, 1, -1 do
+		local card = self.stack[i]
+
+		-- Если первая карта (самая нижняя) - она всегда видима
+		if #visible_cards == 0 then
+			table.insert(visible_cards, card)
+		else
+			local top_card = visible_cards[#visible_cards]
+
+			if is_valid_sequence(top_card.data, card.data) then
+				table.insert(visible_cards, card)
+			else
+				break
+			end
+		end
+	end
+
+	-- Включаем коллизию только у видимых карт
+	for _, card in ipairs(self.stack) do
+		if contains(visible_cards, card) then
+			msg.post(msg.url(nil, card.id, "collisionobject"), "enable")
+			-- msg.post(card.id, "acquire_input_focus")
+		else
+			msg.post(msg.url(nil, card.id, "collisionobject"), "disable")
+			-- msg.post(card.id, "release_input_focus")
+		end
+	end
+end

@@ -1,0 +1,48 @@
+function init(self)
+	print("I am GUI FILE")
+
+	-- Получаем позиции всех слотов
+	local slots = {}
+	slots.free_cell_1 = gui.get_position(gui.get_node("free_cell_1"))
+	slots.free_cell_2 = gui.get_position(gui.get_node("free_cell_2"))
+
+	-- Инициализация GUI-элементов
+	self.tableau_slots = {}
+	self.tableau_slots = get_tableau_positions(self)
+	-- Отправляем позиции в main скрипт
+	msg.post("/card_table", "slots_positions", {positions = self.tableau_slots})
+end
+
+function get_tableau_positions(self)
+	local tableau_positions = {}
+	for i = 1, 8 do
+		local node_id = "tableau_" .. i
+		local position = gui.get_position(gui.get_node(node_id))
+		table.insert(tableau_positions, position)
+	end
+	return tableau_positions
+end
+
+function on_message(self, message_id, message, sender)
+	-- Add message-handling code here
+	-- Learn more: https://defold.com/manuals/message-passing/
+	-- Remove this function if not needed
+end
+
+function on_input(self, action_id, action)
+	-- Add input-handling code here. The game object this script is attached to
+	-- must have acquired input focus:
+	--
+	--    msg.post(".", "acquire_input_focus")
+	--
+	-- All mapped input bindings will be received. Mouse and touch input will
+	-- be received regardless of where on the screen it happened.
+	-- Learn more: https://defold.com/manuals/input/
+	-- Remove this function if not needed
+end
+
+function on_reload(self)
+	-- Add reload-handling code here
+	-- Learn more: https://defold.com/manuals/hot-reload/
+	-- Remove this function if not needed
+end

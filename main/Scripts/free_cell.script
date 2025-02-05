@@ -1,0 +1,25 @@
+function init(self)
+	self.is_occupied = false
+	self.card = nil
+end
+
+
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("check_slot") then
+		if self.is_occupied then
+			msg.post(sender, "slot_invalid")
+		else
+			msg.post(sender, "slot_valid")
+		end
+	elseif message_id == hash("set_card") then
+		msg.post(sender, "slot_invalid")
+	end
+end
+
+function on_input(self, action_id, action)
+	if action_id == hash("touch") and action.pressed then
+		print("i am free slot")
+	end
+end
+

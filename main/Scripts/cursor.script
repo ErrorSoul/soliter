@@ -1,0 +1,125 @@
+-- cursor.script
+go.property("selected_card", nil)
+
+function init(self)
+	-- Отключаем лишние сообщения о коллизиях
+	self.is_processing = false
+	self.valid = false
+	msg.post(".", "acquire_input_focus")
+end
+
+-- function on_message(self, message_id, message, sender)
+-- 	if message_id == hash("trigger_response") and not self.is_dragging then
+-- 		if message.enter then
+-- 			if message.group == hash("card") then
+-- 				-- Сохраняем ID карты и её изначальную позицию
+-- 				self.selected_card = message.other_id
+-- 				self.original_position = go.get_position(self.selected_card)
+-- 				print("Card detected:", self.selected_card)
+-- 				print("Card old position:", self.original_position)
+-- 			
+-- 			end
+-- 		end
+-- 	end
+-- end
+function on_input(self, action_id, action)
+	if action_id == hash("touch") then
+		local cursor_pos = vmath.vector3(action.x, action.y, 0)
+		go.set_position(cursor_pos, ".")
+
+		if action.pressed then
+			self.was_pressed = true  -- Отмечаем, что был клик
+		elseif action.released then
+			
+			self.was_pressed = false
+			-- Если отпустили карту, проверяем, можно ли её положить
+			if self.is_dragging and self.selected_card then
+				if self.current_slot then
+					-- Если был найден свободный слот, запрашиваем у него проверку
+					msg.post(self.current_slot, "check_slot")
+				else
+					-- Если нет свободного слота, возвращаем карту на место
+					msg.post(self.selected_card, "drop_failed", {position = self.original_position})
+				end
+
+				self.selected_card = nil
+				self.is_dragging = false
+				self.current_slot = nil  -- Сбрасываем текущий слот
+			end
+		end
+		print("self pressed is ", self.was_pressed)
+
+		-- Обновляем позицию карты только если перетаскиваем
+		if self.is_dragging and self.selected_card then
+			
+			msg.post(self.selected_card, "drag_update", {position = cursor_pos})
+		end
+	end
+end
+
+-- function on_message(self, message_id, message, sender)
+-- 	if message_id == hash("trigger_response") then
+-- 		if message.enter and message.group == hash("card") then
+-- 			-- Если курсор на карте и был клик - начинаем перетаскивание
+-- 			if self.was_pressed and not self.is_dragging then
+-- 				self.selected_card = message.other_id
+-- 				self.is_dragging = true
+-- 				self.original_position = go.get_position(self.selected_card)
+-- 				msg.post(self.selected_card, "start_drag")
+-- 			end
+-- 		end
+-- 	end
+-- end
+-- 
+function on_message(self, message_id, message, sender)
+	if message_id == hash("trigger_response") then
+		if message.enter then
+			print("message enter")
+			-- Обработка зон во время перетаскивания
+			local drop_zone = {
+				group = message.group,
+				id = message.other_id
+			}
+			pprint(drop_zone)
+			if self.was_pressed  and not self.is_dragging then
+				print("on message is pressed", self.was_pressed)
+				if message.group == hash("card") then
+					-- Проверяем, можно ли выбрать карту
+					self.selected_card = message.other_id
+					self.is_dragging = true
+					self.original_position = go.get_position(self.selected_card)
+					print("Selected movable card:", self.selected_card)
+					msg.post(self.selected_card, "start_drag")
+				end
+			elseif self.is_dragging then
+				print("on message is pressed", self.was_pressed)
+				if message.group == hash("free_slots") then
+					print("FFFFFFFFFFFE SLOTS")
+					-- Запрашиваем у слота, свободен ли он
+					msg.post(message.other_id, "check_slot")
+					self.current_slot = message.other_id
+					
+				end
+				
+			end				
+		else
+		end
+
+	elseif message_id == hash("slot_valid") then
+		-- Слот свободен, ждем отпускания карты
+		print("slot is valid")
+		self.can_drop = true
+		msg.post(self.selected_card, "drop_success", {position = go.get_position(self.current_slot)})
+		clean_cursor(self)
+	elseif message_id == hash("slot_invalid") then
+		-- Слот занят
+		self.can_drop = false
+	end
+end
+
+function clean_cursor(self)
+	self.selected_card = nil
+	self.is_dragging = false
+	self.current_slot = nil  -- Сбрасываем текущий слот
+end
+

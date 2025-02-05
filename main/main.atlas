@@ -1,0 +1,107 @@
+images {
+  image: "/assets/cards/red_cards/2_red.png"
+  sprite_trim_mode: SPRITE_TRIM_MODE_8
+}
+images {
+  image: "/assets/cards/red_cards/3_red.png"
+  sprite_trim_mode: SPRITE_TRIM_MODE_4
+}
+images {
+  image: "/assets/cards/red_cards/4_red.png"
+  sprite_trim_mode: SPRITE_TRIM_MODE_4
+}
+images {
+  image: "/assets/cards/red_cards/5_red.png"
+  sprite_trim_mode: SPRITE_TRIM_MODE_4
+}
+images {
+  image: "/assets/cards/red_cards/6_red.png"
+  sprite_trim_mode: SPRITE_TRIM_MODE_4
+}
+images {
+  image: "/assets/cards/red_cards/7_red.png"
+  sprite_trim_mode: SPRITE_TRIM_MODE_4
+}
+images {
+  image: "/assets/cards/red_cards/8_red.png"
+  sprite_trim_mode: SPRITE_TRIM_MODE_4
+}
+images {
+  image: "/assets/cards/red_cards/9_red.png"
+  sprite_trim_mode: SPRITE_TRIM_MODE_4
+}
+images {
+  image: "/assets/cards/red_cards/10_red.png"
+  sprite_trim_mode: SPRITE_TRIM_MODE_4
+}
+images {
+  image: "/assets/cards/back.png"
+  sprite_trim_mode: SPRITE_TRIM_MODE_4
+}
+images {
+  image: "/assets/cards/blue_cards/2_blue.png"
+}
+images {
+  image: "/assets/cards/blue_cards/3_blue.png"
+}
+images {
+  image: "/assets/cards/blue_cards/5_blue.png"
+}
+images {
+  image: "/assets/cards/blue_cards/6_blue.png"
+}
+images {
+  image: "/assets/cards/blue_cards/7_blue.png"
+}
+images {
+  image: "/assets/cards/blue_cards/8_blue.png"
+}
+images {
+  image: "/assets/cards/blue_cards/9_blue.png"
+}
+images {
+  image: "/assets/cards/blue_cards/10_blue.png"
+}
+images {
+  image: "/assets/cards/green_cards/2_green.png"
+}
+images {
+  image: "/assets/cards/green_cards/3_green.png"
+}
+images {
+  image: "/assets/cards/green_cards/4_green.png"
+}
+images {
+  image: "/assets/cards/green_cards/5_green.png"
+}
+images {
+  image: "/assets/cards/green_cards/6_green.png"
+}
+images {
+  image: "/assets/cards/green_cards/7_green.png"
+}
+images {
+  image: "/assets/cards/green_cards/8_green.png"
+}
+images {
+  image: "/assets/cards/green_cards/9_green.png"
+}
+images {
+  image: "/assets/cards/green_cards/10_green.png"
+}
+images {
+  image: "/assets/cards/blue_cards/4_blue.png"
+}
+images {
+  image: "/assets/cards/f_flower.png"
+}
+images {
+  image: "/assets/cards/d_red.png"
+}
+images {
+  image: "/assets/cards/d_blue.png"
+}
+images {
+  image: "/assets/cards/d_green.png"
+}
+extrude_borders: 2

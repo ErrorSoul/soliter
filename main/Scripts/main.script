@@ -1,0 +1,194 @@
+
+function init(self)
+	print("I am MAIN SCRIPT")
+	self.states = {
+		INIT = "init",        -- Начальное состояние
+		PLAYING = "playing",  -- Игра идет
+		PAUSED = "paused",    -- Пауза
+		WIN = "win",          -- Победа
+		GAME_OVER = "gameover" -- Конец игры
+	}
+
+	self.cursor = factory.create("#cursor_factory")
+	pprint("ssss", self.cursor)
+	
+
+	--msg.post(".", "acquire_input_focus")
+
+	-- Динамически добавляем обработчик столкновений
+	self.currentState = self.states.INIT
+	self.cards = {}          -- Все карты в игре
+	
+	-- Создаём игровую колоду
+	self.deck = create_deck(self)
+	shuffle_deck(self)
+	deal_cards(self)
+	self.dragonPiles = {}    -- Стопки драконов
+	self.foundation = {}     -- Верхние стопки для построения последовательностей
+	self.tableau = {}        -- Основное игровое поле
+	self.freeCells = {}      -- Свободные ячейки слева сверху
+	self.flowerCell = nil    -- Ячейка для цветка
+	--local card = factory.create("#card_factory", vmath.vector3(100, 100, 0))
+	msg.post(".", "acquire_input_focus")
+	msg.post("@render:", "use_fixed_fit_projection", { near = -1, far = 1 })
+end
+
+
+function get_tableau_positions(self)
+	local tableau_positions = {}
+	for i = 1, 8 do
+		local slot_id = "tableau_slot" .. i
+		local position = go.get_position(slot_id)
+		table.insert(tableau_positions, position)
+	end
+	return tableau_positions
+end
+
+-- Создаём колоду карт
+function create_deck(self)
+	local deck = {}
+	local suits = {"red", "blue", "green"}
+	for _, suit in ipairs(suits) do
+		for value = 2, 10 do
+			table.insert(deck, {id = value .. "_" .. suit, value = value, suit = suit})
+		end
+		-- Добавляем драконов и цветок
+		for i = 1, 3 do
+			local value = 'd'
+			table.insert(deck, {id = value .. "_" .. suit, value = value, suit = suit, is_dragon = true})
+		end
+	end
+
+	
+	
+	table.insert(deck, {id = 'flower', value = 'f', suit = 'flower', is_flower = true})
+-- 
+	return deck
+end
+
+
+function deal_cards(self)
+	-- Получаем позиции стопок
+	local tableau_positions = get_tableau_positions(self)
+
+	-- Проверяем, есть ли карты в колоде
+	if not self.deck or #self.deck == 0 then
+		print("Колода пуста!")
+		return
+	end
+
+	-- Количество карт в каждой стопке
+	local cards_per_stack = math.floor(#self.deck / 8)
+	local remaining_cards = #self.deck % 8
+	self.tableau_stacks = {}
+	
+	-- Раздаём карты по стопкам
+	for stack_index = 1, 8 do
+		local stack_position = tableau_positions[stack_index]
+		local cards_in_stack = cards_per_stack + (stack_index <= remaining_cards and 1 or 0)
+		
+		local slot_id = "tableau_slot" .. stack_index
+		self.tableau_stacks[stack_index] = { slot_id = slot_id, cards = {} }
+		
+		for card_index = 1, cards_in_stack do
+			-- Извлекаем карту из колоды
+			local card_data = table.remove(self.deck)
+
+			-- Позиция карты в стопке (смещение по вертикали)
+			local card_offset = vmath.vector3(0, (card_index - 1) * -40, 0)  -- Смещение на 20 пикселей вниз
+			local target_position = stack_position + card_offset
+
+			-- Создаём карту с фабрикой
+			local card = factory.create("#card_factory", stack_position, vmath.quat(0, 0, 0, 1))
+			-- Устанавливаем данные карты (если нужно)
+			msg.post(card, "set_card", { data = card_data })
+
+			-- Анимируем карту до её позиции с задержкой
+			go.animate(card, "position", go.PLAYBACK_ONCE_FORWARD, target_position, go.EASING_LINEAR, 0.5, 0.1 * (stack_index + card_index))
+
+			-- Сохраняем карту в стопку
+			table.insert(self.tableau_stacks[stack_index].cards, { id = card, data = card_data })
+			
+			-- Сохраняем карту в таблицу
+			table.insert(self.cards, card)
+		end
+		-- Отправляем сообщение слоту о новой стопке
+		msg.post(slot_id, "update_stack", { stack = self.tableau_stacks[stack_index].cards })
+	end
+end
+
+-- Перемешивание колоды
+function shuffle_deck(self)
+	
+	math.randomseed(os.time())
+	for i = #self.deck, 2, -1 do
+		local j = math.random(1, i)
+		self.deck[i], self.deck[j] = self.deck[j], self.deck[i]
+	end
+end
+local function cursor_collision_handler(self, message_id, message, sender)
+	if message_id == hash("collision_response") then
+		print("Курсор столкнулся с:", message.other_id)
+		-- Ваша логика обработки столкновений
+	end
+end
+
+function on_input(self, action_id, action)
+	if action_id == hash("touch") and action.pressed then
+		go.set_position(vmath.vector3(action.x, action.y, 0), self.pointer)
+		pprint(go.get_position(self.pointer))
+		print("Touch!")
+		-- local id = factory.create("#card_factory", vmath.vector3(100, 100, 0))
+	end
+end
+
+-- 
+
+-- function on_input(self, action_id, action)
+-- 	if action_id == hash("touch") and action.pressed then
+-- 		-- Преобразуем экранные координаты в мировые
+-- 		local screen_pos = vmath.vector3(action.screen_x, action.screen_y, 0)
+-- 		-- local world_pos = window.screen_to_world(screen_pos)
+-- 		local my_start = vmath.vector3(0, 0, 0)
+-- 		-- Выполняем Raycast
+-- 		local result = physics.raycast(screen_pos + vmath.vector3(0, -5, 100), screen_pos + vmath.vector3(0, -5, 0), { hash("free_slots"), hash("card") })
+-- 		pprint(result)
+-- 		pprint(result.group)
+-- 		pprint(result.group == hash("card"))
+-- 		pprint(#result > 0)
+-- 		-- Проверяем результат
+-- 		if result then
+-- 			local hit = result[1]  -- Берём первый результат
+-- 			if result.group == hash("card") then
+-- 				print("card", self.cards[hit.id])
+-- 				print("Карта нажата")
+-- 				msg.post(hit.id, "card_pressed", {})  -- Отправляем сообщение карте
+-- 			elseif hit.group == hash("slot") then
+-- 				print("Слот нажат")
+-- 				msg.post(hit.id, "slot_pressed", {})  -- Отправляем сообщение слоту
+-- 			end
+-- 		else
+-- 			print("Ничего не найдено")
+-- 		end
+-- 	end
+-- end
+
+function on_message(self, message_id, message, sender)
+	print("message", message_id)
+	if message_id == hash("slots_positions") then
+		self.tableau_slots = message.positions
+		-- Теперь можно использовать позиции для размещения карт
+		
+	end
+end
+
+function update(self, dt)
+	-- print("MAINSSSSSSSSSSSSS", go.get_position(self.cursor))
+	-- Логика игры, например, проверка победы
+	if self.currenState == self.states.PLAYING then
+		if self:check_win() then
+			self.state = self.states.WIN
+			print("You win!")
+		end
+	end
+end
