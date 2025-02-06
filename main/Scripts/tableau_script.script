@@ -70,6 +70,8 @@ function update_visible_cards(self)
 	for _, card in ipairs(self.stack) do
 		if contains(visible_cards, card) then
 			msg.post(msg.url(nil, card.id, "collisionobject"), "enable")
+			local x = {id = 'flower', value = 'f', suit = 'flower', is_flower = true}
+			msg.post(card.id, "set_card", {data=x} )
 			-- msg.post(card.id, "acquire_input_focus")
 		else
 			msg.post(msg.url(nil, card.id, "collisionobject"), "disable")
