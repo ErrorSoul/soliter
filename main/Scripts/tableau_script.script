@@ -5,39 +5,92 @@ function init(self)
 	msg.post("#collisionobject", "disable")
 end
 
-local function is_valid_sequence(top_card, bottom_card)
-	-- Если одна из карт цветок, последовательность невозможна
-	if top_card.is_flower or bottom_card.is_flower then
-		return false
-	end
-
-	-- Если обе карты драконы
-	if top_card.is_dragon and bottom_card.is_dragon then
-		return top_card.suit ~= bottom_card.suit
-	end
-
-	-- Если одна карта дракон, а другая нет - последовательность невозможна
-	if top_card.is_dragon or bottom_card.is_dragon then
-		return false
-	end
-
-	-- Для обычных карт: должны идти в нисходящем порядке и быть разных мастей
-	if top_card.value ~= bottom_card.value + 1 then
-		return false
-	end
-
-	return (top_card.suit ~= bottom_card.suit)
-end
-
-local function contains(stack, card)
-	for _, c in ipairs(stack) do
-		if c.id == card.id then
-			return true
-		end
-	end
-	return false
-end
-
+-- function update_visible_cards(self)
+-- 	local visible_cards = {}
+-- 
+-- 	-- Если стопка не пуста, первая карта всегда видима
+-- 	if #self.stack > 0 then
+-- 		table.insert(visible_cards, self.stack[1])
+-- 
+-- 		-- Проверяем остальные карты
+-- 		for i = 2, #self.stack do
+-- 			local prev_card = self.stack[i - 1]
+-- 			local current_card = self.stack[i]
+-- 
+-- 			-- Проверяем, что карты образуют правильную последовательность
+-- 			if is_valid_sequence(prev_card.data, current_card.data) then
+-- 				table.insert(visible_cards, current_card)
+-- 			else
+-- 				break  -- Прерываем проверку при первом нарушении последовательности
+-- 			end
+-- 		end
+-- 	end
+-- 	pprint("VISIBLE CARDS", visible_cards)
+-- 	-- Обновляем состояние всех карт в стопке
+-- 	for i, card in ipairs(self.stack) do
+-- 
+-- 		local is_visible = contains(visible_cards, card)
+-- 		local card_url = msg.url(nil, card.id, "collisionobject")
+-- 
+-- 		if is_visible then
+-- 			print(string.format("Card %d: %s %s", i, card.data.value, card.data.suit))
+-- 			-- Включаем коллизию и подсветку
+-- 			msg.post(card_url, "enable")
+-- 			msg.post(card.id, "highlight")
+-- 			go.set_position(vmath.vector3(go.get_position().x, 
+-- 			go.get_position().y, 
+-- 			0.2))
+-- 		else
+-- 			-- Выключаем коллизию и убираем подсветку
+-- 			msg.post(card_url, "disable")
+-- 			msg.post(card.id, "unhighlight")
+-- 			go.set_position(vmath.vector3(go.get_position().x, 
+-- 			go.get_position().y, 
+-- 			0.2))
+-- 		end
+-- 	end
+-- 
+-- 	-- Сохраняем видимые карты для дальнейшего использования
+-- 	self.visible_cards = visible_cards
+-- end
+-- 
+-- 
+-- function is_valid_sequence(top_card, next_card)
+-- 	-- Если одна из карт отсутствует
+-- 	if not top_card or not next_card then
+-- 		return false
+-- 	end
+-- 
+-- 	-- Если это цветок или дракон - они не могут быть частью последовательности
+-- 	if top_card.is_flower or next_card.is_flower or
+-- 	top_card.is_dragon or next_card.is_dragon then
+-- 		return false
+-- 	end
+-- 
+-- 	-- Проверяем, что значения карт образуют нисходящую последовательность
+-- 	if next_card.value ~= top_card.value - 1 then
+-- 		return false
+-- 	end
+-- 
+-- 	-- Проверяем чередование цветов
+-- 	if top_card.suit == next_card.suit then
+-- 		return false
+-- 	end
+-- 
+-- 	-- Если все проверки пройдены, последовательность правильная
+-- 	return true
+-- end
+-- 
+-- 
+-- function contains(arr, item)
+-- 	for _, v in ipairs(arr) do
+-- 		if v == item then
+-- 			return true
+-- 		end
+-- 	end
+-- 	return false
+-- end
+-- 
 function on_message(self, message_id, message, sender)
 	if message_id == hash("update_stack") then
 		self.stack = message.stack
@@ -45,37 +98,188 @@ function on_message(self, message_id, message, sender)
 	end
 end
 
+-- function update_visible_cards(self)
+-- 	local visible_cards = {}
+-- 
+-- 	-- Идем с верхней карты (последней в стопке)
+-- 	if #self.stack > 0 then
+-- 		-- Верхняя карта всегда видима
+-- 		table.insert(visible_cards, self.stack[#self.stack])
+-- 
+-- 		-- Проверяем остальные карты сверху вниз
+-- 		for i = #self.stack - 1, 1, -1 do
+-- 			local current_card = self.stack[i]
+-- 			local next_card = self.stack[i + 1]
+-- 
+-- 			-- Если следующая карта видима и образует правильную последовательность
+-- 			if contains(visible_cards, next_card) and 
+-- 			is_valid_sequence(current_card.data, next_card.data) then
+-- 				table.insert(visible_cards, current_card)
+-- 			else
+-- 				break
+-- 			end
+-- 		end
+-- 	end
+-- 
+-- 	-- Обновляем состояние всех карт в стопке
+-- 	for i, card in ipairs(self.stack) do
+-- 		local is_visible = contains(visible_cards, card)
+-- 		local card_url = msg.url(nil, card.id, "collisionobject")
+-- 
+-- 		if is_visible then
+-- 			-- Включаем коллизию
+-- 			msg.post(card_url, "enable")
+-- 			-- Подсвечиваем карту
+-- 			msg.post(card.id, "highlight")
+-- 			-- Устанавливаем z-index для видимых карт выше
+-- 			go.set_position(vmath.vector3(go.get_position(card.id).x, 
+-- 			go.get_position(card.id).y, 
+-- 			0.2), card.id)
+-- 		else
+-- 			-- Выключаем коллизию
+-- 			msg.post(card_url, "disable")
+-- 			-- Убираем подсветку
+-- 			msg.post(card.id, "unhighlight")
+-- 			-- Устанавливаем z-index для невидимых карт ниже
+-- 			go.set_position(vmath.vector3(go.get_position(card.id).x, 
+-- 			go.get_position(card.id).y, 
+-- 			0.1), card.id)
+-- 		end
+-- 	end
+-- 
+-- 	self.visible_cards = visible_cards
+-- end
+
+
+-- Функция для получения видимых карт в стопке
 function update_visible_cards(self)
 	local visible_cards = {}
+	print("Начинаем проверку стопки из " .. #self.stack .. " карт")
 
-	-- Проверяем стопку с конца
+	-- Проходим по стопке карт снизу вверх
 	for i = #self.stack, 1, -1 do
-		local card = self.stack[i]
+		local current_card = self.stack[i]
+		print("Проверяем карту " .. tostring(current_card) .. " на индексе " .. i)
 
-		-- Если первая карта (самая нижняя) - она всегда видима
 		if #visible_cards == 0 then
-			table.insert(visible_cards, card)
+			print("  Добавляем как первую карту")
+			table.insert(visible_cards, current_card)
+		elseif can_stack_cards(visible_cards[#visible_cards], current_card) then
+			print("  Можно добавить к последовательности")
+			table.insert(visible_cards, current_card)
 		else
-			local top_card = visible_cards[#visible_cards]
-
-			if is_valid_sequence(top_card.data, card.data) then
-				table.insert(visible_cards, card)
-			else
-				break
-			end
+			print("  Карта не подходит, останавливаемся")
+			break
 		end
 	end
 
-	-- Включаем коллизию только у видимых карт
-	for _, card in ipairs(self.stack) do
-		if contains(visible_cards, card) then
-			msg.post(msg.url(nil, card.id, "collisionobject"), "enable")
-			local x = {id = 'flower', value = 'f', suit = 'flower', is_flower = true}
-			msg.post(card.id, "set_card", {data=x} )
-			-- msg.post(card.id, "acquire_input_focus")
-		else
-			msg.post(msg.url(nil, card.id, "collisionobject"), "disable")
-			-- msg.post(card.id, "release_input_focus")
-		end
-	end
+	print("Найдено " .. #visible_cards .. " видимых карт")
+	return visible_cards
 end
+
+-- Функция для проверки, можно ли сложить карты в стопку
+function can_stack_cards(top_card, bottom_card)
+	if not top_card or not bottom_card then
+		return false
+	end
+	if top_card.is_flower or top_card.is_dragon or bottom_card.is_flower or bottom_card.is_dragon then
+		return false
+	end
+	return top_card.suit ~= bottom_card.suit and top_card.value == bottom_card.value - 1
+end
+function is_valid_sequence(top_card, next_card)
+	-- Если одна из карт отсутствует
+	if not top_card or not next_card then
+		return false
+	end
+
+	-- Если это цветок или дракон - особые правила
+	if top_card.is_flower or next_card.is_flower then
+		return false
+	end
+	if top_card.is_dragon or next_card.is_dragon then
+		return false
+	end
+
+	-- Проверяем значение
+	if type(top_card.value) == "number" and type(next_card.value) == "number" then
+		if next_card.value ~= top_card.value - 1 then
+			return false
+		end
+	else
+		return false
+	end
+
+	-- Проверяем чередование цветов
+	if top_card.suit == next_card.suit then
+		return false
+	end
+	if top_card.suit == "red" and next_card.suit == "blue" then
+		return true
+	end
+	if top_card.suit == "blue" and next_card.suit == "green" then
+		return true
+	end
+	if top_card.suit == "green" and next_card.suit == "red" then
+		return true
+	end
+
+	return false
+end
+
+-- function update_visible_cards(self)
+-- 	local visible_cards = {}
+-- 
+-- 	-- Сначала определяем видимые карты
+-- 	if #self.stack > 0 then
+-- 		-- Первая карта всегда видима
+-- 		table.insert(visible_cards, self.stack[1])
+-- 
+-- 		-- Проверяем остальные карты
+-- 		for i = 2, #self.stack do
+-- 			local prev_card = self.stack[i-1]
+-- 			local current_card = self.stack[i]
+-- 
+-- 			-- Если предыдущая карта видима и образует правильную последовательность
+-- 			if contains(visible_cards, prev_card) and 
+-- 			is_valid_sequence(prev_card.data, current_card.data) then
+-- 				table.insert(visible_cards, current_card)
+-- 			else
+-- 				break  -- Прерываем проверку при первом нарушении последовательности
+-- 			end
+-- 		end
+-- 	end
+-- 
+-- 	-- Обновляем состояние всех карт в стопке
+-- 	for i, card in ipairs(self.stack) do
+-- 		local is_visible = contains(visible_cards, card)
+-- 		local card_url = msg.url(nil, card.id, "collisionobject")
+-- 
+-- 		if is_visible then
+-- 			-- Включаем коллизию
+-- 			msg.post(card_url, "enable")
+-- 			-- Подсвечиваем карту
+-- 			msg.post(card.id, "highlight")
+-- 		else
+-- 			-- Выключаем коллизию
+-- 			msg.post(card_url, "disable")
+-- 			-- Убираем подсветку
+-- 			msg.post(card.id, "unhighlight")
+-- 		end
+-- 	end
+-- 
+-- 	-- Сохраняем видимые карты для дальнейшего использования
+-- 	self.visible_cards = visible_cards
+-- end
+-- 
+-- Вспомогательная функция для проверки наличия карты в массиве
+function contains(arr, item)
+	for _, v in ipairs(arr) do
+		if v == item then
+			return true
+		end
+	end
+	return false
+end
+
+
