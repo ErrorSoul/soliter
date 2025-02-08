@@ -26,8 +26,9 @@ function init(self)
 	self.dragonPiles = {}    -- Стопки драконов
 	self.foundation = {}     -- Верхние стопки для построения последовательностей
 	self.tableau = {}        -- Основное игровое поле
-	self.freeCells = {}      -- Свободные ячейки слева сверху
+	self.free_slots = get_free_slots()      -- Свободные ячейки слева сверху
 	self.flowerCell = nil    -- Ячейка для цветка
+	send_messages_to_cursor(self)
 	--local card = factory.create("#card_factory", vmath.vector3(100, 100, 0))
 	-- msg.post(".", "acquire_input_focus")
 	msg.post("@render:", "use_fixed_fit_projection", { near = -1, far = 1 })
@@ -159,6 +160,7 @@ function deal_cards(self)
 		end
 
 		msg.post(slot_id, "update_stack", { stack = self.tableau_stacks[stack_index].cards })
+		msg.post(self.cursor, "set_stack", { index = stack_index, stack = self.tableau_stacks[stack_index].cards })
 	end
 end
 
@@ -179,52 +181,31 @@ local function cursor_collision_handler(self, message_id, message, sender)
 end
 
 function on_input(self, action_id, action)
-	if action_id == hash("touch") and action.pressed then
-		go.set_position(vmath.vector3(action.x, action.y, 0), self.pointer)
-		pprint(go.get_position(self.pointer))
-		print("Touch!")
-		-- local id = factory.create("#card_factory", vmath.vector3(100, 100, 0))
-	end
 end
 
--- 
+function get_data(self)
+	return { 
+		tableau_slots = self.tableau_stacks,    -- Основные слоты для игры           
+		free_slots = self.free_slots, -- Слоты для финальных стопок
+		cards = self.cards,
+	}
+	
+end
 
--- function on_input(self, action_id, action)
--- 	if action_id == hash("touch") and action.pressed then
--- 		-- Преобразуем экранные координаты в мировые
--- 		local screen_pos = vmath.vector3(action.screen_x, action.screen_y, 0)
--- 		-- local world_pos = window.screen_to_world(screen_pos)
--- 		local my_start = vmath.vector3(0, 0, 0)
--- 		-- Выполняем Raycast
--- 		local result = physics.raycast(screen_pos + vmath.vector3(0, -5, 100), screen_pos + vmath.vector3(0, -5, 0), { hash("free_slots"), hash("card") })
--- 		pprint(result)
--- 		pprint(result.group)
--- 		pprint(result.group == hash("card"))
--- 		pprint(#result > 0)
--- 		-- Проверяем результат
--- 		if result then
--- 			local hit = result[1]  -- Берём первый результат
--- 			if result.group == hash("card") then
--- 				print("card", self.cards[hit.id])
--- 				print("Карта нажата")
--- 				msg.post(hit.id, "card_pressed", {})  -- Отправляем сообщение карте
--- 			elseif hit.group == hash("slot") then
--- 				print("Слот нажат")
--- 				msg.post(hit.id, "slot_pressed", {})  -- Отправляем сообщение слоту
--- 			end
--- 		else
--- 			print("Ничего не найдено")
--- 		end
--- 	end
--- end
+function send_messages_to_cursor(self)
+	msg.post(self.cursor, "set_cards", self.cards)
+	msg.post(self.cursor, "set_free_slots", self.free_slots)
+end
+
+function get_free_slots()
+	return {
+		free_slot1 = go.get_position('free_slot1'), 
+		free_slot2 = go.get_position('free_slot2'), 
+		free_slot3 = go.get_position('free_slot3')
+	}
+end
 
 function on_message(self, message_id, message, sender)
-	print("message", message_id)
-	if message_id == hash("slots_positions") then
-		self.tableau_slots = message.positions
-		-- Теперь можно использовать позиции для размещения карт
-		
-	end
 end
 
 function update(self, dt)

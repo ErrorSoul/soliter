@@ -306,30 +306,30 @@ end
 -- Функция для получения видимых карт в стопке
 function update_visible_cards(self)
 	local visible_cards = {}
-	print("Начинаем проверку стопки из " .. #self.stack .. " карт")
+	-- print("Начинаем проверку стопки из " .. #self.stack .. " карт")
 
 	-- Проходим по стопке карт снизу вверх (от 1 до #self.stack)
 	for i = #self.stack, 1, -1 do
 		local current_card = self.stack[i]
 
-		print("Проверяем карту " .. tostring(current_card.data.value) .. tostring(current_card.data.suit) .. " на индексе " .. i)
-		print(string.format("Card %d: %s %s", i, current_card.data.value, current_card.data.suit))
+		-- print("Проверяем карту " .. tostring(current_card.data.value) .. tostring(current_card.data.suit) .. " на индексе " .. i)
+		-- print(string.format("Card %d: %s %s", i, current_card.data.value, current_card.data.suit))
 
 		if #visible_cards == 0 then
 			-- Первая карта всегда видима
-			print("  Добавляем как первую карту")
+			-- print("  Добавляем как первую карту")
 			table.insert(visible_cards, current_card)
 		elseif can_stack_cards(visible_cards[#visible_cards], current_card)  then
-			pprint("Нижняя карта " .. visible_cards[#visible_cards].data.value .. visible_cards[#visible_cards].data.suit)
-			pprint("Верхняя карта " .. current_card.data.value .. current_card.data.suit)
+			-- pprint("Нижняя карта " .. visible_cards[#visible_cards].data.value .. visible_cards[#visible_cards].data.suit)
+			-- pprint("Верхняя карта " .. current_card.data.value .. current_card.data.suit)
 			
 		-- elseif can_stack_cards(visible_cards[#visible_cards], current_card) then
 			-- Если текущая карта может быть сложена на последнюю видимую карту
-			print("  Можно добавить к последовательности")
+			-- print("  Можно добавить к последовательности")
 			table.insert(visible_cards, current_card)
 		else
 			-- Если карта не подходит для стека, останавливаем проверку
-			print("  Карта не подходит, останавливаемся")
+			-- print("  Карта не подходит, останавливаемся")
 			break
 		end
 	end
@@ -352,8 +352,8 @@ function update_visible_cards(self)
 
 		local z_index = (i == #self.stack) and 0.7 or 0.1 + i * 0.05
 		go.set_position(vmath.vector3(go.get_position(card.id).x, go.get_position(card.id).y, z_index), card.id)
-		print(string.format("Card %d: %s %s %s", i, card.data.value, card.data.suit, go.get_position(card.id)))
-		print(go.get_position(card.id))
+		-- print(string.format("Card %d: %s %s %s", i, card.data.value, card.data.suit, go.get_position(card.id)))
+		-- print(go.get_position(card.id))
 	end
 
 	-- Сохраняем список видимых карт

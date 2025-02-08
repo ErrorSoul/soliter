@@ -6,16 +6,17 @@ end
 
 
 function on_message(self, message_id, message, sender)
+	print("MMMMESSSAGE_ID", message_id)
 	if message_id == hash("check_slot") then
 		if self.is_occupied then
 			msg.post(sender, "slot_invalid")
-			print("Free slot", go.get_position())
+			print("Free slot in free slot", go.get_position())
 		else
 			msg.post(sender, "slot_valid")
 		end
 	elseif message_id == hash("occupy_slot") then
 		self.is_occupied = true
-		self.current_card = message.card_id
+		self.current_card = sender
 		go.set_position(go.get_position() + vmath.vector3(0, 0, 0))
 		-- go.set_position(self.current_card,go.get_position(self.current_card) + vmath.vector3(0, 0, 1))
 		print("Free slot", go.get_position())
