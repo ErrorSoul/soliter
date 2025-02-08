@@ -13,13 +13,22 @@ end
 
 
 function on_input(self, action_id, action)
-	local cursor_pos = vmath.vector3(action.x, action.y, 0)
-	go.set_position(cursor_pos, ".")
+	self.cursor_pos = vmath.vector3(action.x, action.y, 0)
+	
+	if action_id == hash("space") then
+		
+		if action.pressed then
+			msg.post("@system:", "toggle_physics_debug") -- <3>
+		else
+			msg.post("@system:", "toggle_physics_debug") -- <3>
+		end
+	end
 	if action_id == hash("touch") then
 		
 
 		if action.pressed then
 			self.was_pressed = true
+			
 			print("[pressed")
 			-- Если есть карта под курсором, сразу пробуем её поднять
 			if self.overlapped_card and not self.is_dragging then
@@ -28,6 +37,7 @@ function on_input(self, action_id, action)
 				self.potential_card = self.overlapped_card
 			end
 		elseif action.released then
+			
 			self.was_pressed = false
 			if self.is_dragging and self.selected_card then
 				if self.current_slot and self.can_drop then
@@ -97,6 +107,7 @@ function clean_cursor(self)
 	-- overlapped_card не очищаем, так как он отслеживает карту под курсором
 end
 function update(self, dt)
+	go.set_position(self.cursor_pos, ".")
 	-- Преобразуем все объекты в строки и объединяем их
 	local debug_string = "selected_card: " .. tostring(self.selected_card) .. "\n" ..
 	"is_dragging: " .. tostring(self.is_dragging) .. "\n" ..

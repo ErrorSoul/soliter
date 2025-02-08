@@ -16,6 +16,7 @@ function init(self)
 	go.set_position(vmath.vector3(go.get_position().x, 
 	go.get_position().y, 
 	0.2))
+	
 	msg.post("#collisionobject", "disable")
 	--msg.post(".", "acquire_input_focus")
 end
@@ -44,12 +45,12 @@ function on_message(self, message_id, message, sender)
 		msg.post("#collisionobject", "disable")
 
 	elseif message_id == hash("drag_update") and self.is_dragging then
-		go.set_position(message.position + vmath.vector3(0, 0, 0.1))
+		go.set_position(message.position + vmath.vector3(0, 0, 0.3))
 
 	elseif message_id == hash("drop_success") then
 		self.is_dragging = false
 		self.current_slot = message.slot_id
-		go.set_position(message.position)
+		go.set_position(message.position + vmath.vector3(0, 0, 0.2))
 		timer.delay(0.1, false, function()
 			msg.post("#collisionobject", "enable")
 		end)
