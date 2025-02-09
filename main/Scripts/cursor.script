@@ -66,8 +66,6 @@ end
 
 function on_message(self, message_id, message, sender)
    if message_id == hash("set_free_slots") then
-      pprint(message)
-      print("Message data: ", message)
       self.free_slots = message
    elseif message_id == hash("set_cards") then
       self.cards = message
@@ -78,10 +76,10 @@ function on_message(self, message_id, message, sender)
                   slot_id = self.pending_drop.slot.slot_id,
                   position = self.pending_drop.slot.slot_pos
       })
-      self.pending_drop = nil
+      clean_cursor(self)
    elseif message_id == hash("slot_invalid") and self.pending_drop then
       msg.post(self.pending_drop.card.id, 'drop_failed', {position = self.original_position})
-      self.pending_drop = nil
+      clean_cursor(self)
    end
 end
 
@@ -89,9 +87,7 @@ function clean_cursor(self)
    self.selected_card = nil
    self.is_dragging = false
    self.current_slot = nil
-   self.can_drop = false
-   self.potential_card = nil
-   -- overlapped_card не очищаем, так как он отслеживает карту под курсором
+   self.pending_drop = nil
 end
 
 local function is_point_in_rect(x, y, rect_pos, half_size)
