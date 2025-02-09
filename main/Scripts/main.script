@@ -1,218 +1,218 @@
 
 function init(self)
-	print("I am MAIN SCRIPT")
-	self.states = {
-		INIT = "init",        -- Начальное состояние
-		PLAYING = "playing",  -- Игра идет
-		PAUSED = "paused",    -- Пауза
-		WIN = "win",          -- Победа
-		GAME_OVER = "gameover" -- Конец игры
-	}
+   print("I am MAIN SCRIPT")
+   self.states = {
+      INIT = "init",        -- Начальное состояние
+      PLAYING = "playing",  -- Игра идет
+      PAUSED = "paused",    -- Пауза
+      WIN = "win",          -- Победа
+      GAME_OVER = "gameover" -- Конец игры
+   }
 
-	self.cursor = factory.create("#cursor_factory")
-	pprint("ssss", self.cursor)
-	
+   self.cursor = factory.create("#cursor_factory")
+   pprint("ssss", self.cursor)
 
-	--msg.post(".", "acquire_input_focus")
 
-	-- Динамически добавляем обработчик столкновений
-	self.currentState = self.states.INIT
-	self.cards = {}          -- Все карты в игре
-	
-	-- Создаём игровую колоду
-	self.deck = create_deck(self)
-	shuffle_deck(self)
-	deal_cards(self)
-	self.dragonPiles = {}    -- Стопки драконов
-	self.foundation = {}     -- Верхние стопки для построения последовательностей
-	self.tableau = {}        -- Основное игровое поле
-	self.free_slots = get_free_slots()      -- Свободные ячейки слева сверху
-	self.flowerCell = nil    -- Ячейка для цветка
-	send_messages_to_cursor(self)
-	--local card = factory.create("#card_factory", vmath.vector3(100, 100, 0))
-	-- msg.post(".", "acquire_input_focus")
-	msg.post("@render:", "use_fixed_fit_projection", { near = -1, far = 1 })
+   --msg.post(".", "acquire_input_focus")
+
+   -- Динамически добавляем обработчик столкновений
+   self.currentState = self.states.INIT
+   self.cards = {}          -- Все карты в игре
+
+   -- Создаём игровую колоду
+   self.deck = create_deck(self)
+   shuffle_deck(self)
+   deal_cards(self)
+   self.dragonPiles = {}    -- Стопки драконов
+   self.foundation = {}     -- Верхние стопки для построения последовательностей
+   self.tableau = {}        -- Основное игровое поле
+   self.free_slots = get_free_slots()      -- Свободные ячейки слева сверху
+   self.flowerCell = nil    -- Ячейка для цветка
+   send_messages_to_cursor(self)
+   --local card = factory.create("#card_factory", vmath.vector3(100, 100, 0))
+   -- msg.post(".", "acquire_input_focus")
+   msg.post("@render:", "use_fixed_fit_projection", { near = -1, far = 1 })
 end
 
 
 function get_tableau_positions(self)
-	local tableau_positions = {}
-	for i = 1, 8 do
-		local slot_id = "tableau_slot" .. i
-		local position = go.get_position(slot_id)
-		table.insert(tableau_positions, position)
-	end
-	return tableau_positions
+   local tableau_positions = {}
+   for i = 1, 8 do
+      local slot_id = "tableau_slot" .. i
+      local position = go.get_position(slot_id)
+      table.insert(tableau_positions, position)
+   end
+   return tableau_positions
 end
 
 -- Создаём колоду карт
 function create_deck(self)
-	local deck = {}
-	local suits = {"red", "blue", "green"}
-	for _, suit in ipairs(suits) do
-		for value = 2, 10 do
-			table.insert(deck, {id = value .. "_" .. suit, value = value, suit = suit})
-		end
-		-- Добавляем драконов и цветок
-		for i = 1, 3 do
-			local value = 'd'
-			table.insert(deck, {id = value .. "_" .. suit, value = value, suit = suit, is_dragon = true})
-		end
-	end
+   local deck = {}
+   local suits = {"red", "blue", "green"}
+   for _, suit in ipairs(suits) do
+      for value = 2, 10 do
+         table.insert(deck, {id = value .. "_" .. suit, value = value, suit = suit})
+      end
+      -- Добавляем драконов и цветок
+      for i = 1, 3 do
+         local value = 'd'
+         table.insert(deck, {id = value .. "_" .. suit, value = value, suit = suit, is_dragon = true})
+      end
+   end
 
-	
-	
-	table.insert(deck, {id = 'flower', value = 'f', suit = 'flower', is_flower = true})
--- 
-	return deck
+
+
+   table.insert(deck, {id = 'flower', value = 'f', suit = 'flower', is_flower = true})
+   --
+   return deck
 end
 
 
--- 
+--
 
 function create_debug_stack()
-	local debug_stack = {}
-	-- Создаем последовательность: 10 красная, 9 зеленая, 8 синяя, 7 красная, 6 зеленая, 5 синяя, 4 красная, 3 зеленая, 2 синяя
-	local suits_sequence = {"red", "green", "blue"}
-	local current_suit_index = 1
+   local debug_stack = {}
+   -- Создаем последовательность: 10 красная, 9 зеленая, 8 синяя, 7 красная, 6 зеленая, 5 синяя, 4 красная, 3 зеленая, 2 синяя
+   local suits_sequence = {"red", "green", "blue"}
+   local current_suit_index = 1
 
-	for value = 10, 2, -1 do
-		local suit = suits_sequence[current_suit_index]
-		table.insert(debug_stack, {
-			id = value .. "_" .. suit,
-			value = value,
-			suit = suit
-		})
-		current_suit_index = current_suit_index + 1
-		if current_suit_index > #suits_sequence then
-			current_suit_index = 1
-		end
-	end
-	return debug_stack
+   for value = 10, 2, -1 do
+      local suit = suits_sequence[current_suit_index]
+      table.insert(debug_stack, {
+                      id = value .. "_" .. suit,
+                      value = value,
+                      suit = suit
+      })
+      current_suit_index = current_suit_index + 1
+      if current_suit_index > #suits_sequence then
+         current_suit_index = 1
+      end
+   end
+   return debug_stack
 end
 
 function deal_cards(self)
-	local tableau_positions = get_tableau_positions(self)
-	if not self.deck or #self.deck == 0 then
-		print("Колода пуста!")
-		return
-	end
+   local tableau_positions = get_tableau_positions(self)
+   if not self.deck or #self.deck == 0 then
+      print("Колода пуста!")
+      return
+   end
 
-	-- Создаем отладочную стопку
-	local debug_stack = create_debug_stack()
+   -- Создаем отладочную стопку
+   local debug_stack = create_debug_stack()
 
-	-- Удаляем карты из основной колоды, которые уже есть в отладочной стопке
-	local cards_to_remove = {}
-	for _, debug_card in ipairs(debug_stack) do
-		for i, deck_card in ipairs(self.deck) do
-			if deck_card.id == debug_card.id then
-				table.insert(cards_to_remove, i)
-				break
-			end
-		end
-	end
+   -- Удаляем карты из основной колоды, которые уже есть в отладочной стопке
+   local cards_to_remove = {}
+   for _, debug_card in ipairs(debug_stack) do
+      for i, deck_card in ipairs(self.deck) do
+         if deck_card.id == debug_card.id then
+            table.insert(cards_to_remove, i)
+            break
+         end
+      end
+   end
 
-	-- Удаляем карты с конца, чтобы не нарушить индексы
-	table.sort(cards_to_remove, function(a, b) return a > b end)
-	for _, index in ipairs(cards_to_remove) do
-		table.remove(self.deck, index)
-	end
+   -- Удаляем карты с конца, чтобы не нарушить индексы
+   table.sort(cards_to_remove, function(a, b) return a > b end)
+   for _, index in ipairs(cards_to_remove) do
+      table.remove(self.deck, index)
+   end
 
-	local cards_per_stack = math.floor(#self.deck / 7)  -- 7 вместо 8, так как одна стопка будет отладочной
-	local remaining_cards = #self.deck % 7
-	self.tableau_stacks = {}
+   local cards_per_stack = math.floor(#self.deck / 7)  -- 7 вместо 8, так как одна стопка будет отладочной
+   local remaining_cards = #self.deck % 7
+   self.tableau_stacks = {}
 
-	-- Раздаём карты по стопкам
-	for stack_index = 1, 8 do
-		local stack_position = tableau_positions[stack_index]
-		local cards_in_stack
-		local current_stack
+   -- Раздаём карты по стопкам
+   for stack_index = 1, 8 do
+      local stack_position = tableau_positions[stack_index]
+      local cards_in_stack
+      local current_stack
 
-		if stack_index == 1 then  -- Первая стопка будет отладочной
-			cards_in_stack = #debug_stack
-			current_stack = debug_stack
-		else
-			cards_in_stack = cards_per_stack + (stack_index <= remaining_cards + 1 and 1 or 0)
-			current_stack = self.deck
-		end
+      if stack_index == 1 then  -- Первая стопка будет отладочной
+         cards_in_stack = #debug_stack
+         current_stack = debug_stack
+      else
+         cards_in_stack = cards_per_stack + (stack_index <= remaining_cards + 1 and 1 or 0)
+         current_stack = self.deck
+      end
 
-		local slot_id = "tableau_slot" .. stack_index
-		self.tableau_stacks[stack_index] = { slot_id = slot_id, cards = {} }
+      local slot_id = "tableau_slot" .. stack_index
+      self.tableau_stacks[stack_index] = { slot_id = slot_id, cards = {} }
 
-		for card_index = 1, cards_in_stack do
-			local card_data
-			if stack_index == 1 then
-				card_data = table.remove(debug_stack, 1)  -- Берем карты из отладочной стопки
-			else
-				card_data = table.remove(self.deck)  -- Берем карты из основной колоды
-			end
+      for card_index = 1, cards_in_stack do
+         local card_data
+         if stack_index == 1 then
+            card_data = table.remove(debug_stack, 1)  -- Берем карты из отладочной стопки
+         else
+            card_data = table.remove(self.deck)  -- Берем карты из основной колоды
+         end
 
-			local card_offset = vmath.vector3(0, (card_index - 1) * -40, 0)
-			local target_position = stack_position + card_offset
+         local card_offset = vmath.vector3(0, (card_index - 1) * -40, 0)
+         local target_position = stack_position + card_offset
 
-			local card = factory.create("#card_factory", stack_position, vmath.quat(0, 0, 0, 1))
-			msg.post(card, "set_card", { data = card_data })
+         local card = factory.create("#card_factory", stack_position, vmath.quat(0, 0, 0, 1))
+         msg.post(card, "set_card", { data = card_data, slot_id = slot_id })
 
-			go.animate(card, "position", go.PLAYBACK_ONCE_FORWARD, target_position, go.EASING_LINEAR, 0.5, 0.1 * (stack_index + card_index))
+         go.animate(card, "position", go.PLAYBACK_ONCE_FORWARD, target_position, go.EASING_LINEAR, 0.5, 0.1 * (stack_index + card_index))
 
-			table.insert(self.tableau_stacks[stack_index].cards, { id = card, data = card_data })
-			table.insert(self.cards, card)
-		end
+         table.insert(self.tableau_stacks[stack_index].cards, { id = card, data = card_data })
+         table.insert(self.cards, card)
+      end
 
-		msg.post(slot_id, "update_stack", { stack = self.tableau_stacks[stack_index].cards })
-		msg.post(self.cursor, "set_stack", { index = stack_index, stack = self.tableau_stacks[stack_index].cards })
-	end
+      msg.post(slot_id, "update_stack", { cursor = self.cursor, index = stack_index, stack = self.tableau_stacks[stack_index].cards })
+      msg.post(self.cursor, "set_stack", { index = stack_index, stack = self.tableau_stacks[stack_index].cards })
+   end
 end
 
 -- Перемешивание колоды
 function shuffle_deck(self)
-	
-	math.randomseed(os.time())
-	for i = #self.deck, 2, -1 do
-		local j = math.random(1, i)
-		self.deck[i], self.deck[j] = self.deck[j], self.deck[i]
-	end
+
+   math.randomseed(os.time())
+   for i = #self.deck, 2, -1 do
+      local j = math.random(1, i)
+      self.deck[i], self.deck[j] = self.deck[j], self.deck[i]
+   end
 end
 local function cursor_collision_handler(self, message_id, message, sender)
-	if message_id == hash("collision_response") then
-		print("Курсор столкнулся с:", message.other_id)
-		-- Ваша логика обработки столкновений
-	end
+   if message_id == hash("collision_response") then
+      print("Курсор столкнулся с:", message.other_id)
+      -- Ваша логика обработки столкновений
+   end
 end
 
 function on_input(self, action_id, action)
 end
 
 function get_data(self)
-	return { 
-		tableau_slots = self.tableau_stacks,    -- Основные слоты для игры           
-		free_slots = self.free_slots, -- Слоты для финальных стопок
-		cards = self.cards,
-	}
-	
+   return {
+      tableau_slots = self.tableau_stacks,    -- Основные слоты для игры
+      free_slots = self.free_slots, -- Слоты для финальных стопок
+      cards = self.cards,
+   }
+
 end
 
 function send_messages_to_cursor(self)
-	msg.post(self.cursor, "set_cards", self.cards)
-	msg.post(self.cursor, "set_free_slots", self.free_slots)
+   msg.post(self.cursor, "set_cards", self.cards)
+   msg.post(self.cursor, "set_free_slots", self.free_slots)
 end
 
 function get_free_slots()
-	return {
-		free_slot1 = go.get_position('free_slot1'), 
-		free_slot2 = go.get_position('free_slot2'), 
-		free_slot3 = go.get_position('free_slot3')
-	}
+   return {
+      free_slot1 = go.get_position('free_slot1'),
+      free_slot2 = go.get_position('free_slot2'),
+      free_slot3 = go.get_position('free_slot3')
+   }
 end
 
 function on_message(self, message_id, message, sender)
 end
 
 function update(self, dt)
-	if self.currenState == self.states.PLAYING then
-		if self:check_win() then
-			self.state = self.states.WIN
-			print("You win!")
-		end
-	end
+   if self.currenState == self.states.PLAYING then
+      if self:check_win() then
+         self.state = self.states.WIN
+         print("You win!")
+      end
+   end
 end

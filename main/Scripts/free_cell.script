@@ -1,44 +1,53 @@
 function init(self)
-	self.is_occupied = false
-	self.card = nil
+   self.is_occupied = false
+   self.card = nil
 end
 
 
 
 function on_message(self, message_id, message, sender)
-	print("MMMMESSSAGE_ID", message_id)
-	if message_id == hash("check_slot") then
-		if self.is_occupied then
-			msg.post(sender, "slot_invalid")
-			print("Free slot in free slot", go.get_position())
-		else
-			msg.post(sender, "slot_valid")
-		end
-	elseif message_id == hash("occupy_slot") then
-		self.is_occupied = true
-		self.current_card = sender
-		go.set_position(go.get_position() + vmath.vector3(0, 0, 0))
-		-- go.set_position(self.current_card,go.get_position(self.current_card) + vmath.vector3(0, 0, 1))
-		print("Free slot", go.get_position())
-		print("Cart slot", go.get_position(self.current_card))
-	elseif message_id == hash("clear_slot") then
-		self.is_occupied = false
-		self.current_card = nil
-	end
+   print("MMMMESSSAGE_ID", message_id)
+   if message_id == hash("check_slot") then
+      if self.is_occupied then
+         msg.post(sender, "slot_invalid")
+         print("Free slot in free slot", go.get_position())
+      else
+         msg.post(sender, "slot_valid")
+      end
+   elseif message_id == hash("occupy_slot") then
+      self.is_occupied = true
+      self.current_card = sender
+      go.set_position(go.get_position() + vmath.vector3(0, 0, 0))
+   elseif message_id == hash("clear_slot") then
+      self.is_occupied = false
+      self.current_card = nil
+   elseif message_id == hash("remove_card") then
+      self.is_occupied = false
+      self.current_card = nil
+   elseif message_id == hash("can_pick_card") then
+      print("CAN PICK CARD")
+      if self.is_occupied then
+        print("SLOT current card", self.current_card)
+        msg.post(sender, "slot_with_card", {card = self.current_card})
+      else
+      end
+
+
+   end
 end
 
 function update(self, dt)
-	if self.flying then
-		local pos = go.get_position(self.cursor)
-		print("cursor_pos", pos)
-		go.set_position(pos)
-	end
-	-- Преобразуем все объекты в строки и объединяем их
-	local debug_string = "current_card: " .. tostring(self.current_card) .. "\n"
+   if self.flying then
+      local pos = go.get_position(self.cursor)
+      print("cursor_pos", pos)
+      go.set_position(pos)
+   end
+   -- Преобразуем все объекты в строки и объединяем их
+   local debug_string = "current_card: " .. tostring(self.current_card) .. "\n"
 
 
-	local color_green = vmath.vector4(1, 0, 0, 1)
-	msg.post("@render:", "draw_debug_text", { text = debug_string, position = vmath.vector3(1300, 780, 0), color = color_green })
+   local color_green = vmath.vector4(1, 0, 0, 1)
+   msg.post("@render:", "draw_debug_text", { text = debug_string, position = vmath.vector3(1300, 780, 0), color = color_green })
 
 
 end

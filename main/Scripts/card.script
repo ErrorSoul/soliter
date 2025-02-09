@@ -6,6 +6,7 @@ function init(self)
 	self.is_dragon = false  -- Это дракон?
 	self.is_flower = false  -- Это цветок?
 	self.flying = false
+	self.owner = nil
 
 	self.is_highlighted = false
 	-- Сохраняем начальный цвет спрайта
@@ -13,24 +14,27 @@ function init(self)
 	self.highlight_tint = vmath.vector4(1.2, 1.2, 0.8, 1) -- Желтоватое свечение
 	self.is_highlighted = true
 	-- sprite.set_constant("#sprite", "tint", self.highlight_tint)
-	go.set_position(vmath.vector3(go.get_position().x, 
-	go.get_position().y, 
+	go.set_position(vmath.vector3(go.get_position().x,
+	go.get_position().y,
 	0.2))
 	-- local size = go.get("#sprite", "size")
 	-- print("SIZE", size)
 	-- msg.post("#collisionobject", "disable")
 	--msg.post(".", "acquire_input_focus")
+        pprint(go.get_id())
 end
 
-function set_card(self, value, suit, is_dragon, is_flower)
+function set_card(self, value, suit, is_dragon, is_flower, owner)
 	self.value = value
 	self.suit = suit
 	self.is_dragon = is_dragon or false
 	self.is_flower = is_flower or false
+	self.owner = owner
 
 	-- Меняем текстуру спрайта карты
-	local sprite_id = tostring(value) .. "_" .. suit   -- Например, "hearts_1"
-	msg.post("#sprite", "play_animation", {id = hash(sprite_id)})
+	self.sprite_id = tostring(value) .. "_" .. suit   -- Например, "hearts_1"
+	msg.post("#sprite", "play_animation", {id = hash(self.sprite_id)})
+
 end
 
 function on_message(self, message_id, message, sender)
@@ -49,37 +53,36 @@ function on_message(self, message_id, message, sender)
 
 	elseif message_id == hash("drop_success") then
 		self.is_dragging = false
-		self.current_slot = message.slot_id
-		msg.post(self.current_slot, "occupy_slot")
-		go.set_position(message.position + vmath.vector3(0, 0, 0.2))
-		timer.delay(0.1, false, function()
-			msg.post("#collisionobject", "enable")
-		end)
 
+		msg.post(message.slot_id, "occupy_slot")
+
+		go.set_position(message.position + vmath.vector3(0, 0, 0.2))
+                msg.post(self.owner, 'remove_card', {id = go.get_id()})
+                self.owner = message.slot_id
 	elseif message_id == hash("drop_failed") then
 		self.is_dragging = false
-		go.animate(".", "position", go.PLAYBACK_ONCE_FORWARD, 
+		go.animate(".", "position", go.PLAYBACK_ONCE_FORWARD,
 		message.position, go.EASING_OUTQUAD, 0.3)
 		-- timer.delay(0.3, false, function()
 		-- 	-- msg.post("#collisionobject", "enable")
 		-- end)
 
 	elseif message_id == hash("set_card") then
-		set_card(self, message.data.value, message.data.suit, 
-		message.data.is_dragon, message.data.is_flower)
+		set_card(self, message.data.value, message.data.suit,
+		message.data.is_dragon, message.data.is_flower, message.slot_id)
 	end
 
 	if message_id == hash("highlight") then
 		self.is_highlighted = true
 		sprite.set_constant("#sprite", "tint", self.highlight_tint)
-		go.set_position(vmath.vector3(go.get_position().x, 
-		go.get_position().y, 
+		go.set_position(vmath.vector3(go.get_position().x,
+		go.get_position().y,
 		0.2))
 	elseif message_id == hash("unhighlight") then
 		self.is_highlighted = false
 		sprite.set_constant("#sprite", "tint", self.normal_tint)
-		go.set_position(vmath.vector3(go.get_position().x, 
-		go.get_position().y, 
+		go.set_position(vmath.vector3(go.get_position().x,
+		go.get_position().y,
 		0.2))
 	end
 end
@@ -109,10 +112,10 @@ function update(self, dt)
 	end
 -- 			-- Преобразуем все объекты в строки и объединяем их
 -- 			local debug_string = "selected_card: " .. tostring(self.selected_card) .. "\n"
--- 			
--- 
+--
+--
 -- 			local color_green = vmath.vector4(1, 0, 0, 1)
 -- 			msg.post("@render:", "draw_debug_text", { text = debug_string, position = vmath.vector3(1300, 780, 0), color = color_green })
 
-	
+
 end

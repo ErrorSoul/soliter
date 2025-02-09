@@ -35,31 +35,41 @@ function on_input(self, action_id, action)
          local card = check_tableau_slots(self, action.x, action.y)
          pprint(card)
          if card then
-            self.selected_card = card
+            self.selected_card = card.id
+            self.selected_card_data = card
             self.is_dragging = true
             self.original_position = card.pos
-            msg.post(self.selected_card.id, "start_drag")
+            msg.post(self.selected_card, "start_drag")
             return
          end
          local free_slot = check_free_slots(self, action.x, action.y)
+         if free_slot then
+            self.pending_drop = free_slot
+            msg.post(free_slot.slot_id, "can_pick_card")
+         end
+
 
       elseif action.released then
          self.was_pressed = false
+         if self.is_dragging and self.selected_card then
 
-         local free_slot = check_free_slots(self, action.x, action.y)
-         if free_slot then
-            self.pending_drop = {card = self.selected_card, slot = free_slot}
-            msg.post(free_slot.slot_id, 'check_slot')
-         else
-            msg.post(self.selected_card.id, 'drop_failed', {position = self.original_position})
+            local free_slot = check_free_slots(self, action.x, action.y)
+            if free_slot then
+               self.pending_drop = {card = self.selected_card, slot = free_slot}
+               msg.post(free_slot.slot_id, 'check_slot')
+               return
+            end
+
+            msg.post(self.selected_card, 'drop_failed', {position = self.original_position})
+            clean_cursor(self)
          end
-
       end
 
 
 
+
       if self.is_dragging and self.selected_card then
-         msg.post(self.selected_card.id, "drag_update", {position = self.cursor_pos})
+         msg.post(self.selected_card, "drag_update", {position = self.cursor_pos})
       end
    end
 end
@@ -72,19 +82,25 @@ function on_message(self, message_id, message, sender)
    elseif message_id == hash("set_stack") then
       self.tableau_stacks[message.index] = message.stack
    elseif message_id == hash("slot_valid") and self.pending_drop then
-      msg.post(self.pending_drop.card.id, 'drop_success', {
+      msg.post(self.pending_drop.card, 'drop_success', {
                   slot_id = self.pending_drop.slot.slot_id,
                   position = self.pending_drop.slot.slot_pos
       })
       clean_cursor(self)
    elseif message_id == hash("slot_invalid") and self.pending_drop then
-      msg.post(self.pending_drop.card.id, 'drop_failed', {position = self.original_position})
+      msg.post(self.pending_drop.card, 'drop_failed', {position = self.original_position})
       clean_cursor(self)
+   elseif message_id == hash("slot_with_card") and self.pending_drop then
+      self.selected_card = message.card
+      self.is_dragging = true
+      self.original_position = self.pending_drop.slot_pos
+      msg.post(self.selected_card, "start_drag")
    end
 end
 
 function clean_cursor(self)
    self.selected_card = nil
+   self.selected_card_data = nil
    self.is_dragging = false
    self.current_slot = nil
    self.pending_drop = nil
@@ -140,7 +156,7 @@ end
 
 function update(self, dt)
    -- Преобразуем все объекты в строки и объединяем их
-   local debug_string = "selected_card: " .. tostring(self.selected_card and self.selected_card.data_id or nil) .. "\n" ..
+   local debug_string = "selected_card: " .. tostring(self.selected_card_data and self.selected_card_data.data_id or nil) .. "\n" ..
       "is_dragging: " .. tostring(self.is_dragging) .. "\n" ..
       "current_slot: " .. tostring(self.current_slot) .. "\n" ..
       "can_drop: " .. tostring(self.can_drop) .. "\n" ..
