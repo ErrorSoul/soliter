@@ -48,16 +48,8 @@ function on_input(self, action_id, action)
 
          local free_slot = check_free_slots(self, action.x, action.y)
          if free_slot then
+            self.pending_drop = {card = self.selected_card, slot = free_slot}
             msg.post(free_slot.slot_id, 'check_slot')
-
-            if self.is_dragging and self.selected_card and self.can_move_to_slot then
-               msg.post(self.selected_card.id, 'drop_success', {slot_id = free_slot.slot_id, position = free_slot.slot_pos})
-               print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-            else
-               msg.post(self.selected_card.id, 'drop_failed', {position = self.original_position})
-
-            end
-            return
          else
             msg.post(self.selected_card.id, 'drop_failed', {position = self.original_position})
          end
@@ -65,9 +57,7 @@ function on_input(self, action_id, action)
       end
 
 
-      if self.is_dragging and self.selected_card and self.can_move_to_slot then
-         msg.post(self.selected_card.id, "drag_update", {position = self.cursor_pos})
-      end
+
       if self.is_dragging and self.selected_card then
          msg.post(self.selected_card.id, "drag_update", {position = self.cursor_pos})
       end
@@ -83,10 +73,15 @@ function on_message(self, message_id, message, sender)
       self.cards = message
    elseif message_id == hash("set_stack") then
       self.tableau_stacks[message.index] = message.stack
-   elseif message_id == hash("slot_valid") then
-      self.can_move_to_slot = true
-   elseif message_id == hash("slot_invalid") then
-      self.can_move_to_slot = false
+   elseif message_id == hash("slot_valid") and self.pending_drop then
+      msg.post(self.pending_drop.card.id, 'drop_success', {
+                  slot_id = self.pending_drop.slot.slot_id,
+                  position = self.pending_drop.slot.slot_pos
+      })
+      self.pending_drop = nil
+   elseif message_id == hash("slot_invalid") and self.pending_drop then
+      msg.post(self.pending_drop.card.id, 'drop_failed', {position = self.original_position})
+      self.pending_drop = nil
    end
 end
 
