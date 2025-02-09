@@ -2,153 +2,161 @@
 go.property("selected_card", nil)
 
 function init(self)
-	-- Отключаем лишние сообщения о коллизиях
-	self.is_processing = false
-	self.valid = false
-	-- Получаем размеры окна при старте
-	self.tableau_stacks = {}
-	self.size = vmath.vector3(90, 150, 0)
-	self.half_size = self.size * 0.5
-	msg.post(".", "acquire_input_focus")
-	-- Draw colored text on the screen
+   -- Отключаем лишние сообщения о коллизиях
+   self.is_processing = false
+   self.valid = false
+   -- Получаем размеры окна при старте
+   self.tableau_stacks = {}
+   self.was_pressed = false
+   self.size = vmath.vector3(90, 150, 0)
+   self.half_size = self.size * 0.5
+   msg.post(".", "acquire_input_focus")
+   -- Draw colored text on the screen
 end
 
 
 function on_input(self, action_id, action)
-	self.cursor_pos = vmath.vector3(action.x, action.y, 0)
-	go.set_position(self.cursor_pos, ".")
+   self.cursor_pos = vmath.vector3(action.x, action.y, 0)
+   go.set_position(self.cursor_pos, ".")
 
 
-	if action_id == hash("space") then
+   if action_id == hash("space") then
 
-		if action.pressed then
-			msg.post("@system:", "toggle_physics_debug") -- <3>
-		else
-			msg.post("@system:", "toggle_physics_debug") -- <3>
-		end
-	end
-	if action_id == hash("touch") then
-		if action.pressed then
-			local card = check_tableau_slots(self, action.x, action.y)
-			pprint(card)
-			if card then
-				self.selected_card = card
-				self.is_dragging = true
-				self.original_position = card.pos
-				msg.post(self.selected_card.id, "start_drag")
-				return
-			end
-			local free_slot = check_free_slots(self, action.x, action.y)
-			
-		elseif action.released then
-			local free_slot = check_free_slots(self, action.x, action.y)
-			if free_slot then
-				msg.post(free_slot.slot_id, 'check_slot')
-				timer.delay(0.1, false, function()
-					if self.is_dragging and self.selected_card and self.can_move_to_slot then
-						msg.post(self.selected_card.id, 'drop_success', {slot_id = free_slot.slot_id, position = free_slot.slot_pos})
-						print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-					else 
-						msg.post(self.selected_card.id, 'drop_failed', {position = self.original_position})
-						
-					end	
-				end)
-				return
-			else
-				msg.post(self.selected_card.id, 'drop_failed', {position = self.original_position})	
-			end
-			
-		end
+      if action.pressed then
+         msg.post("@system:", "toggle_physics_debug") -- <3>
+      else
+         msg.post("@system:", "toggle_physics_debug") -- <3>
+      end
+   end
+   if action_id == hash("touch") then
+      if action.pressed then
+         self.was_pressed = true
 
-		if self.is_dragging and self.selected_card then
-			msg.post(self.selected_card.id, "drag_update", {position = self.cursor_pos})
-		end
-	end
+         local card = check_tableau_slots(self, action.x, action.y)
+         pprint(card)
+         if card then
+            self.selected_card = card
+            self.is_dragging = true
+            self.original_position = card.pos
+            msg.post(self.selected_card.id, "start_drag")
+            return
+         end
+         local free_slot = check_free_slots(self, action.x, action.y)
+
+      elseif action.released then
+         self.was_pressed = false
+
+         local free_slot = check_free_slots(self, action.x, action.y)
+         if free_slot then
+            msg.post(free_slot.slot_id, 'check_slot')
+
+            if self.is_dragging and self.selected_card and self.can_move_to_slot then
+               msg.post(self.selected_card.id, 'drop_success', {slot_id = free_slot.slot_id, position = free_slot.slot_pos})
+               print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+            else
+               msg.post(self.selected_card.id, 'drop_failed', {position = self.original_position})
+
+            end
+            return
+         else
+            msg.post(self.selected_card.id, 'drop_failed', {position = self.original_position})
+         end
+
+      end
+
+
+      if self.is_dragging and self.selected_card and self.can_move_to_slot then
+         msg.post(self.selected_card.id, "drag_update", {position = self.cursor_pos})
+      end
+      if self.is_dragging and self.selected_card then
+         msg.post(self.selected_card.id, "drag_update", {position = self.cursor_pos})
+      end
+   end
 end
 
 function on_message(self, message_id, message, sender)
-	if message_id == hash("set_free_slots") then
-		pprint(message)
-		print("Message data: ", message)
-		self.free_slots = message
-	elseif message_id == hash("set_cards") then
-		self.cards = message
-	elseif message_id == hash("set_stack") then
-		self.tableau_stacks[message.index] = message.stack
-	elseif message_id == hash("slot_valid") then
-		self.can_move_to_slot = true
-	elseif message_id == hash("slot_invalid") then
-		self.can_move_to_slot = false
-	end
+   if message_id == hash("set_free_slots") then
+      pprint(message)
+      print("Message data: ", message)
+      self.free_slots = message
+   elseif message_id == hash("set_cards") then
+      self.cards = message
+   elseif message_id == hash("set_stack") then
+      self.tableau_stacks[message.index] = message.stack
+   elseif message_id == hash("slot_valid") then
+      self.can_move_to_slot = true
+   elseif message_id == hash("slot_invalid") then
+      self.can_move_to_slot = false
+   end
 end
 
 function clean_cursor(self)
-	self.selected_card = nil
-	self.is_dragging = false
-	self.current_slot = nil
-	self.can_drop = false
-	self.potential_card = nil
-	-- overlapped_card не очищаем, так как он отслеживает карту под курсором
+   self.selected_card = nil
+   self.is_dragging = false
+   self.current_slot = nil
+   self.can_drop = false
+   self.potential_card = nil
+   -- overlapped_card не очищаем, так как он отслеживает карту под курсором
 end
 
 local function is_point_in_rect(x, y, rect_pos, half_size)
-	return (x > rect_pos.x - half_size.x and
-		x < rect_pos.x + half_size.x and
-		y > rect_pos.y - half_size.y and
-		y < rect_pos.y + half_size.y)
+   return (x > rect_pos.x - half_size.x and
+           x < rect_pos.x + half_size.x and
+           y > rect_pos.y - half_size.y and
+           y < rect_pos.y + half_size.y)
 end
-	
+
 function check_tableau_slots(self, cursor_x, cursor_y)
-	-- Проверяем каждую стопку
-	for stack_index, stack in ipairs(self.tableau_stacks) do
-	
-		-- Если курсор над стопкой, проверяем каждую карту в стопке
-		for card_index = #stack, 1, -1 do
-			local card = stack[card_index]
-			local card_pos = go.get_position(card.id)
+   -- Проверяем каждую стопку
+   for stack_index, stack in ipairs(self.tableau_stacks) do
+
+      -- Если курсор над стопкой, проверяем каждую карту в стопке
+      for card_index = #stack, 1, -1 do
+         local card = stack[card_index]
+         local card_pos = go.get_position(card.id)
 
 
-			-- Проверяем, находится ли курсор над картой
-			if is_point_in_rect(cursor_x, cursor_y, card_pos, self.half_size) then
-				return {
-					type = "tableau",
-					id  = card.id,
-					stack_index = stack_index,
-					card_index = card_index,
-					card_data = card.data,
-					data_id = card.data.id,
-					pos = card_pos
-				}
-			end
-		end
-	end
-	-- Если курсор не над стопкой, возвращаем nil
-	return nil
+         -- Проверяем, находится ли курсор над картой
+         if is_point_in_rect(cursor_x, cursor_y, card_pos, self.half_size) then
+            return {
+               type = "tableau",
+               id  = card.id,
+               stack_index = stack_index,
+               card_index = card_index,
+               card_data = card.data,
+               data_id = card.data.id,
+               pos = card_pos
+            }
+         end
+      end
+   end
+   -- Если курсор не над стопкой, возвращаем nil
+   return nil
 end
 
 function check_free_slots(self, cursor_x, cursor_y)
-	for slot_id, slot_pos in pairs(self.free_slots) do
-		print("Free slot pos", slot_id)
-		msg.post(slot_id, "xxxx")
-		if is_point_in_rect(cursor_x, cursor_y, slot_pos, self.half_size) then
-			print("SLOT POS", slot_pos)
-			return {slot_id = slot_id, slot_pos = slot_pos}
-		end
-	end
+   for slot_id, slot_pos in pairs(self.free_slots) do
+      print("Free slot pos", slot_id)
+      msg.post(slot_id, "xxxx")
+      if is_point_in_rect(cursor_x, cursor_y, slot_pos, self.half_size) then
+         print("SLOT POS", slot_pos)
+         return {slot_id = slot_id, slot_pos = slot_pos}
+      end
+   end
 end
-	
-	
+
+
 
 function update(self, dt)
-	-- Преобразуем все объекты в строки и объединяем их
-	local debug_string = "selected_card: " .. tostring(self.selected_card and self.selected_card.data_id or nil) .. "\n" ..
-	"is_dragging: " .. tostring(self.is_dragging) .. "\n" ..
-	"current_slot: " .. tostring(self.current_slot) .. "\n" ..
-	"can_drop: " .. tostring(self.can_drop) .. "\n" ..
-	"potential_card: " .. tostring(self.potential_card) .. "\n"..
-	"message: " .. tostring(self.mes) .. "\n" ..
-	"overlapped_card: " .. tostring(self.overlapped_card) .. "\n"
-	
-	local color_green = vmath.vector4(0, 1, 0, 1)
-	msg.post("@render:", "draw_debug_text", { text = debug_string, position = vmath.vector3(800, 780, 0), color = color_green })
+   -- Преобразуем все объекты в строки и объединяем их
+   local debug_string = "selected_card: " .. tostring(self.selected_card and self.selected_card.data_id or nil) .. "\n" ..
+      "is_dragging: " .. tostring(self.is_dragging) .. "\n" ..
+      "current_slot: " .. tostring(self.current_slot) .. "\n" ..
+      "can_drop: " .. tostring(self.can_drop) .. "\n" ..
+      "potential_card: " .. tostring(self.potential_card) .. "\n"..
+      "message: " .. tostring(self.mes) .. "\n" ..
+      "overlapped_card: " .. tostring(self.overlapped_card) .. "\n"
+
+   local color_green = vmath.vector4(0, 1, 0, 1)
+   msg.post("@render:", "draw_debug_text", { text = debug_string, position = vmath.vector3(800, 780, 0), color = color_green })
 end
