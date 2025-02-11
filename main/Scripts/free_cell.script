@@ -17,6 +17,7 @@ function on_message(self, message_id, message, sender)
    elseif message_id == hash("occupy_slot") then
       self.is_occupied = true
       self.current_card = sender
+      message.slot_id = go.get_id()
       self.card_data = message
       go.set_position(go.get_position() + vmath.vector3(0, 0, 0))
    elseif message_id == hash("clear_slot") then

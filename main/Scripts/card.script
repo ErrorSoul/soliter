@@ -69,7 +69,7 @@ function on_message(self, message_id, message, sender)
 
 		msg.post(message.slot_id, "occupy_slot", message.card)
 
-		go.set_position(message.position + vmath.vector3(0, 0, 0.2))
+		go.set_position(message.position + vmath.vector3(0, 0, 0.001))
                 msg.post(self.owner, 'remove_card', {id = go.get_id()})
                 self.owner = message.slot_id
 	elseif message_id == hash("drop_failed") then

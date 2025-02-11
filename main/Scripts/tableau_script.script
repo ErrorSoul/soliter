@@ -3,8 +3,6 @@ function init(self)
 end
 local function remove_by_id(tbl, target_id)
    for i, item in ipairs(tbl) do
-      print("Item.id", item.id)
-      print("target.id", target_id)
       if item.id == target_id then
          table.remove(tbl, i) -- Удаляем элемент по индексу
          return true -- Успешно удалено
@@ -25,8 +23,10 @@ function on_message(self, message_id, message, sender)
       end
       update_visible_cards(self)
     elseif message_id == hash("occupy_slot") then
+       message.slot_id = go.get_id()
        table.insert(self.stack, message)
        pprint("SELF STACK NEw", self.stack)
+       update_visible_cards(self)
    end
 end
 
@@ -76,16 +76,17 @@ function update_visible_cards(self)
       local card_url = msg.url(nil, card.id,"collisionobject1")
 
 
-      if is_visible then
-         -- Включаем коллизию для видимых карт
-         msg.post(card_url, "enable")
-      else
-         -- Выключаем коллизию для скрытых карт
-         msg.post(card_url, "enable")
-      end
+      -- if is_visible then
+      --    -- Включаем коллизию для видимых карт
+      --    msg.post(card_url, "enable")
+      -- else
+      --    -- Выключаем коллизию для скрытых карт
+      --    msg.post(card_url, "enable")
+      -- end
 
-      local z_index = (i == #self.stack) and 0.02 or 0.005 + i * 0.01
-      go.set_position(vmath.vector3(go.get_position(card.id).x, go.get_position(card.id).y, 0.1), card.id)
+      local z_index = (i == #self.stack) and 0.02 or 0.002 + i * 0.002
+      print(string.format("slot id z index %s  %f", card.data.id, z_index))
+      go.set_position(vmath.vector3(go.get_position(card.id).x, go.get_position(card.id).y, z_index), card.id)
       -- print(string.format("Card %d: %s %s %s", i, card.data.value, card.data.suit, go.get_position(card.id)))
       -- print(go.get_position(card.id))
    end
