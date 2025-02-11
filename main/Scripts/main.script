@@ -152,10 +152,10 @@ function deal_cards(self)
 
          local card = factory.create("#card_factory", stack_position, vmath.quat(0, 0, 0, 1))
          msg.post(card, "set_card", { data = card_data, slot_id = slot_id })
-
+         print("CARD IDDDDDDDDDDDD", card)
          go.animate(card, "position", go.PLAYBACK_ONCE_FORWARD, target_position, go.EASING_LINEAR, 0.5, 0.1 * (stack_index + card_index))
 
-         table.insert(self.tableau_stacks[stack_index].cards, { id = card, data = card_data })
+         table.insert(self.tableau_stacks[stack_index].cards, { id = card, data = card_data, slot_id = slot_id })
          table.insert(self.cards, card)
       end
 

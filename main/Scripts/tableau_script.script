@@ -24,6 +24,9 @@ function on_message(self, message_id, message, sender)
          msg.post(self.cursor, 'set_stack', {index = self.index, stack = self.stack})
       end
       update_visible_cards(self)
+    elseif message_id == hash("occupy_slot") then
+       table.insert(self.stack, message)
+       pprint("SELF STACK NEw", self.stack)
    end
 end
 

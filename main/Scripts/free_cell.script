@@ -17,6 +17,7 @@ function on_message(self, message_id, message, sender)
    elseif message_id == hash("occupy_slot") then
       self.is_occupied = true
       self.current_card = sender
+      self.card_data = message
       go.set_position(go.get_position() + vmath.vector3(0, 0, 0))
    elseif message_id == hash("clear_slot") then
       self.is_occupied = false
@@ -24,11 +25,12 @@ function on_message(self, message_id, message, sender)
    elseif message_id == hash("remove_card") then
       self.is_occupied = false
       self.current_card = nil
+      self.card_data = nil
    elseif message_id == hash("can_pick_card") then
       print("CAN PICK CARD")
       if self.is_occupied then
         print("SLOT current card", self.current_card)
-        msg.post(sender, "slot_with_card", {card = self.current_card})
+        msg.post(sender, "slot_with_card", self.card_data) --id = self.current_card})
       else
       end
 

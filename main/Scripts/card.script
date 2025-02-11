@@ -42,10 +42,10 @@ function is_correct_card(self, selected_card)
    if self.is_flower or self.is_dragon then
       return false
    end
-   if selected_card.card_data.value == 'd' or selected_card.card_data.value == 'f' then
+   if selected_card.data.value == 'd' or selected_card.data.value == 'f' then
       return false
    end
-   if self.suit ~= selected_card.card_data.suit and self.value == selected_card.card_data.value + 1 then
+   if self.suit ~= selected_card.data.suit and self.value == selected_card.data.value + 1 then
       return true
    end
 end
@@ -67,7 +67,7 @@ function on_message(self, message_id, message, sender)
 	elseif message_id == hash("drop_success") then
 		self.is_dragging = false
 
-		msg.post(message.slot_id, "occupy_slot")
+		msg.post(message.slot_id, "occupy_slot", message.card)
 
 		go.set_position(message.position + vmath.vector3(0, 0, 0.2))
                 msg.post(self.owner, 'remove_card', {id = go.get_id()})
@@ -79,7 +79,7 @@ function on_message(self, message_id, message, sender)
         elseif message_id == hash("can_move_card") then
 		self.is_dragging = false
 		if is_correct_card(self, message.card) then
-                   print("CORRECT")
+                   msg.post(sender, 'valid_card')
                 else
                    msg.post(sender, 'invalid_card')
                 end

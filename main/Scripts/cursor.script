@@ -37,7 +37,7 @@ function on_input(self, action_id, action)
          pprint(card)
          if card then
             self.selected_card = card.id
-            self.selected_card_data = card
+            self.selected_card_data = card.source
             self.is_dragging = true
             self.original_position = card.pos
             msg.post(self.selected_card, "start_drag")
@@ -47,6 +47,7 @@ function on_input(self, action_id, action)
          if free_slot then
             self.pending_drop = free_slot
             msg.post(free_slot.slot_id, "can_pick_card")
+            return
          end
 
 
@@ -63,7 +64,10 @@ function on_input(self, action_id, action)
 
             local card = check_last_cards(self, action.x, action.y)
             pprint("LAST card", card)
+
+
             if card then
+               self.pending_drop = {card = card, slot_id = card.slot_id}
                msg.post(card.id, "can_move_card", {card = self.selected_card_data})
                return
             end
@@ -83,6 +87,7 @@ function on_input(self, action_id, action)
 end
 
 function on_message(self, message_id, message, sender)
+   print("[CURSOR]", message_id)
    if message_id == hash("set_free_slots") then
       self.free_slots = message
    elseif message_id == hash("set_cards") then
@@ -94,17 +99,27 @@ function on_message(self, message_id, message, sender)
    elseif message_id == hash("slot_valid") and self.pending_drop then
       msg.post(self.selected_card, 'drop_success', {
                   slot_id = self.pending_drop.slot.slot_id,
-                  position = self.pending_drop.slot.slot_pos
+                  position = self.pending_drop.slot.slot_pos,
+                  card = self.selected_card_data
+
       })
       clean_cursor(self)
    elseif message_id == hash("slot_invalid") and self.pending_drop then
-      msg.post(self.pending_drop.card, 'drop_failed', {position = self.original_position})
+      msg.post(self.selected_card, 'drop_failed', {position = self.original_position})
       clean_cursor(self)
    elseif message_id == hash("invalid_card")  then
       msg.post(self.selected_card, 'drop_failed', {position = self.original_position})
       clean_cursor(self)
+   elseif message_id == hash("valid_card") and self.pending_drop then
+      msg.post(self.selected_card, 'drop_success', {
+                  position = (self.pending_drop.card.pos + vmath.vector3(0, -40, 0)),
+                  slot_id = self.pending_drop.slot_id,
+                  card = self.selected_card_data
+      })
+      clean_cursor(self)
    elseif message_id == hash("slot_with_card") and self.pending_drop then
-      self.selected_card = message.card
+      self.selected_card = message.data.id
+      self.selected_card_data = message.data
       self.is_dragging = true
       self.original_position = self.pending_drop.slot_pos
       msg.post(self.selected_card, "start_drag")
@@ -145,7 +160,9 @@ function check_tableau_slots(self, cursor_x, cursor_y)
                card_index = card_index,
                card_data = card.data,
                data_id = card.data.id,
-               pos = card_pos
+               pos = card_pos,
+               slot_id = card.slot_id,
+               source = card
             }
          end
       end
@@ -159,13 +176,11 @@ function check_last_cards(self, cursor_x, cursor_y)
 
    -- Если курсор над стопкой, проверяем каждую карту в стопке
    for stack_index, card in ipairs(self.last_cards) do
-      print("Card id", card.id)
-      print("self cart id", self.selected_card)
       local card_pos = go.get_position(card.id)
-
 
       -- Проверяем, находится ли курсор над картой
       if card.id ~= self.selected_card and is_point_in_rect(cursor_x, cursor_y, card_pos, self.half_size) then
+         pprint("Cardddd", card)
          return {
             type = "tableau",
             id  = card.id,
@@ -173,7 +188,9 @@ function check_last_cards(self, cursor_x, cursor_y)
             card_index = card_index,
             card_data = card.data,
             data_id = card.data.id,
-            pos = card_pos
+            slot_id = card.slot_id,
+            pos = card_pos,
+            source = card
          }
       end
    end
@@ -184,9 +201,7 @@ end
 function check_free_slots(self, cursor_x, cursor_y)
    for slot_id, slot_pos in pairs(self.free_slots) do
       print("Free slot pos", slot_id)
-      msg.post(slot_id, "xxxx")
       if is_point_in_rect(cursor_x, cursor_y, slot_pos, self.half_size) then
-         print("SLOT POS", slot_pos)
          return {slot_id = slot_id, slot_pos = slot_pos}
       end
    end
