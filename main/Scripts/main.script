@@ -160,7 +160,8 @@ function deal_cards(self)
       end
 
       msg.post(slot_id, "update_stack", { cursor = self.cursor, index = stack_index, stack = self.tableau_stacks[stack_index].cards })
-      msg.post(self.cursor, "set_stack", { index = stack_index, stack = self.tableau_stacks[stack_index].cards })
+
+      --msg.post(self.cursor, "set_stack", { index = stack_index, stack = self.tableau_stacks[stack_index].cards })
    end
 end
 

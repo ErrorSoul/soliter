@@ -7,6 +7,7 @@ function init(self)
    self.valid = false
    -- Получаем размеры окна при старте
    self.tableau_stacks = {}
+   self.last_cards = {}
    self.was_pressed = false
    self.size = vmath.vector3(90, 150, 0)
    self.half_size = self.size * 0.5
@@ -55,8 +56,15 @@ function on_input(self, action_id, action)
 
             local free_slot = check_free_slots(self, action.x, action.y)
             if free_slot then
-               self.pending_drop = {card = self.selected_card, slot = free_slot}
+               self.pending_drop = {slot = free_slot}
                msg.post(free_slot.slot_id, 'check_slot')
+               return
+            end
+
+            local card = check_last_cards(self, action.x, action.y)
+            pprint("LAST card", card)
+            if card then
+               msg.post(card.id, "can_move_card", {card = self.selected_card_data})
                return
             end
 
@@ -81,14 +89,19 @@ function on_message(self, message_id, message, sender)
       self.cards = message
    elseif message_id == hash("set_stack") then
       self.tableau_stacks[message.index] = message.stack
+   elseif message_id == hash("set_last_cards") then
+      self.last_cards[message.index] = message.card
    elseif message_id == hash("slot_valid") and self.pending_drop then
-      msg.post(self.pending_drop.card, 'drop_success', {
+      msg.post(self.selected_card, 'drop_success', {
                   slot_id = self.pending_drop.slot.slot_id,
                   position = self.pending_drop.slot.slot_pos
       })
       clean_cursor(self)
    elseif message_id == hash("slot_invalid") and self.pending_drop then
       msg.post(self.pending_drop.card, 'drop_failed', {position = self.original_position})
+      clean_cursor(self)
+   elseif message_id == hash("invalid_card")  then
+      msg.post(self.selected_card, 'drop_failed', {position = self.original_position})
       clean_cursor(self)
    elseif message_id == hash("slot_with_card") and self.pending_drop then
       self.selected_card = message.card
@@ -135,6 +148,33 @@ function check_tableau_slots(self, cursor_x, cursor_y)
                pos = card_pos
             }
          end
+      end
+   end
+   -- Если курсор не над стопкой, возвращаем nil
+   return nil
+end
+
+
+function check_last_cards(self, cursor_x, cursor_y)
+
+   -- Если курсор над стопкой, проверяем каждую карту в стопке
+   for stack_index, card in ipairs(self.last_cards) do
+      print("Card id", card.id)
+      print("self cart id", self.selected_card)
+      local card_pos = go.get_position(card.id)
+
+
+      -- Проверяем, находится ли курсор над картой
+      if card.id ~= self.selected_card and is_point_in_rect(cursor_x, cursor_y, card_pos, self.half_size) then
+         return {
+            type = "tableau",
+            id  = card.id,
+            stack_index = stack_index,
+            card_index = card_index,
+            card_data = card.data,
+            data_id = card.data.id,
+            pos = card_pos
+         }
       end
    end
    -- Если курсор не над стопкой, возвращаем nil

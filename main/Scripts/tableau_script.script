@@ -20,17 +20,20 @@ function on_message(self, message_id, message, sender)
       self.cursor = message.cursor
       update_visible_cards(self)
    elseif message_id == hash("remove_card") then
-      pprint("STACK" , self.stack)
-
       if remove_by_id(self.stack, message.id) then
          msg.post(self.cursor, 'set_stack', {index = self.index, stack = self.stack})
       end
-
-      pprint("STACK new" , self.stack)
+      update_visible_cards(self)
    end
-
 end
 
+local function reverse_table(tbl)
+    local reversed = {}
+    for i = #tbl, 1, -1 do
+        table.insert(reversed, tbl[i])
+    end
+    return reversed
+end
 
 function update_visible_cards(self)
    local visible_cards = {}
@@ -78,14 +81,17 @@ function update_visible_cards(self)
          msg.post(card_url, "enable")
       end
 
-      local z_index = (i == #self.stack) and 0.7 or 0.1 + i * 0.05
-      go.set_position(vmath.vector3(go.get_position(card.id).x, go.get_position(card.id).y, z_index), card.id)
+      local z_index = (i == #self.stack) and 0.02 or 0.005 + i * 0.01
+      go.set_position(vmath.vector3(go.get_position(card.id).x, go.get_position(card.id).y, 0.1), card.id)
       -- print(string.format("Card %d: %s %s %s", i, card.data.value, card.data.suit, go.get_position(card.id)))
       -- print(go.get_position(card.id))
    end
 
    -- Сохраняем список видимых карт
    self.visible_cards = visible_cards
+   msg.post(self.cursor, "set_stack", { index = self.index, stack = reverse_table(self.visible_cards) })
+
+   msg.post(self.cursor, "set_last_cards", { index = self.index, card = reverse_table(self.stack)[1] })
 end
 
 -- Функция для проверки, можно ли сложить карты в стопку

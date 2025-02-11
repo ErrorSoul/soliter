@@ -37,6 +37,19 @@ function set_card(self, value, suit, is_dragon, is_flower, owner)
 
 end
 
+function is_correct_card(self, selected_card)
+   pprint('selected', selected_card)
+   if self.is_flower or self.is_dragon then
+      return false
+   end
+   if selected_card.card_data.value == 'd' or selected_card.card_data.value == 'f' then
+      return false
+   end
+   if self.suit ~= selected_card.card_data.suit and self.value == selected_card.card_data.value + 1 then
+      return true
+   end
+end
+
 function on_message(self, message_id, message, sender)
 	if message_id == hash("can_pick_up") then
 		if self.current_slot then
@@ -63,9 +76,14 @@ function on_message(self, message_id, message, sender)
 		self.is_dragging = false
 		go.animate(".", "position", go.PLAYBACK_ONCE_FORWARD,
 		message.position, go.EASING_OUTQUAD, 0.3)
-		-- timer.delay(0.3, false, function()
-		-- 	-- msg.post("#collisionobject", "enable")
-		-- end)
+        elseif message_id == hash("can_move_card") then
+		self.is_dragging = false
+		if is_correct_card(self, message.card) then
+                   print("CORRECT")
+                else
+                   msg.post(sender, 'invalid_card')
+                end
+
 
 	elseif message_id == hash("set_card") then
 		set_card(self, message.data.value, message.data.suit,
