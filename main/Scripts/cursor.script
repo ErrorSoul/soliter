@@ -63,15 +63,19 @@ function on_input(self, action_id, action)
             end
 
             local card = check_last_cards(self, action.x, action.y)
-            pprint("LAST card", card)
-
 
             if card then
                self.pending_drop = {card = card, slot_id = card.slot_id}
                msg.post(card.id, "can_move_card", {card = self.selected_card_data})
                return
             end
-            print("ORIGINAL POS", self.original_position)
+
+            local base_slot = check_base_slots(self, action.x, action.y)
+            if base_slot then
+               self.pending_drop = {slot = base_slot}
+               msg.post(base_slot.slot_id, 'check_slot', {card = self.selected_card_data})
+               return
+            end
             msg.post(self.selected_card, 'drop_failed', {position = self.original_position})
             clean_cursor(self)
          end
@@ -202,7 +206,15 @@ end
 
 function check_free_slots(self, cursor_x, cursor_y)
    for slot_id, slot_pos in pairs(self.free_slots) do
-      print("Free slot pos", slot_id)
+      if is_point_in_rect(cursor_x, cursor_y, slot_pos, self.half_size) then
+         return {slot_id = slot_id, slot_pos = slot_pos}
+      end
+   end
+end
+
+function check_base_slots(self, cursor_x, cursor_y)
+   for slot_id, slot_pos in pairs(self.base_slots) do
+      print("Base slot pos", slot_id)
       if is_point_in_rect(cursor_x, cursor_y, slot_pos, self.half_size) then
          return {slot_id = slot_id, slot_pos = slot_pos}
       end

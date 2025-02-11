@@ -24,7 +24,7 @@ function init(self)
    shuffle_deck(self)
    deal_cards(self)
    self.dragonPiles = {}    -- Стопки драконов
-   self.base = get_base_slots()     -- Верхние стопки для построения последовательностей
+   self.base_slots = get_base_slots()     -- Верхние стопки для построения последовательностей
    self.tableau = {}        -- Основное игровое поле
    self.free_slots = get_free_slots()      -- Свободные ячейки слева сверху
    self.flowerCell = nil    -- Ячейка для цветка
@@ -209,9 +209,9 @@ end
 
 function get_base_slots()
    return {
-      free_slot1 = go.get_position('base_slot1'),
-      free_slot2 = go.get_position('base_slot2'),
-      free_slot3 = go.get_position('base_slot3')
+      base_slot1 = go.get_position('base_slot1'),
+      base_slot2 = go.get_position('base_slot2'),
+      base_slot3 = go.get_position('base_slot3')
    }
 end
 

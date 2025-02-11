@@ -1,6 +1,6 @@
 components {
-  id: "cursor"
-  component: "/main/Scripts/cursor.script"
+  id: "base_slot"
+  component: "/main/Scripts/base_slot.script"
 }
 embedded_components {
   id: "sprite"
