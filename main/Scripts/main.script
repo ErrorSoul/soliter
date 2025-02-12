@@ -27,7 +27,7 @@ function init(self)
    self.base_slots = get_base_slots()     -- Верхние стопки для построения последовательностей
    self.tableau = {}        -- Основное игровое поле
    self.free_slots = get_free_slots()      -- Свободные ячейки слева сверху
-   self.flowerCell = nil    -- Ячейка для цветка
+   self.flower_slot = get_flower_slot()    -- Ячейка для цветка
    send_messages_to_cursor(self)
    --local card = factory.create("#card_factory", vmath.vector3(100, 100, 0))
    -- msg.post(".", "acquire_input_focus")
@@ -147,7 +147,7 @@ function deal_cards(self)
             card_data = table.remove(self.deck)  -- Берем карты из основной колоды
          end
 
-         local card_offset = vmath.vector3(0, (card_index - 1) * -40, 0)
+         local card_offset = vmath.vector3(0, (card_index - 1) * -35, 0)
          local target_position = stack_position + card_offset
 
          local card = factory.create("#card_factory", stack_position, vmath.quat(0, 0, 0, 1))
@@ -197,6 +197,7 @@ function send_messages_to_cursor(self)
    msg.post(self.cursor, "set_cards", self.cards)
    msg.post(self.cursor, "set_free_slots", self.free_slots)
    msg.post(self.cursor, "set_base_slots", self.base_slots)
+   msg.post(self.cursor, "set_flower_slot",self.flower_slot)
 end
 
 function get_free_slots()
@@ -212,6 +213,12 @@ function get_base_slots()
       base_slot1 = go.get_position('base_slot1'),
       base_slot2 = go.get_position('base_slot2'),
       base_slot3 = go.get_position('base_slot3')
+   }
+end
+
+function get_flower_slot()
+   return {
+      flower_slot = go.get_position('flower_slot'),
    }
 end
 

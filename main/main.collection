@@ -4,7 +4,7 @@ instances {
   prototype: "/main/Game Objects/free_slot.go"
   position {
     x: 80.0
-    y: 449.0
+    y: 457.0
   }
 }
 instances {
@@ -12,7 +12,7 @@ instances {
   prototype: "/main/Game Objects/free_slot.go"
   position {
     x: 193.0
-    y: 449.0
+    y: 457.0
   }
 }
 instances {
@@ -20,7 +20,7 @@ instances {
   prototype: "/main/Game Objects/free_slot.go"
   position {
     x: 309.0
-    y: 449.0
+    y: 457.0
   }
 }
 instances {
@@ -28,7 +28,7 @@ instances {
   prototype: "/main/Game Objects/tableau_slot.go"
   position {
     x: 77.0
-    y: 256.0
+    y: 299.0
   }
 }
 instances {
@@ -36,7 +36,7 @@ instances {
   prototype: "/main/Game Objects/tableau_slot.go"
   position {
     x: 193.0
-    y: 256.0
+    y: 299.0
   }
 }
 instances {
@@ -44,7 +44,7 @@ instances {
   prototype: "/main/Game Objects/tableau_slot.go"
   position {
     x: 309.0
-    y: 256.0
+    y: 299.0
   }
 }
 instances {
@@ -52,7 +52,7 @@ instances {
   prototype: "/main/Game Objects/tableau_slot.go"
   position {
     x: 425.0
-    y: 256.0
+    y: 299.0
   }
 }
 instances {
@@ -60,7 +60,7 @@ instances {
   prototype: "/main/Game Objects/tableau_slot.go"
   position {
     x: 541.0
-    y: 257.0
+    y: 300.0
   }
 }
 instances {
@@ -68,7 +68,7 @@ instances {
   prototype: "/main/Game Objects/tableau_slot.go"
   position {
     x: 657.0
-    y: 257.0
+    y: 300.0
   }
 }
 instances {
@@ -76,7 +76,7 @@ instances {
   prototype: "/main/Game Objects/tableau_slot.go"
   position {
     x: 773.0
-    y: 257.0
+    y: 300.0
   }
 }
 instances {
@@ -84,31 +84,39 @@ instances {
   prototype: "/main/Game Objects/tableau_slot.go"
   position {
     x: 889.0
-    y: 260.0
+    y: 300.0
   }
 }
 instances {
   id: "base_slot1"
   prototype: "/main/Game Objects/base_slot.go"
   position {
-    x: 888.0
-    y: 449.0
+    x: 889.0
+    y: 457.0
   }
 }
 instances {
   id: "base_slot3"
   prototype: "/main/Game Objects/base_slot.go"
   position {
-    x: 656.0
-    y: 449.0
+    x: 657.0
+    y: 457.0
   }
 }
 instances {
   id: "base_slot2"
   prototype: "/main/Game Objects/base_slot.go"
   position {
-    x: 770.0
-    y: 449.0
+    x: 773.0
+    y: 457.0
+  }
+}
+instances {
+  id: "flower_slot"
+  prototype: "/main/Game Objects/flower_slot.go"
+  position {
+    x: 541.0
+    y: 457.0
   }
 }
 scale_along_z: 0

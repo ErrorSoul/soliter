@@ -1,5 +1,4 @@
 function init(self)
-   print("CCCC", go.get_id("cursor"))
 end
 local function remove_by_id(tbl, target_id)
    for i, item in ipairs(tbl) do
@@ -85,7 +84,7 @@ function update_visible_cards(self)
       -- end
 
       local z_index = (i == #self.stack) and 0.02 or 0.002 + i * 0.002
-      print(string.format("slot id z index %s  %f", card.data.id, z_index))
+      -- print(string.format("slot id z index %s  %f", card.data.id, z_index))
       go.set_position(vmath.vector3(go.get_position(card.id).x, go.get_position(card.id).y, z_index), card.id)
       -- print(string.format("Card %d: %s %s %s", i, card.data.value, card.data.suit, go.get_position(card.id)))
       -- print(go.get_position(card.id))
