@@ -182,7 +182,8 @@ function check_last_cards(self, cursor_x, cursor_y)
 
    -- Если курсор над стопкой, проверяем каждую карту в стопке
    for stack_index, card in ipairs(self.last_cards) do
-      local card_pos = go.get_position(card.id)
+        local card_pos = go.get_position(card.id)
+        pprint('cARRRRR',card.id)
 
       -- Проверяем, находится ли курсор над картой
       if card.id ~= self.selected_card and is_point_in_rect(cursor_x, cursor_y, card_pos, self.half_size) then

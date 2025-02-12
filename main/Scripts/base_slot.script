@@ -11,7 +11,7 @@ function on_message(self, message_id, message, sender)
    if message_id == hash("check_slot") then
       if self.empty and message.card.data.value == 2 then
          msg.post(sender, "slot_valid")
-      elseif not self.full and check_correct_cards(self, message.card) then
+      elseif not self.full and self.last_card and check_correct_cards(self, message.card) then
          msg.post(sender, "slot_valid")
       else
          msg.post(sender, "slot_invalid")
