@@ -57,11 +57,10 @@ function on_input(self, action_id, action)
 
             local flower_slot = check_flower_slot(self, action.x, action.y)
             if flower_slot then
-               self.pending_drop = flower_slot
-               msg.post(free_slot.slot_id, "check_slot")
+               self.pending_drop = {slot = flower_slot}
+               msg.post(flower_slot.slot_id, "check_slot", {card = self.selected_card_data})
                return
             end
-
 
             local free_slot = check_free_slots(self, action.x, action.y)
             if free_slot then

@@ -1,0 +1,18 @@
+function init(self)
+   self.empty = true
+end
+
+function on_message(self, message_id, message, sender)
+   if message_id == hash("check_slot") then
+      if self.empty and message.card.data.value ~= 'f' then
+         msg.post(sender, "slot_invalid")
+      elseif self.empty and message.card.data.value == 'f' then
+         msg.post(sender, "slot_valid")
+      else
+         msg.post(sender, "slot_invalid")
+      end
+   elseif message_id == hash("occupy_slot") then
+      self.empty = false
+      go.set_position(go.get_position() + vmath.vector3(0, 0, 0.2 ), message.id)
+   end
+end
