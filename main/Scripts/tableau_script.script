@@ -1,4 +1,5 @@
 function init(self)
+    self.is_empty = false
 end
 local function remove_by_id(tbl, target_id)
    for i, item in ipairs(tbl) do
@@ -19,13 +20,23 @@ function on_message(self, message_id, message, sender)
    elseif message_id == hash("remove_card") then
       if remove_by_id(self.stack, message.id) then
          msg.post(self.cursor, 'set_stack', {index = self.index, stack = self.stack})
+         if #self.stack == 0 then
+            self.is_empty = true
+            print("EMPTY SLOT !!!!!!!!!!!!!!!!!!")
+         end
       end
       update_visible_cards(self)
-    elseif message_id == hash("occupy_slot") then
-       message.slot_id = go.get_id()
-       table.insert(self.stack, message)
-       pprint("SELF STACK NEw", self.stack)
-       update_visible_cards(self)
+   elseif message_id == hash("occupy_slot") then
+      message.slot_id = go.get_id()
+      table.insert(self.stack, message)
+      pprint("SELF STACK NEw", self.stack)
+      update_visible_cards(self)
+   elseif message_id == hash("check_slot") then
+      if self.is_empty then
+         msg.post(sender, "slot_valid")
+      else
+         msg.post(sender, "slot_invalid")
+      end
    end
 end
 

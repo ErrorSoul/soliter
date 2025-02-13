@@ -25,9 +25,9 @@ function init(self)
    deal_cards(self)
    self.dragonPiles = {}    -- Стопки драконов
    self.base_slots = get_base_slots()     -- Верхние стопки для построения последовательностей
-   self.tableau = {}        -- Основное игровое поле
-   self.free_slots = get_free_slots()      -- Свободные ячейки слева сверху
-   self.flower_slot = get_flower_slot()    -- Ячейка для цветка
+   self.tableau_slots = get_tableau_slots() -- Основное игровое поле
+   self.free_slots = get_free_slots()       -- Свободные ячейки слева сверху
+   self.flower_slot = get_flower_slot()     -- Ячейка для цветка
    send_messages_to_cursor(self)
    --local card = factory.create("#card_factory", vmath.vector3(100, 100, 0))
    -- msg.post(".", "acquire_input_focus")
@@ -198,6 +198,7 @@ function send_messages_to_cursor(self)
    msg.post(self.cursor, "set_free_slots", self.free_slots)
    msg.post(self.cursor, "set_base_slots", self.base_slots)
    msg.post(self.cursor, "set_flower_slot",self.flower_slot)
+   msg.post(self.cursor, "set_tableau_slots",self.tableau_slots)
 end
 
 function get_free_slots()
@@ -213,6 +214,19 @@ function get_base_slots()
       base_slot1 = go.get_position('base_slot1'),
       base_slot2 = go.get_position('base_slot2'),
       base_slot3 = go.get_position('base_slot3')
+   }
+end
+
+function get_tableau_slots()
+   return {
+      tableau_slot1 = {pos = go.get_position('tableau_slot1'), is_empty = false},
+      tableau_slot2 = {pos = go.get_position('tableau_slot2'), is_empty = false},
+      tableau_slot3 = {pos = go.get_position('tableau_slot3'), is_empty = false},
+      tableau_slot4 = {pos = go.get_position('tableau_slot4'), is_empty = false},
+      tableau_slot5 = {pos = go.get_position('tableau_slot5'), is_empty = false},
+      tableau_slot6 = {pos = go.get_position('tableau_slot6'), is_empty = false},
+      tableau_slot7 = {pos = go.get_position('tableau_slot7'), is_empty = false},
+      tableau_slot8 = {pos = go.get_position('tableau_slot8'), is_empty = false},
    }
 end
 

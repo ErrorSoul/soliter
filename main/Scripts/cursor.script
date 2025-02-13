@@ -84,6 +84,13 @@ function on_input(self, action_id, action)
                return
             end
 
+            local tableau_slot = check_free_tableau_slots(self, action.x, action.y)
+            if tableau_slot then
+               self.pending_drop = {slot = tableau_slot}
+               msg.post(tableau_slot.slot_id, 'check_slot', {card = self.selected_card_data})
+               return
+            end
+
             msg.post(self.selected_card, 'drop_failed', {position = self.original_position})
             clean_cursor(self)
          end
@@ -108,10 +115,17 @@ function on_message(self, message_id, message, sender)
       pprint(self.flower_slot)
    elseif message_id == hash("set_base_slots") then
       self.base_slots = message
+   elseif message_id == hash("set_tableau_slots") then
+      self.tableau_slots = message
    elseif message_id == hash("set_cards") then
       self.cards = message
    elseif message_id == hash("set_stack") then
       self.tableau_stacks[message.index] = message.stack
+      if #message.stack == 0 then
+         self.tableau_slots['tableau_slot'..message.index].is_empty = true
+         pprint("SELF TABLEAU SLOTS", self.tableau_slots)
+      end
+
    elseif message_id == hash("set_last_cards") then
       self.last_cards[message.index] = message.card
    elseif message_id == hash("slot_valid") and self.pending_drop then
@@ -237,6 +251,16 @@ function check_base_slots(self, cursor_x, cursor_y)
       print("Base slot pos", slot_id)
       if is_point_in_rect(cursor_x, cursor_y, slot_pos, self.half_size) then
          return {slot_id = slot_id, slot_pos = slot_pos}
+      end
+   end
+end
+
+function check_free_tableau_slots(self, cursor_x, cursor_y)
+   for slot_id, slot in pairs(self.tableau_slots) do
+
+      if slot.is_empty and is_point_in_rect(cursor_x, cursor_y, slot.pos, self.half_size) then
+         pprint("tableau slot pos", slot_id)
+         return {slot_id = slot_id, slot_pos = slot.pos}
       end
    end
 end
