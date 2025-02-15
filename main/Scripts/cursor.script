@@ -267,9 +267,7 @@ function on_message(self, message_id, message, sender)
                   card = self.selected_card_data
 
       })
-      pprint("POSITIon", self.pending_drop.slot.slot_pos)
       if self.dragging_stack then
-         print("DROP SUCESS STACK")
          params = {
             slot_id =  self.pending_drop.slot.slot_id,
             position = self.pending_drop.slot.slot_pos
@@ -290,6 +288,13 @@ function on_message(self, message_id, message, sender)
                   slot_id = self.pending_drop.slot_id,
                   card = self.selected_card_data
       })
+      if self.dragging_stack then
+         params = {
+            slot_id =  self.pending_drop.slot_id,
+            position = self.pending_drop.card.pos + vmath.vector3(0, -40, 0),
+         }
+         move_stack_cards(self, 'drop_success', params)
+      end
 
       clean_cursor(self)
    elseif message_id == hash("slot_with_card") and self.pending_drop then
