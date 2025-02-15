@@ -51,6 +51,7 @@ function is_correct_card(self, selected_card)
 end
 
 function on_message(self, message_id, message, sender)
+   pprint("[CARD]", message_id)
 	if message_id == hash("can_pick_up") then
 		if self.current_slot then
 			-- Если карта в слоте, очищаем слот
