@@ -152,10 +152,7 @@ function on_input(self, action_id, action)
 
                clean_cursor(self)
                return
-
-
             end
-
 
             local card = check_last_cards(self, action.x, action.y)
             if card then
@@ -198,17 +195,7 @@ function on_input(self, action_id, action)
          msg.post(self.selected_card, 'drop_failed', {position = self.original_position})
 
          end
-
       end
-
-
-
-
-
-
-      -- if self.is_dragging and self.selected_card then
-      --    msg.post(self.selected_card, "drag_update", {position = self.cursor_pos})
-      -- end
 
       -- Обновление позиций при перетаскивании
       if self.is_dragging then
@@ -323,36 +310,6 @@ local function is_point_in_rect(x, y, rect_pos, half_size)
            y > rect_pos.y - half_size.y and
            y < rect_pos.y + half_size.y)
 end
-
--- function check_tableau_slots(self, cursor_x, cursor_y)
---    -- Проверяем каждую стопку
---    for stack_index, stack in ipairs(self.tableau_stacks) do
-
---       -- Если курсор над стопкой, проверяем каждую карту в стопке
---       for card_index = #stack, 1, -1 do
---          local card = stack[card_index]
---          local card_pos = go.get_position(card.id)
-
-
---          -- Проверяем, находится ли курсор над картой
---          if is_point_in_rect(cursor_x, cursor_y, card_pos, self.half_size) then
---             return {
---                type = "tableau",
---                id  = card.id,
---                stack_index = stack_index,
---                card_index = card_index,
---                card_data = card.data,
---                data_id = card.data.id,
---                pos = card_pos,
---                slot_id = card.slot_id,
---                source = card
---             }
---          end
---       end
---    end
---    -- Если курсор не над стопкой, возвращаем nil
---    return nil
--- end
 
 function check_tableau_slots(self, cursor_x, cursor_y)
    for stack_index, stack in ipairs(self.tableau_stacks) do
