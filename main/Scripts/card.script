@@ -25,15 +25,15 @@ function init(self)
 end
 
 function set_card(self, value, suit, is_dragon, is_flower, owner)
-	self.value = value
-	self.suit = suit
-	self.is_dragon = is_dragon or false
-	self.is_flower = is_flower or false
-	self.owner = owner
+   self.value = value
+   self.suit = suit
+   self.is_dragon = is_dragon or false
+   self.is_flower = is_flower or false
+   self.owner = owner
 
-	-- Меняем текстуру спрайта карты
-	self.sprite_id = tostring(value) .. "_" .. suit   -- Например, "hearts_1"
-	msg.post("#sprite", "play_animation", {id = hash(self.sprite_id)})
+   -- Меняем текстуру спрайта карты
+   self.sprite_id = tostring(value) .. "_" .. suit   -- Например, "hearts_1"
+   msg.post("#sprite", "play_animation", {id = hash(self.sprite_id)})
 
 end
 
@@ -86,7 +86,7 @@ function on_message(self, message_id, message, sender)
                 end
 
 
-	elseif message_id == hash("set_card") then
+		elseif message_id == hash("set_card") then
 		set_card(self, message.data.value, message.data.suit,
 		message.data.is_dragon, message.data.is_flower, message.slot_id)
 	end

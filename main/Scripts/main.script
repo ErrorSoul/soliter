@@ -21,6 +21,8 @@ function init(self)
 
    -- Создаём игровую колоду
    self.deck = create_deck(self)
+   print("SIZE", #self.deck)
+   pprint("DECK", self.deck)
    shuffle_deck(self)
    deal_cards(self)
    self.dragonPiles = {}    -- Стопки драконов
@@ -54,7 +56,7 @@ function create_deck(self)
          table.insert(deck, {id = value .. "_" .. suit, value = value, suit = suit})
       end
       -- Добавляем драконов и цветок
-      for i = 1, 3 do
+      for i = 1, 4 do
          local value = 'd'
          table.insert(deck, {id = value .. "_" .. suit, value = value, suit = suit, is_dragon = true})
       end
@@ -99,27 +101,27 @@ function deal_cards(self)
    end
 
    -- Создаем отладочную стопку
-   local debug_stack = create_debug_stack()
+   -- local debug_stack = create_debug_stack()
 
-   -- Удаляем карты из основной колоды, которые уже есть в отладочной стопке
-   local cards_to_remove = {}
-   for _, debug_card in ipairs(debug_stack) do
-      for i, deck_card in ipairs(self.deck) do
-         if deck_card.id == debug_card.id then
-            table.insert(cards_to_remove, i)
-            break
-         end
-      end
-   end
+   -- -- Удаляем карты из основной колоды, которые уже есть в отладочной стопке
+   -- local cards_to_remove = {}
+   -- for _, debug_card in ipairs(debug_stack) do
+   --    for i, deck_card in ipairs(self.deck) do
+   --       if deck_card.id == debug_card.id then
+   --          table.insert(cards_to_remove, i)
+   --          break
+   --       end
+   --    end
+   -- end
 
-   -- Удаляем карты с конца, чтобы не нарушить индексы
-   table.sort(cards_to_remove, function(a, b) return a > b end)
-   for _, index in ipairs(cards_to_remove) do
-      table.remove(self.deck, index)
-   end
+   -- -- Удаляем карты с конца, чтобы не нарушить индексы
+   -- table.sort(cards_to_remove, function(a, b) return a > b end)
+   -- for _, index in ipairs(cards_to_remove) do
+   --    table.remove(self.deck, index)
+   -- end
 
-   local cards_per_stack = math.floor(#self.deck / 7)  -- 7 вместо 8, так как одна стопка будет отладочной
-   local remaining_cards = #self.deck % 7
+   local cards_per_stack = math.floor(#self.deck / 8)  -- 7 вместо 8, так как одна стопка будет отладочной
+   local remaining_cards = #self.deck % 8
    self.tableau_stacks = {}
 
    -- Раздаём карты по стопкам
@@ -128,37 +130,40 @@ function deal_cards(self)
       local cards_in_stack
       local current_stack
 
-      if stack_index == 1 then  -- Первая стопка будет отладочной
-         cards_in_stack = #debug_stack
-         current_stack = debug_stack
-      else
-         cards_in_stack = cards_per_stack + (stack_index <= remaining_cards + 1 and 1 or 0)
+      -- if stack_index == 1 then  -- Первая стопка будет отладочной
+      --    cards_in_stack = #debug_stack
+      --    current_stack = debug_stack
+      -- else
+         cards_in_stack = cards_per_stack + (stack_index <= remaining_cards and 1 or 0)
+         print("card in stack", cards_in_stack)
          current_stack = self.deck
-      end
+      -- end
 
       local slot_id = "tableau_slot" .. stack_index
       self.tableau_stacks[stack_index] = { slot_id = slot_id, cards = {} }
 
       for card_index = 1, cards_in_stack do
          local card_data
-         if stack_index == 1 then
-            card_data = table.remove(debug_stack, 1)  -- Берем карты из отладочной стопки
-         else
+         -- if stack_index == 1 then
+         --    card_data = table.remove(debug_stack, 1)  -- Берем карты из отладочной стопки
+         -- else
             card_data = table.remove(self.deck)  -- Берем карты из основной колоды
-         end
+            pprint("INIT card data", card_data)
+         -- end
 
          local card_offset = vmath.vector3(0, (card_index - 1) * -35, 0)
          local target_position = stack_position + card_offset
 
          local card = factory.create("#card_factory", stack_position, vmath.quat(0, 0, 0, 1))
          msg.post(card, "set_card", { data = card_data, slot_id = slot_id })
-         print("CARD IDDDDDDDDDDDD", card)
+         pprint("Set card", card_data)
+
          go.animate(card, "position", go.PLAYBACK_ONCE_FORWARD, target_position, go.EASING_LINEAR, 0.5, 0.1 * (stack_index + card_index))
 
          table.insert(self.tableau_stacks[stack_index].cards, { id = card, data = card_data, slot_id = slot_id })
          table.insert(self.cards, card)
       end
-
+      print("stack index", stack_index)
       msg.post(slot_id, "update_stack", { cursor = self.cursor, index = stack_index, stack = self.tableau_stacks[stack_index].cards })
 
       --msg.post(self.cursor, "set_stack", { index = stack_index, stack = self.tableau_stacks[stack_index].cards })
@@ -172,12 +177,6 @@ function shuffle_deck(self)
    for i = #self.deck, 2, -1 do
       local j = math.random(1, i)
       self.deck[i], self.deck[j] = self.deck[j], self.deck[i]
-   end
-end
-local function cursor_collision_handler(self, message_id, message, sender)
-   if message_id == hash("collision_response") then
-      print("Курсор столкнулся с:", message.other_id)
-      -- Ваша логика обработки столкновений
    end
 end
 

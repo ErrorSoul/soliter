@@ -103,6 +103,7 @@ function update_visible_cards(self)
 
    -- Сохраняем список видимых карт
    self.visible_cards = visible_cards
+   if self.index <= 8 then print("SENDING", self.index) end
    msg.post(self.cursor, "set_stack", { index = self.index, stack = reverse_table(self.visible_cards) })
 
    msg.post(self.cursor, "set_last_cards", { index = self.index, card = reverse_table(self.stack)[1] })
