@@ -186,13 +186,14 @@ function on_message(self, message_id, message, sender)
       self.flower_slot = message
    elseif message_id == hash("set_base_slots") then
       self.base_slots = message
-   elseif message_id == hash("set_tableau_slots") then
+elseif message_id == hash("set_tableau_slots") then
+
       self.tableau_slots = message
    elseif message_id == hash("set_cards") then
       self.cards = message
    elseif message_id == hash("set_stack") then
       self.tableau_stacks[message.index] = message.stack
-      local emtpy_flag = (#message.stack == 0)
+      local empty_flag = (#message.stack == 0)
       self.tableau_slots['tableau_slot'..message.index].is_empty = empty_flag
 
    elseif message_id == hash("set_last_cards") then
