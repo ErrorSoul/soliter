@@ -394,8 +394,6 @@ function check_free_tableau_slots(self, cursor_x, cursor_y)
    end
 end
 
-
-
 function update(self, dt)
    -- Преобразуем все объекты в строки и объединяем их
    local debug_string = "selected_card: " .. tostring(self.selected_card_data and self.selected_card_data.data_id or nil) .. "\n" ..

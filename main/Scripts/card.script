@@ -1,27 +1,26 @@
 function init(self)
-	-- Значения карты, будут переданы при создании
-	self.value = 2      -- Значение карты (2-9)
-	self.suit = "red"   -- Масть карты ("red", "blue", и т.д.)
-	self.is_face_up = false -- Видна ли карта лицом вверх
-	self.is_dragon = false  -- Это дракон?
-	self.is_flower = false  -- Это цветок?
-	self.flying = false
-	self.owner = nil
+   -- Значения карты, будут переданы при создании
+   self.value = 2      -- Значение карты (2-9)
+   self.suit = "red"   -- Масть карты ("red", "blue", и т.д.)
+   self.is_face_up = false -- Видна ли карта лицом вверх
+   self.is_dragon = false  -- Это дракон?
+   self.is_flower = false  -- Это цветок?
+   self.flying = false
+   self.owner = nil
 
-	self.is_highlighted = false
-	-- Сохраняем начальный цвет спрайта
-	self.normal_tint = vmath.vector4(1, 1, 1, 1)
-	self.highlight_tint = vmath.vector4(1.2, 1.2, 0.8, 1) -- Желтоватое свечение
-	self.is_highlighted = true
-	-- sprite.set_constant("#sprite", "tint", self.highlight_tint)
-	go.set_position(vmath.vector3(go.get_position().x,
-	go.get_position().y,
-	0.2))
-	-- local size = go.get("#sprite", "size")
-	-- print("SIZE", size)
-	-- msg.post("#collisionobject", "disable")
-	--msg.post(".", "acquire_input_focus")
-        pprint(go.get_id())
+   self.is_highlighted = false
+   -- Сохраняем начальный цвет спрайта
+   self.normal_tint = vmath.vector4(1, 1, 1, 1)
+   self.highlight_tint = vmath.vector4(1.2, 1.2, 0.8, 1) -- Желтоватое свечение
+   self.is_highlighted = true
+   -- sprite.set_constant("#sprite", "tint", self.highlight_tint)
+   go.set_position(vmath.vector3(go.get_position().x,
+                                 go.get_position().y,
+                                 0.2))
+   -- local size = go.get("#sprite", "size")
+   -- print("SIZE", size)
+   -- msg.post("#collisionobject", "disable")
+   --msg.post(".", "acquire_input_focus")
 end
 
 function set_card(self, value, suit, is_dragon, is_flower, owner)

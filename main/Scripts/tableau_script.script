@@ -11,11 +11,25 @@ local function remove_by_id(tbl, target_id)
    return false -- Элемент не найден
 end
 
+local function reverse_table(tbl)
+    local reversed = {}
+    for i = #tbl, 1, -1 do
+        table.insert(reversed, tbl[i])
+    end
+    return reversed
+end
+
+
 function on_message(self, message_id, message, sender)
    if message_id == hash("update_stack") then
       self.stack = message.stack
       self.index = message.index
       self.cursor = message.cursor
+      local card = reverse_table(self.stack)[1]
+      if card.data.value == 2 then
+         pprint("CAAAAA", card)
+      end
+
       update_visible_cards(self)
    elseif message_id == hash("remove_card") then
       if remove_by_id(self.stack, message.id) then
@@ -29,7 +43,6 @@ function on_message(self, message_id, message, sender)
    elseif message_id == hash("occupy_slot") then
       message.slot_id = go.get_id()
       table.insert(self.stack, message)
-      pprint("SELF STACK NEw", self.stack)
       update_visible_cards(self)
    elseif message_id == hash("check_slot") then
       if self.is_empty then
@@ -38,14 +51,6 @@ function on_message(self, message_id, message, sender)
          msg.post(sender, "slot_invalid")
       end
    end
-end
-
-local function reverse_table(tbl)
-    local reversed = {}
-    for i = #tbl, 1, -1 do
-        table.insert(reversed, tbl[i])
-    end
-    return reversed
 end
 
 function update_visible_cards(self)
