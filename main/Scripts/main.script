@@ -89,6 +89,84 @@ function create_debug_stack()
    return debug_stack
 end
 
+-- function deal_cards(self)
+--    local tableau_positions = get_tableau_positions(self)
+--    if not self.deck or #self.deck == 0 then
+--       print("Колода пуста!")
+--       return
+--    end
+
+--    -- Создаем отладочную стопку
+--    -- local debug_stack = create_debug_stack()
+
+--    -- -- Удаляем карты из основной колоды, которые уже есть в отладочной стопке
+--    -- local cards_to_remove = {}
+--    -- for _, debug_card in ipairs(debug_stack) do
+--    --    for i, deck_card in ipairs(self.deck) do
+--    --       if deck_card.id == debug_card.id then
+--    --          table.insert(cards_to_remove, i)
+--    --          break
+--    --       end
+--    --    end
+--    -- end
+
+--    -- -- Удаляем карты с конца, чтобы не нарушить индексы
+--    -- table.sort(cards_to_remove, function(a, b) return a > b end)
+--    -- for _, index in ipairs(cards_to_remove) do
+--    --    table.remove(self.deck, index)
+--    -- end
+
+--    local cards_per_stack = math.floor(#self.deck / 8)  -- 7 вместо 8, так как одна стопка будет отладочной
+--    local remaining_cards = #self.deck % 8
+--    self.tableau_stacks = {}
+
+--    -- Раздаём карты по стопкам
+--    for stack_index = 1, 8 do
+--       local stack_position = tableau_positions[stack_index]
+--       local cards_in_stack
+--       local current_stack
+
+--       -- if stack_index == 1 then  -- Первая стопка будет отладочной
+--       --    cards_in_stack = #debug_stack
+--       --    current_stack = debug_stack
+--       -- else
+--       cards_in_stack = cards_per_stack + (stack_index <= remaining_cards and 1 or 0)
+--       current_stack = self.deck
+--       -- end
+
+--       local slot_id = "tableau_slot" .. stack_index
+--       self.tableau_stacks[stack_index] = { slot_id = slot_id, cards = {} }
+
+--       for card_index = 1, cards_in_stack do
+--          local card_data
+--          -- if stack_index == 1 then
+--          --    card_data = table.remove(debug_stack, 1)  -- Берем карты из отладочной стопки
+--          -- else
+--          card_data = table.remove(self.deck)  -- Берем карты из основной колоды
+--          -- end
+
+--          local card_offset = vmath.vector3(0, (card_index - 1) * -35, 0)
+--          local target_position = stack_position + card_offset
+
+--          if stack_index == 8 and card_index == cards_in_stack then
+--             card_data = {id = 'flower', value = 'f', suit = 'flower', is_flower = true}
+--          end
+
+--          local card = factory.create("#card_factory", stack_position, vmath.quat(0, 0, 0, 1))
+--          msg.post(card, "set_card", { data = card_data, slot_id = slot_id })
+
+--          go.animate(card, "position", go.PLAYBACK_ONCE_FORWARD, target_position, go.EASING_LINEAR, 0.5, 0.1 * (stack_index + card_index))
+
+--          table.insert(self.tableau_stacks[stack_index].cards, { id = card, data = card_data, slot_id = slot_id })
+--          table.insert(self.cards, card)
+--       end
+--       msg.post(slot_id, "update_stack", { cursor = self.cursor, index = stack_index, stack = self.tableau_stacks[stack_index].cards })
+
+--       --msg.post(self.cursor, "set_stack", { index = stack_index, stack = self.tableau_stacks[stack_index].cards })
+--    end
+-- end
+
+
 function deal_cards(self)
    local tableau_positions = get_tableau_positions(self)
    if not self.deck or #self.deck == 0 then
@@ -96,73 +174,45 @@ function deal_cards(self)
       return
    end
 
-   -- Создаем отладочную стопку
-   -- local debug_stack = create_debug_stack()
-
-   -- -- Удаляем карты из основной колоды, которые уже есть в отладочной стопке
-   -- local cards_to_remove = {}
-   -- for _, debug_card in ipairs(debug_stack) do
-   --    for i, deck_card in ipairs(self.deck) do
-   --       if deck_card.id == debug_card.id then
-   --          table.insert(cards_to_remove, i)
-   --          break
-   --       end
-   --    end
-   -- end
-
-   -- -- Удаляем карты с конца, чтобы не нарушить индексы
-   -- table.sort(cards_to_remove, function(a, b) return a > b end)
-   -- for _, index in ipairs(cards_to_remove) do
-   --    table.remove(self.deck, index)
-   -- end
-
-   local cards_per_stack = math.floor(#self.deck / 8)  -- 7 вместо 8, так как одна стопка будет отладочной
+   local cards_per_stack = math.floor(#self.deck / 8)
    local remaining_cards = #self.deck % 8
    self.tableau_stacks = {}
 
    -- Раздаём карты по стопкам
    for stack_index = 1, 8 do
       local stack_position = tableau_positions[stack_index]
-      local cards_in_stack
-      local current_stack
-
-      -- if stack_index == 1 then  -- Первая стопка будет отладочной
-      --    cards_in_stack = #debug_stack
-      --    current_stack = debug_stack
-      -- else
-      cards_in_stack = cards_per_stack + (stack_index <= remaining_cards and 1 or 0)
-      current_stack = self.deck
-      -- end
-
+      local cards_in_stack = cards_per_stack + (stack_index <= remaining_cards and 1 or 0)
       local slot_id = "tableau_slot" .. stack_index
-      self.tableau_stacks[stack_index] = { slot_id = slot_id, cards = {} }
+      self.tableau_stacks[stack_index] = { slot_id = slot_id, cards = {}, animations_completed = 0 }
 
       for card_index = 1, cards_in_stack do
-         local card_data
-         -- if stack_index == 1 then
-         --    card_data = table.remove(debug_stack, 1)  -- Берем карты из отладочной стопки
-         -- else
-         card_data = table.remove(self.deck)  -- Берем карты из основной колоды
-         -- end
+         local card_data = table.remove(self.deck)
 
          local card_offset = vmath.vector3(0, (card_index - 1) * -35, 0)
          local target_position = stack_position + card_offset
 
          if stack_index == 8 and card_index == cards_in_stack then
-            card_data = {id = 'flower', value = 'f', suit = 'flower', is_flower = true}
+            -- card_data = {id = 'flower', value = 'f', suit = 'flower', is_flower = true}
          end
 
          local card = factory.create("#card_factory", stack_position, vmath.quat(0, 0, 0, 1))
          msg.post(card, "set_card", { data = card_data, slot_id = slot_id })
 
-         go.animate(card, "position", go.PLAYBACK_ONCE_FORWARD, target_position, go.EASING_LINEAR, 0.5, 0.1 * (stack_index + card_index))
-
+         -- Добавляем карту в стопку
          table.insert(self.tableau_stacks[stack_index].cards, { id = card, data = card_data, slot_id = slot_id })
          table.insert(self.cards, card)
-      end
-      msg.post(slot_id, "update_stack", { cursor = self.cursor, index = stack_index, stack = self.tableau_stacks[stack_index].cards })
 
-      --msg.post(self.cursor, "set_stack", { index = stack_index, stack = self.tableau_stacks[stack_index].cards })
+         -- Анимация с коллбэком
+         go.animate(card, "position", go.PLAYBACK_ONCE_FORWARD, target_position, go.EASING_LINEAR, 0.5, 0.1 * (stack_index + card_index), function()
+            -- Увеличиваем счётчик завершённых анимаций
+            self.tableau_stacks[stack_index].animations_completed = self.tableau_stacks[stack_index].animations_completed + 1
+
+            -- Если все анимации в стопке завершены, отправляем update_stack
+            if self.tableau_stacks[stack_index].animations_completed == cards_in_stack then
+               msg.post(slot_id, "update_stack", { cursor = self.cursor, index = stack_index, stack = self.tableau_stacks[stack_index].cards })
+            end
+         end)
+      end
    end
 end
 

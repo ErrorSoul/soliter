@@ -26,9 +26,11 @@ function on_message(self, message_id, message, sender)
       self.index = message.index
       self.cursor = message.cursor
       local card = reverse_table(self.stack)[1]
-      if card.data.value == 2 then
+      if card.data.value == 'f' then
          pprint("CAAAAA", card)
+         msg.post(self.cursor, 'send_to_flower_slot', card)
       end
+
 
       update_visible_cards(self)
    elseif message_id == hash("remove_card") then

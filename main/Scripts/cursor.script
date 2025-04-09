@@ -241,6 +241,13 @@ elseif message_id == hash("set_tableau_slots") then
       self.is_dragging = true
       self.original_position = self.pending_drop.slot_pos
       msg.post(self.selected_card, "start_drag")
+   elseif message_id == hash("send_to_flower_slot") then
+      msg.post(message.id, 'drop_success', {
+                  slot_id = 'flower_slot',
+                  position = self.flower_slot['flower_slot'],
+                  card = message,
+                  animation = true
+      })
    end
 end
 

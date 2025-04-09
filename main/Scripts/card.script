@@ -51,56 +51,57 @@ end
 
 function on_message(self, message_id, message, sender)
    pprint("[CARD]", message_id)
-	if message_id == hash("can_pick_up") then
-		if self.current_slot then
-			-- Если карта в слоте, очищаем слот
-			msg.post(self.current_slot, "clear_slot")
-		end
-		msg.post(sender, "card_pickable")
 
-	elseif message_id == hash("start_drag") then
-		self.is_dragging = true
+   if message_id == hash("start_drag") then
+      self.is_dragging = true
 
-	elseif message_id == hash("drag_update") and self.is_dragging then
-		go.set_position(message.position + vmath.vector3(0, 0, 0.3))
+   elseif message_id == hash("drag_update") and self.is_dragging then
+      go.set_position(message.position + vmath.vector3(0, 0, 0.3))
 
-	elseif message_id == hash("drop_success") then
-		self.is_dragging = false
+   elseif message_id == hash("drop_success") then
+      self.is_dragging = false
 
-		msg.post(message.slot_id, "occupy_slot", message.card)
+      local pos = message.position + vmath.vector3(0, 0, 0.001)
+      msg.post(message.slot_id, "occupy_slot", {
+                  card = message.card,
+                  position = pos,
+                  animation = message.animation
+      })
+      if not message.animation then
+         go.set_position(pos)
+      end
 
-		go.set_position(message.position + vmath.vector3(0, 0, 0.001))
-                msg.post(self.owner, 'remove_card', {id = go.get_id()})
-                self.owner = message.slot_id
-	elseif message_id == hash("drop_failed") then
-		self.is_dragging = false
-		go.animate(".", "position", go.PLAYBACK_ONCE_FORWARD,
-		message.position, go.EASING_OUTQUAD, 0.3)
-        elseif message_id == hash("can_move_card") then
-		self.is_dragging = false
-		if is_correct_card(self, message.card) then
-                   msg.post(sender, 'valid_card')
-                else
-                   msg.post(sender, 'invalid_card')
-                end
+      msg.post(self.owner, 'remove_card', {id = go.get_id()})
+      self.owner = message.slot_id
+   elseif message_id == hash("drop_failed") then
+      self.is_dragging = false
+      go.animate(".", "position", go.PLAYBACK_ONCE_FORWARD,
+                 message.position, go.EASING_OUTQUAD, 0.3)
+   elseif message_id == hash("can_move_card") then
+      self.is_dragging = false
+      if is_correct_card(self, message.card) then
+         msg.post(sender, 'valid_card')
+      else
+         msg.post(sender, 'invalid_card')
+      end
 
 
-		elseif message_id == hash("set_card") then
-		set_card(self, message.data.value, message.data.suit,
-		message.data.is_dragon, message.data.is_flower, message.slot_id)
-	end
+   elseif message_id == hash("set_card") then
+      set_card(self, message.data.value, message.data.suit,
+               message.data.is_dragon, message.data.is_flower, message.slot_id)
+   end
 
-	if message_id == hash("highlight") then
-		self.is_highlighted = true
-		sprite.set_constant("#sprite", "tint", self.highlight_tint)
-		go.set_position(vmath.vector3(go.get_position().x,
-		go.get_position().y,
-		0.2))
-	elseif message_id == hash("unhighlight") then
-		self.is_highlighted = false
-		sprite.set_constant("#sprite", "tint", self.normal_tint)
-		go.set_position(vmath.vector3(go.get_position().x,
-		go.get_position().y,
-		0.2))
-	end
+   if message_id == hash("highlight") then
+      self.is_highlighted = true
+      sprite.set_constant("#sprite", "tint", self.highlight_tint)
+      go.set_position(vmath.vector3(go.get_position().x,
+                                    go.get_position().y,
+                                    0.2))
+   elseif message_id == hash("unhighlight") then
+      self.is_highlighted = false
+      sprite.set_constant("#sprite", "tint", self.normal_tint)
+      go.set_position(vmath.vector3(go.get_position().x,
+                                    go.get_position().y,
+                                    0.2))
+   end
 end

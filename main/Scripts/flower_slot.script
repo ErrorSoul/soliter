@@ -13,6 +13,10 @@ function on_message(self, message_id, message, sender)
       end
    elseif message_id == hash("occupy_slot") then
       self.empty = false
-      go.set_position(go.get_position() + vmath.vector3(0, 0, 0.2 ), message.id)
+      if message.animation then
+         go.animate(message.card.id, "position", go.PLAYBACK_ONCE_FORWARD, go.get_position() + vmath.vector3(0, 0, 0.2), go.EASING_LINEAR, 0.5, 0.3)
+      else
+         go.set_position(message.position, message.card.id)
+      end
    end
 end
