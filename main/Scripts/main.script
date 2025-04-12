@@ -256,9 +256,9 @@ end
 
 function get_base_slots()
    return {
-      base_slot1 = go.get_position('base_slot1'),
-      base_slot2 = go.get_position('base_slot2'),
-      base_slot3 = go.get_position('base_slot3')
+      base_slot1 = {pos = go.get_position('base_slot1'), is_empty = true },
+      base_slot2 = {pos = go.get_position('base_slot2'), is_empty = true },
+      base_slot3 = {pos = go.get_position('base_slot3'), is_empty = true },
    }
 end
 
