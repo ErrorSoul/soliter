@@ -49,7 +49,7 @@ function on_message(self, message_id, message, sender)
       update_visible_cards(self)
    elseif message_id == hash("occupy_slot") then
       message.slot_id = go.get_id()
-      table.insert(self.stack, message)
+      table.insert(self.stack, message.card)
       update_visible_cards(self)
    elseif message_id == hash("check_slot") then
       if self.is_empty then

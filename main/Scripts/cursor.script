@@ -262,15 +262,21 @@ function on_message(self, message_id, message, sender)
    elseif message_id == hash("send_to_base_slot") then
       local slot = self.base_slot_trace[message.data.suit]
       local is_empty = self.base_slots[slot].is_empty
-      if is_empty then
-         msg.post(message.id, 'drop_success', {
-                     slot_id = slot,
-                     position = self.base_slots[slot].pos,
-                     card = message,
-                     animation = true
-         })
-
+      if not is_empty then
+         for slot_id, sl in pairs(self.base_slots) do
+            if sl.is_empty then
+               slot = slot_id
+               break
+            end
+         end
       end
+
+      msg.post(message.id, 'drop_success', {
+                  slot_id = slot,
+                  position = self.base_slots[slot].pos,
+                  card = message,
+                  animation = true
+      })
 
       pprint("X is ", x)
       pprint("EMP is ", is_empty)
