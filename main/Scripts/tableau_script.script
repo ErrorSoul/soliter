@@ -19,18 +19,22 @@ local function reverse_table(tbl)
     return reversed
 end
 
+function last_card_to_slot(self)
+   local card = reverse_table(self.stack)[1]
+   if card.data.value == 'f' then
+      msg.post(self.cursor, 'send_to_flower_slot', card)
+   elseif card.data.value == 2 then
+      msg.post(self.cursor, 'send_to_base_slot', card)
+   end
+end
 
 function on_message(self, message_id, message, sender)
    if message_id == hash("update_stack") then
       self.stack = message.stack
       self.index = message.index
       self.cursor = message.cursor
-      local card = reverse_table(self.stack)[1]
-      if card.data.value == 'f' then
-         pprint("CAAAAA", card)
-         msg.post(self.cursor, 'send_to_flower_slot', card)
-      end
 
+      last_card_to_slot(self)
 
       update_visible_cards(self)
    elseif message_id == hash("remove_card") then
@@ -41,6 +45,7 @@ function on_message(self, message_id, message, sender)
             print("EMPTY SLOT !!!!!!!!!!!!!!!!!!")
          end
       end
+      last_card_to_slot(self)
       update_visible_cards(self)
    elseif message_id == hash("occupy_slot") then
       message.slot_id = go.get_id()

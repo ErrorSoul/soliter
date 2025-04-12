@@ -12,6 +12,11 @@ function init(self)
    self.size = vmath.vector3(90, 150, 0)
    self.half_size = self.size * 0.5
    self.dragging_stack = false
+   self.base_slot_trace = {
+      red = "base_slot1",
+      blue = "base_slot2",
+      green = "base_slot3"
+   }
    self.stack_offset = {}  -- Сохраняем смещение каждой карты относительно первой
    msg.post(".", "acquire_input_focus")
    -- Draw colored text on the screen
@@ -254,6 +259,22 @@ function on_message(self, message_id, message, sender)
    elseif message_id == hash("base_slot_full") then
       self.base_slots[message.slot_id].is_empty = false
       pprint("BAAAAAAAAAAAAAAA", self.base_slots)
+   elseif message_id == hash("send_to_base_slot") then
+      local slot = self.base_slot_trace[message.data.suit]
+      local is_empty = self.base_slots[slot].is_empty
+      if is_empty then
+         msg.post(message.id, 'drop_success', {
+                     slot_id = slot,
+                     position = self.base_slots[slot].pos,
+                     card = message,
+                     animation = true
+         })
+
+      end
+
+      pprint("X is ", x)
+      pprint("EMP is ", is_empty)
+      pprint("CRRRRDDDDD", message)
    end
 end
 

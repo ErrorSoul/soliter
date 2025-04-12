@@ -24,11 +24,18 @@ function on_message(self, message_id, message, sender)
       if self.card_count == 1 then
          msg.post(self.cursor, "base_slot_full", {slot_id = self.slot_id})
       end
-      go.set_position(go.get_position() + vmath.vector3(0, 0, self.z_index + self.card_count * self.z_index ), message.card.id)
+      if message.animation then
+         go.animate(message.card.id, "position", go.PLAYBACK_ONCE_FORWARD, go.get_position() + vmath.vector3(0, 0, 0.2), go.EASING_LINEAR, 0.5, 0.3, function ()
+                       -- чтобы летела сверху, а потом не перекрывала следующие карты
+                       go.set_position(go.get_position() + vmath.vector3(0, 0, self.z_index + self.card_count * self.z_index ), message.card.id)
+         end)
+
+      else
+         go.set_position(go.get_position() + vmath.vector3(0, 0, self.z_index + self.card_count * self.z_index ), message.card.id)
+      end
    elseif message_id == hash("set_cursor") then
       self.cursor = sender
       self.slot_id = message.slot_id
-      pprint("FFFFFFFF", go.get_id())
    end
 end
 
