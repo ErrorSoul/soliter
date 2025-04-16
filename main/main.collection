@@ -120,7 +120,7 @@ instances {
   }
 }
 instances {
-  id: "dragon_button"
+  id: "dragon_button1"
   prototype: "/main/Game Objects/dragon_button.go"
   position {
     x: 420.0
@@ -128,7 +128,7 @@ instances {
   }
 }
 instances {
-  id: "dragon_button1"
+  id: "dragon_button2"
   prototype: "/main/Game Objects/dragon_button.go"
   position {
     x: 420.0
@@ -136,7 +136,7 @@ instances {
   }
 }
 instances {
-  id: "dragon_button2"
+  id: "dragon_button3"
   prototype: "/main/Game Objects/dragon_button.go"
   position {
     x: 420.0

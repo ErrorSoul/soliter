@@ -1,3 +1,7 @@
+components {
+  id: "dragon_button"
+  component: "/main/Scripts/dragon_button.script"
+}
 embedded_components {
   id: "sprite"
   type: "sprite"

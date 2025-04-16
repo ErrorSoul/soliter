@@ -26,7 +26,9 @@ function init(self)
    self.tableau_slots = get_tableau_slots() -- Основное игровое поле
    self.free_slots = get_free_slots()       -- Свободные ячейки слева сверху
    self.flower_slot = get_flower_slot()     -- Ячейка для цветка
+   self.dragon_buttons = get_dragon_buttons()  -- Кнопки драконов
    send_messages_to_cursor(self)
+   send_message_to_dragon_buttons(self)
    --local card = factory.create("#card_factory", vmath.vector3(100, 100, 0))
    -- msg.post(".", "acquire_input_focus")
    msg.post("@render:", "use_fixed_fit_projection", { near = -1, far = 1 })
@@ -261,6 +263,12 @@ function send_messages_to_cursor(self)
    msg.post(self.cursor, "set_tableau_slots",self.tableau_slots)
 end
 
+function send_message_to_dragon_buttons(self)
+   for btn, value in pairs(self.dragon_buttons) do
+      msg.post(btn, 'set_button', value)
+   end
+end
+
 function get_free_slots()
    return {
       free_slot1 = go.get_position('free_slot1'),
@@ -293,6 +301,14 @@ end
 function get_flower_slot()
    return {
       flower_slot = go.get_position('flower_slot'),
+   }
+end
+
+function get_dragon_buttons()
+   return {
+      dragon_button1 = {sprite = 'red',   is_active = false },
+      dragon_button2 = {sprite = 'blue',  is_active = false },
+      dragon_button3 = {sprite = 'green', is_active = false },
    }
 end
 
