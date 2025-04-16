@@ -119,6 +119,30 @@ instances {
     y: 457.0
   }
 }
+instances {
+  id: "dragon_button"
+  prototype: "/main/Game Objects/dragon_button.go"
+  position {
+    x: 420.0
+    y: 511.0
+  }
+}
+instances {
+  id: "dragon_button1"
+  prototype: "/main/Game Objects/dragon_button.go"
+  position {
+    x: 420.0
+    y: 463.0
+  }
+}
+instances {
+  id: "dragon_button2"
+  prototype: "/main/Game Objects/dragon_button.go"
+  position {
+    x: 420.0
+    y: 416.0
+  }
+}
 scale_along_z: 0
 embedded_instances {
   id: "card_table"

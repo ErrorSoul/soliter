@@ -99,16 +99,16 @@ end
 --    -- Создаем отладочную стопку
 --    -- local debug_stack = create_debug_stack()
 
---    -- -- Удаляем карты из основной колоды, которые уже есть в отладочной стопке
---    -- local cards_to_remove = {}
---    -- for _, debug_card in ipairs(debug_stack) do
---    --    for i, deck_card in ipairs(self.deck) do
---    --       if deck_card.id == debug_card.id then
---    --          table.insert(cards_to_remove, i)
---    --          break
---    --       end
---    --    end
---    -- end
+   -- Удаляем карты из основной колоды, которые уже есть в отладочной стопке
+   -- local cards_to_remove = {}
+   -- for _, debug_card in ipairs(debug_stack) do
+   --    for i, deck_card in ipairs(self.deck) do
+   --       if deck_card.id == debug_card.id then
+   --          table.insert(cards_to_remove, i)
+   --          break
+   --       end
+   --    end
+   -- end
 
 --    -- -- Удаляем карты с конца, чтобы не нарушить индексы
 --    -- table.sort(cards_to_remove, function(a, b) return a > b end)
