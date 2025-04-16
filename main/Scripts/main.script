@@ -191,12 +191,27 @@ function deal_cards(self)
          local card_offset = vmath.vector3(0, (card_index - 1) * -35, 0)
          local target_position = stack_position + card_offset
 
-         if stack_index == 8 and card_index == cards_in_stack then
-            --card_data = {id = 'flower', value = 'f', suit = 'flower', is_flower = true}
-         end
+         -- if stack_index == 6 and card_index == cards_in_stack then
+         --    value = 2
+         --    suit = 'green'
+         --    card_data = {id = value .. "_" .. suit, value = value, suit = suit}
+         --    --card_data = {id = 'flower', value = 'f', suit = 'flower', is_flower = true}
+         -- end
+         -- if stack_index == 7 and card_index == cards_in_stack then
+         --    value = 2
+         --    suit = 'red'
+         --    card_data = {id = value .. "_" .. suit, value = value, suit = suit}
+         --    --card_data = {id = 'flower', value = 'f', suit = 'flower', is_flower = true}
+         -- end
+         -- if stack_index == 8 and card_index == cards_in_stack then
+         --    value = 2
+         --    suit = 'blue'
+         --    card_data = {id = value .. "_" .. suit, value = value, suit = suit}
+         --    --card_data = {id = 'flower', value = 'f', suit = 'flower', is_flower = true}
+         -- end
 
          local card = factory.create("#card_factory", stack_position, vmath.quat(0, 0, 0, 1))
-         msg.post(card, "set_card", { data = card_data, slot_id = slot_id })
+         msg.post(card, "set_card", { data = card_data, slot_id = slot_id }) --
 
          -- Добавляем карту в стопку
          table.insert(self.tableau_stacks[stack_index].cards, { id = card, data = card_data, slot_id = slot_id })
@@ -256,7 +271,7 @@ end
 
 function get_base_slots()
    return {
-      base_slot1 = {pos = go.get_position('base_slot1'), is_empty = false },
+      base_slot1 = {pos = go.get_position('base_slot1'), is_empty = true },
       base_slot2 = {pos = go.get_position('base_slot2'), is_empty = true },
       base_slot3 = {pos = go.get_position('base_slot3'), is_empty = true },
    }
