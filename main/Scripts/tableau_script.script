@@ -18,13 +18,23 @@ local function reverse_table(tbl)
     end
     return reversed
 end
+local function color_to_cell(card)
+   local color_table = {
+      red = "dragon_button1",
+      blue = "dragon_button2",
+      green = "dragon_button3"
+   }
 
+   return color_table[card.data.suit]
+end
 function last_card_to_slot(self)
    local card = reverse_table(self.stack)[1]
    if card.data.value == 'f' then
       msg.post(self.cursor, 'send_to_flower_slot', card)
    elseif card.data.value == 2 then
       msg.post(self.cursor, 'send_to_base_slot', card)
+   elseif card.data.value == 'd' then
+      msg.post(color_to_cell(card), 'send_counter_to_button', card)
    end
 end
 

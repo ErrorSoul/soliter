@@ -29,6 +29,7 @@ function init(self)
    self.dragon_buttons = get_dragon_buttons()  -- Кнопки драконов
    send_messages_to_cursor(self)
    send_message_to_dragon_buttons(self)
+   --send_message_to_free_slots(self)
    --local card = factory.create("#card_factory", vmath.vector3(100, 100, 0))
    -- msg.post(".", "acquire_input_focus")
    msg.post("@render:", "use_fixed_fit_projection", { near = -1, far = 1 })
@@ -54,10 +55,14 @@ function create_deck(self)
          table.insert(deck, {id = value .. "_" .. suit, value = value, suit = suit})
       end
       -- Добавляем драконов и цветок
-      for i = 1, 4 do
-         local value = 'd'
-         table.insert(deck, {id = value .. "_" .. suit, value = value, suit = suit, is_dragon = true})
+     if suit ~= "green" then
+
+         for i = 1, 4 do
+            local value = 'd'
+            table.insert(deck, {id = value .. "_" .. suit, value = value, suit = suit, is_dragon = true})
+         end
       end
+
    end
 
 
@@ -193,24 +198,37 @@ function deal_cards(self)
          local card_offset = vmath.vector3(0, (card_index - 1) * -35, 0)
          local target_position = stack_position + card_offset
 
-         -- if stack_index == 6 and card_index == cards_in_stack then
-         --    value = 2
-         --    suit = 'green'
-         --    card_data = {id = value .. "_" .. suit, value = value, suit = suit}
-         --    --card_data = {id = 'flower', value = 'f', suit = 'flower', is_flower = true}
-         -- end
-         -- if stack_index == 7 and card_index == cards_in_stack then
-         --    value = 2
-         --    suit = 'red'
-         --    card_data = {id = value .. "_" .. suit, value = value, suit = suit}
-         --    --card_data = {id = 'flower', value = 'f', suit = 'flower', is_flower = true}
-         -- end
-         -- if stack_index == 8 and card_index == cards_in_stack then
-         --    value = 2
-         --    suit = 'blue'
-         --    card_data = {id = value .. "_" .. suit, value = value, suit = suit}
-         --    --card_data = {id = 'flower', value = 'f', suit = 'flower', is_flower = true}
-         -- end
+         if stack_index == 5  and card_index == cards_in_stack then
+            value = 'd'
+            suit = 'green'
+
+            card_data = {id = value .. "_" .. suit, value = value, suit = suit, is_dragon = true}
+
+            --card_data = {id = 'flower', value = 'f', suit = 'flower', is_flower = true}
+         end
+
+         if stack_index == 6 and card_index == cards_in_stack then
+            value = 'd'
+            suit = 'green'
+
+            card_data = {id = value .. "_" .. suit, value = value, suit = suit, is_dragon = true}
+
+            --card_data = {id = 'flower', value = 'f', suit = 'flower', is_flower = true}
+         end
+         if stack_index == 7 and card_index == cards_in_stack then
+            value = 'd'
+            suit = 'green'
+
+            card_data = {id = value .. "_" .. suit, value = value, suit = suit, is_dragon = true}
+
+         end
+
+         if stack_index == 8 and card_index == cards_in_stack then
+            value = 'd'
+            suit = 'green'
+
+            card_data = {id = value .. "_" .. suit, value = value, suit = suit, is_dragon = true}
+         end
 
          local card = factory.create("#card_factory", stack_position, vmath.quat(0, 0, 0, 1))
          msg.post(card, "set_card", { data = card_data, slot_id = slot_id }) --
@@ -261,6 +279,7 @@ function send_messages_to_cursor(self)
    msg.post(self.cursor, "set_base_slots", self.base_slots)
    msg.post(self.cursor, "set_flower_slot",self.flower_slot)
    msg.post(self.cursor, "set_tableau_slots",self.tableau_slots)
+   msg.post(self.cursor, "set_dragon_buttons",self.dragon_buttons)
 end
 
 function send_message_to_dragon_buttons(self)
@@ -268,6 +287,12 @@ function send_message_to_dragon_buttons(self)
       msg.post(btn, 'set_button', value)
    end
 end
+
+-- function send_message_to_free_slots(self)
+--    for slot, _ in pairs(self.free_slots) do
+--       msg.post(btn, 'set_dragon_buttons', self.dragon_buttons)
+--    end
+-- end
 
 function get_free_slots()
    return {

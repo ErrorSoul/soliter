@@ -1,6 +1,28 @@
 function init(self)
    self.is_occupied = false
    self.card = nil
+   self.dragon_button_trace = nil
+   self.slot_id = nil
+end
+
+local function check_dragon(card)
+   return card.data.value == 'd'
+end
+
+function change_button_counter(self, num)
+   for _, id in pairs(self.dragon_button_trace) do
+      msg.post(id, 'change_free_slots_button_counter', {num = num})
+   end
+end
+
+function send_to_dragon_buttons(self, card)
+   if check_dragon(card) then
+      local url = self.dragon_button_trace[card.data.suit]
+      msg.post(url, 'set_dragon_card_pos', {pos = go.get_position()})
+      -- отправить в другие кнопки дракона, что один из фри слотов занят другим цветом
+   else
+      change_button_counter(self, -1)
+   end
 end
 
 function on_message(self, message_id, message, sender)
@@ -8,16 +30,26 @@ function on_message(self, message_id, message, sender)
    if message_id == hash("check_slot") then
       if self.is_occupied then
          msg.post(sender, "slot_invalid")
-         print("Free slot in free slot", go.get_position())
       else
          msg.post(sender, "slot_valid")
       end
+   elseif message_id == hash("set_cursor") then
+      self.cursor = sender
+      self.slot_id = message.slot_id
+      self.dragon_button_trace = message.params
+
+   elseif message_id == hash("set_cursor") then
+      self.cursor = sender
+      self.slot_id = message.slot_id
+      self.dragon_button_trace = message.params
+
    elseif message_id == hash("occupy_slot") then
       self.is_occupied = true
       self.current_card = sender
       message.slot_id = go.get_id()
       self.card_data = message.card
       go.set_position(go.get_position(), sender)
+      send_to_dragon_buttons(self, message.card)
    elseif message_id == hash("clear_slot") then
       self.is_occupied = false
       self.current_card = nil
@@ -26,7 +58,6 @@ function on_message(self, message_id, message, sender)
       self.current_card = nil
       self.card_data = nil
    elseif message_id == hash("can_pick_card") then
-      print("CAN PICK CARD")
       if self.is_occupied then
         print("SLOT current card", self.current_card)
         msg.post(sender, "slot_with_card", self.card_data) --id = self.current_card})
@@ -36,11 +67,6 @@ function on_message(self, message_id, message, sender)
 end
 
 function update(self, dt)
-   if self.flying then
-      local pos = go.get_position(self.cursor)
-      print("cursor_pos", pos)
-      go.set_position(pos)
-   end
    -- Преобразуем все объекты в строки и объединяем их
    local debug_string = "current_card: " .. tostring(self.current_card) .. "\n"
 

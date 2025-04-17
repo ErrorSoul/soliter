@@ -1,6 +1,5 @@
 -- cursor.script
 go.property("selected_card", nil)
-
 function init(self)
    -- Отключаем лишние сообщения о коллизиях
    self.is_processing = false
@@ -16,6 +15,11 @@ function init(self)
       red = "base_slot1",
       blue = "base_slot2",
       green = "base_slot3"
+   }
+   self.dragon_button_trace = {
+      red = "dragon_button1",
+      blue = "dragon_button2",
+      green = "dragon_button3"
    }
    self.stack_offset = {}  -- Сохраняем смещение каждой карты относительно первой
    msg.post(".", "acquire_input_focus")
@@ -182,21 +186,32 @@ function move_stack_cards(self, message_id, params)
    end
 end
 
+local function set_cursor(slots, params)
+   local p = params or {}
+   for slot_id, _ in pairs(slots) do
+      msg.post(slot_id, "set_cursor", {slot_id = slot_id, params=p})
+   end
+end
+
 function on_message(self, message_id, message, sender)
-   print("[CURSOR]", message_id)
+   if not message_id == hash('drag_update') then
+      print("[CURSOR]", message_id)
+   end
+
    if message_id == hash("set_free_slots") then
       self.free_slots = message
-
+      set_cursor(self.free_slots, self.dragon_button_trace)
    elseif message_id == hash("set_flower_slot") then
       self.flower_slot = message
    elseif message_id == hash("set_base_slots") then
       self.base_slots = message
-      for slot_id, _ in pairs(self.base_slots) do
-         msg.post(slot_id, "set_cursor", {slot_id = slot_id})
-      end
+      set_cursor(self.base_slots)
 
    elseif message_id == hash("set_tableau_slots") then
       self.tableau_slots = message
+   elseif message_id == hash("set_dragon_buttons") then
+       self.dragon_buttons = message
+       pprint("DRG BUTTON", self.dragon_buttons)
    elseif message_id == hash("set_cards") then
       self.cards = message
    elseif message_id == hash("set_stack") then
@@ -258,7 +273,6 @@ function on_message(self, message_id, message, sender)
       })
    elseif message_id == hash("base_slot_full") then
       self.base_slots[message.slot_id].is_empty = false
-      pprint("BAAAAAAAAAAAAAAA", self.base_slots)
    elseif message_id == hash("send_to_base_slot") then
       local slot = self.base_slot_trace[message.data.suit]
       local is_empty = self.base_slots[slot].is_empty
@@ -277,10 +291,6 @@ function on_message(self, message_id, message, sender)
                   card = message,
                   animation = true
       })
-
-      pprint("X is ", x)
-      pprint("EMP is ", is_empty)
-      pprint("CRRRRDDDDD", message)
    end
 end
 

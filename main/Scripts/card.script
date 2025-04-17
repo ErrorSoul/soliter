@@ -50,7 +50,10 @@ function is_correct_card(self, selected_card)
 end
 
 function on_message(self, message_id, message, sender)
-   pprint("[CARD]", message_id)
+    if not message_id == hash('drag_update') then
+       pprint("[CARD]", message_id)
+    end
+
 
    if message_id == hash("start_drag") then
       self.is_dragging = true
