@@ -239,7 +239,18 @@ function on_message(self, message_id, message, sender)
       msg.post(self.selected_card, 'drop_failed', {position = self.original_position})
       clean_cursor(self)
    elseif message_id == hash("invalid_card")  then
-      msg.post(self.selected_card, 'drop_failed', {position = self.original_position})
+      if self.is_dragging then
+         if self.dragging_stack then
+            for _, card in ipairs(self.stack_cards) do
+               msg.post(card.id, "drop_failed", {
+                   position = self.original_position + card.relative_pos
+               })
+            end
+         else
+            msg.post(self.selected_card, 'drop_failed', {position = self.original_position})
+         end
+      end
+
       clean_cursor(self)
    elseif message_id == hash("valid_card") and self.pending_drop then
       local params = {
