@@ -29,37 +29,39 @@ local function color_to_cell(card)
 end
 function last_card_to_slot(self)
    local card = reverse_table(self.stack)[1]
-   if card.data.value == 'f' then
-      msg.post(self.cursor, 'send_to_flower_slot', card)
-   elseif card.data.value == 2 then
-      msg.post(self.cursor, 'send_to_base_slot', card)
-   elseif card.data.value == 'd' then
-      msg.post(color_to_cell(card), 'send_counter_to_button', card)
+   if card then
+      if card.data.value == 'f' then
+         msg.post(self.cursor, 'send_to_flower_slot', card)
+      elseif card.data.value == 2 then
+         msg.post(self.cursor, 'send_to_base_slot', card)
+      elseif card.data.value == 'd' then
+         msg.post(color_to_cell(card), 'send_counter_to_button', card)
+      end
    end
 end
 
 function on_message(self, message_id, message, sender)
+   pprint("[TABLEA]", (self.index or 'nil') .. '/' .. message_id .. "||" .. (message.card and message.card.data.id .. "/" .. message.card.id or (message and message.id or 'nil')))
    if message_id == hash("update_stack") then
       self.stack = message.stack
       self.index = message.index
       self.cursor = message.cursor
-
-      last_card_to_slot(self)
-
+       -- last_card_to_slot(self)
       update_visible_cards(self)
    elseif message_id == hash("remove_card") then
       if remove_by_id(self.stack, message.id) then
-         msg.post(self.cursor, 'set_stack', {index = self.index, stack = self.stack})
+         -- msg.post(self.cursor, 'set_stack', {index = self.indeX, Stack = self.stack})
          if #self.stack == 0 then
             self.is_empty = true
             print("EMPTY SLOT !!!!!!!!!!!!!!!!!!")
          end
       end
-      last_card_to_slot(self)
+      -- last_card_to_slot(self)
       update_visible_cards(self)
    elseif message_id == hash("occupy_slot") then
-      message.slot_id = go.get_id()
+      message.card.slot_id = go.get_id()
       table.insert(self.stack, message.card)
+      print("BEFORE UPDATE VISIBLE CARDS")
       update_visible_cards(self)
    elseif message_id == hash("check_slot") then
       if self.is_empty then
@@ -115,10 +117,12 @@ function update_visible_cards(self)
       --    -- Выключаем коллизию для скрытых карт
       --    msg.post(card_url, "enable")
       -- end
-
-      local z_index = (i == #self.stack) and 0.02 or 0.002 + i * 0.002
+      --pprint("DXXXX", card.id)
+      local z_index = (i == #self.stack) and 0.03 or 0.002 + i * 0.002
+      local y = go.get_position().y + i * (-40)
       -- print(string.format("slot id z index %s  %f", card.data.id, z_index))
-      go.set_position(vmath.vector3(go.get_position(card.id).x, go.get_position(card.id).y, z_index), card.id)
+      -- y = go.get_position(card.id).y
+      go.set_position(vmath.vector3(go.get_position().x, y, z_index), card.id)
       -- print(string.format("Card %d: %s %s %s", i, card.data.value, card.data.suit, go.get_position(card.id)))
       -- print(go.get_position(card.id))
    end

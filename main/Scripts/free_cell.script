@@ -9,19 +9,34 @@ local function check_dragon(card)
    return card.data.value == 'd'
 end
 
-function change_button_counter(self, num)
-   for _, id in pairs(self.dragon_button_trace) do
+local function wo_array(arr, cond)
+   tbl = {}
+   for _, value in pairs(arr) do
+      if cond ~= value then
+         table.insert(tbl, value)
+      end
+
+   end
+   return tbl
+end
+
+function change_button_counter(self, num, wo)
+   local without_arr = wo or self.dragon_button_trace
+   for _, id in pairs(without_arr) do
       msg.post(id, 'change_free_slots_button_counter', {num = num})
    end
 end
 
-function send_to_dragon_buttons(self, card)
+function send_to_dragon_buttons(self, card, num)
    if check_dragon(card) then
       local url = self.dragon_button_trace[card.data.suit]
-      msg.post(url, 'set_dragon_card_pos', {pos = go.get_position()})
+      local wo_arr = wo_array(self.dragon_button_trace, card.data.suit)
+
+      --msg.post(url, 'set_dragon_card_pos', {pos = go.get_position()})
+      change_button_counter(self, num, wo_arr)
       -- отправить в другие кнопки дракона, что один из фри слотов занят другим цветом
    else
-      change_button_counter(self, -1)
+      change_button_counter(self, num)
    end
 end
 
@@ -49,14 +64,16 @@ function on_message(self, message_id, message, sender)
       message.slot_id = go.get_id()
       self.card_data = message.card
       go.set_position(go.get_position(), sender)
-      send_to_dragon_buttons(self, message.card)
+      send_to_dragon_buttons(self, message.card, -1)
    elseif message_id == hash("clear_slot") then
       self.is_occupied = false
       self.current_card = nil
    elseif message_id == hash("remove_card") then
       self.is_occupied = false
+      send_to_dragon_buttons(self, self.card_data, 1)
       self.current_card = nil
       self.card_data = nil
+
    elseif message_id == hash("can_pick_card") then
       if self.is_occupied then
         print("SLOT current card", self.current_card)

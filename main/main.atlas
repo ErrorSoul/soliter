@@ -105,11 +105,11 @@ images {
   image: "/assets/cards/d_green.png"
 }
 images {
-  image: "/assets/buttons/button-red.png"
+  image: "/assets/buttons/button_red.png"
   sprite_trim_mode: SPRITE_TRIM_MODE_5
 }
 images {
-  image: "/assets/buttons/button-blue.png"
+  image: "/assets/buttons/button_blue.png"
   sprite_trim_mode: SPRITE_TRIM_MODE_5
 }
 images {

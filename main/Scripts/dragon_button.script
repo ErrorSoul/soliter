@@ -21,10 +21,10 @@ function on_message(self, message_id, message, sender)
       self.free_slot_pos = message.pos
       pprint("DRAGON POS", self.free_slot_pos)
       check_state(self)
-   elseif message_id == hash("set_dragon_card_pos") then
-      self.free_slot_pos = message.pos
-      pprint("DRAGON POS", self.free_slot_pos)
-      check_state(self)
+   -- elseif message_id == hash("set_dragon_card_pos") then
+   --    self.free_slot_pos = message.pos
+   --    pprint("DRAGON POS", self.free_slot_pos)
+   --    check_state(self)
    elseif message_id == hash("change_free_slots_button_counter") then
       self.free_slots_counter = self.free_slots_counter + message.num
       pprint("COUNTER", self.free_slots_counter)
@@ -42,5 +42,6 @@ function check_state(self)
 end
 
 function free_slot_any(self)
-   return self.free_slot_pos or self.free_slots_counter > 0
+   --return self.free_slot_pos or self.free_slots_counter > 0
+   return self.free_slots_counter > 0
 end

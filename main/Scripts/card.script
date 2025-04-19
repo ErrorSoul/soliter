@@ -37,7 +37,7 @@ function set_card(self, value, suit, is_dragon, is_flower, owner)
 end
 
 function is_correct_card(self, selected_card)
-   pprint('selected', selected_card)
+   --pprint('selected', selected_card)
    if self.is_flower or self.is_dragon then
       return false
    end
@@ -50,7 +50,7 @@ function is_correct_card(self, selected_card)
 end
 
 function on_message(self, message_id, message, sender)
-    if not message_id == hash('drag_update') then
+    if message_id ~= hash('drag_update') then
        pprint("[CARD]", message_id)
     end
 
@@ -70,9 +70,9 @@ function on_message(self, message_id, message, sender)
                   position = pos,
                   animation = message.animation
       })
-      if not message.animation then
-         go.set_position(pos)
-      end
+      -- if not message.animation then
+      --    go.set_position(pos)
+      -- end
 
       msg.post(self.owner, 'remove_card', {id = go.get_id()})
       self.owner = message.slot_id
