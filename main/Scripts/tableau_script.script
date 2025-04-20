@@ -46,7 +46,7 @@ function on_message(self, message_id, message, sender)
       self.stack = message.stack
       self.index = message.index
       self.cursor = message.cursor
-       -- last_card_to_slot(self)
+      last_card_to_slot(self)
       update_visible_cards(self)
    elseif message_id == hash("remove_card") then
       if remove_by_id(self.stack, message.id) then
@@ -56,7 +56,7 @@ function on_message(self, message_id, message, sender)
             print("EMPTY SLOT !!!!!!!!!!!!!!!!!!")
          end
       end
-      -- last_card_to_slot(self)
+      last_card_to_slot(self)
       update_visible_cards(self)
    elseif message_id == hash("occupy_slot") then
       message.card.slot_id = go.get_id()
@@ -119,7 +119,7 @@ function update_visible_cards(self)
       -- end
       --pprint("DXXXX", card.id)
       local z_index = (i == #self.stack) and 0.03 or 0.002 + i * 0.002
-      local y = go.get_position().y + i * (-40)
+      local y = go.get_position().y + (i-1) * (-35)
       -- print(string.format("slot id z index %s  %f", card.data.id, z_index))
       -- y = go.get_position(card.id).y
       go.set_position(vmath.vector3(go.get_position().x, y, z_index), card.id)

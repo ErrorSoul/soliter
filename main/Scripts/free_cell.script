@@ -11,8 +11,8 @@ end
 
 local function wo_array(arr, cond)
    tbl = {}
-   for _, value in pairs(arr) do
-      if cond ~= value then
+   for key, value in pairs(arr) do
+      if cond ~= key then
          table.insert(tbl, value)
       end
 
