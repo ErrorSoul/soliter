@@ -3,6 +3,7 @@ function init(self)
    self.card = nil
    self.dragon_button_trace = nil
    self.slot_id = nil
+   self.curson = nil
 end
 
 local function check_dragon(card)
@@ -65,12 +66,15 @@ function on_message(self, message_id, message, sender)
       self.card_data = message.card
       go.set_position(go.get_position(), sender)
       send_to_dragon_buttons(self, message.card, -1)
+      local dragon = check_dragon(message.card) and message.card.data.suit or nil
+      msg.post(self.cursor, "update_free_slot", {slot_id = self.slot_id, dragon = dragon, is_empty = false })
    elseif message_id == hash("clear_slot") then
       self.is_occupied = false
       self.current_card = nil
    elseif message_id == hash("remove_card") then
       self.is_occupied = false
       send_to_dragon_buttons(self, self.card_data, 1)
+      msg.post(self.cursor, "update_free_slot", {slot_id = self.slot_id, dragon = nil, is_empty = true })
       self.current_card = nil
       self.card_data = nil
 

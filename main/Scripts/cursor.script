@@ -299,6 +299,10 @@ function on_message(self, message_id, message, sender)
                   card = message,
                   animation = true
       })
+   elseif message_id == hash("update_free_slot") then
+      self.free_slots[message.slot_id].is_empty = message.is_empty
+      self.free_slots[message.slot_id].dragon = message.dragon
+      pprint("CURSOR FREE SLOTS", self.free_slots)
    end
 end
 
@@ -422,9 +426,9 @@ function check_last_cards(self, cursor_x, cursor_y)
 end
 
 function check_free_slots(self, cursor_x, cursor_y)
-   for slot_id, slot_pos in pairs(self.free_slots) do
-      if is_point_in_rect(cursor_x, cursor_y, slot_pos, self.half_size) then
-         return {slot_id = slot_id, slot_pos = slot_pos}
+   for slot_id, slot in pairs(self.free_slots) do
+      if is_point_in_rect(cursor_x, cursor_y, slot.pos, self.half_size) then
+         return {slot_id = slot_id, slot_pos = slot.pos}
       end
    end
 end

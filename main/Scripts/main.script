@@ -296,9 +296,9 @@ end
 
 function get_free_slots()
    return {
-      free_slot1 = go.get_position('free_slot1'),
-      free_slot2 = go.get_position('free_slot2'),
-      free_slot3 = go.get_position('free_slot3')
+      free_slot1 = {pos = go.get_position('free_slot1'), dragon = nil, is_empty = true },
+      free_slot2 = {pos = go.get_position('free_slot2'), dragon = nil, is_empty = true },
+      free_slot3 = {pos = go.get_position('free_slot3'), dragon = nil, is_empty = true },
    }
 end
 
