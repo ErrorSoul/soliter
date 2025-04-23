@@ -10,6 +10,8 @@ function init(self)
    self.was_pressed = false
    self.size = vmath.vector3(90, 150, 0)
    self.half_size = self.size * 0.5
+   self.btn_size = vmath.vector3(32, 32, 0)
+   self.half_btn_size = self.btn_size * 0.5
    self.dragging_stack = false
    self.base_slot_trace = {
       red = "base_slot1",
@@ -42,6 +44,14 @@ function on_input(self, action_id, action)
    if action_id == hash("touch") then
       if action.pressed then
          self.was_pressed = true
+         local btn_color = check_dragon_buttons(self, action.x, action.y)
+
+         if btn_color then
+            pprint('BUTTON COLOR', btn_color)
+            self.pending_drop = btn_color
+            msg.post(btn_color.slot_id, 'get_dragon_cards')
+            return
+         end
 
          local card = check_tableau_slots(self, action.x, action.y)
          if card then
@@ -76,6 +86,8 @@ function on_input(self, action_id, action)
             msg.post(free_slot.slot_id, "can_pick_card")
             return
          end
+
+
 
       elseif action.released then
          self.was_pressed = false
@@ -210,8 +222,8 @@ function on_message(self, message_id, message, sender)
    elseif message_id == hash("set_tableau_slots") then
       self.tableau_slots = message
    elseif message_id == hash("set_dragon_buttons") then
-       self.dragon_buttons = message
-       pprint("DRG BUTTON", self.dragon_buttons)
+      self.dragon_buttons = message
+      pprint("DRG BUTTON", self.dragon_buttons)
    elseif message_id == hash("set_cards") then
       self.cards = message
    elseif message_id == hash("set_stack") then
@@ -302,7 +314,22 @@ function on_message(self, message_id, message, sender)
    elseif message_id == hash("update_free_slot") then
       self.free_slots[message.slot_id].is_empty = message.is_empty
       self.free_slots[message.slot_id].dragon = message.dragon
-      pprint("CURSOR FREE SLOTS", self.free_slots)
+      pprint("update_free_slot", self.free_slots)
+   elseif message_id == hash("set_button_state") then
+      self.dragon_buttons[message.slot_id].is_active = message.is_active
+   elseif message_id == hash("get_dragon_cards") and self.pending_drop then
+      for _, card in pairs(message) do
+         --pprint("A", card)
+         msg.post(card.id, 'drop_success', {
+                  slot_id = 'free_slot1',
+                  position = self.free_slots['free_slot1'].pos,
+                  card = card,
+                  animation = true,
+                  complete = true
+      })
+      end
+
+
    end
 end
 
@@ -400,7 +427,6 @@ function check_last_cards(self, cursor_x, cursor_y)
 
    -- Если курсор над стопкой, проверяем каждую карту в стопке
    for stack_index, card in pairs(self.last_cards) do
-      pprint("HHHH", stack_index, card)
         local card_pos = go.get_position(card.id)
 
       -- Проверяем, находится ли курсор над картой
@@ -456,6 +482,15 @@ function check_free_tableau_slots(self, cursor_x, cursor_y)
       end
    end
 end
+
+function check_dragon_buttons(self, cursor_x, cursor_y)
+   for btn_id, btn in pairs(self.dragon_buttons) do
+      if btn.is_active and is_point_in_rect(cursor_x, cursor_y, btn.pos, self.half_btn_size) then
+         return {slot_id = btn_id, color = btn.sprite}
+      end
+   end
+end
+
 
 function update(self, dt)
    -- Преобразуем все объекты в строки и объединяем их

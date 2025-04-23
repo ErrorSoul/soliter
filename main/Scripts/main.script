@@ -284,7 +284,7 @@ end
 
 function send_message_to_dragon_buttons(self)
    for btn, value in pairs(self.dragon_buttons) do
-      msg.post(btn, 'set_button', value)
+      msg.post(btn, 'set_button', {data = value, cursor = self.cursor, slot_id = btn})
    end
 end
 
@@ -331,9 +331,9 @@ end
 
 function get_dragon_buttons()
    return {
-      dragon_button1 = {sprite = 'red',   is_active = false },
-      dragon_button2 = {sprite = 'blue',  is_active = false },
-      dragon_button3 = {sprite = 'green', is_active = false },
+      dragon_button1 = {sprite = 'red',   is_active = false, pos = go.get_position('dragon_button1')},
+      dragon_button2 = {sprite = 'blue',  is_active = false, pos = go.get_position('dragon_button2')},
+      dragon_button3 = {sprite = 'green', is_active = false, pos = go.get_position('dragon_button3')},
    }
 end
 

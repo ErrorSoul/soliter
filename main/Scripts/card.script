@@ -68,7 +68,8 @@ function on_message(self, message_id, message, sender)
       msg.post(message.slot_id, "occupy_slot", {
                   card = message.card,
                   position = pos,
-                  animation = message.animation
+                  animation = message.animation,
+                  complete = message.complete
       })
       -- if not message.animation then
       --    go.set_position(pos)

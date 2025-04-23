@@ -60,14 +60,28 @@ function on_message(self, message_id, message, sender)
       self.dragon_button_trace = message.params
 
    elseif message_id == hash("occupy_slot") then
-      self.is_occupied = true
+
       self.current_card = sender
       message.slot_id = go.get_id()
       self.card_data = message.card
-      go.set_position(go.get_position(), sender)
-      send_to_dragon_buttons(self, message.card, -1)
+      --go.set_position(go.get_position(), sender)
+      if message.animation then
+         go.animate(message.card.id, "position", go.PLAYBACK_ONCE_FORWARD, go.get_position() + vmath.vector3(0, 0, 0.2), go.EASING_LINEAR, 0.5, 0.3)
+      else
+         go.set_position(message.position, message.card.id)
+      end
       local dragon = check_dragon(message.card) and message.card.data.suit or nil
-      msg.post(self.cursor, "update_free_slot", {slot_id = self.slot_id, dragon = dragon, is_empty = false })
+      if message.complete then
+         self.is_blocked = true
+         if not self.occupied then
+            msg.post(self.cursor, "update_free_slot", {slot_id = self.slot_id, dragon = dragon, is_empty = false})
+            send_to_dragon_buttons(self, message.card, -1)
+         end
+      else
+         msg.post(self.cursor, "update_free_slot", {slot_id = self.slot_id, dragon = dragon, is_empty = false})
+         send_to_dragon_buttons(self, message.card, -1)
+      end
+      self.is_occupied = true
    elseif message_id == hash("clear_slot") then
       self.is_occupied = false
       self.current_card = nil
@@ -79,8 +93,7 @@ function on_message(self, message_id, message, sender)
       self.card_data = nil
 
    elseif message_id == hash("can_pick_card") then
-      if self.is_occupied then
-        print("SLOT current card", self.current_card)
+      if self.is_occupied and not self.is_blocked then
         msg.post(sender, "slot_with_card", self.card_data) --id = self.current_card})
       else
       end
