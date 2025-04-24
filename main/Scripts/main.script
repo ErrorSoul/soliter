@@ -55,17 +55,12 @@ function create_deck(self)
          table.insert(deck, {id = value .. "_" .. suit, value = value, suit = suit})
       end
       -- Добавляем драконов и цветок
-     if suit ~= "green" then
 
-         -- for i = 1, 4 do
-         --    local value = 'd'
-         --    table.insert(deck, {id = value .. "_" .. suit, value = value, suit = suit, is_dragon = true})
-         -- end
+      for i = 1, 4 do
+         local value = 'd'
+         table.insert(deck, {id = value .. "_" .. suit, value = value, suit = suit, is_dragon = true})
       end
-
    end
-
-
 
    table.insert(deck, {id = 'flower', value = 'f', suit = 'flower', is_flower = true})
    --
@@ -198,37 +193,37 @@ function deal_cards(self)
          local card_offset = vmath.vector3(0, (card_index - 1) * -35, 0)
          local target_position = stack_position + card_offset
 
-         if stack_index == 5  and card_index == cards_in_stack then
-            value = 'd'
-            suit = 'green'
+         -- if stack_index == 5  and card_index == cards_in_stack then
+         --    value = 'd'
+         --    suit = 'green'
 
-            card_data = {id = value .. "_" .. suit, value = value, suit = suit, is_dragon = true}
+         --    card_data = {id = value .. "_" .. suit, value = value, suit = suit, is_dragon = true}
 
-            --card_data = {id = 'flower', value = 'f', suit = 'flower', is_flower = true}
-         end
+         --    --card_data = {id = 'flower', value = 'f', suit = 'flower', is_flower = true}
+         -- end
 
-         if stack_index == 6 and card_index == cards_in_stack then
-            value = 'd'
-            suit = 'green'
+         -- if stack_index == 6 and card_index == cards_in_stack then
+         --    value = 'd'
+         --    suit = 'green'
 
-            card_data = {id = value .. "_" .. suit, value = value, suit = suit, is_dragon = true}
+         --    card_data = {id = value .. "_" .. suit, value = value, suit = suit, is_dragon = true}
 
-            --card_data = {id = 'flower', value = 'f', suit = 'flower', is_flower = true}
-         end
-         if stack_index == 7 and card_index == cards_in_stack then
-            value = 'd'
-            suit = 'green'
+         --    --card_data = {id = 'flower', value = 'f', suit = 'flower', is_flower = true}
+         -- end
+         -- if stack_index == 7 and card_index == cards_in_stack then
+         --    value = 'd'
+         --    suit = 'green'
 
-            card_data = {id = value .. "_" .. suit, value = value, suit = suit, is_dragon = true}
+         --    card_data = {id = value .. "_" .. suit, value = value, suit = suit, is_dragon = true}
 
-         end
+         -- end
 
-         if stack_index == 8 and card_index == cards_in_stack then
-            value = 'd'
-            suit = 'green'
+         -- if stack_index == 8 and card_index == cards_in_stack then
+         --    value = 'd'
+         --    suit = 'green'
 
-            card_data = {id = value .. "_" .. suit, value = value, suit = suit, is_dragon = true}
-         end
+         --    card_data = {id = value .. "_" .. suit, value = value, suit = suit, is_dragon = true}
+         -- end
 
          local card = factory.create("#card_factory", stack_position, vmath.quat(0, 0, 0, 1))
          msg.post(card, "set_card", { data = card_data, slot_id = slot_id }) --

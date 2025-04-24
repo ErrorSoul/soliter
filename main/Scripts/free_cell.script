@@ -72,10 +72,12 @@ function on_message(self, message_id, message, sender)
       end
       local dragon = check_dragon(message.card) and message.card.data.suit or nil
       if message.complete then
-         self.is_blocked = true
-         if not self.occupied then
-            msg.post(self.cursor, "update_free_slot", {slot_id = self.slot_id, dragon = dragon, is_empty = false})
-            send_to_dragon_buttons(self, message.card, -1)
+         if not self.is_blocked then
+            self.is_blocked = true
+            if not self.occupied then
+               msg.post(self.cursor, "update_free_slot", {slot_id = self.slot_id, dragon = dragon, is_empty = false})
+               send_to_dragon_buttons(self, message.card, -1)
+            end
          end
       else
          msg.post(self.cursor, "update_free_slot", {slot_id = self.slot_id, dragon = dragon, is_empty = false})
