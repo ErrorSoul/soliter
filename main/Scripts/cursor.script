@@ -320,11 +320,22 @@ function on_message(self, message_id, message, sender)
    elseif message_id == hash("set_button_state") then
       self.dragon_buttons[message.slot_id].is_active = message.is_active
    elseif message_id == hash("get_dragon_cards") and self.pending_drop then
+      local sl_id, sl_pos
+      local color = self.pending_drop.color
+      for slot_id, value in pairs(self.free_slots) do
+         if value.dragon == color or value.is_empty then
+            sl_id = slot_id
+            sl_pos = value.pos
+            break
+         end
+
+      end
+
       for _, card in pairs(message) do
          --pprint("A", card)
          msg.post(card.id, 'drop_success', {
-                  slot_id = 'free_slot1',
-                  position = self.free_slots['free_slot1'].pos,
+                  slot_id = sl_id,
+                  position = sl_pos,
                   card = card,
                   animation = true,
                   complete = true
