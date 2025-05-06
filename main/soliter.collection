@@ -1,0 +1,186 @@
+name: "main"
+instances {
+  id: "free_slot1"
+  prototype: "/main/Game Objects/free_slot.go"
+  position {
+    x: 80.0
+    y: 457.0
+  }
+}
+instances {
+  id: "free_slot2"
+  prototype: "/main/Game Objects/free_slot.go"
+  position {
+    x: 193.0
+    y: 457.0
+  }
+}
+instances {
+  id: "free_slot3"
+  prototype: "/main/Game Objects/free_slot.go"
+  position {
+    x: 309.0
+    y: 457.0
+  }
+}
+instances {
+  id: "tableau_slot1"
+  prototype: "/main/Game Objects/tableau_slot.go"
+  position {
+    x: 77.0
+    y: 299.0
+  }
+}
+instances {
+  id: "tableau_slot2"
+  prototype: "/main/Game Objects/tableau_slot.go"
+  position {
+    x: 193.0
+    y: 299.0
+  }
+}
+instances {
+  id: "tableau_slot3"
+  prototype: "/main/Game Objects/tableau_slot.go"
+  position {
+    x: 309.0
+    y: 299.0
+  }
+}
+instances {
+  id: "tableau_slot4"
+  prototype: "/main/Game Objects/tableau_slot.go"
+  position {
+    x: 425.0
+    y: 299.0
+  }
+}
+instances {
+  id: "tableau_slot5"
+  prototype: "/main/Game Objects/tableau_slot.go"
+  position {
+    x: 541.0
+    y: 300.0
+  }
+}
+instances {
+  id: "tableau_slot6"
+  prototype: "/main/Game Objects/tableau_slot.go"
+  position {
+    x: 657.0
+    y: 300.0
+  }
+}
+instances {
+  id: "tableau_slot7"
+  prototype: "/main/Game Objects/tableau_slot.go"
+  position {
+    x: 773.0
+    y: 300.0
+  }
+}
+instances {
+  id: "tableau_slot8"
+  prototype: "/main/Game Objects/tableau_slot.go"
+  position {
+    x: 889.0
+    y: 300.0
+  }
+}
+instances {
+  id: "base_slot1"
+  prototype: "/main/Game Objects/base_slot.go"
+  position {
+    x: 889.0
+    y: 457.0
+  }
+}
+instances {
+  id: "base_slot3"
+  prototype: "/main/Game Objects/base_slot.go"
+  position {
+    x: 657.0
+    y: 457.0
+  }
+}
+instances {
+  id: "base_slot2"
+  prototype: "/main/Game Objects/base_slot.go"
+  position {
+    x: 773.0
+    y: 457.0
+  }
+}
+instances {
+  id: "flower_slot"
+  prototype: "/main/Game Objects/flower_slot.go"
+  position {
+    x: 541.0
+    y: 457.0
+  }
+}
+instances {
+  id: "dragon_button1"
+  prototype: "/main/Game Objects/dragon_button.go"
+  position {
+    x: 420.0
+    y: 511.0
+  }
+}
+instances {
+  id: "dragon_button2"
+  prototype: "/main/Game Objects/dragon_button.go"
+  position {
+    x: 420.0
+    y: 463.0
+  }
+}
+instances {
+  id: "dragon_button3"
+  prototype: "/main/Game Objects/dragon_button.go"
+  position {
+    x: 420.0
+    y: 416.0
+  }
+}
+scale_along_z: 0
+embedded_instances {
+  id: "card_table"
+  data: "components {\n"
+  "  id: \"main\"\n"
+  "  component: \"/main/Scripts/main.script\"\n"
+  "}\n"
+  "embedded_components {\n"
+  "  id: \"card_factory\"\n"
+  "  type: \"factory\"\n"
+  "  data: \"prototype: \\\"/main/Game Objects/card.go\\\"\\n"
+  "\"\n"
+  "}\n"
+  "embedded_components {\n"
+  "  id: \"cursor_factory\"\n"
+  "  type: \"factory\"\n"
+  "  data: \"prototype: \\\"/main/Game Objects/cursor.go\\\"\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    x: 546.0
+    y: 456.0
+    z: 10.0
+  }
+  rotation {
+    z: 0.70710677
+    w: 0.70710677
+  }
+}
+embedded_instances {
+  id: "\302\240gui"
+  data: "components {\n"
+  "  id: \"game\"\n"
+  "  component: \"/gui/game.gui\"\n"
+  "}\n"
+  ""
+  position {
+    x: 1.0
+  }
+}
