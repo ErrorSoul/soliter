@@ -2,6 +2,80 @@ fonts {
   name: "default"
   font: "/builtins/fonts/default.font"
 }
+nodes {
+  position {
+    x: 150.0
+    y: 385.0
+  }
+  scale {
+    x: 0.488999
+    y: 0.455395
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "box"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  color {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  type: TYPE_TEXT
+  blend_mode: BLEND_MODE_MULT
+  text: "RESTART\n"
+  ""
+  font: "default"
+  id: "restart_text"
+  parent: "box"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 150.0
+    y: 385.0
+  }
+  scale {
+    x: 0.488999
+    y: 0.455395
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "box1"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  color {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  type: TYPE_TEXT
+  blend_mode: BLEND_MODE_MULT
+  text: "RESTART\n"
+  ""
+  font: "default"
+  id: "restart_text1"
+  parent: "box1"
+  inherit_alpha: true
+}
 layers {
   name: "background"
 }
