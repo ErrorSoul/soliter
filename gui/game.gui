@@ -2,10 +2,14 @@ fonts {
   name: "default"
   font: "/builtins/fonts/default.font"
 }
+fonts {
+  name: "main_font"
+  font: "/assets/fonts/main_font.font"
+}
 nodes {
   position {
-    x: 150.0
-    y: 385.0
+    x: 151.0
+    y: 465.0
   }
   scale {
     x: 0.488999
@@ -16,11 +20,19 @@ nodes {
     y: 100.0
   }
   type: TYPE_BOX
-  id: "box"
+  id: "restrart_button"
   inherit_alpha: true
   size_mode: SIZE_MODE_AUTO
 }
 nodes {
+  position {
+    x: 2.044994
+    y: -2.195896
+  }
+  scale {
+    x: 0.934878
+    y: 0.765601
+  }
   size {
     x: 200.0
     y: 100.0
@@ -33,10 +45,11 @@ nodes {
   type: TYPE_TEXT
   blend_mode: BLEND_MODE_MULT
   text: "RESTART\n"
+  "\n"
   ""
-  font: "default"
+  font: "main_font"
   id: "restart_text"
-  parent: "box"
+  parent: "restrart_button"
   inherit_alpha: true
 }
 nodes {
@@ -45,19 +58,27 @@ nodes {
     y: 385.0
   }
   scale {
-    x: 0.488999
-    y: 0.455395
+    x: 0.474573
+    y: 0.433508
   }
   size {
     x: 200.0
     y: 100.0
   }
   type: TYPE_BOX
-  id: "box1"
+  id: "tutorial_button"
   inherit_alpha: true
   size_mode: SIZE_MODE_AUTO
 }
 nodes {
+  position {
+    x: 2.044994
+    y: -2.195896
+  }
+  scale {
+    x: 0.860989
+    y: 0.761652
+  }
   size {
     x: 200.0
     y: 100.0
@@ -69,11 +90,88 @@ nodes {
   }
   type: TYPE_TEXT
   blend_mode: BLEND_MODE_MULT
+  text: "TUTORIAL\n"
+  "\n"
+  ""
+  font: "main_font"
+  id: "restart_text1"
+  parent: "tutorial_button"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 432.0
+    y: 289.0
+  }
+  size {
+    x: 300.0
+    y: 400.0
+  }
+  type: TYPE_BOX
+  id: "victory_popup"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: -5.0
+    y: -54.0
+  }
+  scale {
+    x: 0.465995
+    y: 0.335482
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  color {
+    x: 0.6
+    y: 0.0
+    z: 0.0
+  }
+  type: TYPE_BOX
+  id: "victory_restart"
+  parent: "victory_popup"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  scale {
+    x: 0.906218
+    y: 0.921665
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
   text: "RESTART\n"
   ""
-  font: "default"
-  id: "restart_text1"
-  parent: "box1"
+  font: "main_font"
+  id: "text"
+  parent: "victory_restart"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 2.0
+    y: 123.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  color {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  type: TYPE_TEXT
+  text: "You win !!!"
+  font: "main_font"
+  id: "text1"
+  parent: "victory_popup"
   inherit_alpha: true
 }
 layers {

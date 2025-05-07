@@ -1,2 +1,18 @@
 name: "main"
 scale_along_z: 0
+embedded_instances {
+  id: "level_proxy"
+  data: "components {\n"
+  "  id: \"level\"\n"
+  "  component: \"/main/level.collectionproxy\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "game_manager"
+  data: "components {\n"
+  "  id: \"game_manager\"\n"
+  "  component: \"/main/Scripts/game_manager.script\"\n"
+  "}\n"
+  ""
+}

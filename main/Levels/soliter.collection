@@ -1,4 +1,4 @@
-name: "main"
+name: "soliter"
 instances {
   id: "free_slot1"
   prototype: "/main/Game Objects/free_slot.go"
@@ -171,16 +171,5 @@ embedded_instances {
   rotation {
     z: 0.70710677
     w: 0.70710677
-  }
-}
-embedded_instances {
-  id: "\302\240gui"
-  data: "components {\n"
-  "  id: \"game\"\n"
-  "  component: \"/gui/game.gui\"\n"
-  "}\n"
-  ""
-  position {
-    x: 1.0
   }
 }

@@ -1,4 +1,4 @@
-font: "/builtins/fonts/vera_mo_bd.ttf"
+font: "/assets/fonts/CocomatLight-ZXY3.ttf"
 material: "/builtins/fonts/font.material"
-size: 15
+size: 45
 characters: " !\"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
