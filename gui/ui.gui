@@ -1,3 +1,4 @@
+script: "/gui/ui.gui_script"
 fonts {
   name: "default"
   font: "/builtins/fonts/default.font"
@@ -20,7 +21,7 @@ nodes {
     y: 100.0
   }
   type: TYPE_BOX
-  id: "restrart_button"
+  id: "restart_button"
   inherit_alpha: true
   size_mode: SIZE_MODE_AUTO
 }
@@ -49,7 +50,7 @@ nodes {
   ""
   font: "main_font"
   id: "restart_text"
-  parent: "restrart_button"
+  parent: "restart_button"
   inherit_alpha: true
 }
 nodes {
@@ -100,17 +101,26 @@ nodes {
 }
 nodes {
   position {
-    x: 432.0
-    y: 289.0
+    x: 483.0
+    y: 253.0
+  }
+  scale {
+    x: 1.224082
   }
   size {
     x: 300.0
     y: 400.0
   }
+  color {
+    x: 0.302
+    y: 0.502
+    z: 0.302
+  }
   type: TYPE_BOX
   id: "victory_popup"
   inherit_alpha: true
   size_mode: SIZE_MODE_AUTO
+  enabled: false
 }
 nodes {
   position {
@@ -173,6 +183,25 @@ nodes {
   id: "text1"
   parent: "victory_popup"
   inherit_alpha: true
+}
+nodes {
+  position {
+    x: 132.34407
+    y: 181.0
+  }
+  scale {
+    x: 0.155385
+    y: 0.314693
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "victory_close_button"
+  parent: "victory_popup"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
 }
 layers {
   name: "background"

@@ -29,56 +29,56 @@
 --       pprint("SPace pressed")
 --       if action.pressed then
 --  	msg.post("/main#game_manager", "restart_level")
-	
+
 --       end
 --    end
 -- end
 
 
 local function show(self, proxy)
-    if self.current_proxy then
-        msg.post(self.current_proxy, "unload")
-        self.current_proxy = nil
-    end
-    msg.post(proxy, "async_load")
+   if self.current_proxy then
+      msg.post(self.current_proxy, "unload")
+      self.current_proxy = nil
+   end
+   msg.post(proxy, "async_load")
 end
 
 function init(self)
-    msg.post(".", "acquire_input_focus")
-    self.current_proxy = nil
-    self.current_level = "soliter" -- Имя текущего уровня (для отслеживания)
-    show(self, "#level_proxy") -- Загружаем soliter.collection по умолчанию
+   msg.post(".", "acquire_input_focus")
+   self.current_proxy = nil
+   self.current_level = "soliter" -- Имя текущего уровня (для отслеживания)
+   show(self, "#level_proxy") -- Загружаем soliter.collection по умолчанию
+   print("UI")
 end
 
 function on_message(self, message_id, message, sender)
-    if message_id == hash("restart_level") then
-        pprint("Restart level: ", self.current_level)
-        --show(self, self.current_level == "soliter" and "#level_proxy" or "#level_proxy1")
-	show(self, "#level_proxy")
-    elseif message_id == hash("switch_level") then
-        -- Переключение между soliter и soliter1 для теста
-        self.current_level = (self.current_level == "soliter") and "soliter1" or "soliter"
-        pprint("Switching to level: ", self.current_level)
-        show(self, self.current_level == "soliter" and "#level_proxy" or "#level_proxy1")
-    elseif message_id == hash("proxy_loaded") then
-        pprint("Proxy loaded: ", sender)
-        self.current_proxy = sender
-        msg.post(sender, "enable")
-        -- Отправляем сообщение скрипту уровня для сброса
-        msg.post("/level#script", "restart")
-    elseif message_id == hash("proxy_unloaded") then
-        pprint("Proxy unloaded: ", sender)
-    end
+   if message_id == hash("restart_level") then
+      pprint("Restart level: ", self.current_level)
+      --show(self, self.current_level == "soliter" and "#level_proxy" or "#level_proxy1")
+      show(self, "#level_proxy")
+   elseif message_id == hash("switch_level") then
+      -- Переключение между soliter и soliter1 для теста
+      self.current_level = (self.current_level == "soliter") and "soliter1" or "soliter"
+      pprint("Switching to level: ", self.current_level)
+      show(self, self.current_level == "soliter" and "#level_proxy" or "#level_proxy1")
+   elseif message_id == hash("proxy_loaded") then
+      pprint("Proxy loaded: ", sender)
+      self.current_proxy = sender
+      msg.post(sender, "enable")
+   elseif message_id == hash("proxy_unloaded") then
+      pprint("Proxy unloaded: ", sender)
+   end
 end
 
 function on_input(self, action_id, action)
-    if action_id == hash("space") and action.pressed then
-        pprint("Space pressed")
-        msg.post("#", "restart_level")
-    elseif action_id == hash("touch") and action.pressed then
-        -- Для теста переключения уровней (например, клик мышью)
-        pprint("Touch pressed")
-        msg.post("#", "switch_level")
-    end
+   if action_id == hash("space") and action.pressed then
+      pprint("Space pressed")
+      msg.post("#", "restart_level")
+      -- elseif action_id == hash("touch") and action.pressed then
+      --     -- Для теста переключения уровней (например, клик мышью)
+      --     pprint("Touch pressed")
+      --     msg.post("#", "switch_level")
+      -- end
+   end
 end
 

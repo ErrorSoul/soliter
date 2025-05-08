@@ -1,0 +1,7 @@
+images {
+  image: "/assets/vfx/Burst_3_256.png"
+}
+animations {
+  id: "New Animation"
+}
+extrude_borders: 2
