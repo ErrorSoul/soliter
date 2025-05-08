@@ -35,12 +35,10 @@ function on_input(self, action_id, action)
 
    if action_id == hash("space") then
 
-      if action.pressed then
-         msg.post("@system:", "toggle_physics_debug") -- <3>
-         msg.post("/card_table#main", "init") -- <3>
-      else
-         msg.post("@system:", "toggle_physics_debug") -- <3>
-      end
+      -- if action.pressed then
+      -- 	msg.post("/main#level_proxy", "unload")
+      -- 	msg.post("/main#level_proxy", "load")
+      -- end
    end
    if action_id == hash("touch") then
       if action.pressed then

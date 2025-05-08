@@ -1,6 +1,6 @@
 key_trigger {
   input: KEY_SPACE
-  action: ""
+  action: "space"
 }
 mouse_trigger {
   input: MOUSE_BUTTON_1

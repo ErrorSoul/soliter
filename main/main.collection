@@ -1,18 +1,18 @@
 name: "main"
 scale_along_z: 0
 embedded_instances {
-  id: "level_proxy"
-  data: "components {\n"
-  "  id: \"level\"\n"
-  "  component: \"/main/level.collectionproxy\"\n"
-  "}\n"
-  ""
-}
-embedded_instances {
-  id: "game_manager"
+  id: "main"
   data: "components {\n"
   "  id: \"game_manager\"\n"
   "  component: \"/main/Scripts/game_manager.script\"\n"
+  "}\n"
+  "components {\n"
+  "  id: \"level_proxy\"\n"
+  "  component: \"/main/level.collectionproxy\"\n"
+  "}\n"
+  "components {\n"
+  "  id: \"level_proxy1\"\n"
+  "  component: \"/main/level_copy.collectionproxy\"\n"
   "}\n"
   ""
 }
