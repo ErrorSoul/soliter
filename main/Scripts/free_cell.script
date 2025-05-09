@@ -75,7 +75,7 @@ function on_message(self, message_id, message, sender)
          if not self.is_blocked then
             self.is_blocked = true
             if not self.occupied then
-               msg.post(self.cursor, "update_free_slot", {slot_id = self.slot_id, dragon = dragon, is_empty = false})
+               msg.post(self.cursor, "update_free_slot", {slot_id = self.slot_id, dragon = nil, is_empty = false})
                send_to_dragon_buttons(self, message.card, -1)
             end
          end
@@ -102,13 +102,4 @@ function on_message(self, message_id, message, sender)
    end
 end
 
-function update(self, dt)
-   -- Преобразуем все объекты в строки и объединяем их
-   local debug_string = "current_card: " .. tostring(self.current_card) .. "\n"
 
-
-   local color_green = vmath.vector4(1, 0, 0, 1)
-   msg.post("@render:", "draw_debug_text", { text = debug_string, position = vmath.vector3(1300, 780, 0), color = color_green })
-
-
-end

@@ -40,12 +40,15 @@ function on_input(self, action_id, action)
         --     show_popup(self, "settings_popup")
         -- end
         -- Кнопка перезапуска в окне победы
-        if gui.pick_node(victory_restart, action.x, action.y) then
+	-- https://forum.defold.com/t/gui-set-enabled-doesnt-prevent-gui-pick-node-in-input/28819
+	-- pick_node работает независимо от is_enabled
+        if gui.is_enabled(gui.get_parent(victory_restart)) and gui.pick_node(victory_restart, action.x, action.y) then
             hide_popup(self, "victory_popup")
 	    restart_level()
         end
 
-	if gui.pick_node(victory_close_button, action.x, action.y) then
+	if gui.is_enabled(victory_close_button) and gui.pick_node(victory_close_button, action.x, action.y) then
+	   print("Victory Close Button")
 	   hide_popup(self, "victory_popup")
         end
         -- Закрытие туториала

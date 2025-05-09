@@ -321,6 +321,7 @@ function on_message(self, message_id, message, sender)
       local sl_id, sl_pos
       local color = self.pending_drop.color
       for slot_id, value in pairs(self.free_slots) do
+	 pprint("SL", slot_id, value)
          if value.dragon == color or value.is_empty then
             sl_id = slot_id
             sl_pos = value.pos
@@ -503,17 +504,17 @@ function check_dragon_buttons(self, cursor_x, cursor_y)
 end
 
 
-function update(self, dt)
-   -- Преобразуем все объекты в строки и объединяем их
-   local debug_string = "selected_card: " .. tostring(self.selected_card_data and self.selected_card_data.data_id or nil) .. "\n" ..
-      "is_dragging: " .. tostring(self.is_dragging) .. "\n" ..
-      "current_slot: " .. tostring(self.current_slot) .. "\n" ..
-      "can_drop: " .. tostring(self.can_drop) .. "\n" ..
-      "potential_card: " .. tostring(self.potential_card) .. "\n"..
-      "message: " .. tostring(self.mes) .. "\n" ..
-      "overlapped_card: " .. tostring(self.overlapped_card) .. "\n"
+-- function update(self, dt)
+--    -- Преобразуем все объекты в строки и объединяем их
+--    local debug_string = "selected_card: " .. tostring(self.selected_card_data and self.selected_card_data.data_id or nil) .. "\n" ..
+--       "is_dragging: " .. tostring(self.is_dragging) .. "\n" ..
+--       "current_slot: " .. tostring(self.current_slot) .. "\n" ..
+--       "can_drop: " .. tostring(self.can_drop) .. "\n" ..
+--       "potential_card: " .. tostring(self.potential_card) .. "\n"..
+--       "message: " .. tostring(self.mes) .. "\n" ..
+--       "overlapped_card: " .. tostring(self.overlapped_card) .. "\n"
 
-   local color_green = vmath.vector4(0, 1, 0, 1)
-   msg.post("@render:", "draw_debug_text", { text = debug_string, position = vmath.vector3(800, 780, 0), color = color_green })
-end
---8BYNTX0E
+--    local color_green = vmath.vector4(0, 1, 0, 1)
+--    msg.post("@render:", "draw_debug_text", { text = debug_string, position = vmath.vector3(800, 780, 0), color = color_green })
+-- end
+-- --8BYNTX0E

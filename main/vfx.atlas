@@ -1,7 +1,4 @@
 images {
-  image: "/assets/vfx/Burst_3_256.png"
-}
-animations {
-  id: "New Animation"
+  image: "/assets/flat-design-poker-table-background/10013144.jpg"
 }
 extrude_borders: 2

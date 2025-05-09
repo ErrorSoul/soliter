@@ -1,5 +1,5 @@
 font: "/assets/fonts/CocomatLight-ZXY3.ttf"
 material: "/builtins/fonts/font.material"
-size: 36
+size: 60
 all_chars: true
 characters: " !\"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"

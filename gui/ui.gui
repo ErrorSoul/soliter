@@ -7,6 +7,10 @@ fonts {
   name: "main_font"
   font: "/assets/fonts/main_font.font"
 }
+fonts {
+  name: "second"
+  font: "/assets/fonts/second.font"
+}
 nodes {
   position {
     x: 151.0
@@ -22,6 +26,7 @@ nodes {
   }
   type: TYPE_BOX
   id: "restart_button"
+  layer: "buttons"
   inherit_alpha: true
   size_mode: SIZE_MODE_AUTO
 }
@@ -29,10 +34,6 @@ nodes {
   position {
     x: 2.044994
     y: -2.195896
-  }
-  scale {
-    x: 0.934878
-    y: 0.765601
   }
   size {
     x: 200.0
@@ -50,53 +51,9 @@ nodes {
   ""
   font: "main_font"
   id: "restart_text"
+  adjust_mode: ADJUST_MODE_STRETCH
   parent: "restart_button"
-  inherit_alpha: true
-}
-nodes {
-  position {
-    x: 150.0
-    y: 385.0
-  }
-  scale {
-    x: 0.474573
-    y: 0.433508
-  }
-  size {
-    x: 200.0
-    y: 100.0
-  }
-  type: TYPE_BOX
-  id: "tutorial_button"
-  inherit_alpha: true
-  size_mode: SIZE_MODE_AUTO
-}
-nodes {
-  position {
-    x: 2.044994
-    y: -2.195896
-  }
-  scale {
-    x: 0.860989
-    y: 0.761652
-  }
-  size {
-    x: 200.0
-    y: 100.0
-  }
-  color {
-    x: 0.0
-    y: 0.0
-    z: 0.0
-  }
-  type: TYPE_TEXT
-  blend_mode: BLEND_MODE_MULT
-  text: "TUTORIAL\n"
-  "\n"
-  ""
-  font: "main_font"
-  id: "restart_text1"
-  parent: "tutorial_button"
+  layer: "buttons"
   inherit_alpha: true
 }
 nodes {
@@ -118,6 +75,7 @@ nodes {
   }
   type: TYPE_BOX
   id: "victory_popup"
+  layer: "buttons"
   inherit_alpha: true
   size_mode: SIZE_MODE_AUTO
   enabled: false
@@ -158,7 +116,7 @@ nodes {
   type: TYPE_TEXT
   text: "RESTART\n"
   ""
-  font: "main_font"
+  font: "second"
   id: "text"
   parent: "victory_restart"
   inherit_alpha: true
@@ -202,6 +160,93 @@ nodes {
   parent: "victory_popup"
   inherit_alpha: true
   size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: 151.0
+    y: 406.0
+  }
+  scale {
+    x: 0.488999
+    y: 0.455395
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "tutorial_button"
+  layer: "buttons"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: 2.044994
+    y: -2.195896
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  color {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  type: TYPE_TEXT
+  blend_mode: BLEND_MODE_MULT
+  text: "TUTORIAL\n"
+  "\n"
+  ""
+  font: "main_font"
+  id: "restart_text1"
+  adjust_mode: ADJUST_MODE_STRETCH
+  parent: "tutorial_button"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 150.12878
+    y: 344.0
+  }
+  scale {
+    x: 0.465995
+    y: 0.335482
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  color {
+    x: 0.6
+    y: 0.0
+    z: 0.0
+  }
+  type: TYPE_BOX
+  id: "victory_restart1"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    y: -2.980786
+  }
+  scale {
+    x: 0.906218
+    y: 0.921665
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "RESTART\n"
+  ""
+  font: "main_font"
+  id: "text2"
+  parent: "victory_restart1"
+  inherit_alpha: true
 }
 layers {
   name: "background"

@@ -143,6 +143,19 @@ instances {
     y: 416.0
   }
 }
+instances {
+  id: "background"
+  prototype: "/main/Game Objects/background.go"
+  position {
+    x: 493.0
+    y: 382.0
+    z: -0.5
+  }
+  scale3 {
+    x: 0.480662
+    y: 0.459701
+  }
+}
 scale_along_z: 0
 embedded_instances {
   id: "card_table"

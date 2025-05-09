@@ -15,7 +15,7 @@ embedded_instances {
   "  component: \"/main/level_copy.collectionproxy\"\n"
   "}\n"
   "components {\n"
-  "  id: \"game\"\n"
+  "  id: \"ui\"\n"
   "  component: \"/gui/ui.gui\"\n"
   "}\n"
   ""
