@@ -24,5 +24,7 @@
 - [plans/](./plans/) — детальные планы по задачам:
   - [start-screen.md](./plans/start-screen.md) — стартовый экран (Фаза 2) ✅
   - [victory-screen.md](./plans/victory-screen.md) — victory screen (Фаза 2) ✅
-  - [button-design.md](./plans/button-design.md) — дизайн кнопок (Фаза 2)
-  - [tutorial.md](./plans/tutorial.md) — интерактивный туториал (Фаза 3)
+  - [button-design.md](./plans/button-design.md) — дизайн кнопок (Фаза 2) ✅
+  - [tutorial.md](./plans/tutorial.md) — туториал-слайдшоу (Фаза 3) ✅ (заменён на v2)
+  - [tutorial-v2.md](./plans/tutorial-v2.md) — интерактивный туториал с мини-уровнем (Фаза 3)
+  - [auto-finish.md](./plans/auto-finish.md) — авто-доигрывание карт в foundation
