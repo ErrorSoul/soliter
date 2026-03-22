@@ -58,42 +58,76 @@ nodes {
 }
 nodes {
   position {
-    x: 483.0
-    y: 253.0
-  }
-  scale {
-    x: 1.224082
+    x: 480.0
+    y: 270.0
   }
   size {
-    x: 300.0
-    y: 400.0
+    x: 960.0
+    y: 540.0
   }
   color {
-    x: 0.302
-    y: 0.502
-    z: 0.302
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 0.6
   }
   type: TYPE_BOX
-  id: "victory_popup"
-  xanchor: XANCHOR_LEFT
-  yanchor: YANCHOR_TOP
+  id: "victory_overlay"
   layer: "buttons"
   inherit_alpha: true
-  size_mode: SIZE_MODE_AUTO
+  size_mode: SIZE_MODE_MANUAL
   enabled: false
 }
 nodes {
   position {
-    x: -5.0
-    y: -54.0
+    x: 480.0
+    y: 270.0
   }
-  scale {
-    x: 0.465995
-    y: 0.335482
+  size {
+    x: 400.0
+    y: 300.0
+  }
+  color {
+    x: 0.2
+    y: 0.35
+    z: 0.2
+  }
+  type: TYPE_BOX
+  id: "victory_popup"
+  parent: "victory_overlay"
+  layer: "buttons"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_MANUAL
+}
+nodes {
+  position {
+    x: 0.0
+    y: 80.0
+  }
+  size {
+    x: 300.0
+    y: 80.0
+  }
+  color {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  type: TYPE_TEXT
+  text: "Victory!"
+  font: "main_font"
+  id: "text1"
+  parent: "victory_popup"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 0.0
+    y: -20.0
   }
   size {
     x: 200.0
-    y: 100.0
+    y: 60.0
   }
   color {
     x: 0.6
@@ -103,34 +137,14 @@ nodes {
   type: TYPE_BOX
   id: "victory_restart"
   parent: "victory_popup"
+  layer: "buttons"
   inherit_alpha: true
-  size_mode: SIZE_MODE_AUTO
+  size_mode: SIZE_MODE_MANUAL
 }
 nodes {
-  scale {
-    x: 0.906218
-    y: 0.921665
-  }
   size {
     x: 200.0
-    y: 100.0
-  }
-  type: TYPE_TEXT
-  text: "RESTART\n"
-  ""
-  font: "second"
-  id: "text"
-  parent: "victory_restart"
-  inherit_alpha: true
-}
-nodes {
-  position {
-    x: 2.0
-    y: 123.0
-  }
-  size {
-    x: 200.0
-    y: 100.0
+    y: 60.0
   }
   color {
     x: 0.0
@@ -138,30 +152,49 @@ nodes {
     z: 0.0
   }
   type: TYPE_TEXT
-  text: "You win !!!"
+  text: "PLAY AGAIN"
   font: "main_font"
-  id: "text1"
-  parent: "victory_popup"
+  id: "text"
+  parent: "victory_restart"
   inherit_alpha: true
 }
 nodes {
   position {
-    x: 132.34407
-    y: 181.0
-  }
-  scale {
-    x: 0.155385
-    y: 0.314693
+    x: 0.0
+    y: -90.0
   }
   size {
     x: 200.0
-    y: 100.0
+    y: 60.0
+  }
+  color {
+    x: 0.2
+    y: 0.2
+    z: 0.5
   }
   type: TYPE_BOX
-  id: "victory_close_button"
+  id: "victory_menu_button"
   parent: "victory_popup"
+  layer: "buttons"
   inherit_alpha: true
-  size_mode: SIZE_MODE_AUTO
+  size_mode: SIZE_MODE_MANUAL
+}
+nodes {
+  size {
+    x: 200.0
+    y: 60.0
+  }
+  color {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  type: TYPE_TEXT
+  text: "MENU"
+  font: "main_font"
+  id: "victory_menu_text"
+  parent: "victory_menu_button"
+  inherit_alpha: true
 }
 nodes {
   position {

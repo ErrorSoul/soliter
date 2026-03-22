@@ -339,10 +339,11 @@ function update(self, dt)
    -- else
    --    msg.post("@render:", "use_fixed_projection", { zoom = 1 })
    -- end
-   if self.currenState == self.states.PLAYING then
+   if self.currentState == self.states.PLAYING then
       if self:check_win() then
-         self.state = self.states.WIN
+         self.currentState = self.states.WIN
          print("You win!")
+         msg.post("/main#ui", "show_victory")
       end
    end
 end
