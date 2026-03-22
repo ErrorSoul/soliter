@@ -22,4 +22,5 @@
 
 - [PLAN.md](./PLAN.md) — план доработки до публикации на Яндекс Играх
 - [plans/](./plans/) — детальные планы по задачам:
-  - [start-screen.md](./plans/start-screen.md) — стартовый экран (Фаза 2)
+  - [start-screen.md](./plans/start-screen.md) — стартовый экран (Фаза 2) ✅
+  - [victory-screen.md](./plans/victory-screen.md) — victory screen (Фаза 2)
