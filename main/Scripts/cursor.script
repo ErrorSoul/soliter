@@ -114,41 +114,14 @@ end
 
 function on_input(self, action_id, action)
    local worldx, worldy = screen_to_world(action.x, action.y)
-   print("SSSSSSSSSS", worldx, worldy)
-   -- self.cursor_pos = vmath.vector3(action.x, action.y, 0)
-   -- go.set_position(self.cursor_pos, ".")
-   local screen_x, screen_y = action.x, action.y
-   --pprint("Action" , action)
-
-   -- Параметры окна и базового разрешения
-   local screen_x, screen_y = action.x, action.y
-
-   -- Получаем размеры окна через window
    local window_width, window_height = window.get_size()
-
-   -- Базовое разрешение из настроек проекта (game.project)
-   -- Установите эти значения вручную или передайте из рендер-скрипта
-   local base_width = 960  -- Укажите ширину из game.project
-   local base_height = 540 -- Укажите высоту из game.project
-
-   -- Вычисляем масштаб для fixed_fit_projection
+   local base_width = 960
+   local base_height = 540
    local zoom = math.min(window_width / base_width, window_height / base_height)
-   pprint("zoom", zoom, window.get_display_scale())
-   pprint("win_w", window_width / base_width)
-   pprint("win_h", window_height / base_height)
-   -- Вычисляем смещение (черные полосы)
    local offset_x = (window_width - base_width * zoom) / 2
    local offset_y = (window_height - base_height * zoom) / 2
-
-   -- Преобразуем экранные координаты в игровые
    local game_x = (action.screen_x - offset_x) / zoom
    local game_y = (action.screen_y - offset_y) / zoom
-
-    pprint("action x, y", action.x, action.y)
-    pprint("game" , vmath.vector3(game_x, game_y, 0))
-    pprint("window", window_width, window_height)
-    x, y = window.get_size()
-    pprint("WSIZE", x,y)
 
 
 
@@ -235,6 +208,7 @@ function on_input(self, action_id, action)
             end
 
             self.original_position = card.pos
+            self.drag_offset = self.original_position - self.cursor_pos
 
             if self.dragging_stack then
                -- Начинаем тащить стопку
@@ -342,14 +316,15 @@ function on_input(self, action_id, action)
 
       -- Обновление позиций при перетаскивании
       if self.is_dragging then
+         local offset = self.drag_offset or vmath.vector3(0, 0, 0)
          if self.dragging_stack then
             for _, card in ipairs(self.stack_cards) do
                msg.post(card.id, "drag_update", {
-                   position = self.cursor_pos + card.relative_pos
+                   position = self.cursor_pos + offset + card.relative_pos
                })
             end
          else
-            msg.post(self.selected_card, "drag_update", {position = self.cursor_pos})
+            msg.post(self.selected_card, "drag_update", {position = self.cursor_pos + offset})
          end
       end
 
@@ -453,6 +428,7 @@ function on_message(self, message_id, message, sender)
       self.selected_card_data = message
       self.is_dragging = true
       self.original_position = self.pending_drop.slot_pos
+      self.drag_offset = vmath.vector3(0, 0, 0)
       msg.post(self.selected_card, "start_drag")
    elseif message_id == hash("send_to_flower_slot") then
       msg.post(message.id, 'drop_success', {
@@ -523,6 +499,7 @@ function clean_cursor(self)
    self.stack_cards = nil
    self.current_slot = nil
    self.pending_drop = nil
+   self.drag_offset = vmath.vector3(0, 0, 0)
 end
 
 local function is_point_in_rect(x, y, rect_pos, half_size)
