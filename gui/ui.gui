@@ -306,6 +306,149 @@ nodes {
   layer: "layer"
   inherit_alpha: true
 }
+nodes {
+  position {
+    x: 480.0
+    y: 270.0
+  }
+  size {
+    x: 960.0
+    y: 540.0
+  }
+  color {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 0.7
+  }
+  type: TYPE_BOX
+  id: "tutorial_overlay"
+  layer: "buttons"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_MANUAL
+  enabled: false
+}
+nodes {
+  size {
+    x: 920.0
+    y: 400.0
+  }
+  color {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+    w: 0.15
+  }
+  type: TYPE_BOX
+  id: "tutorial_highlight"
+  parent: "tutorial_overlay"
+  layer: "buttons"
+  inherit_alpha: false
+  size_mode: SIZE_MODE_MANUAL
+}
+nodes {
+  position {
+    y: -220.0
+  }
+  size {
+    x: 700.0
+    y: 100.0
+  }
+  color {
+    x: 0.1
+    y: 0.2
+    z: 0.1
+    w: 0.95
+  }
+  type: TYPE_BOX
+  id: "tutorial_text_bg"
+  parent: "tutorial_overlay"
+  layer: "buttons"
+  inherit_alpha: false
+  size_mode: SIZE_MODE_MANUAL
+}
+nodes {
+  position {
+    y: 15.0
+  }
+  size {
+    x: 660.0
+    y: 60.0
+  }
+  color {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  type: TYPE_TEXT
+  text: ""
+  font: "main_font"
+  id: "tutorial_text"
+  parent: "tutorial_text_bg"
+  layer: "buttons"
+  inherit_alpha: true
+  line_break: true
+}
+nodes {
+  position {
+    y: -35.0
+  }
+  size {
+    x: 120.0
+    y: 30.0
+  }
+  color {
+    x: 0.3
+    y: 0.5
+    z: 0.3
+  }
+  type: TYPE_BOX
+  id: "tutorial_next_btn"
+  parent: "tutorial_text_bg"
+  layer: "buttons"
+  inherit_alpha: false
+  size_mode: SIZE_MODE_MANUAL
+}
+nodes {
+  size {
+    x: 120.0
+    y: 30.0
+  }
+  color {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  type: TYPE_TEXT
+  text: "NEXT"
+  font: "main_font"
+  id: "tutorial_next_text"
+  parent: "tutorial_next_btn"
+  layer: "buttons"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 330.0
+    y: -180.0
+  }
+  size {
+    x: 60.0
+    y: 30.0
+  }
+  color {
+    x: 0.7
+    y: 0.7
+    z: 0.7
+  }
+  type: TYPE_TEXT
+  text: "1/7"
+  font: "main_font"
+  id: "tutorial_step_text"
+  parent: "tutorial_overlay"
+  layer: "buttons"
+  inherit_alpha: false
+}
 layers {
   name: "background"
 }
