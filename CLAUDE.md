@@ -12,6 +12,7 @@
 - Платформа: HTML5 (Яндекс Игры)
 - Язык: Lua
 - Разрешение: 960x540 (landscape)
+- [architecture.md](./architecture.md) — архитектура, структура коллекций, message-passing, z-index система
 
 ## Build
 
@@ -28,3 +29,4 @@
   - [tutorial.md](./plans/tutorial.md) — туториал-слайдшоу (Фаза 3) ✅ (заменён на v2)
   - [tutorial-v2.md](./plans/tutorial-v2.md) — интерактивный туториал с мини-уровнем (Фаза 3)
   - [auto-finish.md](./plans/auto-finish.md) — авто-доигрывание карт в foundation
+  - [effects.md](./plans/effects.md) — эффекты и анимации (Фаза 4)
