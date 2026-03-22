@@ -32,6 +32,10 @@ nodes {
   size_mode: SIZE_MODE_MANUAL
 }
 nodes {
+  scale {
+    x: 0.7
+    y: 0.7
+  }
   size {
     x: 150.0
     y: 40.0
@@ -210,6 +214,10 @@ nodes {
   size_mode: SIZE_MODE_MANUAL
 }
 nodes {
+  scale {
+    x: 0.7
+    y: 0.7
+  }
   size {
     x: 150.0
     y: 40.0
