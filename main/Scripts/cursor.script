@@ -1,6 +1,16 @@
 -- cursor.script
 -- go.property("selected_card", nil)
 local DEBUG_DRAW = false
+local tutorial_state = require("main.Scripts.tutorial_state")
+
+local function get_slot_target_type(slot_id)
+   if string.sub(slot_id, 1, 9) == "base_slot" then return "base"
+   elseif string.sub(slot_id, 1, 9) == "free_slot" then return "free"
+   elseif string.sub(slot_id, 1, 12) == "tableau_slot" then return "tableau_empty"
+   elseif slot_id == "flower_slot" then return "flower"
+   end
+   return "unknown"
+end
 
 function init(self)
    -- Отключаем лишние сообщения о коллизиях
@@ -391,6 +401,15 @@ function on_message(self, message_id, message, sender)
          msg.post(self.selected_card, 'drop_success', params)
       end
 
+      -- Tutorial: advance only when the move matches expected (no blocking)
+      if tutorial_state.is_tutorial and self.selected_card_data then
+         local card_id = self.selected_card_data.data.id
+         local target_type = get_slot_target_type(self.pending_drop.slot.slot_id)
+         if tutorial_state.check_move(card_id, target_type) then
+            tutorial_state.advance()  -- sets ui_dirty flag, UI polls it
+         end
+      end
+
       clean_cursor(self)
    elseif message_id == hash("slot_invalid") and self.pending_drop then
       msg.post(self.selected_card, 'drop_failed', {position = self.original_position})
@@ -420,6 +439,15 @@ function on_message(self, message_id, message, sender)
          move_stack_cards(self, 'drop_success', params)
       else
          msg.post(self.selected_card, 'drop_success', params)
+      end
+
+      -- Tutorial: advance only when the move matches expected (no blocking)
+      if tutorial_state.is_tutorial and self.selected_card_data then
+         local card_id = self.selected_card_data.data.id
+         local target_card_id = self.pending_drop.card.data_id
+         if tutorial_state.check_move(card_id, "tableau_card", target_card_id) then
+            tutorial_state.advance()  -- sets ui_dirty flag, UI polls it
+         end
       end
 
       clean_cursor(self)

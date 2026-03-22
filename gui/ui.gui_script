@@ -1,91 +1,17 @@
+local tutorial_state = require("main.Scripts.tutorial_state")
+local i18n = require("main.Scripts.i18n")
+
 local function restart_level()
    msg.post("/main#game_manager", "restart_level", { level = {} })
 end
 
-local TUTORIAL_STEPS = {
-    {
-        highlight_pos = vmath.vector3(0, 0, 0),
-        highlight_size = vmath.vector3(920, 400, 0),
-        text = "Welcome to Shenzhen Solitaire!\nThe goal: sort all cards by suit from 2 to 10.",
-        text_bg_pos = vmath.vector3(0, -220, 0),
-    },
-    {
-        highlight_pos = vmath.vector3(0, -20, 0),
-        highlight_size = vmath.vector3(860, 250, 0),
-        text = "These are the tableau stacks.\nDrag cards here: different suit, descending value.\nExample: red 7 on blue 8 — OK. Red 7 on red 8 — NO.",
-        text_bg_pos = vmath.vector3(0, 220, 0),
-    },
-    {
-        highlight_pos = vmath.vector3(-287, 187, 0),
-        highlight_size = vmath.vector3(300, 90, 0),
-        text = "Free cells — temporary storage.\nYou can place any single card here. Max 3 cards.",
-        text_bg_pos = vmath.vector3(0, -220, 0),
-    },
-    {
-        highlight_pos = vmath.vector3(293, 187, 0),
-        highlight_size = vmath.vector3(300, 90, 0),
-        text = "Foundation slots — your goal!\nStack cards of the SAME suit from 2 to 10.\nFill all three to win.",
-        text_bg_pos = vmath.vector3(0, -220, 0),
-    },
-    {
-        highlight_pos = vmath.vector3(-60, 193, 0),
-        highlight_size = vmath.vector3(80, 140, 0),
-        text = "Dragon buttons — collect dragons!\nWhen all 4 dragons of one color are face-up,\npress the button to sweep them into a free cell.",
-        text_bg_pos = vmath.vector3(0, -220, 0),
-    },
-    {
-        highlight_pos = vmath.vector3(61, 187, 0),
-        highlight_size = vmath.vector3(100, 90, 0),
-        text = "The Flower card goes here automatically.\nIt's a free bonus — no action needed!",
-        text_bg_pos = vmath.vector3(0, -220, 0),
-    },
-    {
-        highlight_pos = vmath.vector3(0, 0, 0),
-        highlight_size = vmath.vector3(920, 400, 0),
-        text = "Clear the tableau by sorting all cards\ninto the foundation — and you win!\nGood luck!",
-        text_bg_pos = vmath.vector3(0, -220, 0),
-        next_text = "GOT IT!",
-    },
-}
-
-local tutorial_step = 0
-
-local function show_tutorial_step(step)
-    local data = TUTORIAL_STEPS[step]
-    if not data then return end
-
-    local highlight = gui.get_node("tutorial_highlight")
-    gui.set_position(highlight, data.highlight_pos)
-    gui.set_size(highlight, data.highlight_size)
-
-    local text_bg = gui.get_node("tutorial_text_bg")
-    gui.set_position(text_bg, data.text_bg_pos)
-
-    gui.set_text(gui.get_node("tutorial_text"), data.text)
-    gui.set_text(gui.get_node("tutorial_step_text"), step .. "/" .. #TUTORIAL_STEPS)
-
-    local next_text = data.next_text or "NEXT"
-    gui.set_text(gui.get_node("tutorial_next_text"), next_text)
-end
-
-local function start_tutorial()
-    tutorial_step = 1
-    gui.set_enabled(gui.get_node("tutorial_overlay"), true)
-    show_tutorial_step(1)
-end
-
-local function stop_tutorial()
-    tutorial_step = 0
-    gui.set_enabled(gui.get_node("tutorial_overlay"), false)
-end
-
-local function next_tutorial_step()
-    tutorial_step = tutorial_step + 1
-    if tutorial_step > #TUTORIAL_STEPS then
-        stop_tutorial()
-    else
-        show_tutorial_step(tutorial_step)
-    end
+local function update_tutorial_hint(step)
+    step = step or 0
+    local key = "tutorial_hint_" .. step
+    local hint = i18n.t(key)
+    if hint == key then hint = i18n.t("tutorial_done") end
+    gui.set_text(gui.get_node("tutorial_text"), hint)
+    gui.set_text(gui.get_node("tutorial_step_text"), string.format(i18n.t("tutorial_step"), step + 1))
 end
 
 function init(self)
@@ -116,13 +42,17 @@ function on_input(self, action_id, action)
             return true
         end
 
-        -- Обработка туториала
-        if tutorial_step > 0 then
-            local next_btn = gui.get_node("tutorial_next_btn")
-            if gui.pick_node(next_btn, action.x, action.y) then
-                next_tutorial_step()
+        -- SKIP во время туториала
+        if tutorial_state.is_tutorial then
+            if gui.pick_node(gui.get_node("tutorial_skip_btn"), action.x, action.y) then
+                tutorial_state.is_tutorial = false
+                tutorial_state.reset()
+                gui.set_enabled(gui.get_node("tutorial_overlay"), false)
+                gui.set_enabled(gui.get_node("restart_button"), true)
+                gui.set_enabled(gui.get_node("tutorial_button"), true)
+                restart_level()
+                return true
             end
-            return true
         end
 
         -- Victory overlay
@@ -131,11 +61,23 @@ function on_input(self, action_id, action)
             local restart = gui.get_node("victory_restart")
             local menu = gui.get_node("victory_menu_button")
 
-            if gui.pick_node(restart, action.x, action.y) then
+            if tutorial_state.is_tutorial and gui.pick_node(restart, action.x, action.y) then
+                -- "PLAY NOW" после туториала → запускаем обычную игру
+                tutorial_state.is_tutorial = false
+                tutorial_state.reset()
+                gui.set_enabled(victory_overlay, false)
+                gui.set_enabled(gui.get_node("tutorial_overlay"), false)
+                gui.set_enabled(gui.get_node("restart_button"), true)
+                gui.set_enabled(gui.get_node("tutorial_button"), true)
+                restart_level()
+            elseif gui.pick_node(restart, action.x, action.y) then
                 gui.set_enabled(victory_overlay, false)
                 restart_level()
             elseif gui.pick_node(menu, action.x, action.y) then
+                tutorial_state.is_tutorial = false
+                tutorial_state.reset()
                 gui.set_enabled(victory_overlay, false)
+                gui.set_enabled(gui.get_node("tutorial_overlay"), false)
                 gui.set_enabled(gui.get_node("start_screen"), true)
                 gui.set_enabled(gui.get_node("restart_button"), false)
                 gui.set_enabled(gui.get_node("tutorial_button"), false)
@@ -152,13 +94,35 @@ function on_input(self, action_id, action)
         end
 
         if gui.pick_node(gui.get_node("tutorial_button"), action.x, action.y) then
-            start_tutorial()
+            tutorial_state.is_tutorial = true
+            tutorial_state.reset()
+            gui.set_enabled(gui.get_node("tutorial_overlay"), true)
+            gui.set_enabled(gui.get_node("tutorial_button"), false)
+            gui.set_enabled(gui.get_node("restart_button"), false)
+            update_tutorial_hint(0)
+            restart_level()
         end
     end
 end
 
-function on_message(self, message_id, message)
-    if message_id == hash("show_victory") then
+function update(self, dt)
+    -- Poll shared state (cross-collection workaround: msg.post can't reach UI from proxied collection)
+    if tutorial_state.ui_dirty then
+        tutorial_state.ui_dirty = false
+        update_tutorial_hint(tutorial_state.step)
+    end
+    if tutorial_state.show_victory then
+        tutorial_state.show_victory = false
+        if tutorial_state.is_tutorial then
+            gui.set_text(gui.get_node("text1"), i18n.t("well_done"))
+            gui.set_text(gui.get_node("text"), i18n.t("play_now"))
+        else
+            gui.set_text(gui.get_node("text1"), i18n.t("victory"))
+            gui.set_text(gui.get_node("text"), i18n.t("play_again"))
+        end
         gui.set_enabled(gui.get_node("victory_overlay"), true)
     end
+end
+
+function on_message(self, message_id, message)
 end

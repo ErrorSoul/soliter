@@ -24,6 +24,7 @@ function on_message(self, message_id, message, sender)
       if self.card_count == 1 then
          msg.post(self.cursor, "base_slot_full", {slot_id = self.slot_id})
       end
+      msg.post("/card_table#main", "card_to_base")
       if message.animation then
          go.animate(message.card.id, "position", go.PLAYBACK_ONCE_FORWARD, go.get_position() + vmath.vector3(0, 0, 0.2), go.EASING_LINEAR, 0.5, 0.3, function ()
                        -- чтобы летела сверху, а потом не перекрывала следующие карты
