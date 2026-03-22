@@ -75,6 +75,8 @@ nodes {
   }
   type: TYPE_BOX
   id: "victory_popup"
+  xanchor: XANCHOR_LEFT
+  yanchor: YANCHOR_TOP
   layer: "buttons"
   inherit_alpha: true
   size_mode: SIZE_MODE_AUTO

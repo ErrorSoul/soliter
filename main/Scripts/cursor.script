@@ -1,5 +1,5 @@
 -- cursor.script
-go.property("selected_card", nil)
+--go.property("selected_card", nil)
 function init(self)
    -- Отключаем лишние сообщения о коллизиях
    self.is_processing = false

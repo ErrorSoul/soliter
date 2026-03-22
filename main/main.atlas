@@ -120,4 +120,10 @@ images {
   image: "/assets/buttons/button_grey.png"
   sprite_trim_mode: SPRITE_TRIM_MODE_5
 }
+images {
+  image: "/assets/cards/back/flower_back.png"
+}
+images {
+  image: "/assets/cards/back/flower_back_wo.png"
+}
 extrude_borders: 2

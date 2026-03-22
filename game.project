@@ -49,5 +49,5 @@ scale = 0.01
 velocity_threshold = 100.0
 
 [html5]
-scale_mode = stretch
+scale_mode = fit
 
