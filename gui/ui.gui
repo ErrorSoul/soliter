@@ -13,45 +13,42 @@ fonts {
 }
 nodes {
   position {
-    x: 151.0
-    y: 465.0
-  }
-  scale {
-    x: 0.488999
-    y: 0.455395
+    x: 855.0
+    y: 30.0
   }
   size {
-    x: 200.0
-    y: 100.0
+    x: 150.0
+    y: 40.0
+  }
+  color {
+    x: 0.15
+    y: 0.3
+    z: 0.15
   }
   type: TYPE_BOX
   id: "restart_button"
   layer: "buttons"
   inherit_alpha: true
-  size_mode: SIZE_MODE_AUTO
+  size_mode: SIZE_MODE_MANUAL
 }
 nodes {
-  position {
-    x: 2.044994
-    y: -2.195896
+  scale {
+    x: 0.7
+    y: 0.7
   }
   size {
-    x: 200.0
-    y: 100.0
+    x: 150.0
+    y: 40.0
   }
   color {
-    x: 0.0
-    y: 0.0
-    z: 0.0
+    x: 1.0
+    y: 1.0
+    z: 1.0
   }
   type: TYPE_TEXT
-  blend_mode: BLEND_MODE_MULT
-  text: "RESTART\n"
-  "\n"
-  ""
+  text: "RESTART"
   font: "main_font"
   id: "restart_text"
-  adjust_mode: ADJUST_MODE_STRETCH
   parent: "restart_button"
   layer: "buttons"
   inherit_alpha: true
@@ -198,89 +195,43 @@ nodes {
 }
 nodes {
   position {
-    x: 151.0
-    y: 406.0
-  }
-  scale {
-    x: 0.488999
-    y: 0.455395
+    x: 685.0
+    y: 30.0
   }
   size {
-    x: 200.0
-    y: 100.0
+    x: 150.0
+    y: 40.0
+  }
+  color {
+    x: 0.15
+    y: 0.3
+    z: 0.15
   }
   type: TYPE_BOX
   id: "tutorial_button"
   layer: "buttons"
   inherit_alpha: true
-  size_mode: SIZE_MODE_AUTO
+  size_mode: SIZE_MODE_MANUAL
 }
 nodes {
-  position {
-    x: 2.044994
-    y: -2.195896
+  scale {
+    x: 0.7
+    y: 0.7
   }
   size {
-    x: 200.0
-    y: 100.0
+    x: 150.0
+    y: 40.0
   }
   color {
-    x: 0.0
-    y: 0.0
-    z: 0.0
+    x: 1.0
+    y: 1.0
+    z: 1.0
   }
   type: TYPE_TEXT
-  blend_mode: BLEND_MODE_MULT
-  text: "TUTORIAL\n"
-  "\n"
-  ""
+  text: "TUTORIAL"
   font: "main_font"
   id: "restart_text1"
-  adjust_mode: ADJUST_MODE_STRETCH
   parent: "tutorial_button"
-  inherit_alpha: true
-}
-nodes {
-  position {
-    x: 150.12878
-    y: 344.0
-  }
-  scale {
-    x: 0.465995
-    y: 0.335482
-  }
-  size {
-    x: 200.0
-    y: 100.0
-  }
-  color {
-    x: 0.6
-    y: 0.0
-    z: 0.0
-  }
-  type: TYPE_BOX
-  id: "victory_restart1"
-  inherit_alpha: true
-  size_mode: SIZE_MODE_AUTO
-}
-nodes {
-  position {
-    y: -2.980786
-  }
-  scale {
-    x: 0.906218
-    y: 0.921665
-  }
-  size {
-    x: 200.0
-    y: 100.0
-  }
-  type: TYPE_TEXT
-  text: "RESTART\n"
-  ""
-  font: "main_font"
-  id: "text2"
-  parent: "victory_restart1"
   inherit_alpha: true
 }
 nodes {
