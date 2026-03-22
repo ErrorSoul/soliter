@@ -13,11 +13,11 @@ fonts {
 }
 nodes {
   position {
-    x: 830.0
+    x: 855.0
     y: 30.0
   }
   size {
-    x: 120.0
+    x: 150.0
     y: 40.0
   }
   color {
@@ -33,7 +33,7 @@ nodes {
 }
 nodes {
   size {
-    x: 120.0
+    x: 150.0
     y: 40.0
   }
   color {
@@ -191,11 +191,11 @@ nodes {
 }
 nodes {
   position {
-    x: 700.0
+    x: 685.0
     y: 30.0
   }
   size {
-    x: 120.0
+    x: 150.0
     y: 40.0
   }
   color {
@@ -211,7 +211,7 @@ nodes {
 }
 nodes {
   size {
-    x: 120.0
+    x: 150.0
     y: 40.0
   }
   color {
