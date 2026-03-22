@@ -52,9 +52,14 @@ function check_state(self)
    if self.is_enable and self.counter == 4 and free_slot_any(self) then
       msg.post("#sprite", "play_animation", {id = hash("button" .. "_" .. self.sprite)})
       msg.post(self.cursor, 'set_button_state', {slot_id = self.slot_id, is_active = true})
+      go.cancel_animations(".", "scale")
+      go.animate(".", "scale", go.PLAYBACK_LOOP_PINGPONG,
+          vmath.vector3(1.15, 1.15, 1), go.EASING_INSINE, 0.5)
    else
       msg.post("#sprite", "play_animation", {id = hash("button" .. "_" .. self.default_sprite)})
       msg.post(self.cursor, 'set_button_state', {slot_id = self.slot_id, is_active = false})
+      go.cancel_animations(".", "scale")
+      go.set(".", "scale", vmath.vector3(1, 1, 1))
    end
 end
 
