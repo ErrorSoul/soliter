@@ -1,211 +1,22 @@
 name: "main"
-instances {
-  id: "free_slot1"
-  prototype: "/main/Game Objects/free_slot.go"
-  position {
-    x: 78.0
-    y: 450.0
-  }
-}
-instances {
-  id: "free_slot2"
-  prototype: "/main/Game Objects/free_slot.go"
-  position {
-    x: 191.0
-    y: 450.0
-  }
-}
-instances {
-  id: "free_slot3"
-  prototype: "/main/Game Objects/free_slot.go"
-  position {
-    x: 307.0
-    y: 450.0
-  }
-}
-instances {
-  id: "tableau_slot1"
-  prototype: "/main/Game Objects/tableau_slot.go"
-  position {
-    x: 75.0
-    y: 292.0
-  }
-}
-instances {
-  id: "tableau_slot2"
-  prototype: "/main/Game Objects/tableau_slot.go"
-  position {
-    x: 191.0
-    y: 292.0
-  }
-}
-instances {
-  id: "tableau_slot3"
-  prototype: "/main/Game Objects/tableau_slot.go"
-  position {
-    x: 307.0
-    y: 292.0
-  }
-}
-instances {
-  id: "tableau_slot4"
-  prototype: "/main/Game Objects/tableau_slot.go"
-  position {
-    x: 423.0
-    y: 292.0
-  }
-}
-instances {
-  id: "tableau_slot5"
-  prototype: "/main/Game Objects/tableau_slot.go"
-  position {
-    x: 539.0
-    y: 293.0
-  }
-}
-instances {
-  id: "tableau_slot6"
-  prototype: "/main/Game Objects/tableau_slot.go"
-  position {
-    x: 655.0
-    y: 293.0
-  }
-}
-instances {
-  id: "tableau_slot7"
-  prototype: "/main/Game Objects/tableau_slot.go"
-  position {
-    x: 771.0
-    y: 293.0
-  }
-}
-instances {
-  id: "tableau_slot8"
-  prototype: "/main/Game Objects/tableau_slot.go"
-  position {
-    x: 887.0
-    y: 293.0
-  }
-}
-instances {
-  id: "base_slot1"
-  prototype: "/main/Game Objects/base_slot.go"
-  position {
-    x: 887.0
-    y: 450.0
-  }
-}
-instances {
-  id: "base_slot3"
-  prototype: "/main/Game Objects/base_slot.go"
-  position {
-    x: 655.0
-    y: 450.0
-  }
-}
-instances {
-  id: "base_slot2"
-  prototype: "/main/Game Objects/base_slot.go"
-  position {
-    x: 771.0
-    y: 450.0
-  }
-}
-instances {
-  id: "flower_slot"
-  prototype: "/main/Game Objects/flower_slot.go"
-  position {
-    x: 539.0
-    y: 450.0
-  }
-}
-instances {
-  id: "dragon_button1"
-  prototype: "/main/Game Objects/dragon_button.go"
-  position {
-    x: 416.0
-    y: 506.0
-  }
-}
-instances {
-  id: "dragon_button2"
-  prototype: "/main/Game Objects/dragon_button.go"
-  position {
-    x: 418.0
-    y: 456.0
-  }
-}
-instances {
-  id: "dragon_button3"
-  prototype: "/main/Game Objects/dragon_button.go"
-  position {
-    x: 418.0
-    y: 409.0
-  }
-}
 scale_along_z: 0
 embedded_instances {
-  id: "card_table"
+  id: "main"
   data: "components {\n"
-  "  id: \"main\"\n"
-  "  component: \"/main/Scripts/main.script\"\n"
+  "  id: \"game_manager\"\n"
+  "  component: \"/main/Scripts/game_manager.script\"\n"
   "}\n"
-  "embedded_components {\n"
-  "  id: \"card_factory\"\n"
-  "  type: \"factory\"\n"
-  "  data: \"prototype: \\\"/main/Game Objects/card.go\\\"\\n"
-  "\"\n"
+  "components {\n"
+  "  id: \"level_proxy\"\n"
+  "  component: \"/main/level.collectionproxy\"\n"
   "}\n"
-  "embedded_components {\n"
-  "  id: \"cursor_factory\"\n"
-  "  type: \"factory\"\n"
-  "  data: \"prototype: \\\"/main/Game Objects/cursor.go\\\"\\n"
-  "\"\n"
+  "components {\n"
+  "  id: \"level_proxy1\"\n"
+  "  component: \"/main/level_copy.collectionproxy\"\n"
   "}\n"
-  ""
-  position {
-    x: 546.0
-    y: 456.0
-    z: 10.0
-  }
-  rotation {
-    z: 0.70710677
-    w: 0.70710677
-  }
-}
-embedded_instances {
-  id: "\302\240gui"
-  data: "components {\n"
-  "  id: \"game\"\n"
-  "  component: \"/gui/game.gui\"\n"
+  "components {\n"
+  "  id: \"ui\"\n"
+  "  component: \"/gui/ui.gui\"\n"
   "}\n"
   ""
-  position {
-    x: 1.0
-  }
-}
-embedded_instances {
-  id: "go"
-  data: "embedded_components {\n"
-  "  id: \"sprite\"\n"
-  "  type: \"sprite\"\n"
-  "  data: \"default_animation: \\\"table\\\"\\n"
-  "material: \\\"/builtins/materials/sprite.material\\\"\\n"
-  "size {\\n"
-  "  x: 960.0\\n"
-  "  y: 540.0\\n"
-  "}\\n"
-  "size_mode: SIZE_MODE_MANUAL\\n"
-  "textures {\\n"
-  "  sampler: \\\"texture_sampler\\\"\\n"
-  "  texture: \\\"/main/Scripts/xf.atlas\\\"\\n"
-  "}\\n"
-  "\"\n"
-  "}\n"
-  ""
-  position {
-    x: 480.0
-    y: 270.0
-    z: -0.5
-  }
 }

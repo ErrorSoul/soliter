@@ -1,0 +1,7 @@
+images {
+  image: "/assets/flat-design-poker-table-background/10013144.jpg"
+}
+images {
+  image: "/assets/flat-design-poker-table-background/green_background.jpg"
+}
+extrude_borders: 2
