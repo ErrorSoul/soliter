@@ -25,3 +25,4 @@
   - [start-screen.md](./plans/start-screen.md) — стартовый экран (Фаза 2) ✅
   - [victory-screen.md](./plans/victory-screen.md) — victory screen (Фаза 2) ✅
   - [button-design.md](./plans/button-design.md) — дизайн кнопок (Фаза 2)
+  - [tutorial.md](./plans/tutorial.md) — интерактивный туториал (Фаза 3)
