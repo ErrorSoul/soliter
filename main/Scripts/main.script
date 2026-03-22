@@ -29,7 +29,7 @@ function init(self)
 
    self.dragonPiles = {}
    self.base_slots = get_base_slots()
-   self.tableau_slots = get_tableau_slots()
+   self.tableau_slots = get_tableau_slots(self.tutorial_mode)
    self.free_slots = get_free_slots()
    self.flower_slot = get_flower_slot()
    self.dragon_buttons = get_dragon_buttons()
@@ -133,28 +133,35 @@ function deal_tutorial_cards(self)
    local tableau_positions = get_tableau_positions(self)
    self.tableau_stacks = {}
 
+   -- 10 карт, 5 стеков. БЕЗВАРИАТИВНАЯ раскладка.
+   -- Все нумерованные карты в S1 друг под другом — открываются последовательно.
+   -- При каждом шаге видна ОДНА возможная комбинация.
+   -- Step 0: 2_red → foundation (2→5 не консек.)
+   -- Step 1: 3_red → foundation (3→5 не консек.)
+   -- Step 2: 7_green → free cell (7→found нет 6g, 7→5g same color)
+   -- Step 3: 4_blue → на 5_green (стекинг! 4→5, blue≠green)
+   -- Step 4: dragon button → все 4 d_red видны → собрать
+   -- flower авто-улетает → Victory!
    local layout = {
       {1, {
          {id="d_red", value="d", suit="red", is_dragon=true},
-         {id="d_red", value="d", suit="red", is_dragon=true},
+         {id="4_blue", value=4, suit="blue"},
+         {id="7_green", value=7, suit="green"},
+         {id="3_red", value=3, suit="red"},
+         {id="2_red", value=2, suit="red"},
       }},
       {2, {
-         {id="d_red", value="d", suit="red", is_dragon=true},
-         {id="2_red", value=2, suit="red"},
+         {id="5_green", value=5, suit="green"},
       }},
       {3, {
          {id="d_red", value="d", suit="red", is_dragon=true},
-         {id="4_blue", value=4, suit="blue"},
       }},
       {4, {
-         {id="flower", value="f", suit="flower", is_flower=true},
-         {id="3_red", value=3, suit="red"},
+         {id="d_red", value="d", suit="red", is_dragon=true},
       }},
       {5, {
-         {id="4_green", value=4, suit="green"},
-      }},
-      {6, {
-         {id="2_green", value=2, suit="green"},
+         {id="flower", value="f", suit="flower", is_flower=true},
+         {id="d_red", value="d", suit="red", is_dragon=true},
       }},
    }
 
@@ -264,16 +271,17 @@ function get_base_slots()
    }
 end
 
-function get_tableau_slots()
+function get_tableau_slots(tutorial_mode)
+   local empty_678 = tutorial_mode and true or false
    return {
       tableau_slot1 = {pos = go.get_position('tableau_slot1'), is_empty = false},
       tableau_slot2 = {pos = go.get_position('tableau_slot2'), is_empty = false},
       tableau_slot3 = {pos = go.get_position('tableau_slot3'), is_empty = false},
       tableau_slot4 = {pos = go.get_position('tableau_slot4'), is_empty = false},
       tableau_slot5 = {pos = go.get_position('tableau_slot5'), is_empty = false},
-      tableau_slot6 = {pos = go.get_position('tableau_slot6'), is_empty = false},
-      tableau_slot7 = {pos = go.get_position('tableau_slot7'), is_empty = true},
-      tableau_slot8 = {pos = go.get_position('tableau_slot8'), is_empty = true},
+      tableau_slot6 = {pos = go.get_position('tableau_slot6'), is_empty = empty_678},
+      tableau_slot7 = {pos = go.get_position('tableau_slot7'), is_empty = empty_678},
+      tableau_slot8 = {pos = go.get_position('tableau_slot8'), is_empty = empty_678},
    }
 end
 
@@ -296,12 +304,12 @@ function on_message(self, message_id, message, sender)
       self.base_cards_count = (self.base_cards_count or 0) + 1
       if not self.tutorial_mode and self.base_cards_count >= 27 then
          self.currentState = self.states.WIN
-         msg.post("/main#ui", "show_victory")
+         tutorial_state.show_victory = true  -- UI polls this flag
       end
    elseif message_id == hash("dragons_collected") then
       if self.tutorial_mode then
          self.currentState = self.states.WIN
-         msg.post("/main#ui", "show_victory")
+         tutorial_state.show_victory = true  -- UI polls this flag
       end
    end
 end

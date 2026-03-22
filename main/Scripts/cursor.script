@@ -3,6 +3,15 @@
 local DEBUG_DRAW = false
 local tutorial_state = require("main.Scripts.tutorial_state")
 
+local function get_slot_target_type(slot_id)
+   if string.sub(slot_id, 1, 9) == "base_slot" then return "base"
+   elseif string.sub(slot_id, 1, 9) == "free_slot" then return "free"
+   elseif string.sub(slot_id, 1, 12) == "tableau_slot" then return "tableau_empty"
+   elseif slot_id == "flower_slot" then return "flower"
+   end
+   return "unknown"
+end
+
 function init(self)
    -- Отключаем лишние сообщения о коллизиях
    self.is_processing = false
@@ -392,8 +401,13 @@ function on_message(self, message_id, message, sender)
          msg.post(self.selected_card, 'drop_success', params)
       end
 
-      if tutorial_state.is_tutorial then
-         msg.post("/main#ui", "tutorial_move", {})
+      -- Tutorial: advance only when the move matches expected (no blocking)
+      if tutorial_state.is_tutorial and self.selected_card_data then
+         local card_id = self.selected_card_data.data.id
+         local target_type = get_slot_target_type(self.pending_drop.slot.slot_id)
+         if tutorial_state.check_move(card_id, target_type) then
+            tutorial_state.advance()  -- sets ui_dirty flag, UI polls it
+         end
       end
 
       clean_cursor(self)
@@ -427,8 +441,13 @@ function on_message(self, message_id, message, sender)
          msg.post(self.selected_card, 'drop_success', params)
       end
 
-      if tutorial_state.is_tutorial then
-         msg.post("/main#ui", "tutorial_move", {})
+      -- Tutorial: advance only when the move matches expected (no blocking)
+      if tutorial_state.is_tutorial and self.selected_card_data then
+         local card_id = self.selected_card_data.data.id
+         local target_card_id = self.pending_drop.card.data_id
+         if tutorial_state.check_move(card_id, "tableau_card", target_card_id) then
+            tutorial_state.advance()  -- sets ui_dirty flag, UI polls it
+         end
       end
 
       clean_cursor(self)

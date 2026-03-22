@@ -319,7 +319,7 @@ nodes {
     x: 0.0
     y: 0.0
     z: 0.0
-    w: 0.7
+    w: 0.0
   }
   type: TYPE_BOX
   id: "tutorial_overlay"
@@ -337,7 +337,7 @@ nodes {
     x: 1.0
     y: 1.0
     z: 1.0
-    w: 0.15
+    w: 0.0
   }
   type: TYPE_BOX
   id: "tutorial_highlight"
@@ -368,6 +368,10 @@ nodes {
   size_mode: SIZE_MODE_MANUAL
 }
 nodes {
+  scale {
+    x: 2.0
+    y: 2.0
+  }
   size {
     x: 760.0
     y: 60.0
@@ -379,7 +383,7 @@ nodes {
   }
   type: TYPE_TEXT
   text: ""
-  font: "main_font"
+  font: "default"
   id: "tutorial_text"
   parent: "tutorial_text_bg"
   layer: "buttons"
@@ -388,8 +392,12 @@ nodes {
 }
 nodes {
   position {
-    x: 330.0
-    y: -255.0
+    x: 350.0
+    y: 0.0
+  }
+  scale {
+    x: 1.5
+    y: 1.5
   }
   size {
     x: 60.0
@@ -397,30 +405,30 @@ nodes {
   }
   color {
     x: 0.7
-    y: 0.7
+    y: 0.8
     z: 0.7
   }
   type: TYPE_TEXT
-  text: "1/6"
-  font: "main_font"
+  text: "1/5"
+  font: "default"
   id: "tutorial_step_text"
-  parent: "tutorial_overlay"
+  parent: "tutorial_text_bg"
   layer: "buttons"
   inherit_alpha: false
 }
 nodes {
   position {
-    x: 430.0
-    y: 240.0
+    x: -370.0
+    y: -220.0
   }
   size {
-    x: 60.0
-    y: 30.0
+    x: 100.0
+    y: 40.0
   }
   color {
-    x: 0.5
-    y: 0.5
-    z: 0.5
+    x: 0.4
+    y: 0.15
+    z: 0.15
   }
   type: TYPE_BOX
   id: "tutorial_skip_btn"
@@ -430,9 +438,13 @@ nodes {
   size_mode: SIZE_MODE_MANUAL
 }
 nodes {
+  scale {
+    x: 0.6
+    y: 0.6
+  }
   size {
-    x: 60.0
-    y: 30.0
+    x: 100.0
+    y: 40.0
   }
   color {
     x: 1.0

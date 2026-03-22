@@ -1,3 +1,5 @@
+local tutorial_state = require("main.Scripts.tutorial_state")
+
 function init(self)
     self.is_empty = false
 end
@@ -32,7 +34,7 @@ function last_card_to_slot(self)
    if card then
       if card.data.value == 'f' then
          msg.post(self.cursor, 'send_to_flower_slot', card)
-      elseif card.data.value == 2 then
+      elseif card.data.value == 2 and not tutorial_state.is_tutorial then
          msg.post(self.cursor, 'send_to_base_slot', card)
       elseif card.data.value == 'd' then
          msg.post(color_to_cell(card), 'send_counter_to_button', card)
