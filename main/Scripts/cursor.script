@@ -1,5 +1,7 @@
 -- cursor.script
-go.property("selected_card", nil)
+-- go.property("selected_card", nil)
+local DEBUG_DRAW = false
+
 function init(self)
    -- Отключаем лишние сообщения о коллизиях
    self.is_processing = false
@@ -10,7 +12,7 @@ function init(self)
    self.was_pressed = false
    self.size = vmath.vector3(90, 150, 0)
    self.half_size = self.size * 0.5
-   self.btn_size = vmath.vector3(32, 32, 0)
+   self.btn_size = vmath.vector3(48, 48, 0)
    self.half_btn_size = self.btn_size * 0.5
    self.dragging_stack = false
    self.base_slot_trace = {
@@ -27,11 +29,177 @@ function init(self)
    msg.post(".", "acquire_input_focus")
    -- Draw colored text on the screen
 end
+local DISPLAY_WIDTH = sys.get_config_int("display.width") -- 960
+local DISPLAY_HEIGHT = sys.get_config_int("display.height") -- 540
+-- local DISPLAY_WIDTH = sys.get_config_int("display.width")
+-- local DISPLAY_HEIGHT = sys.get_config_int("display.height")
+
+-- function to convert screen (mouse/touch) coordinates to
+-- world coordinates given a camera component
+-- this function will use the camera view and projection to
+-- translate the screen coordinates into world coordinates
+local function screena_to_world(x, y, z, camera_id)
+    local projection = camera.get_projection(camera_id)
+    local view = camera.get_view(camera_id)
+    local w, h = window.get_size()
+    -- The window.get_size() function will return the scaled window size,
+    -- ie taking into account display scaling (Retina screens on macOS for
+    -- instance). We need to adjust for display scaling in our calculation.
+    w = w / (w / DISPLAY_WIDTH)
+    h = h / (h / DISPLAY_HEIGHT)
+
+    -- https://defold.com/manuals/camera/#converting-mouse-to-world-coordinates
+    local inv = vmath.inv(projection * view)
+    x = (2 * x / w) - 1
+    y = (2 * y / h) - 1
+    z = (2 * z) - 1
+    local x1 = x * inv.m00 + y * inv.m01 + z * inv.m02 + inv.m03
+    local y1 = x * inv.m10 + y * inv.m11 + z * inv.m12 + inv.m13
+    local z1 = x * inv.m20 + y * inv.m21 + z * inv.m22 + inv.m23
+    return x1, y1, z1
+end
+
+
+
+-- Функция для преобразования экранных координат в игровые без камеры
+local function screen_to_world(x, y)
+    local w, h = window.get_size()
+    -- Учитываем масштабирование дисплея (аналогично подходу автора)
+    w = w / (w / DISPLAY_WIDTH)
+    h = h / (h / DISPLAY_HEIGHT)
+
+    -- Вычисляем масштаб для fixed_fit_projection
+    local zoom = math.min(w / DISPLAY_WIDTH, h / DISPLAY_HEIGHT)
+    -- Вычисляем смещение для центрирования
+    local offset_x = (w - DISPLAY_WIDTH * zoom) / 2
+    local offset_y = (h - DISPLAY_HEIGHT * zoom) / 2
+
+    -- Нормализуем координаты (как в подходе автора)
+    local norm_x = (2 * x / w) - 1
+    local norm_y = (2 * y / h) - 1
+
+    -- Преобразуем нормализованные координаты в игровые
+    -- Диапазон norm_x, norm_y (-1..1) соответствует игровому пространству (-width/2..width/2, -height/2..height/2)
+    local world_x = (norm_x + 1) * (DISPLAY_WIDTH / 2)
+    local world_y = (norm_y + 1) * (DISPLAY_HEIGHT / 2)
+
+    -- Учитываем масштаб и смещение
+    world_x = (world_x - offset_x / zoom)
+    world_y = (world_y - offset_y / zoom)
+
+    return world_x, world_y
+end
+
+local FIXED_ZOOM = 2 -- Фиксированный масштаб из рендер-скрипта (например, zoom = 2)
+
+-- Функция для преобразования экранных координат в игровые для fixed_projection
+local function screena_to_world(x, y)
+    local w, h = window.get_size()
+    -- Учитываем масштабирование дисплея (как в подходе автора)
+    w = w / (w / DISPLAY_WIDTH)
+    h = h / (h / DISPLAY_HEIGHT)
+
+    -- Нормализуем координаты (как в подходе автора)
+    local norm_x = (2 * x / w) - 1
+    local norm_y = (2 * y / h) - 1
+
+    -- Преобразуем нормализованные координаты в игровые
+    -- В fixed_projection масштаб фиксирован (FIXED_ZOOM)
+    -- Игровое пространство: (-width/(2*zoom)..width/(2*zoom), -height/(2*zoom)..height/(2*zoom))
+    local world_x = (norm_x / FIXED_ZOOM) * (DISPLAY_WIDTH / 2) + (DISPLAY_WIDTH / 2)
+    local world_y = (norm_y / FIXED_ZOOM) * (DISPLAY_HEIGHT / 2) + (DISPLAY_HEIGHT / 2)
+
+    return world_x, world_y
+end
 
 function on_input(self, action_id, action)
-   self.cursor_pos = vmath.vector3(action.x, action.y, 0)
-   go.set_position(self.cursor_pos, ".")
+   local worldx, worldy = screen_to_world(action.x, action.y)
+   print("SSSSSSSSSS", worldx, worldy)
+   -- self.cursor_pos = vmath.vector3(action.x, action.y, 0)
+   -- go.set_position(self.cursor_pos, ".")
+   local screen_x, screen_y = action.x, action.y
+   --pprint("Action" , action)
 
+   -- Параметры окна и базового разрешения
+   local screen_x, screen_y = action.x, action.y
+
+   -- Получаем размеры окна через window
+   local window_width, window_height = window.get_size()
+
+   -- Базовое разрешение из настроек проекта (game.project)
+   -- Установите эти значения вручную или передайте из рендер-скрипта
+   local base_width = 960  -- Укажите ширину из game.project
+   local base_height = 540 -- Укажите высоту из game.project
+
+   -- Вычисляем масштаб для fixed_fit_projection
+   local zoom = math.min(window_width / base_width, window_height / base_height)
+   pprint("zoom", zoom, window.get_display_scale())
+   pprint("win_w", window_width / base_width)
+   pprint("win_h", window_height / base_height)
+   -- Вычисляем смещение (черные полосы)
+   local offset_x = (window_width - base_width * zoom) / 2
+   local offset_y = (window_height - base_height * zoom) / 2
+
+   -- Преобразуем экранные координаты в игровые
+   local game_x = (action.screen_x - offset_x) / zoom
+   local game_y = (action.screen_y - offset_y) / zoom
+
+    pprint("action x, y", action.x, action.y)
+    pprint("game" , vmath.vector3(game_x, game_y, 0))
+    pprint("window", window_width, window_height)
+    x, y = window.get_size()
+    pprint("WSIZE", x,y)
+
+
+
+
+
+   if DEBUG_DRAW then
+      self.debug_text = {
+         string.format("ScrnWrld: %.1f, %.1f", worldx, worldy),
+         string.format("Window size: %d x %d", window_width, window_height),
+         string.format("Game coords: %.1f, %.1f", game_x, game_y),
+         string.format("Action: %.1f, %.1f", action.x, action.y),
+         string.format("Screen: %.1f, %.1f", action.screen_x, action.screen_y),
+         string.format("Scale: %.2f", window.get_display_scale()),
+         string.format("Offset: %.1f, %.1f", offset_x, offset_y),
+         string.format("Base resolution: %d x %d", base_width, base_height),
+      }
+      local color_green = vmath.vector4(0, 1, 0, 1)
+      msg.post("@render:", "draw_line", {
+                  start_point = vmath.vector3(game_x-10, game_y, 0),
+                  end_point = vmath.vector3(game_x+10, game_y, 0),
+                  color = vmath.vector4(1, 0, 0, 1)
+      })
+      msg.post("@render:", "draw_line", {
+                  start_point = vmath.vector3(game_x, game_y-10, 0),
+                  end_point = vmath.vector3(game_x, game_y+10, 0),
+                  color = vmath.vector4(1, 0, 0, 1)
+      })
+      msg.post("@render:", "draw_line", {
+                  start_point = vmath.vector3(action.x-10, action.y, 0),
+                  end_point = vmath.vector3(action.x+10, action.y, 0),
+                  color = color_green
+      })
+      msg.post("@render:", "draw_line", {
+                  start_point = vmath.vector3(action.x, action.y-10, 0),
+                  end_point = vmath.vector3(action.x, action.y+10, 0),
+                  color = color_green
+      })
+      msg.post("@render:", "draw_line", {
+                  start_point = vmath.vector3(action.screen_x-10, action.screen_y, 0),
+                  end_point = vmath.vector3(action.screen_x+10, action.screen_y, 0),
+                  color = vmath.vector4(1, 1, 1, 1)
+      })
+      msg.post("@render:", "draw_line", {
+                  start_point = vmath.vector3(action.screen_x, action.screen_y-10, 0),
+                  end_point = vmath.vector3(action.screen_x, action.screen_y+10, 0),
+                  color = vmath.vector4(1, 1, 1, 1)
+      })
+   end
+
+    self.cursor_pos = vmath.vector3(worldx, worldy, 0)
+    go.set_position(self.cursor_pos, ".")
 
    if action_id == hash("space") then
 
@@ -507,15 +675,37 @@ end
 
 function update(self, dt)
    -- Преобразуем все объекты в строки и объединяем их
-   local debug_string = "selected_card: " .. tostring(self.selected_card_data and self.selected_card_data.data_id or nil) .. "\n" ..
-      "is_dragging: " .. tostring(self.is_dragging) .. "\n" ..
-      "current_slot: " .. tostring(self.current_slot) .. "\n" ..
-      "can_drop: " .. tostring(self.can_drop) .. "\n" ..
-      "potential_card: " .. tostring(self.potential_card) .. "\n"..
-      "message: " .. tostring(self.mes) .. "\n" ..
-      "overlapped_card: " .. tostring(self.overlapped_card) .. "\n"
+   if DEBUG_DRAW then
+      local debug_string = "selected_card: " .. tostring(self.selected_card_data and self.selected_card_data.data_id or nil) .. "\n" ..
+         "is_dragging: " .. tostring(self.is_dragging) .. "\n" ..
+         "current_slot: " .. tostring(self.current_slot) .. "\n" ..
+         "can_drop: " .. tostring(self.can_drop) .. "\n" ..
+         "potential_card: " .. tostring(self.potential_card) .. "\n"..
+         "message: " .. tostring(self.mes) .. "\n" ..
+         "overlapped_card: " .. tostring(self.overlapped_card) .. "\n"
 
-   local color_green = vmath.vector4(0, 1, 0, 1)
-   msg.post("@render:", "draw_debug_text", { text = debug_string, position = vmath.vector3(800, 780, 0), color = color_green })
+      local color_green = vmath.vector4(0, 1, 0, 1)
+      msg.post("@render:", "draw_debug_text", { text = debug_string, position = vmath.vector3(800, 780, 0), color = color_green })
+
+      local x = 10
+      local y = 30
+      local line_height = 20
+
+      for i, text in ipairs(self.debug_text or {}) do
+         msg.post("@render:", "draw_debug_text", {
+                     text = text,
+                     position = vmath.vector3(x, y, 0),
+                     color = color_green
+         })
+         y = y + line_height
+      end
+      local window_width, window_height = window.get_size()
+      msg.post("@render:", "draw_debug_text", { text = tostring(window_height) .. "/" .. tostring(window_height / 3), position = vmath.vector3(700, 40, 0), color = color_green })
+      msg.post("@render:", "draw_line", {
+                  start_point = vmath.vector3(0, window_height / 3, 0),
+                  end_point = vmath.vector3(300, window_height/3, 0),
+                  color = color_green
+      })
+   end
 end
 --8BYNTX0E
