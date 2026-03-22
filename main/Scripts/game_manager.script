@@ -21,6 +21,11 @@ function on_message(self, message_id, message, sender)
    elseif message_id == hash("switch_level") then
       self.current_level = (self.current_level == "soliter") and "soliter1" or "soliter"
       show(self, self.current_level == "soliter" and "#level_proxy" or "#level_proxy1")
+   elseif message_id == hash("unload_level") then
+      if self.current_proxy then
+         msg.post(self.current_proxy, "unload")
+         self.current_proxy = nil
+      end
    elseif message_id == hash("proxy_loaded") then
       self.current_proxy = sender
       msg.post(sender, "enable")
