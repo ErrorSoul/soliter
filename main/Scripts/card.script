@@ -57,12 +57,19 @@ function on_message(self, message_id, message, sender)
 
    if message_id == hash("start_drag") then
       self.is_dragging = true
+      go.animate(".", "scale", go.PLAYBACK_ONCE_FORWARD,
+          vmath.vector3(1.1, 1.1, 1), go.EASING_OUTQUAD, 0.1)
 
    elseif message_id == hash("drag_update") and self.is_dragging then
-      go.set_position(message.position + vmath.vector3(0, 0, 0.3))
+      go.cancel_animations(".", "position")
+      local target = message.position + vmath.vector3(0, 0, 0.3)
+      go.animate(".", "position", go.PLAYBACK_ONCE_FORWARD,
+          target, go.EASING_OUTQUAD, 0.05)
 
    elseif message_id == hash("drop_success") then
       self.is_dragging = false
+      go.animate(".", "scale", go.PLAYBACK_ONCE_FORWARD,
+          vmath.vector3(1, 1, 1), go.EASING_OUTQUAD, 0.15)
 
       local pos = message.position + vmath.vector3(0, 0, 0.001)
       msg.post(message.slot_id, "occupy_slot", {
@@ -77,10 +84,31 @@ function on_message(self, message_id, message, sender)
 
       msg.post(self.owner, 'remove_card', {id = go.get_id()})
       self.owner = message.slot_id
+
+      go.animate(".", "scale", go.PLAYBACK_ONCE_FORWARD,
+          vmath.vector3(1.08, 1.08, 1), go.EASING_OUTQUAD, 0.1, 0.15, function()
+              go.animate(".", "scale", go.PLAYBACK_ONCE_FORWARD,
+                  vmath.vector3(1, 1, 1), go.EASING_INQUAD, 0.1)
+          end)
    elseif message_id == hash("drop_failed") then
       self.is_dragging = false
+      go.animate(".", "scale", go.PLAYBACK_ONCE_FORWARD,
+          vmath.vector3(1, 1, 1), go.EASING_OUTQUAD, 0.15)
       go.animate(".", "position", go.PLAYBACK_ONCE_FORWARD,
-                 message.position, go.EASING_OUTQUAD, 0.3)
+                 message.position, go.EASING_OUTQUAD, 0.3, 0, function()
+                     local pos = go.get_position()
+                     go.animate(".", "position.x", go.PLAYBACK_ONCE_FORWARD,
+                         pos.x + 5, go.EASING_OUTSINE, 0.05, 0, function()
+                             go.animate(".", "position.x", go.PLAYBACK_ONCE_FORWARD,
+                                 pos.x - 5, go.EASING_OUTSINE, 0.05, 0, function()
+                                     go.animate(".", "position.x", go.PLAYBACK_ONCE_FORWARD,
+                                         pos.x + 3, go.EASING_OUTSINE, 0.05, 0, function()
+                                             go.animate(".", "position.x", go.PLAYBACK_ONCE_FORWARD,
+                                                 pos.x, go.EASING_OUTSINE, 0.05)
+                                         end)
+                                 end)
+                         end)
+                 end)
    elseif message_id == hash("can_move_card") then
       self.is_dragging = false
       if is_correct_card(self, message.card) then
