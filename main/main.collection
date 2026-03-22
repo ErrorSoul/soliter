@@ -3,144 +3,144 @@ instances {
   id: "free_slot1"
   prototype: "/main/Game Objects/free_slot.go"
   position {
-    x: 80.0
-    y: 457.0
+    x: 78.0
+    y: 450.0
   }
 }
 instances {
   id: "free_slot2"
   prototype: "/main/Game Objects/free_slot.go"
   position {
-    x: 193.0
-    y: 457.0
+    x: 191.0
+    y: 450.0
   }
 }
 instances {
   id: "free_slot3"
   prototype: "/main/Game Objects/free_slot.go"
   position {
-    x: 309.0
-    y: 457.0
+    x: 307.0
+    y: 450.0
   }
 }
 instances {
   id: "tableau_slot1"
   prototype: "/main/Game Objects/tableau_slot.go"
   position {
-    x: 77.0
-    y: 299.0
+    x: 75.0
+    y: 292.0
   }
 }
 instances {
   id: "tableau_slot2"
   prototype: "/main/Game Objects/tableau_slot.go"
   position {
-    x: 193.0
-    y: 299.0
+    x: 191.0
+    y: 292.0
   }
 }
 instances {
   id: "tableau_slot3"
   prototype: "/main/Game Objects/tableau_slot.go"
   position {
-    x: 309.0
-    y: 299.0
+    x: 307.0
+    y: 292.0
   }
 }
 instances {
   id: "tableau_slot4"
   prototype: "/main/Game Objects/tableau_slot.go"
   position {
-    x: 425.0
-    y: 299.0
+    x: 423.0
+    y: 292.0
   }
 }
 instances {
   id: "tableau_slot5"
   prototype: "/main/Game Objects/tableau_slot.go"
   position {
-    x: 541.0
-    y: 300.0
+    x: 539.0
+    y: 293.0
   }
 }
 instances {
   id: "tableau_slot6"
   prototype: "/main/Game Objects/tableau_slot.go"
   position {
-    x: 657.0
-    y: 300.0
+    x: 655.0
+    y: 293.0
   }
 }
 instances {
   id: "tableau_slot7"
   prototype: "/main/Game Objects/tableau_slot.go"
   position {
-    x: 773.0
-    y: 300.0
+    x: 771.0
+    y: 293.0
   }
 }
 instances {
   id: "tableau_slot8"
   prototype: "/main/Game Objects/tableau_slot.go"
   position {
-    x: 889.0
-    y: 300.0
+    x: 887.0
+    y: 293.0
   }
 }
 instances {
   id: "base_slot1"
   prototype: "/main/Game Objects/base_slot.go"
   position {
-    x: 889.0
-    y: 457.0
+    x: 887.0
+    y: 450.0
   }
 }
 instances {
   id: "base_slot3"
   prototype: "/main/Game Objects/base_slot.go"
   position {
-    x: 657.0
-    y: 457.0
+    x: 655.0
+    y: 450.0
   }
 }
 instances {
   id: "base_slot2"
   prototype: "/main/Game Objects/base_slot.go"
   position {
-    x: 773.0
-    y: 457.0
+    x: 771.0
+    y: 450.0
   }
 }
 instances {
   id: "flower_slot"
   prototype: "/main/Game Objects/flower_slot.go"
   position {
-    x: 541.0
-    y: 457.0
+    x: 539.0
+    y: 450.0
   }
 }
 instances {
   id: "dragon_button1"
   prototype: "/main/Game Objects/dragon_button.go"
   position {
-    x: 420.0
-    y: 511.0
+    x: 416.0
+    y: 506.0
   }
 }
 instances {
   id: "dragon_button2"
   prototype: "/main/Game Objects/dragon_button.go"
   position {
-    x: 420.0
-    y: 463.0
+    x: 418.0
+    y: 456.0
   }
 }
 instances {
   id: "dragon_button3"
   prototype: "/main/Game Objects/dragon_button.go"
   position {
-    x: 420.0
-    y: 416.0
+    x: 418.0
+    y: 409.0
   }
 }
 scale_along_z: 0
@@ -182,5 +182,30 @@ embedded_instances {
   ""
   position {
     x: 1.0
+  }
+}
+embedded_instances {
+  id: "go"
+  data: "embedded_components {\n"
+  "  id: \"sprite\"\n"
+  "  type: \"sprite\"\n"
+  "  data: \"default_animation: \\\"table\\\"\\n"
+  "material: \\\"/builtins/materials/sprite.material\\\"\\n"
+  "size {\\n"
+  "  x: 960.0\\n"
+  "  y: 540.0\\n"
+  "}\\n"
+  "size_mode: SIZE_MODE_MANUAL\\n"
+  "textures {\\n"
+  "  sampler: \\\"texture_sampler\\\"\\n"
+  "  texture: \\\"/main/Scripts/xf.atlas\\\"\\n"
+  "}\\n"
+  "\"\n"
+  "}\n"
+  ""
+  position {
+    x: 480.0
+    y: 270.0
+    z: -0.5
   }
 }
