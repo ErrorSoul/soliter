@@ -351,8 +351,8 @@ nodes {
     y: -220.0
   }
   size {
-    x: 700.0
-    y: 100.0
+    x: 800.0
+    y: 80.0
   }
   color {
     x: 0.1
@@ -368,11 +368,8 @@ nodes {
   size_mode: SIZE_MODE_MANUAL
 }
 nodes {
-  position {
-    y: 15.0
-  }
   size {
-    x: 660.0
+    x: 760.0
     y: 60.0
   }
   color {
@@ -391,46 +388,8 @@ nodes {
 }
 nodes {
   position {
-    y: -35.0
-  }
-  size {
-    x: 120.0
-    y: 30.0
-  }
-  color {
-    x: 0.3
-    y: 0.5
-    z: 0.3
-  }
-  type: TYPE_BOX
-  id: "tutorial_next_btn"
-  parent: "tutorial_text_bg"
-  layer: "buttons"
-  inherit_alpha: false
-  size_mode: SIZE_MODE_MANUAL
-}
-nodes {
-  size {
-    x: 120.0
-    y: 30.0
-  }
-  color {
-    x: 1.0
-    y: 1.0
-    z: 1.0
-  }
-  type: TYPE_TEXT
-  text: "NEXT"
-  font: "main_font"
-  id: "tutorial_next_text"
-  parent: "tutorial_next_btn"
-  layer: "buttons"
-  inherit_alpha: true
-}
-nodes {
-  position {
     x: 330.0
-    y: -180.0
+    y: -255.0
   }
   size {
     x: 60.0
@@ -442,12 +401,51 @@ nodes {
     z: 0.7
   }
   type: TYPE_TEXT
-  text: "1/7"
+  text: "1/6"
   font: "main_font"
   id: "tutorial_step_text"
   parent: "tutorial_overlay"
   layer: "buttons"
   inherit_alpha: false
+}
+nodes {
+  position {
+    x: 430.0
+    y: 240.0
+  }
+  size {
+    x: 60.0
+    y: 30.0
+  }
+  color {
+    x: 0.5
+    y: 0.5
+    z: 0.5
+  }
+  type: TYPE_BOX
+  id: "tutorial_skip_btn"
+  parent: "tutorial_overlay"
+  layer: "buttons"
+  inherit_alpha: false
+  size_mode: SIZE_MODE_MANUAL
+}
+nodes {
+  size {
+    x: 60.0
+    y: 30.0
+  }
+  color {
+    x: 1.0
+    y: 1.0
+    z: 1.0
+  }
+  type: TYPE_TEXT
+  text: "SKIP"
+  font: "main_font"
+  id: "tutorial_skip_text"
+  parent: "tutorial_skip_btn"
+  layer: "buttons"
+  inherit_alpha: true
 }
 layers {
   name: "background"

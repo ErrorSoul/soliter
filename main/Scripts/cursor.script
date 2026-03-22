@@ -1,6 +1,7 @@
 -- cursor.script
 -- go.property("selected_card", nil)
 local DEBUG_DRAW = false
+local tutorial_state = require("main.Scripts.tutorial_state")
 
 function init(self)
    -- Отключаем лишние сообщения о коллизиях
@@ -391,6 +392,10 @@ function on_message(self, message_id, message, sender)
          msg.post(self.selected_card, 'drop_success', params)
       end
 
+      if tutorial_state.is_tutorial then
+         msg.post("/main#ui", "tutorial_move", {})
+      end
+
       clean_cursor(self)
    elseif message_id == hash("slot_invalid") and self.pending_drop then
       msg.post(self.selected_card, 'drop_failed', {position = self.original_position})
@@ -420,6 +425,10 @@ function on_message(self, message_id, message, sender)
          move_stack_cards(self, 'drop_success', params)
       else
          msg.post(self.selected_card, 'drop_success', params)
+      end
+
+      if tutorial_state.is_tutorial then
+         msg.post("/main#ui", "tutorial_move", {})
       end
 
       clean_cursor(self)
