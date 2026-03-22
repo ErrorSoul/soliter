@@ -1,0 +1,266 @@
+script: "/gui/ui.gui_script"
+fonts {
+  name: "default"
+  font: "/builtins/fonts/default.font"
+}
+fonts {
+  name: "main_font"
+  font: "/assets/fonts/main_font.font"
+}
+fonts {
+  name: "second"
+  font: "/assets/fonts/second.font"
+}
+nodes {
+  position {
+    x: 151.0
+    y: 465.0
+  }
+  scale {
+    x: 0.488999
+    y: 0.455395
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "restart_button"
+  layer: "buttons"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: 2.044994
+    y: -2.195896
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  color {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  type: TYPE_TEXT
+  blend_mode: BLEND_MODE_MULT
+  text: "RESTART\n"
+  "\n"
+  ""
+  font: "main_font"
+  id: "restart_text"
+  adjust_mode: ADJUST_MODE_STRETCH
+  parent: "restart_button"
+  layer: "buttons"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 483.0
+    y: 253.0
+  }
+  scale {
+    x: 1.224082
+  }
+  size {
+    x: 300.0
+    y: 400.0
+  }
+  color {
+    x: 0.302
+    y: 0.502
+    z: 0.302
+  }
+  type: TYPE_BOX
+  id: "victory_popup"
+  xanchor: XANCHOR_LEFT
+  yanchor: YANCHOR_TOP
+  layer: "buttons"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+  enabled: false
+}
+nodes {
+  position {
+    x: -5.0
+    y: -54.0
+  }
+  scale {
+    x: 0.465995
+    y: 0.335482
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  color {
+    x: 0.6
+    y: 0.0
+    z: 0.0
+  }
+  type: TYPE_BOX
+  id: "victory_restart"
+  parent: "victory_popup"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  scale {
+    x: 0.906218
+    y: 0.921665
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "RESTART\n"
+  ""
+  font: "second"
+  id: "text"
+  parent: "victory_restart"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 2.0
+    y: 123.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  color {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  type: TYPE_TEXT
+  text: "You win !!!"
+  font: "main_font"
+  id: "text1"
+  parent: "victory_popup"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 132.34407
+    y: 181.0
+  }
+  scale {
+    x: 0.155385
+    y: 0.314693
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "victory_close_button"
+  parent: "victory_popup"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: 151.0
+    y: 406.0
+  }
+  scale {
+    x: 0.488999
+    y: 0.455395
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "tutorial_button"
+  layer: "buttons"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    x: 2.044994
+    y: -2.195896
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  color {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  type: TYPE_TEXT
+  blend_mode: BLEND_MODE_MULT
+  text: "TUTORIAL\n"
+  "\n"
+  ""
+  font: "main_font"
+  id: "restart_text1"
+  adjust_mode: ADJUST_MODE_STRETCH
+  parent: "tutorial_button"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 150.12878
+    y: 344.0
+  }
+  scale {
+    x: 0.465995
+    y: 0.335482
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  color {
+    x: 0.6
+    y: 0.0
+    z: 0.0
+  }
+  type: TYPE_BOX
+  id: "victory_restart1"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  position {
+    y: -2.980786
+  }
+  scale {
+    x: 0.906218
+    y: 0.921665
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_TEXT
+  text: "RESTART\n"
+  ""
+  font: "main_font"
+  id: "text2"
+  parent: "victory_restart1"
+  inherit_alpha: true
+}
+layers {
+  name: "background"
+}
+layers {
+  name: "cards"
+}
+layers {
+  name: "buttons"
+}
+layers {
+  name: "layer"
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

@@ -120,4 +120,41 @@ images {
   image: "/assets/buttons/button_grey.png"
   sprite_trim_mode: SPRITE_TRIM_MODE_5
 }
+images {
+  image: "/assets/cards/back/flower_back.png"
+}
+images {
+  image: "/assets/cards/back/flower_back_wo.png"
+}
+animations {
+  id: "New Animation"
+  images {
+    image: "/assets/cards/green_cards/2_green.png"
+  }
+  images {
+    image: "/assets/cards/green_cards/3_green.png"
+  }
+  images {
+    image: "/assets/cards/green_cards/4_green.png"
+  }
+  images {
+    image: "/assets/cards/green_cards/5_green.png"
+  }
+  images {
+    image: "/assets/cards/green_cards/6_green.png"
+  }
+  images {
+    image: "/assets/cards/green_cards/7_green.png"
+  }
+  images {
+    image: "/assets/cards/green_cards/8_green.png"
+  }
+  images {
+    image: "/assets/cards/green_cards/9_green.png"
+  }
+  images {
+    image: "/assets/cards/green_cards/10_green.png"
+  }
+  playback: PLAYBACK_LOOP_FORWARD
+}
 extrude_borders: 2

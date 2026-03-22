@@ -103,12 +103,4 @@ function on_message(self, message_id, message, sender)
 end
 
 function update(self, dt)
-   -- Преобразуем все объекты в строки и объединяем их
-   local debug_string = "current_card: " .. tostring(self.current_card) .. "\n"
-
-
-   local color_green = vmath.vector4(1, 0, 0, 1)
-   msg.post("@render:", "draw_debug_text", { text = debug_string, position = vmath.vector3(1300, 780, 0), color = color_green })
-
-
 end

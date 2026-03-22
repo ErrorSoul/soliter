@@ -1,0 +1,33 @@
+local function show(self, proxy)
+   if self.current_proxy then
+      msg.post(self.current_proxy, "unload")
+      self.current_proxy = nil
+   end
+   msg.post(proxy, "async_load")
+end
+
+function init(self)
+   msg.post(".", "acquire_input_focus")
+   self.current_proxy = nil
+   self.current_level = "soliter"
+   show(self, "#level_proxy")
+end
+
+function on_message(self, message_id, message, sender)
+   if message_id == hash("restart_level") then
+      show(self, "#level_proxy")
+   elseif message_id == hash("switch_level") then
+      self.current_level = (self.current_level == "soliter") and "soliter1" or "soliter"
+      show(self, self.current_level == "soliter" and "#level_proxy" or "#level_proxy1")
+   elseif message_id == hash("proxy_loaded") then
+      self.current_proxy = sender
+      msg.post(sender, "enable")
+   elseif message_id == hash("proxy_unloaded") then
+   end
+end
+
+function on_input(self, action_id, action)
+   if action_id == hash("space") and action.pressed then
+      msg.post("#", "restart_level")
+   end
+end

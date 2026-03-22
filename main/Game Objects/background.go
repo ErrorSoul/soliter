@@ -1,20 +1,16 @@
-components {
-  id: "dragon_button"
-  component: "/main/Scripts/dragon_button.script"
-}
 embedded_components {
   id: "sprite"
   type: "sprite"
-  data: "default_animation: \"button_grey\"\n"
+  data: "default_animation: \"table\"\n"
   "material: \"/builtins/materials/sprite.material\"\n"
   "size {\n"
-  "  x: 48.0\n"
-  "  y: 48.0\n"
+  "  x: 960.0\n"
+  "  y: 540.0\n"
   "}\n"
   "size_mode: SIZE_MODE_MANUAL\n"
   "textures {\n"
   "  sampler: \"texture_sampler\"\n"
-  "  texture: \"/main/main.atlas\"\n"
+  "  texture: \"/main/Scripts/xf.atlas\"\n"
   "}\n"
   ""
 }

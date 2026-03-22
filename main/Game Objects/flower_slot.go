@@ -5,7 +5,7 @@ components {
 embedded_components {
   id: "sprite"
   type: "sprite"
-  data: "default_animation: \"back\"\n"
+  data: "default_animation: \"flower_back\"\n"
   "material: \"/builtins/materials/sprite.material\"\n"
   "size {\n"
   "  x: 90.0\n"
@@ -18,6 +18,11 @@ embedded_components {
   "}\n"
   ""
   position {
+    x: -1.0
     z: -0.2
+  }
+  scale {
+    x: 0.98
+    y: 0.98
   }
 }
