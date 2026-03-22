@@ -3,6 +3,7 @@ title = ShenzenSolitare
 
 [bootstrap]
 main_collection = /main/main.collectionc
+render = /builtins/render/default.renderc
 
 [input]
 game_binding = /input/game.input_bindingc
@@ -14,6 +15,8 @@ height = 540
 orientation = landscape
 high_dpi = 1
 fullscreen = 0
+dynamic_orientation = 1
+display_device_info = 1
 
 [ios]
 app_icon_120x120 = /assets/app_icons/icon_120.png
@@ -50,4 +53,6 @@ velocity_threshold = 100.0
 
 [html5]
 scale_mode = stretch
+show_fullscreen_button = 0
+show_made_with_defold = 0
 

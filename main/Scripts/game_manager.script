@@ -10,11 +10,13 @@ function init(self)
    msg.post(".", "acquire_input_focus")
    self.current_proxy = nil
    self.current_level = "soliter"
-   show(self, "#level_proxy")
+   -- Не грузим уровень сразу, ждём start_game от UI
 end
 
 function on_message(self, message_id, message, sender)
-   if message_id == hash("restart_level") then
+   if message_id == hash("start_game") then
+      show(self, "#level_proxy")
+   elseif message_id == hash("restart_level") then
       show(self, "#level_proxy")
    elseif message_id == hash("switch_level") then
       self.current_level = (self.current_level == "soliter") and "soliter1" or "soliter"
