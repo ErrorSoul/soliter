@@ -27,8 +27,8 @@ nodes {
   }
   type: TYPE_BOX
   id: "restart_button"
-  x_anchor: XANCHOR_RIGHT
-  y_anchor: YANCHOR_BOTTOM
+  xanchor: XANCHOR_RIGHT
+  yanchor: YANCHOR_BOTTOM
   layer: "buttons"
   inherit_alpha: true
   size_mode: SIZE_MODE_MANUAL
@@ -211,8 +211,8 @@ nodes {
   }
   type: TYPE_BOX
   id: "tutorial_button"
-  x_anchor: XANCHOR_RIGHT
-  y_anchor: YANCHOR_BOTTOM
+  xanchor: XANCHOR_RIGHT
+  yanchor: YANCHOR_BOTTOM
   layer: "buttons"
   inherit_alpha: true
   size_mode: SIZE_MODE_MANUAL
