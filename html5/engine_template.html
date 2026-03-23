@@ -10,26 +10,17 @@
 	<style type='text/css'>
 	body {
 		position: fixed;
-		margin: 0;
-		padding: 0;
-		width: 100%;
-		height: 100%;
-		background-color: #1a3311;
-	}
-
-	html {
-		height: 100%;
+		margin:0;
+		padding:0;
 	}
 
 	.canvas-app-container {
 		width: 100%;
 		height: 100%;
 		position: absolute;
-		display: flex;
 		align-items: center;
 		justify-content: center;
 		overflow: hidden;
-		background: #1a3311;
 	}
 
 	.canvas-app-container:-webkit-full-screen {
@@ -40,7 +31,8 @@
 	#canvas {
 		outline: none;
 		border: 0;
-		display: block;
+		width: 100%;
+		vertical-align: bottom;
 	}
 
 	#canvas-container {
@@ -83,17 +75,29 @@
 		transform-origin: left;
 		transform: scaleX(1.0);
 	}
+
+	body {
+		background-color: #1a3311;
+	}
+
+	.canvas-app-container {
+		background: #1a3311;
+	}
+
+	.canvas-app-canvas {
+		background-color: #1a3311;
+	}
 	</style>
 </head>
 
 <body>
 
 	<div id="app-container" class="canvas-app-container">
-		<div id="running-from-file-warning" style="display: none; margin: 3em; color: #fff;">
+		<div id="running-from-file-warning" style="display: none; margin: 3em; color: #aaffaa;">
 			<h1>Running from local file ⚠️</h1>
 			<p>Open this file from a web server, not by double-clicking.</p>
 		</div>
-		<div id="webgl-not-supported" style="display: none; margin: 3em; color: #fff;">
+		<div id="webgl-not-supported" style="display: none; margin: 3em; color: #aaffaa;">
 			<h1>WebGL not supported ⚠️</h1>
 			<p>WebGL is not supported by your browser.</p>
 		</div>
