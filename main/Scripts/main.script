@@ -1,4 +1,5 @@
-local DEBUG_DEAL = true -- false = нормальная тасовка, true = синие драконы сверху стеков
+local DEBUG_DEAL = false -- false = нормальная тасовка, true = синие драконы сверху стеков
+local DEBUG_AUTO_FINISH = false -- true = тестовая раздача для auto-finish
 local tutorial_state = require("main.Scripts.tutorial_state")
 
 function init(self)
@@ -18,6 +19,8 @@ function init(self)
 
    if self.tutorial_mode then
       deal_tutorial_cards(self)
+   elseif DEBUG_AUTO_FINISH then
+      deal_auto_finish_test(self)
    else
       self.deck = create_deck(self)
       shuffle_deck(self)
@@ -132,6 +135,71 @@ function deal_cards(self)
                msg.post(slot_id, "update_stack", { cursor = self.cursor, index = stack_index, stack = self.tableau_stacks[stack_index].cards })
             end
          end)
+      end
+   end
+end
+
+-- Тестовая раздача для auto-finish:
+-- 9 карт (3 масти × 2-4), все numbered, все safe.
+-- Положи одну 2-ку в foundation → auto-finish подхватит остальные.
+function deal_auto_finish_test(self)
+   local tableau_positions = get_tableau_positions(self)
+   self.tableau_stacks = {}
+
+   local layout = {
+      {1, {
+         {id="4_red", value=4, suit="red"},
+         {id="3_blue", value=3, suit="blue"},
+         {id="2_red", value=2, suit="red"},
+      }},
+      {2, {
+         {id="4_green", value=4, suit="green"},
+         {id="3_red", value=3, suit="red"},
+         {id="2_blue", value=2, suit="blue"},
+      }},
+      {3, {
+         {id="4_blue", value=4, suit="blue"},
+         {id="3_green", value=3, suit="green"},
+         {id="2_green", value=2, suit="green"},
+      }},
+   }
+
+   for i = 1, 8 do
+      local slot_id = "tableau_slot" .. i
+      self.tableau_stacks[i] = { slot_id = slot_id, cards = {}, animations_completed = 0 }
+   end
+
+   for _, stack_def in ipairs(layout) do
+      local stack_index = stack_def[1]
+      local cards = stack_def[2]
+      local stack_position = tableau_positions[stack_index]
+      local slot_id = "tableau_slot" .. stack_index
+      local cards_in_stack = #cards
+
+      for card_index, card_data in ipairs(cards) do
+         local card_offset = vmath.vector3(0, (card_index - 1) * -35, 0)
+         local target_position = stack_position + card_offset
+         local start_pos = vmath.vector3(480, 270, 0.2)
+         local card = factory.create("#card_factory", start_pos, vmath.quat(0, 0, 0, 1))
+         msg.post(card, "set_card", { data = card_data, slot_id = slot_id })
+         table.insert(self.tableau_stacks[stack_index].cards, { id = card, data = card_data, slot_id = slot_id })
+         table.insert(self.cards, card)
+         local delay = 0.1 * (stack_index + card_index)
+         go.set(card, "scale", vmath.vector3(0.5, 0.5, 1))
+         go.animate(card, "scale", go.PLAYBACK_ONCE_FORWARD,
+             vmath.vector3(1, 1, 1), go.EASING_OUTQUAD, 0.3, delay)
+         go.animate(card, "position", go.PLAYBACK_ONCE_FORWARD, target_position, go.EASING_OUTQUAD, 0.3, delay, function()
+            self.tableau_stacks[stack_index].animations_completed = self.tableau_stacks[stack_index].animations_completed + 1
+            if self.tableau_stacks[stack_index].animations_completed == cards_in_stack then
+               msg.post(slot_id, "update_stack", { cursor = self.cursor, index = stack_index, stack = self.tableau_stacks[stack_index].cards })
+            end
+         end)
+      end
+   end
+
+   for i = 1, 8 do
+      if #self.tableau_stacks[i].cards == 0 then
+         msg.post("tableau_slot" .. i, "update_stack", { cursor = self.cursor, index = i, stack = {} })
       end
    end
 end
