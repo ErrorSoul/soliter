@@ -36,6 +36,7 @@ function init(self)
       green = "dragon_button3"
    }
    self.stack_offset = {}  -- Сохраняем смещение каждой карты относительно первой
+   self.input_disabled = false
    msg.post(".", "acquire_input_focus")
    -- Draw colored text on the screen
 end
@@ -123,6 +124,7 @@ local function screena_to_world(x, y)
 end
 
 function on_input(self, action_id, action)
+   if self.input_disabled then return end
    local worldx, worldy = screen_to_world(action.x, action.y)
    local window_width, window_height = window.get_size()
    local base_width = 960
@@ -411,6 +413,15 @@ function on_message(self, message_id, message, sender)
       end
 
       clean_cursor(self)
+      if not tutorial_state.is_tutorial then
+         local free_cell_cards = {}
+         for slot_id, slot in pairs(self.free_slots) do
+            if not slot.is_empty then
+               table.insert(free_cell_cards, { slot_id = slot_id, dragon = slot.dragon })
+            end
+         end
+         msg.post("/card_table#main", "check_auto_finish", { free_cells = free_cell_cards })
+      end
    elseif message_id == hash("slot_invalid") and self.pending_drop then
       msg.post(self.selected_card, 'drop_failed', {position = self.original_position})
       clean_cursor(self)
@@ -451,6 +462,15 @@ function on_message(self, message_id, message, sender)
       end
 
       clean_cursor(self)
+      if not tutorial_state.is_tutorial then
+         local free_cell_cards = {}
+         for slot_id, slot in pairs(self.free_slots) do
+            if not slot.is_empty then
+               table.insert(free_cell_cards, { slot_id = slot_id, dragon = slot.dragon })
+            end
+         end
+         msg.post("/card_table#main", "check_auto_finish", { free_cells = free_cell_cards })
+      end
    elseif message_id == hash("slot_with_card") and self.pending_drop then
       self.selected_card = message.id
       self.selected_card_data = message
@@ -485,6 +505,10 @@ function on_message(self, message_id, message, sender)
                   card = message,
                   animation = true
       })
+   elseif message_id == hash("disable_input") then
+      self.input_disabled = true
+   elseif message_id == hash("enable_input") then
+      self.input_disabled = false
    elseif message_id == hash("update_free_slot") then
       self.free_slots[message.slot_id].is_empty = message.is_empty
       self.free_slots[message.slot_id].dragon = message.dragon

@@ -26,6 +26,8 @@ function init(self)
 
    self.currentState = self.states.PLAYING
    self.base_cards_count = 0
+   self.foundation_top = { red = 1, blue = 1, green = 1 }
+   self.suit_to_base = {}
 
    self.dragonPiles = {}
    self.base_slots = get_base_slots()
@@ -309,12 +311,133 @@ function get_dragon_buttons()
    }
 end
 
+function can_auto_finish(self, message)
+   if self.tutorial_mode then return false end
+   if self.auto_finishing then return false end
+
+   -- Проверяем free cells на драконов
+   if message and message.free_cells then
+      for _, fc in ipairs(message.free_cells) do
+         if fc.dragon then
+            return false
+         end
+      end
+   end
+
+   -- Собираем все оставшиеся карты из tableau
+   local remaining = {}
+   for i = 1, 8 do
+      if self.tableau_stacks[i] then
+         for _, card in ipairs(self.tableau_stacks[i].cards) do
+            table.insert(remaining, card)
+         end
+      end
+   end
+
+   if #remaining == 0 then return false end
+
+   for _, card in ipairs(remaining) do
+      if card.data.is_dragon or card.data.is_flower then
+         return false
+      end
+      local v = card.data.value
+      local s = card.data.suit
+      -- Safe check: другие масти не должны отставать более чем на 1
+      local min_other = 10
+      for suit, val in pairs(self.foundation_top) do
+         if suit ~= s then
+            min_other = math.min(min_other, val)
+         end
+      end
+      if v > min_other + 1 then
+         return false
+      end
+   end
+
+   return true
+end
+
+function find_next_auto_card(self)
+   for i = 1, 8 do
+      local stack = self.tableau_stacks[i]
+      if stack and #stack.cards > 0 then
+         local top_card = stack.cards[#stack.cards]
+         if not top_card.data.is_dragon and not top_card.data.is_flower then
+            local expected = self.foundation_top[top_card.data.suit] + 1
+            if top_card.data.value == expected then
+               return top_card, i
+            end
+         end
+      end
+   end
+   return nil
+end
+
+function auto_finish_step(self)
+   local card, stack_index = find_next_auto_card(self)
+   if not card then
+      self.auto_finishing = false
+      msg.post(self.cursor, "enable_input")
+      return
+   end
+
+   local target_slot = self.suit_to_base[card.data.suit]
+   if not target_slot then
+      -- Масть ещё не в foundation — ищем свободный base_slot
+      for slot_id, sl in pairs(self.base_slots) do
+         if sl.is_empty then
+            target_slot = slot_id
+            break
+         end
+      end
+   end
+
+   if not target_slot then
+      -- Нет доступного слота — останавливаем
+      self.auto_finishing = false
+      msg.post(self.cursor, "enable_input")
+      return
+   end
+
+   msg.post(card.id, "drop_success", {
+      slot_id = target_slot,
+      position = self.base_slots[target_slot].pos,
+      card = card,
+      animation = true
+   })
+
+   -- Обновляем main.script tableau для find_next_auto_card
+   table.remove(self.tableau_stacks[stack_index].cards)
+
+   timer.delay(0.4, false, function()
+      auto_finish_step(self)
+   end)
+end
+
+function start_auto_finish(self)
+   self.auto_finishing = true
+   msg.post(self.cursor, "disable_input")
+   timer.delay(0.5, false, function()
+      auto_finish_step(self)
+   end)
+end
+
 function on_message(self, message_id, message, sender)
    if message_id == hash("card_to_base") then
       self.base_cards_count = (self.base_cards_count or 0) + 1
+      if message.suit and message.value then
+         self.foundation_top[message.suit] = message.value
+      end
+      if message.suit and message.slot_id and not self.suit_to_base[message.suit] then
+         self.suit_to_base[message.suit] = message.slot_id
+      end
       if not self.tutorial_mode and self.base_cards_count >= 27 then
          self.currentState = self.states.WIN
          tutorial_state.show_victory = true  -- UI polls this flag
+      end
+   elseif message_id == hash("check_auto_finish") then
+      if can_auto_finish(self, message) then
+         start_auto_finish(self)
       end
    elseif message_id == hash("dragons_collected") then
       if self.tutorial_mode then
