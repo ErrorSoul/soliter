@@ -52,6 +52,7 @@ scale = 0.01
 velocity_threshold = 100.0
 
 [html5]
+htmlfile = /html5/engine_template.html
 scale_mode = fit
 show_fullscreen_button = 0
 show_made_with_defold = 0
