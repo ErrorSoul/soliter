@@ -113,13 +113,18 @@ function deal_cards(self)
          local card_offset = vmath.vector3(0, (card_index - 1) * -35, 0)
          local target_position = stack_position + card_offset
 
-         local card = factory.create("#card_factory", stack_position, vmath.quat(0, 0, 0, 1))
+         local start_pos = vmath.vector3(480, 270, 0.2)
+         local card = factory.create("#card_factory", start_pos, vmath.quat(0, 0, 0, 1))
          msg.post(card, "set_card", { data = card_data, slot_id = slot_id })
 
          table.insert(self.tableau_stacks[stack_index].cards, { id = card, data = card_data, slot_id = slot_id })
          table.insert(self.cards, card)
 
-         go.animate(card, "position", go.PLAYBACK_ONCE_FORWARD, target_position, go.EASING_LINEAR, 0.5, 0.1 * (stack_index + card_index), function()
+         local delay = 0.1 * (stack_index + card_index)
+         go.set(card, "scale", vmath.vector3(0.5, 0.5, 1))
+         go.animate(card, "scale", go.PLAYBACK_ONCE_FORWARD,
+             vmath.vector3(1, 1, 1), go.EASING_OUTQUAD, 0.5, delay)
+         go.animate(card, "position", go.PLAYBACK_ONCE_FORWARD, target_position, go.EASING_OUTQUAD, 0.5, delay, function()
             self.tableau_stacks[stack_index].animations_completed = self.tableau_stacks[stack_index].animations_completed + 1
             if self.tableau_stacks[stack_index].animations_completed == cards_in_stack then
                msg.post(slot_id, "update_stack", { cursor = self.cursor, index = stack_index, stack = self.tableau_stacks[stack_index].cards })
@@ -183,13 +188,18 @@ function deal_tutorial_cards(self)
          local card_offset = vmath.vector3(0, (card_index - 1) * -35, 0)
          local target_position = stack_position + card_offset
 
-         local card = factory.create("#card_factory", stack_position, vmath.quat(0, 0, 0, 1))
+         local start_pos = vmath.vector3(480, 270, 0.2)
+         local card = factory.create("#card_factory", start_pos, vmath.quat(0, 0, 0, 1))
          msg.post(card, "set_card", { data = card_data, slot_id = slot_id })
 
          table.insert(self.tableau_stacks[stack_index].cards, { id = card, data = card_data, slot_id = slot_id })
          table.insert(self.cards, card)
 
-         go.animate(card, "position", go.PLAYBACK_ONCE_FORWARD, target_position, go.EASING_LINEAR, 0.3, 0.1 * (stack_index + card_index), function()
+         local delay = 0.1 * (stack_index + card_index)
+         go.set(card, "scale", vmath.vector3(0.5, 0.5, 1))
+         go.animate(card, "scale", go.PLAYBACK_ONCE_FORWARD,
+             vmath.vector3(1, 1, 1), go.EASING_OUTQUAD, 0.3, delay)
+         go.animate(card, "position", go.PLAYBACK_ONCE_FORWARD, target_position, go.EASING_OUTQUAD, 0.3, delay, function()
             self.tableau_stacks[stack_index].animations_completed = self.tableau_stacks[stack_index].animations_completed + 1
             if self.tableau_stacks[stack_index].animations_completed == cards_in_stack then
                msg.post(slot_id, "update_stack", { cursor = self.cursor, index = stack_index, stack = self.tableau_stacks[stack_index].cards })
