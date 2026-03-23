@@ -31,14 +31,22 @@ local function color_to_cell(card)
 end
 function last_card_to_slot(self)
    local card = reverse_table(self.stack)[1]
+   print("[AUTO-FLY] last_card_to_slot called, stack size:", #self.stack)
    if card then
+      print("[AUTO-FLY] top card:", card.data.id, "value:", card.data.value, "type:", type(card.data.value), "suit:", card.data.suit)
       if card.data.value == 'f' then
+         print("[AUTO-FLY] -> flower slot")
          msg.post(self.cursor, 'send_to_flower_slot', card)
       elseif card.data.value == 2 and not tutorial_state.is_tutorial then
+         print("[AUTO-FLY] -> base slot! tutorial:", tutorial_state.is_tutorial)
          msg.post(self.cursor, 'send_to_base_slot', card)
       elseif card.data.value == 'd' then
          msg.post(color_to_cell(card), 'send_counter_to_button', card)
+      else
+         print("[AUTO-FLY] no match: value ~= 2, ~= f, ~= d")
       end
+   else
+      print("[AUTO-FLY] no card on top (empty stack)")
    end
 end
 

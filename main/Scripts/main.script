@@ -443,6 +443,19 @@ function auto_finish_step(self)
    if not card then
       self.auto_finishing = false
       msg.post(self.cursor, "enable_input")
+      -- Проверяем победу: все tableau пусты = все карты в foundation
+      local all_empty = true
+      for i = 1, 8 do
+         if self.tableau_stacks[i] and #self.tableau_stacks[i].cards > 0 then
+            all_empty = false
+            break
+         end
+      end
+      if all_empty and self.base_cards_count > 0 then
+         print("[MAIN] auto-finish complete — victory!")
+         self.currentState = self.states.WIN
+         tutorial_state.show_victory = true
+      end
       return
    end
 
@@ -496,12 +509,38 @@ function on_message(self, message_id, message, sender)
       if message.suit and message.slot_id and not self.suit_to_base[message.suit] then
          self.suit_to_base[message.suit] = message.slot_id
       end
+      -- Удаляем карту из tableau_stacks чтобы auto-finish видел актуальное состояние
+      if message.suit and message.value then
+         for i = 1, 8 do
+            local stack = self.tableau_stacks[i]
+            if stack then
+               for j = #stack.cards, 1, -1 do
+                  local c = stack.cards[j]
+                  if c.data.suit == message.suit and c.data.value == message.value then
+                     table.remove(stack.cards, j)
+                     print("[MAIN] removed card from tableau_stacks:", message.suit, message.value, "stack:", i)
+                     break
+                  end
+               end
+            end
+         end
+      end
       if not self.tutorial_mode and self.base_cards_count >= 27 then
          self.currentState = self.states.WIN
          tutorial_state.show_victory = true  -- UI polls this flag
       end
    elseif message_id == hash("check_auto_finish") then
-      if can_auto_finish(self, message) then
+      print("[MAIN] check_auto_finish received, foundation_top:", self.foundation_top.red, self.foundation_top.blue, self.foundation_top.green)
+      local remaining_count = 0
+      for i = 1, 8 do
+         if self.tableau_stacks[i] then
+            remaining_count = remaining_count + #self.tableau_stacks[i].cards
+         end
+      end
+      print("[MAIN] remaining cards in tableau_stacks:", remaining_count)
+      local result = can_auto_finish(self, message)
+      print("[MAIN] can_auto_finish =", result)
+      if result then
          start_auto_finish(self)
       end
    elseif message_id == hash("dragons_collected") then

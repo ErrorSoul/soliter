@@ -488,7 +488,9 @@ function on_message(self, message_id, message, sender)
    elseif message_id == hash("base_slot_full") then
       self.base_slots[message.slot_id].is_empty = false
    elseif message_id == hash("send_to_base_slot") then
+      print("[AUTO-FLY CURSOR] send_to_base_slot received, suit:", message.data.suit, "id:", message.id)
       local slot = self.base_slot_trace[message.data.suit]
+      print("[AUTO-FLY CURSOR] target slot:", slot, "is_empty:", self.base_slots[slot].is_empty)
       local is_empty = self.base_slots[slot].is_empty
       if not is_empty then
          for slot_id, sl in pairs(self.base_slots) do
@@ -499,6 +501,7 @@ function on_message(self, message_id, message, sender)
          end
       end
 
+      print("[AUTO-FLY CURSOR] sending drop_success to:", message.id, "slot:", slot)
       msg.post(message.id, 'drop_success', {
                   slot_id = slot,
                   position = self.base_slots[slot].pos,
