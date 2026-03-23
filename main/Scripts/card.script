@@ -68,6 +68,7 @@ function on_message(self, message_id, message, sender)
 
    elseif message_id == hash("drop_success") then
       self.is_dragging = false
+      go.cancel_animations(".", "position")
       go.animate(".", "scale", go.PLAYBACK_ONCE_FORWARD,
           vmath.vector3(1, 1, 1), go.EASING_OUTQUAD, 0.15)
 
