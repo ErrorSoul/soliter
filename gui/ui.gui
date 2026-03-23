@@ -13,7 +13,7 @@ fonts {
 }
 nodes {
   position {
-    x: -105.0
+    x: 855.0
     y: 30.0
   }
   size {
@@ -27,8 +27,6 @@ nodes {
   }
   type: TYPE_BOX
   id: "restart_button"
-  xanchor: XANCHOR_RIGHT
-  yanchor: YANCHOR_BOTTOM
   layer: "buttons"
   inherit_alpha: true
   size_mode: SIZE_MODE_MANUAL
@@ -197,7 +195,7 @@ nodes {
 }
 nodes {
   position {
-    x: -275.0
+    x: 685.0
     y: 30.0
   }
   size {
@@ -211,8 +209,6 @@ nodes {
   }
   type: TYPE_BOX
   id: "tutorial_button"
-  xanchor: XANCHOR_RIGHT
-  yanchor: YANCHOR_BOTTOM
   layer: "buttons"
   inherit_alpha: true
   size_mode: SIZE_MODE_MANUAL
