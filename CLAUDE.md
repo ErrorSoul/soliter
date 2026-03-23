@@ -31,3 +31,5 @@
   - [auto-finish.md](./plans/auto-finish.md) — авто-доигрывание карт в foundation
   - [effects.md](./plans/effects.md) — эффекты и анимации (Фаза 4)
   - [refactoring.md](./plans/refactoring.md) — рефакторинг cursor.script, config, cleanup
+  - [responsive.md](./plans/responsive.md) — респонсив HTML5 (Фаза 5)
+  - [sounds.md](./plans/sounds.md) — звуковые эффекты
