@@ -1,5 +1,5 @@
 local DEBUG_DEAL = false -- false = нормальная тасовка, true = синие драконы сверху стеков
-local DEBUG_AUTO_FINISH = false -- true = тестовая раздача для auto-finish
+local DEBUG_AUTO_FINISH = true -- true = тестовая раздача для auto-finish
 local tutorial_state = require("main.Scripts.tutorial_state")
 
 function init(self)
@@ -140,25 +140,22 @@ function deal_cards(self)
 end
 
 -- Тестовая раздача для auto-finish:
--- 9 карт (3 масти × 2-4), все numbered, все safe.
--- Положи одну 2-ку в foundation → auto-finish подхватит остальные.
+-- 6 карт (3 масти × 2-3). 2-ки авто-улетят, потом двинь одну 3-ку →
+-- auto-finish подхватит остальные две 3-ки.
 function deal_auto_finish_test(self)
    local tableau_positions = get_tableau_positions(self)
    self.tableau_stacks = {}
 
    local layout = {
       {1, {
-         {id="4_red", value=4, suit="red"},
          {id="3_blue", value=3, suit="blue"},
          {id="2_red", value=2, suit="red"},
       }},
       {2, {
-         {id="4_green", value=4, suit="green"},
          {id="3_red", value=3, suit="red"},
          {id="2_blue", value=2, suit="blue"},
       }},
       {3, {
-         {id="4_blue", value=4, suit="blue"},
          {id="3_green", value=3, suit="green"},
          {id="2_green", value=2, suit="green"},
       }},
