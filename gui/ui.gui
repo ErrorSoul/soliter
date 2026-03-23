@@ -13,7 +13,7 @@ fonts {
 }
 nodes {
   position {
-    x: 855.0
+    x: -105.0
     y: 30.0
   }
   size {
@@ -27,6 +27,8 @@ nodes {
   }
   type: TYPE_BOX
   id: "restart_button"
+  x_anchor: XANCHOR_RIGHT
+  y_anchor: YANCHOR_BOTTOM
   layer: "buttons"
   inherit_alpha: true
   size_mode: SIZE_MODE_MANUAL
@@ -70,6 +72,7 @@ nodes {
   }
   type: TYPE_BOX
   id: "victory_overlay"
+  adjust_mode: ADJUST_STRETCH
   layer: "buttons"
   inherit_alpha: true
   size_mode: SIZE_MODE_MANUAL
@@ -195,7 +198,7 @@ nodes {
 }
 nodes {
   position {
-    x: 685.0
+    x: -275.0
     y: 30.0
   }
   size {
@@ -209,6 +212,8 @@ nodes {
   }
   type: TYPE_BOX
   id: "tutorial_button"
+  x_anchor: XANCHOR_RIGHT
+  y_anchor: YANCHOR_BOTTOM
   layer: "buttons"
   inherit_alpha: true
   size_mode: SIZE_MODE_MANUAL
@@ -250,6 +255,7 @@ nodes {
   }
   type: TYPE_BOX
   id: "start_screen"
+  adjust_mode: ADJUST_STRETCH
   layer: "layer"
   inherit_alpha: true
 }
@@ -323,6 +329,7 @@ nodes {
   }
   type: TYPE_BOX
   id: "tutorial_overlay"
+  adjust_mode: ADJUST_STRETCH
   layer: "buttons"
   inherit_alpha: true
   size_mode: SIZE_MODE_MANUAL

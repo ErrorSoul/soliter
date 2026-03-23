@@ -3,7 +3,7 @@ title = ShenzenSolitare
 
 [bootstrap]
 main_collection = /main/main.collectionc
-render = /builtins/render/default.renderc
+render = /render.renderc
 
 [input]
 game_binding = /input/game.input_bindingc
@@ -52,7 +52,13 @@ scale = 0.01
 velocity_threshold = 100.0
 
 [html5]
-scale_mode = stretch
+scale_mode = fit
 show_fullscreen_button = 0
 show_made_with_defold = 0
+
+[render]
+clear_color_red = 0.1
+clear_color_green = 0.2
+clear_color_blue = 0.1
+clear_color_alpha = 1.0
 
