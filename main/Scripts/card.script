@@ -59,7 +59,8 @@ function on_message(self, message_id, message, sender)
       self.is_dragging = true
       go.animate(".", "scale", go.PLAYBACK_ONCE_FORWARD,
           vmath.vector3(1.1, 1.1, 1), go.EASING_OUTQUAD, 0.1)
-      sprite.set_constant("#sprite", "tint", vmath.vector4(1.15, 1.15, 1.15, 1))
+      sprite.reset_constant("#sprite", "tint")
+      go.set("#sprite", "tint", vmath.vector4(1, 1, 0.6, 1))
 
    elseif message_id == hash("drag_update") and self.is_dragging then
       go.cancel_animations(".", "position")
@@ -72,13 +73,14 @@ function on_message(self, message_id, message, sender)
       go.cancel_animations(".", "position")
       go.animate(".", "scale", go.PLAYBACK_ONCE_FORWARD,
           vmath.vector3(1, 1, 1), go.EASING_OUTQUAD, 0.15)
-      sprite.set_constant("#sprite", "tint", vmath.vector4(1, 1, 1, 1))
-
-      -- Auto-move flash: жёлтая вспышка при авто-перемещении
+      sprite.reset_constant("#sprite", "tint")
       if message.animation then
-          go.set("#sprite", "tint", vmath.vector4(1.4, 1.4, 1.0, 1))
+          -- Auto-move flash: жёлтая вспышка
+          go.set("#sprite", "tint", vmath.vector4(1, 1, 0.1, 1))
           go.animate("#sprite", "tint", go.PLAYBACK_ONCE_FORWARD,
-              vmath.vector4(1, 1, 1, 1), go.EASING_OUTQUAD, 0.3)
+              vmath.vector4(1, 1, 1, 1), go.EASING_OUTQUAD, 0.4)
+      else
+          go.set("#sprite", "tint", vmath.vector4(1, 1, 1, 1))
       end
 
       local pos = message.position + vmath.vector3(0, 0, 0.001)
@@ -102,7 +104,8 @@ function on_message(self, message_id, message, sender)
           end)
    elseif message_id == hash("drop_failed") then
       self.is_dragging = false
-      sprite.set_constant("#sprite", "tint", vmath.vector4(1, 1, 1, 1))
+      sprite.reset_constant("#sprite", "tint")
+      go.set("#sprite", "tint", vmath.vector4(1, 1, 1, 1))
       go.animate(".", "scale", go.PLAYBACK_ONCE_FORWARD,
           vmath.vector3(1, 1, 1), go.EASING_OUTQUAD, 0.15)
       go.animate(".", "position", go.PLAYBACK_ONCE_FORWARD,
