@@ -30,7 +30,7 @@ function on_message(self, message_id, message, sender)
          slot_id = self.slot_id
       })
       if message.animation then
-         go.animate(message.card.id, "position", go.PLAYBACK_ONCE_FORWARD, go.get_position() + vmath.vector3(0, 0, 0.2), go.EASING_LINEAR, 0.5, 0.3, function ()
+         go.animate(message.card.id, "position", go.PLAYBACK_ONCE_FORWARD, go.get_position() + vmath.vector3(0, 0, 0.2), go.EASING_OUTQUAD, 0.4, 0.1, function ()
                        -- чтобы летела сверху, а потом не перекрывала следующие карты
                        go.set_position(go.get_position() + vmath.vector3(0, 0, self.z_index + self.card_count * self.z_index ), message.card.id)
          end)

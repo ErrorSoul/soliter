@@ -527,22 +527,40 @@ function on_message(self, message_id, message, sender)
             sl_pos = value.pos
             break
          end
-
       end
 
+      local i = 0
       for _, card in pairs(message) do
-         --pprint("A", card)
-         msg.post(card.id, 'drop_success', {
-                  slot_id = sl_id,
-                  position = sl_pos,
-                  card = card,
-                  animation = true,
-                  complete = true
-      })
+         local arc_delay = i * 0.1
+         local captured_card = card
+         fly_card_arc(captured_card.id, sl_pos, arc_delay, function()
+            msg.post(captured_card.id, 'drop_success', {
+               slot_id = sl_id,
+               position = sl_pos,
+               card = captured_card,
+               animation = false,
+               complete = true
+            })
+         end)
+         i = i + 1
       end
 
 
    end
+end
+
+local function fly_card_arc(card_id, target_pos, delay, callback)
+    local start_pos = go.get_position(card_id)
+    local mid = vmath.vector3(
+        (start_pos.x + target_pos.x) / 2,
+        math.max(start_pos.y, target_pos.y) + 80,
+        0.25
+    )
+    go.animate(card_id, "position", go.PLAYBACK_ONCE_FORWARD,
+        mid, go.EASING_OUTQUAD, 0.2, delay, function()
+            go.animate(card_id, "position", go.PLAYBACK_ONCE_FORWARD,
+                target_pos, go.EASING_INQUAD, 0.2, 0, callback)
+        end)
 end
 
 function clean_cursor(self)

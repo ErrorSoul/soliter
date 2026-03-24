@@ -113,6 +113,9 @@ function update(self, dt)
     end
     if tutorial_state.show_victory then
         tutorial_state.show_victory = false
+        local overlay = gui.get_node("victory_overlay")
+        local popup = gui.get_node("victory_popup")
+
         if tutorial_state.is_tutorial then
             gui.set_text(gui.get_node("text1"), i18n.t("well_done"))
             gui.set_text(gui.get_node("text"), i18n.t("play_now"))
@@ -120,7 +123,18 @@ function update(self, dt)
             gui.set_text(gui.get_node("text1"), i18n.t("victory"))
             gui.set_text(gui.get_node("text"), i18n.t("play_again"))
         end
-        gui.set_enabled(gui.get_node("victory_overlay"), true)
+
+        gui.set_enabled(overlay, true)
+
+        -- Overlay fade-in
+        gui.set_color(overlay, vmath.vector4(0, 0, 0, 0))
+        gui.animate(overlay, "color.w", 0.6, gui.EASING_OUTQUAD, 0.4)
+
+        -- Popup bounce: scale 0 → 1.2 → 1.0
+        gui.set_scale(popup, vmath.vector3(0, 0, 1))
+        gui.animate(popup, "scale", vmath.vector3(1.2, 1.2, 1), gui.EASING_OUTQUAD, 0.3, 0.2, function()
+            gui.animate(popup, "scale", vmath.vector3(1, 1, 1), gui.EASING_INQUAD, 0.15)
+        end)
     end
 end
 
