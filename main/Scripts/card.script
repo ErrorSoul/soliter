@@ -11,8 +11,8 @@ function init(self)
    self.is_highlighted = false
    -- Сохраняем начальный цвет спрайта
    self.normal_tint = vmath.vector4(1, 1, 1, 1)
-   self.highlight_tint = vmath.vector4(1.2, 1.2, 0.8, 1) -- Желтоватое свечение
-   self.is_highlighted = true
+   self.highlight_tint = vmath.vector4(1.15, 1.15, 1.15, 1) -- Белое свечение
+   self.is_highlighted = false
    -- sprite.set_constant("#sprite", "tint", self.highlight_tint)
    go.set_position(vmath.vector3(go.get_position().x,
                                  go.get_position().y,
@@ -59,7 +59,7 @@ function on_message(self, message_id, message, sender)
       self.is_dragging = true
       go.animate(".", "scale", go.PLAYBACK_ONCE_FORWARD,
           vmath.vector3(1.1, 1.1, 1), go.EASING_OUTQUAD, 0.1)
-      sprite.set_constant("#sprite", "tint", vmath.vector4(1, 1, 0.2, 1))
+      sprite.set_constant("#sprite", "tint", vmath.vector4(1.15, 1.15, 1.15, 1))
 
    elseif message_id == hash("drag_update") and self.is_dragging then
       go.cancel_animations(".", "position")
@@ -73,8 +73,8 @@ function on_message(self, message_id, message, sender)
       go.animate(".", "scale", go.PLAYBACK_ONCE_FORWARD,
           vmath.vector3(1, 1, 1), go.EASING_OUTQUAD, 0.15)
       if message.animation then
-          -- Auto-move flash: жёлтая вспышка через set_constant + timer
-          sprite.set_constant("#sprite", "tint", vmath.vector4(1, 1, 0, 1))
+          -- Auto-move flash: белая вспышка
+          sprite.set_constant("#sprite", "tint", vmath.vector4(1.3, 1.3, 1.3, 1))
           timer.delay(0.35, false, function()
               sprite.set_constant("#sprite", "tint", vmath.vector4(1, 1, 1, 1))
           end)
