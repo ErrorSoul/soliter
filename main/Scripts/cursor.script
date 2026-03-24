@@ -361,6 +361,20 @@ local function set_cursor(slots, params)
    end
 end
 
+local function fly_card_arc(card_id, target_pos, delay, callback)
+    local start_pos = go.get_position(card_id)
+    local mid = vmath.vector3(
+        (start_pos.x + target_pos.x) / 2,
+        math.max(start_pos.y, target_pos.y) + 80,
+        0.25
+    )
+    go.animate(card_id, "position", go.PLAYBACK_ONCE_FORWARD,
+        mid, go.EASING_OUTQUAD, 0.2, delay, function()
+            go.animate(card_id, "position", go.PLAYBACK_ONCE_FORWARD,
+                target_pos, go.EASING_INQUAD, 0.2, 0, callback)
+        end)
+end
+
 function on_message(self, message_id, message, sender)
    if not message_id == hash('drag_update') then
       print("[CURSOR]", message_id)
@@ -547,20 +561,6 @@ function on_message(self, message_id, message, sender)
 
 
    end
-end
-
-local function fly_card_arc(card_id, target_pos, delay, callback)
-    local start_pos = go.get_position(card_id)
-    local mid = vmath.vector3(
-        (start_pos.x + target_pos.x) / 2,
-        math.max(start_pos.y, target_pos.y) + 80,
-        0.25
-    )
-    go.animate(card_id, "position", go.PLAYBACK_ONCE_FORWARD,
-        mid, go.EASING_OUTQUAD, 0.2, delay, function()
-            go.animate(card_id, "position", go.PLAYBACK_ONCE_FORWARD,
-                target_pos, go.EASING_INQUAD, 0.2, 0, callback)
-        end)
 end
 
 function clean_cursor(self)
