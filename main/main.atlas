@@ -121,6 +121,18 @@ images {
   sprite_trim_mode: SPRITE_TRIM_MODE_5
 }
 images {
+  image: "/assets/buttons/button_red_grey.png"
+  sprite_trim_mode: SPRITE_TRIM_MODE_5
+}
+images {
+  image: "/assets/buttons/button_green_grey.png"
+  sprite_trim_mode: SPRITE_TRIM_MODE_5
+}
+images {
+  image: "/assets/buttons/button_blue_grey.png"
+  sprite_trim_mode: SPRITE_TRIM_MODE_5
+}
+images {
   image: "/assets/cards/back/flower_back.png"
 }
 images {

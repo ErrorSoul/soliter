@@ -383,7 +383,7 @@ nodes {
   }
   type: TYPE_TEXT
   text: ""
-  font: "default"
+  font: "main_font"
   id: "tutorial_text"
   parent: "tutorial_text_bg"
   layer: "buttons"
@@ -410,7 +410,7 @@ nodes {
   }
   type: TYPE_TEXT
   text: "1/5"
-  font: "default"
+  font: "main_font"
   id: "tutorial_step_text"
   parent: "tutorial_text_bg"
   layer: "buttons"

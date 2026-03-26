@@ -1,5 +1,5 @@
 local DEBUG_DEAL = false -- false = нормальная тасовка, true = синие драконы сверху стеков
-local DEBUG_AUTO_FINISH = true -- true = тестовая раздача для auto-finish
+local DEBUG_AUTO_FINISH = false -- true = тестовая раздача для auto-finish
 local tutorial_state = require("main.Scripts.tutorial_state")
 
 function init(self)

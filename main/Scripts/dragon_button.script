@@ -15,8 +15,10 @@ function on_message(self, message_id, message, sender)
    if message_id == hash("set_button") then
       self.is_active = message.data.is_active
       self.sprite = message.data.sprite
+      self.default_sprite = message.data.sprite .. "_grey"
       self.cursor = message.cursor
       self.slot_id = message.slot_id
+      check_state(self)
    elseif message_id == hash("send_counter_to_button") then
       self.counter = self.counter + 1
       table.insert(self.cards, message)
