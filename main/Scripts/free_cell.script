@@ -94,6 +94,9 @@ function on_message(self, message_id, message, sender)
          msg.post(self.cursor, "update_free_slot", {slot_id = self.slot_id, dragon = nil, is_empty = true })
          self.current_card = nil
          self.card_data = nil
+      else
+         -- Blocked slot: restore free_slots_counter for other-suit buttons only
+         change_button_counter(self, 1)
       end
 
    elseif message_id == hash("can_pick_card") then
