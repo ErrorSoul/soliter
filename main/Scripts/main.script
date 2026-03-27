@@ -232,8 +232,8 @@ function deal_tutorial_cards(self)
          {id="d_red", value="d", suit="red", is_dragon=true},
       }},
       {5, {
-         {id="flower", value="f", suit="flower", is_flower=true},
          {id="d_red", value="d", suit="red", is_dragon=true},
+         {id="flower", value="f", suit="flower", is_flower=true},
       }},
    }
 
