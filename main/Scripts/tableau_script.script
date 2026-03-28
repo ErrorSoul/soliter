@@ -56,6 +56,7 @@ function on_message(self, message_id, message, sender)
       self.stack = message.stack
       self.index = message.index
       self.cursor = message.cursor
+      self.is_empty = (#self.stack == 0)
       last_card_to_slot(self)
       update_visible_cards(self)
    elseif message_id == hash("remove_card") then

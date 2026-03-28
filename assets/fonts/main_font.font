@@ -1,4 +1,4 @@
-font: "/assets/fonts/CocomatLight-ZXY3.ttf"
+font: "/assets/fonts/ArialBold.ttf"
 material: "/builtins/fonts/font.material"
 size: 36
 all_chars: true
