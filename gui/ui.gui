@@ -57,85 +57,67 @@ nodes {
     y: 540.0
   }
   color {
-    x: 0.0
-    y: 0.0
-    z: 0.0
+    x: 0.1
+    y: 0.2
+    z: 0.1
   }
   type: TYPE_BOX
   id: "victory_overlay"
   layer: "buttons"
   inherit_alpha: true
-  alpha: 0.6
   enabled: false
 }
 nodes {
   position {
-    x: 480.0
-    y: 270.0
+    y: 60.0
+  }
+  scale {
+    x: 1.8
+    y: 1.8
   }
   size {
     x: 400.0
-    y: 300.0
-  }
-  color {
-    x: 0.2
-    y: 0.35
-    z: 0.2
-  }
-  type: TYPE_BOX
-  id: "victory_popup"
-  parent: "victory_overlay"
-  layer: "buttons"
-  inherit_alpha: true
-}
-nodes {
-  position {
-    y: 80.0
-  }
-  size {
-    x: 300.0
     y: 80.0
   }
   color {
-    x: 0.0
-    y: 0.0
-    z: 0.0
+    x: 0.95
+    y: 0.85
+    z: 0.4
   }
   type: TYPE_TEXT
-  text: "Victory!"
+  text: "VICTORY!"
   font: "main_font"
   id: "text1"
-  parent: "victory_popup"
-  inherit_alpha: true
+  parent: "victory_overlay"
+  inherit_alpha: false
 }
 nodes {
   position {
-    y: -20.0
+    y: -40.0
   }
   size {
-    x: 200.0
-    y: 60.0
+    x: 260.0
+    y: 64.0
   }
   color {
-    x: 0.6
-    y: 0.0
-    z: 0.0
+    x: 0.55
+    y: 0.15
+    z: 0.1
   }
   type: TYPE_BOX
   id: "victory_restart"
-  parent: "victory_popup"
+  parent: "victory_overlay"
   layer: "buttons"
-  inherit_alpha: true
+  inherit_alpha: false
 }
 nodes {
-  size {
-    x: 200.0
-    y: 60.0
+  scale {
+    x: 0.8
+    y: 0.8
   }
-  color {
-    x: 0.0
-    y: 0.0
-    z: 0.0
+  size {
+    x: 260.0
+    y: 64.0
   }
   type: TYPE_TEXT
   text: "PLAY AGAIN"
@@ -146,32 +128,31 @@ nodes {
 }
 nodes {
   position {
-    y: -90.0
+    y: -120.0
   }
   size {
     x: 200.0
-    y: 60.0
+    y: 50.0
   }
   color {
-    x: 0.2
-    y: 0.2
-    z: 0.5
+    x: 0.15
+    y: 0.3
+    z: 0.15
   }
   type: TYPE_BOX
   id: "victory_menu_button"
-  parent: "victory_popup"
+  parent: "victory_overlay"
   layer: "buttons"
-  inherit_alpha: true
+  inherit_alpha: false
 }
 nodes {
+  scale {
+    x: 0.65
+    y: 0.65
+  }
   size {
     x: 200.0
-    y: 60.0
-  }
-  color {
-    x: 0.0
-    y: 0.0
-    z: 0.0
+    y: 50.0
   }
   type: TYPE_TEXT
   text: "MENU"

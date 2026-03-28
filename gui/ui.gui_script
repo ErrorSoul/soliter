@@ -114,27 +114,40 @@ function update(self, dt)
     if tutorial_state.show_victory then
         tutorial_state.show_victory = false
         local overlay = gui.get_node("victory_overlay")
-        local popup = gui.get_node("victory_popup")
+        local title = gui.get_node("text1")
+        local btn_play = gui.get_node("victory_restart")
+        local btn_menu = gui.get_node("victory_menu_button")
 
         if tutorial_state.is_tutorial then
-            gui.set_text(gui.get_node("text1"), i18n.t("well_done"))
+            gui.set_text(title, i18n.t("well_done"))
             gui.set_text(gui.get_node("text"), i18n.t("play_now"))
         else
-            gui.set_text(gui.get_node("text1"), i18n.t("victory"))
+            gui.set_text(title, i18n.t("victory"))
             gui.set_text(gui.get_node("text"), i18n.t("play_again"))
         end
 
         gui.set_enabled(overlay, true)
 
-        -- Overlay fade-in
-        gui.set_color(overlay, vmath.vector4(0, 0, 0, 0))
-        gui.animate(overlay, "color.w", 0.6, gui.EASING_OUTQUAD, 0.4)
+        -- Full-screen fade-in
+        gui.set_color(overlay, vmath.vector4(0.1, 0.2, 0.1, 0))
+        gui.animate(overlay, "color.w", 1.0, gui.EASING_OUTQUAD, 0.5)
 
-        -- Popup bounce: scale 0 → 1.2 → 1.0
-        gui.set_scale(popup, vmath.vector3(0, 0, 1))
-        gui.animate(popup, "scale", vmath.vector3(1.2, 1.2, 1), gui.EASING_OUTQUAD, 0.3, 0.2, function()
-            gui.animate(popup, "scale", vmath.vector3(1, 1, 1), gui.EASING_INQUAD, 0.15)
-        end)
+        -- Title: slide down + scale bounce
+        gui.set_position(title, vmath.vector3(0, 160, 0))
+        gui.set_scale(title, vmath.vector3(0.5, 0.5, 1))
+        gui.animate(title, "position.y", 60, gui.EASING_OUTBACK, 0.5, 0.3)
+        gui.animate(title, "scale", vmath.vector3(1.8, 1.8, 1), gui.EASING_OUTBACK, 0.4, 0.3)
+
+        -- Buttons: fade in with slide up
+        gui.set_color(btn_play, vmath.vector4(0.55, 0.15, 0.1, 0))
+        gui.set_position(btn_play, vmath.vector3(0, -70, 0))
+        gui.animate(btn_play, "color.w", 1.0, gui.EASING_OUTQUAD, 0.3, 0.6)
+        gui.animate(btn_play, "position.y", -40, gui.EASING_OUTQUAD, 0.3, 0.6)
+
+        gui.set_color(btn_menu, vmath.vector4(0.15, 0.3, 0.15, 0))
+        gui.set_position(btn_menu, vmath.vector3(0, -150, 0))
+        gui.animate(btn_menu, "color.w", 1.0, gui.EASING_OUTQUAD, 0.3, 0.75)
+        gui.animate(btn_menu, "position.y", -120, gui.EASING_OUTQUAD, 0.3, 0.75)
     end
 end
 
