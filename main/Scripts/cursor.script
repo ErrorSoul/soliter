@@ -38,6 +38,7 @@ function init(self)
    }
    self.stack_offset = {}  -- Сохраняем смещение каждой карты относительно первой
    self.input_disabled = false
+   self.tutorial_highlights_applied = false
    msg.post(".", "acquire_input_focus")
    -- Draw colored text on the screen
 end
@@ -367,6 +368,77 @@ local function set_cursor(slots, params)
    end
 end
 
+-- Tutorial highlight: find card GO by data id (e.g. "2_red")
+local function find_card_by_data_id(self, data_id)
+    -- Search visible stacks (pairs — stacks may have gaps)
+    for _, stack in pairs(self.tableau_stacks) do
+        for _, card in ipairs(stack) do
+            if card.data and card.data.id == data_id then
+                return card.id
+            end
+        end
+    end
+    -- Search last cards (top of each stack)
+    for _, card in pairs(self.last_cards) do
+        if card and card.data and card.data.id == data_id then
+            return card.id
+        end
+    end
+    return nil
+end
+
+local function clear_tutorial_highlights(self)
+    -- Unhighlight all cards in all stacks (pairs — stacks may have gaps)
+    for _, stack in pairs(self.tableau_stacks) do
+        for _, card in ipairs(stack) do
+            msg.post(card.id, "unhighlight")
+        end
+    end
+    -- Unhighlight last cards (top of each stack)
+    for _, card in pairs(self.last_cards) do
+        if card then
+            msg.post(card.id, "unhighlight")
+        end
+    end
+    -- Unhighlight slots
+    for slot_id, _ in pairs(self.base_slots) do
+        msg.post(slot_id, "unhighlight")
+    end
+    for slot_id, _ in pairs(self.free_slots) do
+        msg.post(slot_id, "unhighlight")
+    end
+    for btn_id, _ in pairs(self.dragon_buttons) do
+        msg.post(btn_id, "unhighlight")
+    end
+end
+
+local function apply_tutorial_highlights(self)
+    local highlights = tutorial_state.HIGHLIGHTS[tutorial_state.step]
+    if not highlights then return end
+
+    -- Highlight cards
+    for _, card_data_id in ipairs(highlights.cards) do
+        local card_go = find_card_by_data_id(self, card_data_id)
+        if card_go then
+            msg.post(card_go, "highlight")
+        end
+    end
+
+    -- Highlight slots
+    for _, slot_id in ipairs(highlights.slots) do
+        msg.post(slot_id, "highlight")
+    end
+
+    -- Dynamic: highlight the base slot that already has a card (e.g. where 2_red landed)
+    if highlights.find_occupied_base then
+        for slot_id, slot in pairs(self.base_slots) do
+            if not slot.is_empty then
+                msg.post(slot_id, "highlight")
+            end
+        end
+    end
+end
+
 local function fly_card_arc(card_id, target_pos, delay, callback)
     local start_pos = go.get_position(card_id)
     local fly_z = 0.5
@@ -409,6 +481,11 @@ function on_message(self, message_id, message, sender)
       self.tableau_stacks[message.index] = message.stack
       local empty_flag = (#message.stack == 0)
       self.tableau_slots['tableau_slot'..message.index].is_empty = empty_flag
+      -- Trigger initial tutorial highlights once main stack (1) is loaded
+      if tutorial_state.is_tutorial and message.index == 1 and not self.tutorial_highlights_applied then
+         self.tutorial_highlights_applied = true
+         tutorial_state.highlight_dirty = true
+      end
 
    elseif message_id == hash("set_last_cards") then
       self.last_cards[message.index] = message.card
@@ -737,6 +814,13 @@ end
 
 
 function update(self, dt)
+   -- Tutorial highlights polling
+   if tutorial_state.is_tutorial and tutorial_state.highlight_dirty then
+      tutorial_state.highlight_dirty = false
+      clear_tutorial_highlights(self)
+      apply_tutorial_highlights(self)
+   end
+
    -- Преобразуем все объекты в строки и объединяем их
    if DEBUG_DRAW then
       local debug_string = "selected_card: " .. tostring(self.selected_card_data and self.selected_card_data.data_id or nil) .. "\n" ..
