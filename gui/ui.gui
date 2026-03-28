@@ -29,7 +29,6 @@ nodes {
   id: "restart_button"
   layer: "buttons"
   inherit_alpha: true
-  size_mode: SIZE_MODE_MANUAL
 }
 nodes {
   scale {
@@ -39,11 +38,6 @@ nodes {
   size {
     x: 150.0
     y: 40.0
-  }
-  color {
-    x: 1.0
-    y: 1.0
-    z: 1.0
   }
   type: TYPE_TEXT
   text: "RESTART"
@@ -66,13 +60,12 @@ nodes {
     x: 0.0
     y: 0.0
     z: 0.0
-    w: 0.6
   }
   type: TYPE_BOX
   id: "victory_overlay"
   layer: "buttons"
   inherit_alpha: true
-  size_mode: SIZE_MODE_MANUAL
+  alpha: 0.6
   enabled: false
 }
 nodes {
@@ -94,11 +87,9 @@ nodes {
   parent: "victory_overlay"
   layer: "buttons"
   inherit_alpha: true
-  size_mode: SIZE_MODE_MANUAL
 }
 nodes {
   position {
-    x: 0.0
     y: 80.0
   }
   size {
@@ -119,7 +110,6 @@ nodes {
 }
 nodes {
   position {
-    x: 0.0
     y: -20.0
   }
   size {
@@ -136,7 +126,6 @@ nodes {
   parent: "victory_popup"
   layer: "buttons"
   inherit_alpha: true
-  size_mode: SIZE_MODE_MANUAL
 }
 nodes {
   size {
@@ -157,7 +146,6 @@ nodes {
 }
 nodes {
   position {
-    x: 0.0
     y: -90.0
   }
   size {
@@ -174,7 +162,6 @@ nodes {
   parent: "victory_popup"
   layer: "buttons"
   inherit_alpha: true
-  size_mode: SIZE_MODE_MANUAL
 }
 nodes {
   size {
@@ -211,7 +198,6 @@ nodes {
   id: "tutorial_button"
   layer: "buttons"
   inherit_alpha: true
-  size_mode: SIZE_MODE_MANUAL
 }
 nodes {
   scale {
@@ -221,11 +207,6 @@ nodes {
   size {
     x: 150.0
     y: 40.0
-  }
-  color {
-    x: 1.0
-    y: 1.0
-    z: 1.0
   }
   type: TYPE_TEXT
   text: "TUTORIAL"
@@ -319,13 +300,12 @@ nodes {
     x: 0.0
     y: 0.0
     z: 0.0
-    w: 0.0
   }
   type: TYPE_BOX
   id: "tutorial_overlay"
   layer: "buttons"
   inherit_alpha: true
-  size_mode: SIZE_MODE_MANUAL
+  alpha: 0.0
   enabled: false
 }
 nodes {
@@ -333,18 +313,11 @@ nodes {
     x: 920.0
     y: 400.0
   }
-  color {
-    x: 1.0
-    y: 1.0
-    z: 1.0
-    w: 0.0
-  }
   type: TYPE_BOX
   id: "tutorial_highlight"
   parent: "tutorial_overlay"
   layer: "buttons"
-  inherit_alpha: false
-  size_mode: SIZE_MODE_MANUAL
+  alpha: 0.0
 }
 nodes {
   position {
@@ -358,14 +331,12 @@ nodes {
     x: 0.1
     y: 0.2
     z: 0.1
-    w: 0.95
   }
   type: TYPE_BOX
   id: "tutorial_text_bg"
   parent: "tutorial_overlay"
   layer: "buttons"
-  inherit_alpha: false
-  size_mode: SIZE_MODE_MANUAL
+  alpha: 0.95
 }
 nodes {
   scale {
@@ -376,24 +347,17 @@ nodes {
     x: 760.0
     y: 60.0
   }
-  color {
-    x: 1.0
-    y: 1.0
-    z: 1.0
-  }
   type: TYPE_TEXT
-  text: ""
   font: "main_font"
   id: "tutorial_text"
+  line_break: true
   parent: "tutorial_text_bg"
   layer: "buttons"
   inherit_alpha: true
-  line_break: true
 }
 nodes {
   position {
     x: 350.0
-    y: 0.0
   }
   scale {
     x: 1.5
@@ -414,7 +378,6 @@ nodes {
   id: "tutorial_step_text"
   parent: "tutorial_text_bg"
   layer: "buttons"
-  inherit_alpha: false
 }
 nodes {
   position {
@@ -434,8 +397,6 @@ nodes {
   id: "tutorial_skip_btn"
   parent: "tutorial_overlay"
   layer: "buttons"
-  inherit_alpha: false
-  size_mode: SIZE_MODE_MANUAL
 }
 nodes {
   scale {
@@ -445,11 +406,6 @@ nodes {
   size {
     x: 100.0
     y: 40.0
-  }
-  color {
-    x: 1.0
-    y: 1.0
-    z: 1.0
   }
   type: TYPE_TEXT
   text: "SKIP"

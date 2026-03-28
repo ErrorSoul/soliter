@@ -25,6 +25,7 @@ function init(self)
    self.btn_size = vmath.vector3(48, 48, 0)
    self.half_btn_size = self.btn_size * 0.5
    self.dragging_stack = false
+   self.prev_cursor_x = 0
    self.base_slot_trace = {
       red = "base_slot1",
       blue = "base_slot2",
@@ -329,16 +330,21 @@ function on_input(self, action_id, action)
       -- Обновление позиций при перетаскивании
       if self.is_dragging then
          local offset = self.drag_offset or vmath.vector3(0, 0, 0)
+         local dx = self.cursor_pos.x - self.prev_cursor_x
+         -- Tilt: scale.x уменьшается при горизонтальном движении (эффект 3D поворота)
+         local tilt = 1.0 - math.min(math.abs(dx) * 0.04, 0.45)
          if self.dragging_stack then
             for _, card in ipairs(self.stack_cards) do
                msg.post(card.id, "drag_update", {
-                   position = self.cursor_pos + offset + card.relative_pos
+                   position = self.cursor_pos + offset + card.relative_pos,
+                   tilt = tilt
                })
             end
          else
-            msg.post(self.selected_card, "drag_update", {position = self.cursor_pos + offset})
+            msg.post(self.selected_card, "drag_update", {position = self.cursor_pos + offset, tilt = tilt})
          end
       end
+      self.prev_cursor_x = self.cursor_pos.x
 
 
    end
@@ -363,15 +369,17 @@ end
 
 local function fly_card_arc(card_id, target_pos, delay, callback)
     local start_pos = go.get_position(card_id)
+    local fly_z = 0.5
     local mid = vmath.vector3(
         (start_pos.x + target_pos.x) / 2,
         math.max(start_pos.y, target_pos.y) + 80,
-        0.25
+        fly_z
     )
+    local land = vmath.vector3(target_pos.x, target_pos.y, fly_z)
     go.animate(card_id, "position", go.PLAYBACK_ONCE_FORWARD,
-        mid, go.EASING_OUTQUAD, 0.2, delay, function()
+        mid, go.EASING_OUTQUAD, 0.35, delay, function()
             go.animate(card_id, "position", go.PLAYBACK_ONCE_FORWARD,
-                target_pos, go.EASING_INQUAD, 0.2, 0, callback)
+                land, go.EASING_INQUAD, 0.35, 0, callback)
         end)
 end
 
@@ -493,12 +501,17 @@ function on_message(self, message_id, message, sender)
       self.drag_offset = vmath.vector3(0, 0, 0)
       msg.post(self.selected_card, "start_drag")
    elseif message_id == hash("send_to_flower_slot") then
-      msg.post(message.id, 'drop_success', {
-                  slot_id = 'flower_slot',
-                  position = self.flower_slot['flower_slot'],
-                  card = message,
-                  animation = true
-      })
+      local fl_pos = self.flower_slot['flower_slot']
+      local captured = message
+      fly_card_arc(captured.id, fl_pos, 0, function()
+         msg.post(captured.id, 'drop_success', {
+                     slot_id = 'flower_slot',
+                     position = fl_pos,
+                     card = captured,
+                     animation = true,
+                     complete = true
+         })
+      end)
    elseif message_id == hash("base_slot_full") then
       self.base_slots[message.slot_id].is_empty = false
    elseif message_id == hash("send_to_base_slot") then

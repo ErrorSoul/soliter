@@ -66,10 +66,17 @@ function on_message(self, message_id, message, sender)
       local target = message.position + vmath.vector3(0, 0, 0.3)
       go.animate(".", "position", go.PLAYBACK_ONCE_FORWARD,
           target, go.EASING_OUTQUAD, 0.05)
+      -- 3D perspective tilt
+      if message.tilt then
+         go.cancel_animations(".", "scale.x")
+         go.animate(".", "scale.x", go.PLAYBACK_ONCE_FORWARD,
+             message.tilt * 1.1, go.EASING_OUTQUAD, 0.04)
+      end
 
    elseif message_id == hash("drop_success") then
       self.is_dragging = false
       go.cancel_animations(".", "position")
+      go.cancel_animations(".", "scale.x")
       go.animate(".", "scale", go.PLAYBACK_ONCE_FORWARD,
           vmath.vector3(1, 1, 1), go.EASING_OUTQUAD, 0.15)
       if message.animation then
@@ -104,6 +111,7 @@ function on_message(self, message_id, message, sender)
    elseif message_id == hash("drop_failed") then
       self.is_dragging = false
       sprite.set_constant("#sprite", "tint", vmath.vector4(1, 1, 1, 1))
+      go.cancel_animations(".", "scale.x")
       go.animate(".", "scale", go.PLAYBACK_ONCE_FORWARD,
           vmath.vector3(1, 1, 1), go.EASING_OUTQUAD, 0.15)
       go.animate(".", "position", go.PLAYBACK_ONCE_FORWARD,
