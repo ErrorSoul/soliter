@@ -1,3 +1,5 @@
+local sfx = require("main.Scripts.sfx")
+
 function init(self)
    -- Значения карты, будут переданы при создании
    self.value = 2      -- Значение карты (2-9)
@@ -57,6 +59,7 @@ function on_message(self, message_id, message, sender)
 
    if message_id == hash("start_drag") then
       self.is_dragging = true
+      sfx.card_pick()
       go.animate(".", "scale", go.PLAYBACK_ONCE_FORWARD,
           vmath.vector3(1.1, 1.1, 1), go.EASING_OUTQUAD, 0.1)
       sprite.set_constant("#sprite", "tint", vmath.vector4(1.15, 1.15, 1.15, 1))
@@ -75,6 +78,11 @@ function on_message(self, message_id, message, sender)
 
    elseif message_id == hash("drop_success") then
       self.is_dragging = false
+      if message.animation then
+         sfx.flower_auto()
+      else
+         sfx.card_drop()
+      end
       go.cancel_animations(".", "position")
       go.cancel_animations(".", "scale.x")
       go.animate(".", "scale", go.PLAYBACK_ONCE_FORWARD,
@@ -110,6 +118,7 @@ function on_message(self, message_id, message, sender)
           end)
    elseif message_id == hash("drop_failed") then
       self.is_dragging = false
+      sfx.card_error()
       sprite.set_constant("#sprite", "tint", vmath.vector4(1, 1, 1, 1))
       go.cancel_animations(".", "scale.x")
       go.animate(".", "scale", go.PLAYBACK_ONCE_FORWARD,

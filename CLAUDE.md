@@ -14,6 +14,7 @@
 - Разрешение: 960x540 (landscape)
 - [architecture.md](./architecture.md) — архитектура, структура коллекций, message-passing, z-index система
 - [docs/responsive-explained.md](./docs/responsive-explained.md) — как работает респонсив в Defold (проекция, GUI, input)
+- [docs/sounds.md](./docs/sounds.md) — звуковая система: sfx.lua, sound_manager, cross-collection workaround
 
 ## Build
 

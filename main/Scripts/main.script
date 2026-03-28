@@ -2,6 +2,7 @@ local DEBUG_DEAL = false -- false = нормальная тасовка, true = 
 local DEBUG_AUTO_FINISH = false -- true = тестовая раздача для auto-finish
 local DEBUG_DRAGONS = false -- true = тест сбора драконов подряд: red→blue→green
 local tutorial_state = require("main.Scripts.tutorial_state")
+local sfx = require("main.Scripts.sfx")
 
 function init(self)
    print("I am MAIN SCRIPT")
@@ -95,6 +96,7 @@ end
 
 function deal_cards(self)
    local tableau_positions = get_tableau_positions(self)
+   sfx.card_deal()
    if not self.deck or #self.deck == 0 then
       print("Колода пуста!")
       return
@@ -537,6 +539,7 @@ function auto_finish_step(self)
       if all_empty and self.base_cards_count > 0 then
          print("[MAIN] auto-finish complete — victory!")
          self.currentState = self.states.WIN
+         sfx.victory()
          tutorial_state.show_victory = true
       end
       return
@@ -560,6 +563,7 @@ function auto_finish_step(self)
       return
    end
 
+   sfx.auto_finish()
    msg.post(card.id, "drop_success", {
       slot_id = target_slot,
       position = self.base_slots[target_slot].pos,
@@ -610,6 +614,7 @@ function on_message(self, message_id, message, sender)
       end
       if not self.tutorial_mode and self.base_cards_count >= 27 then
          self.currentState = self.states.WIN
+         sfx.victory()
          tutorial_state.show_victory = true  -- UI polls this flag
       end
    elseif message_id == hash("check_auto_finish") then
@@ -629,6 +634,7 @@ function on_message(self, message_id, message, sender)
    elseif message_id == hash("dragons_collected") then
       if self.tutorial_mode then
          self.currentState = self.states.WIN
+         sfx.victory()
          tutorial_state.show_victory = true  -- UI polls this flag
       else
          -- После сбора драконов проверяем auto-finish
@@ -638,4 +644,9 @@ function on_message(self, message_id, message, sender)
 end
 
 function update(self, dt)
+   -- Poll queued sounds from GUI (cross-collection workaround)
+   if sfx.pending then
+      sound.play("sound_manager#" .. sfx.pending)
+      sfx.pending = nil
+   end
 end

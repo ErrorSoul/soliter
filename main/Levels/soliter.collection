@@ -152,6 +152,14 @@ instances {
     z: -0.5
   }
 }
+instances {
+  id: "sound_manager"
+  prototype: "/main/Game Objects/sound_manager.go"
+  position {
+    x: 0.0
+    y: 0.0
+  }
+}
 scale_along_z: 0
 embedded_instances {
   id: "card_table"
