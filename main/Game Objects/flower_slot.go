@@ -5,7 +5,7 @@ components {
 embedded_components {
   id: "sprite"
   type: "sprite"
-  data: "default_animation: \"flower_back\"\n"
+  data: "default_animation: \"slot_flower\"\n"
   "material: \"/builtins/materials/sprite.material\"\n"
   "size {\n"
   "  x: 90.0\n"
