@@ -634,6 +634,7 @@ function on_message(self, message_id, message, sender)
    elseif message_id == hash("dragons_collected") then
       if self.tutorial_mode then
          self.currentState = self.states.WIN
+         sfx.victory()
          tutorial_state.show_victory = true  -- UI polls this flag
       else
          -- После сбора драконов проверяем auto-finish
