@@ -516,7 +516,7 @@ function on_message(self, message_id, message, sender)
          local free_cell_cards = {}
          for slot_id, slot in pairs(self.free_slots) do
             if not slot.is_empty then
-               table.insert(free_cell_cards, { slot_id = slot_id, dragon = slot.dragon })
+               table.insert(free_cell_cards, { slot_id = slot_id, dragon = slot.dragon, is_blocked = slot.is_blocked })
             end
          end
          msg.post("/card_table#main", "check_auto_finish", { free_cells = free_cell_cards })
@@ -565,7 +565,7 @@ function on_message(self, message_id, message, sender)
          local free_cell_cards = {}
          for slot_id, slot in pairs(self.free_slots) do
             if not slot.is_empty then
-               table.insert(free_cell_cards, { slot_id = slot_id, dragon = slot.dragon })
+               table.insert(free_cell_cards, { slot_id = slot_id, dragon = slot.dragon, is_blocked = slot.is_blocked })
             end
          end
          msg.post("/card_table#main", "check_auto_finish", { free_cells = free_cell_cards })
@@ -619,7 +619,16 @@ function on_message(self, message_id, message, sender)
    elseif message_id == hash("update_free_slot") then
       self.free_slots[message.slot_id].is_empty = message.is_empty
       self.free_slots[message.slot_id].dragon = message.dragon
+      self.free_slots[message.slot_id].is_blocked = message.is_blocked or false
       pprint("update_free_slot", self.free_slots)
+   elseif message_id == hash("send_auto_finish_check") then
+      local free_cell_cards = {}
+      for slot_id, slot in pairs(self.free_slots) do
+         if not slot.is_empty then
+            table.insert(free_cell_cards, { slot_id = slot_id, dragon = slot.dragon, is_blocked = slot.is_blocked })
+         end
+      end
+      msg.post("/card_table#main", "check_auto_finish", { free_cells = free_cell_cards })
    elseif message_id == hash("set_button_state") then
       self.dragon_buttons[message.slot_id].is_active = message.is_active
    elseif message_id == hash("get_dragon_cards") and self.pending_drop then
