@@ -336,12 +336,13 @@ nodes {
   id: "tutorial_text_bg"
   parent: "tutorial_overlay"
   layer: "buttons"
+  inherit_alpha: false
   alpha: 0.95
 }
 nodes {
   scale {
-    x: 2.0
-    y: 2.0
+    x: 0.7
+    y: 0.7
   }
   size {
     x: 760.0
@@ -360,8 +361,8 @@ nodes {
     x: 350.0
   }
   scale {
-    x: 1.5
-    y: 1.5
+    x: 0.55
+    y: 0.55
   }
   size {
     x: 60.0
@@ -378,6 +379,7 @@ nodes {
   id: "tutorial_step_text"
   parent: "tutorial_text_bg"
   layer: "buttons"
+  inherit_alpha: false
 }
 nodes {
   position {
@@ -397,6 +399,7 @@ nodes {
   id: "tutorial_skip_btn"
   parent: "tutorial_overlay"
   layer: "buttons"
+  inherit_alpha: false
 }
 nodes {
   scale {

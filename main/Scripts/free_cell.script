@@ -104,6 +104,15 @@ function on_message(self, message_id, message, sender)
         msg.post(sender, "slot_with_card", self.card_data) --id = self.current_card})
       else
       end
+   elseif message_id == hash("highlight") then
+      sprite.set_constant("#sprite", "tint", vmath.vector4(1.5, 1.4, 1.0, 1))
+      go.cancel_animations(".", "scale")
+      go.animate(".", "scale", go.PLAYBACK_LOOP_PINGPONG,
+          vmath.vector3(1.06, 1.06, 1), go.EASING_INSINE, 0.5)
+   elseif message_id == hash("unhighlight") then
+      sprite.set_constant("#sprite", "tint", vmath.vector4(1, 1, 1, 1))
+      go.cancel_animations(".", "scale")
+      go.set(".", "scale", vmath.vector3(1, 1, 1))
    end
 end
 

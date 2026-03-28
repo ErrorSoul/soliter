@@ -145,15 +145,15 @@ function on_message(self, message_id, message, sender)
 
    if message_id == hash("highlight") then
       self.is_highlighted = true
-      sprite.set_constant("#sprite", "tint", self.highlight_tint)
-      go.set_position(vmath.vector3(go.get_position().x,
-                                    go.get_position().y,
-                                    0.2))
+      -- Pulsing glow: bright yellow-white tint
+      sprite.set_constant("#sprite", "tint", vmath.vector4(1.5, 1.4, 1.0, 1))
+      go.cancel_animations(".", "scale")
+      go.animate(".", "scale", go.PLAYBACK_LOOP_PINGPONG,
+          vmath.vector3(1.06, 1.06, 1), go.EASING_INSINE, 0.5)
    elseif message_id == hash("unhighlight") then
       self.is_highlighted = false
       sprite.set_constant("#sprite", "tint", self.normal_tint)
-      go.set_position(vmath.vector3(go.get_position().x,
-                                    go.get_position().y,
-                                    0.2))
+      go.cancel_animations(".", "scale")
+      go.set(".", "scale", vmath.vector3(1, 1, 1))
    end
 end

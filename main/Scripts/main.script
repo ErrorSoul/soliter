@@ -1,6 +1,6 @@
 local DEBUG_DEAL = false -- false = нормальная тасовка, true = синие драконы сверху стеков
 local DEBUG_AUTO_FINISH = false -- true = тестовая раздача для auto-finish
-local DEBUG_DRAGONS = true -- true = тест сбора драконов подряд: red→blue→green
+local DEBUG_DRAGONS = false -- true = тест сбора драконов подряд: red→blue→green
 local tutorial_state = require("main.Scripts.tutorial_state")
 
 function init(self)
@@ -104,6 +104,7 @@ function deal_cards(self)
    local remaining_cards = #self.deck % 8
    self.tableau_stacks = {}
 
+   local deal_index = 0
    for stack_index = 1, 8 do
       local stack_position = tableau_positions[stack_index]
       local cards_in_stack = cards_per_stack + (stack_index <= remaining_cards and 1 or 0)
@@ -129,12 +130,13 @@ function deal_cards(self)
          table.insert(self.tableau_stacks[stack_index].cards, { id = card, data = card_data, slot_id = slot_id })
          table.insert(self.cards, card)
 
-         local delay = 0.05 * ((stack_index - 1) * cards_in_stack + card_index)
+         deal_index = deal_index + 1
+         local delay = 0.02 * deal_index
          go.set(card, "scale", vmath.vector3(0.5, 0.5, 1))
          go.animate(card, "scale", go.PLAYBACK_ONCE_FORWARD,
-             vmath.vector3(1, 1, 1), go.EASING_OUTQUAD, 0.4, delay)
+             vmath.vector3(1, 1, 1), go.EASING_OUTQUAD, 0.25, delay)
          target_position.z = z
-         go.animate(card, "position", go.PLAYBACK_ONCE_FORWARD, target_position, go.EASING_OUTQUAD, 0.4, delay, function()
+         go.animate(card, "position", go.PLAYBACK_ONCE_FORWARD, target_position, go.EASING_OUTQUAD, 0.25, delay, function()
             self.tableau_stacks[stack_index].animations_completed = self.tableau_stacks[stack_index].animations_completed + 1
             if self.tableau_stacks[stack_index].animations_completed == cards_in_stack then
                msg.post(slot_id, "update_stack", { cursor = self.cursor, index = stack_index, stack = self.tableau_stacks[stack_index].cards })
@@ -195,11 +197,11 @@ function deal_dragon_test(self)
          msg.post(card, "set_card", { data = card_data, slot_id = slot_id })
          table.insert(self.tableau_stacks[stack_index].cards, { id = card, data = card_data, slot_id = slot_id })
          table.insert(self.cards, card)
-         local delay = 0.1 * (stack_index + card_index)
+         local delay = 0.04 * (stack_index + card_index)
          go.set(card, "scale", vmath.vector3(0.5, 0.5, 1))
          go.animate(card, "scale", go.PLAYBACK_ONCE_FORWARD,
-             vmath.vector3(1, 1, 1), go.EASING_OUTQUAD, 0.3, delay)
-         go.animate(card, "position", go.PLAYBACK_ONCE_FORWARD, target_position, go.EASING_OUTQUAD, 0.3, delay, function()
+             vmath.vector3(1, 1, 1), go.EASING_OUTQUAD, 0.25, delay)
+         go.animate(card, "position", go.PLAYBACK_ONCE_FORWARD, target_position, go.EASING_OUTQUAD, 0.25, delay, function()
             self.tableau_stacks[stack_index].animations_completed = self.tableau_stacks[stack_index].animations_completed + 1
             if self.tableau_stacks[stack_index].animations_completed == cards_in_stack then
                msg.post(slot_id, "update_stack", { cursor = self.cursor, index = stack_index, stack = self.tableau_stacks[stack_index].cards })
@@ -257,11 +259,11 @@ function deal_auto_finish_test(self)
          msg.post(card, "set_card", { data = card_data, slot_id = slot_id })
          table.insert(self.tableau_stacks[stack_index].cards, { id = card, data = card_data, slot_id = slot_id })
          table.insert(self.cards, card)
-         local delay = 0.1 * (stack_index + card_index)
+         local delay = 0.04 * (stack_index + card_index)
          go.set(card, "scale", vmath.vector3(0.5, 0.5, 1))
          go.animate(card, "scale", go.PLAYBACK_ONCE_FORWARD,
-             vmath.vector3(1, 1, 1), go.EASING_OUTQUAD, 0.3, delay)
-         go.animate(card, "position", go.PLAYBACK_ONCE_FORWARD, target_position, go.EASING_OUTQUAD, 0.3, delay, function()
+             vmath.vector3(1, 1, 1), go.EASING_OUTQUAD, 0.25, delay)
+         go.animate(card, "position", go.PLAYBACK_ONCE_FORWARD, target_position, go.EASING_OUTQUAD, 0.25, delay, function()
             self.tableau_stacks[stack_index].animations_completed = self.tableau_stacks[stack_index].animations_completed + 1
             if self.tableau_stacks[stack_index].animations_completed == cards_in_stack then
                msg.post(slot_id, "update_stack", { cursor = self.cursor, index = stack_index, stack = self.tableau_stacks[stack_index].cards })
@@ -338,11 +340,11 @@ function deal_tutorial_cards(self)
          table.insert(self.tableau_stacks[stack_index].cards, { id = card, data = card_data, slot_id = slot_id })
          table.insert(self.cards, card)
 
-         local delay = 0.1 * (stack_index + card_index)
+         local delay = 0.04 * (stack_index + card_index)
          go.set(card, "scale", vmath.vector3(0.5, 0.5, 1))
          go.animate(card, "scale", go.PLAYBACK_ONCE_FORWARD,
-             vmath.vector3(1, 1, 1), go.EASING_OUTQUAD, 0.3, delay)
-         go.animate(card, "position", go.PLAYBACK_ONCE_FORWARD, target_position, go.EASING_OUTQUAD, 0.3, delay, function()
+             vmath.vector3(1, 1, 1), go.EASING_OUTQUAD, 0.25, delay)
+         go.animate(card, "position", go.PLAYBACK_ONCE_FORWARD, target_position, go.EASING_OUTQUAD, 0.25, delay, function()
             self.tableau_stacks[stack_index].animations_completed = self.tableau_stacks[stack_index].animations_completed + 1
             if self.tableau_stacks[stack_index].animations_completed == cards_in_stack then
                msg.post(slot_id, "update_stack", { cursor = self.cursor, index = stack_index, stack = self.tableau_stacks[stack_index].cards })

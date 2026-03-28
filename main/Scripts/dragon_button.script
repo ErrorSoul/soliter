@@ -42,6 +42,15 @@ function on_message(self, message_id, message, sender)
    --    self.free_slot_pos = message.pos
    --    pprint("DRAGON POS", self.free_slot_pos)
    --    check_state(self)
+   elseif message_id == hash("highlight") then
+      sprite.set_constant("#sprite", "tint", vmath.vector4(1.5, 1.4, 1.0, 1))
+      go.cancel_animations(".", "scale")
+      go.animate(".", "scale", go.PLAYBACK_LOOP_PINGPONG,
+          vmath.vector3(1.15, 1.15, 1), go.EASING_INSINE, 0.5)
+   elseif message_id == hash("unhighlight") then
+      sprite.set_constant("#sprite", "tint", vmath.vector4(1, 1, 1, 1))
+      go.cancel_animations(".", "scale")
+      go.set(".", "scale", vmath.vector3(1, 1, 1))
    elseif message_id == hash("change_free_slots_button_counter") then
       self.free_slots_counter = self.free_slots_counter + message.num
       if self.sprite == 'green' then
