@@ -11,6 +11,10 @@ fonts {
   name: "second"
   font: "/assets/fonts/second.font"
 }
+textures {
+  name: "main"
+  texture: "/main/main.atlas"
+}
 nodes {
   position {
     x: 855.0
@@ -56,12 +60,8 @@ nodes {
     x: 960.0
     y: 540.0
   }
-  color {
-    x: 0.1
-    y: 0.2
-    z: 0.1
-  }
   type: TYPE_BOX
+  texture: "main/victory_bg"
   id: "victory_overlay"
   layer: "buttons"
   inherit_alpha: true

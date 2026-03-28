@@ -190,4 +190,7 @@ animations {
   }
   playback: PLAYBACK_LOOP_FORWARD
 }
+images {
+  image: "/assets/victory_bg.png"
+}
 extrude_borders: 2
