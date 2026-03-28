@@ -46,10 +46,20 @@ function on_message(self, message_id, message, sender)
       go.cancel_animations(".", "scale")
       go.animate(".", "scale", go.PLAYBACK_LOOP_PINGPONG,
           vmath.vector3(1.06, 1.06, 1), go.EASING_INSINE, 0.5)
+      -- Подсветить верхнюю карту и запомнить какую
+      if self.last_card then
+         self.highlighted_card = self.last_card
+         msg.post(self.last_card.id, "highlight")
+      end
    elseif message_id == hash("unhighlight") then
       sprite.set_constant("#sprite", "tint", vmath.vector4(1, 1, 1, 1))
       go.cancel_animations(".", "scale")
       go.set(".", "scale", vmath.vector3(1, 1, 1))
+      -- Снять подсветку с той карты, которую подсветили (а не текущей last_card)
+      if self.highlighted_card then
+         msg.post(self.highlighted_card.id, "unhighlight")
+         self.highlighted_card = nil
+      end
    end
 end
 

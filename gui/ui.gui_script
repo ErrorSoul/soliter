@@ -131,8 +131,8 @@ function update(self, dt)
 
         gui.set_enabled(overlay, true)
 
-        -- Full-screen fade-in
-        gui.set_color(overlay, vmath.vector4(0.1, 0.2, 0.1, 0))
+        -- Full-screen fade-in (white tint for image texture)
+        gui.set_color(overlay, vmath.vector4(1, 1, 1, 0))
         gui.animate(overlay, "color.w", 1.0, gui.EASING_OUTQUAD, 0.5)
 
         -- Title: slide down + scale bounce
