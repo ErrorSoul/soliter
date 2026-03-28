@@ -1,3 +1,5 @@
+local sfx = require("main.Scripts.sfx")
+
 function init(self)
    self.sprite = nil
    self.default_sprite = 'grey'
@@ -24,6 +26,7 @@ function on_message(self, message_id, message, sender)
       table.insert(self.cards, message)
       check_state(self)
    elseif message_id == hash("get_dragon_cards") then
+      sfx.dragon_collect()
       msg.post(self.cursor, 'get_dragon_cards', self.cards)
       if self.sprite == 'green' then
          pprint("STATE", self.counter, free_slot_any(self), self.counter == 4 and free_slot_any(self) )
