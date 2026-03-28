@@ -118,6 +118,9 @@ function update(self, dt)
         local btn_play = gui.get_node("victory_restart")
         local btn_menu = gui.get_node("victory_menu_button")
 
+        -- Скрыть tutorial overlay при победе
+        gui.set_enabled(gui.get_node("tutorial_overlay"), false)
+
         if tutorial_state.is_tutorial then
             gui.set_text(title, i18n.t("well_done"))
             gui.set_text(gui.get_node("text"), i18n.t("play_now"))
