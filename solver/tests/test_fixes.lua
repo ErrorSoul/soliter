@@ -35,29 +35,56 @@ local function has_move(moves, fields)
 end
 
 -- ============================================================
--- FIX #1: deal layout is COLUMN-MAJOR (regression snapshot, seed 42).
--- Round-robin (the old bug) produces a different layout. These exact values
--- were captured from the corrected column-major M.deal(42). Source of truth:
--- main.script:105-148 (deal_cards) — outer col 1..8, inner 5 cards per column.
+-- FIX #1: M.deal reproduces the GAME'S deal ALGORITHM bit-for-bit. The oracle
+-- below independently reimplements the game in pure Lua:
+--   create_deck   (main.script:62-76)  — PER-SUIT: each suit's 2..10 then its 4
+--                                          dragons, then next suit, flower last.
+--   shuffle_deck  (main.script:367-377) — seed, 20 warmups, 3 Fisher-Yates passes
+--   deal_cards    (main.script:105-148) — COLUMN-MAJOR, 8 cols × 5, removed from end.
+-- This is a Lua-vs-Lua check (both use math.random) so it CAN match exactly,
+-- validating the algorithm. It does NOT claim per-seed parity with the LIVE game
+-- (Defold's PRNG ≠ Lua 5.4's) — that is unfixable in pure Lua and irrelevant to
+-- the aggregate solvable-rate (uniform shuffle ⇒ same board distribution).
 -- ============================================================
-H.test("fix#1 deal column-major: seed 42 layout matches game (regression)", function(rules)
-   local function code(card) return card.suit:sub(1,1) .. tostring(card.value) end
-   local function col_str(st, i)
-      local t = {}
-      for _, c in ipairs(st.tableau[i]) do t[#t+1] = code(c) end
-      return table.concat(t, ",")
+H.test("fix#1 deal matches game algorithm bit-for-bit (oracle, seeds 1/42/12345)", function(rules)
+   -- Independent oracle reimplementation of the game's deal.
+   local function game_deal(seed)
+      local deck = {}
+      for _, suit in ipairs({ "red", "blue", "green" }) do
+         for v = 2, 10 do deck[#deck+1] = { value=v,   suit=suit } end
+         for _ = 1, 4   do deck[#deck+1] = { value="d", suit=suit, is_dragon=true } end
+      end
+      deck[#deck+1] = { value="f", suit="flower", is_flower=true }
+      math.randomseed(seed)
+      for _ = 1, 20 do math.random() end
+      for _ = 1, 3 do
+         for i = #deck, 2, -1 do
+            local j = math.random(1, i)
+            deck[i], deck[j] = deck[j], deck[i]
+         end
+      end
+      local tableau = {}
+      for c = 1, 8 do
+         tableau[c] = {}
+         for _ = 1, 5 do table.insert(tableau[c], table.remove(deck)) end
+      end
+      return tableau
    end
-   local st = rules.deal(42)
-   local c1 = col_str(st, 1)
-   local c2 = col_str(st, 2)
-   if c1 ~= "g6,b4,g5,b2,g3" then
-      return false, "col1 expected 'g6,b4,g5,b2,g3' (column-major) got '" .. c1 .. "' — deal may have reverted to round-robin"
+
+   for _, seed in ipairs({ 1, 42, 12345 }) do
+      local got = rules.deal(seed).tableau
+      local want = game_deal(seed)
+      for c = 1, 8 do
+         for r = 1, 5 do
+            local g, w = got[c][r], want[c][r]
+            if g.value ~= w.value or g.suit ~= w.suit then
+               return false, string.format(
+                  "seed %d col%d row%d: got %s:%s, game algorithm gives %s:%s — deck build / deal order diverges",
+                  seed, c, r, tostring(g.suit), tostring(g.value), tostring(w.suit), tostring(w.value))
+            end
+         end
+      end
    end
-   if c2 ~= "rd,b5,r8,rd,rd" then
-      return false, "col2 expected 'rd,b5,r8,rd,rd' got '" .. c2 .. "'"
-   end
-   -- determinism
-   if col_str(rules.deal(42), 1) ~= c1 then return false, "deal not deterministic for same seed" end
    return true
 end)
 

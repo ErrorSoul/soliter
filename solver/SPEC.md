@@ -175,16 +175,22 @@ picked from; it is permanently inaccessible.
 
 **Enable condition:** a dragon-collect button for suit S becomes active when ALL
 of:
-1. `counter[S] == 4` — all 4 dragons of suit S are exposed as the **top card of
-   their respective tableau columns**. The counter is incremented by 1 for each
-   such exposed dragon via the `send_counter_to_button` message in
-   `tableau_script.script:44`, which fires after every stack change.
-   **Important:** this counter tracks **tableau-tops only**. A dragon of suit S
-   sitting in a free cell (non-blocked) does NOT increment the counter in the
-   live game. The solver's `compute_dragon_counter` adds free-cell dragons for
-   convenience (to simplify collect eligibility); this deviates from the strict
-   game counter but is functionally safe because the collect move still removes
-   all 4 dragons from their actual locations.
+1. `counter[S] == 4` — the solver requires all 4 dragons of suit S to be exposed
+   as the **top card of their respective tableau columns simultaneously**.
+   `compute_dragon_counter` counts **tableau-tops only** (a dragon in a free cell
+   does NOT count), matching where the game fires `send_counter_to_button`
+   (`tableau_script.script:44`, on top exposure).
+
+   **Fidelity caveat — the game counter is monotonic.** In the live game
+   (`dragon_button.script:24-25`) the counter is `self.counter + 1` on every
+   exposure event and is **never decremented**. So the game enables collect on 4
+   *cumulative* exposures (a dragon re-buried then re-exposed still counts), which
+   is *more lenient* than the solver's "4 simultaneously on tops". Modeling the
+   monotonic counter exactly would require per-dragon exposure history (breaking
+   the pure-state transposition model). The solver therefore uses the stricter
+   simultaneous-tops rule, making its solvable count a **conservative lower
+   bound** — it can mark a board unsolvable that the game's lenient counter could
+   in principle clear. Stated, not hidden.
 2. `free_slots_counter[S] > 0` — at least one free cell slot is available from
    the perspective of suit S. This counter starts at 3 and is decremented by 1
    for each occupied free cell (with cross-suit accounting: a dragon of suit S

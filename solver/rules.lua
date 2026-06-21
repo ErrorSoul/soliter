@@ -46,21 +46,20 @@ local function build_deck()
    local deck = {}
    local suits = { "red", "blue", "green" }
 
-   -- 27 numeric cards: values 2..10 for each suit
+   -- Per-suit order, EXACTLY matching create_deck (main.script:62-76): for each
+   -- suit emit its 9 numerics (2..10) then its 4 dragons, then the next suit.
+   -- (The previous all-numerics-then-all-dragons order gave a different shuffled
+   --  deck for the same seed — review composer-v2 P0.)
    for _, suit in ipairs(suits) do
       for v = 2, 10 do
          deck[#deck + 1] = make_num(suit, v)
       end
-   end
-
-   -- 12 dragon cards: 4 per suit
-   for _, suit in ipairs(suits) do
       for _ = 1, 4 do
          deck[#deck + 1] = make_dragon(suit)
       end
    end
 
-   -- 1 flower card
+   -- 1 flower card (last)
    deck[#deck + 1] = make_flower()
 
    return deck
