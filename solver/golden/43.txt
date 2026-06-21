@@ -1,0 +1,969 @@
+# seed=43 moves=968
+to_free_cell from_col=1
+to_free_cell from_col=1
+to_free_cell from_col=1
+from_free_cell from_slot=2 to_col=2
+to_free_cell from_col=1
+to_foundation from_col=1
+to_foundation from_col=3
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+from_free_cell from_slot=2 to_col=8
+to_free_cell from_col=1
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+from_free_cell from_slot=1 to_col=7
+to_free_cell from_col=1
+from_free_cell from_slot=1 to_col=7
+to_free_cell from_col=2
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+from_free_cell from_slot=3 to_col=4
+to_free_cell from_col=1
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+from_free_cell from_slot=3 to_col=8
+to_free_cell from_col=1
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+from_free_cell from_slot=2 to_col=2
+to_free_cell from_col=1
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=3
+from_free_cell from_slot=3 to_col=3
+to_free_cell from_col=1
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+from_free_cell from_slot=2 to_col=2
+to_free_cell from_col=1
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=3
+from_free_cell from_slot=3 to_col=1
+to_free_cell from_col=2
+from_free_cell from_slot=1 to_col=2
+to_free_cell from_col=1
+tableau_to_tableau from_col=5 to_col=4
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+from_free_cell from_slot=1 to_col=3
+to_free_cell from_col=1
+from_free_cell from_slot=1 to_col=2
+to_free_cell from_col=1
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+from_free_cell from_slot=1 to_col=2
+to_free_cell from_col=3
+from_free_cell from_slot=2 to_col=2
+to_free_cell from_col=3
+multi_to_tableau from_col=4 to_col=7 run_start=5 run_size=3
+to_foundation from_col=4
+to_foundation from_col=4
+from_free_cell from_slot=2 to_col=4
+to_free_cell from_col=1
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+tableau_to_tableau from_col=1 to_col=4
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+from_free_cell from_slot=2 to_col=2
+to_free_cell from_col=1
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=3
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+from_free_cell from_slot=1 to_col=2
+to_free_cell from_col=1
+multi_to_tableau from_col=8 to_col=4 run_start=5 run_size=3
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+from_free_cell from_slot=2 to_col=2
+to_free_cell from_col=1
+tableau_to_tableau from_col=8 to_col=1
+multi_to_tableau from_col=4 to_col=8 run_start=3 run_size=5
+from_free_cell from_slot=2 to_col=4
+to_free_cell from_col=1
+tableau_to_tableau from_col=4 to_col=1
+multi_to_tableau from_col=7 to_col=1 run_start=5 run_size=6
+multi_to_tableau from_col=1 to_col=4 run_start=2 run_size=7
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+from_free_cell from_slot=1 to_col=2
+to_free_cell from_col=1
+multi_to_tableau from_col=4 to_col=1 run_start=3 run_size=7
+multi_to_tableau from_col=1 to_col=7 run_start=5 run_size=4
+multi_to_tableau from_col=1 to_col=4 run_start=2 run_size=3
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+from_free_cell from_slot=2 to_col=2
+to_free_cell from_col=1
+multi_to_tableau from_col=4 to_col=1 run_start=3 run_size=3
+multi_to_tableau from_col=8 to_col=4 run_start=4 run_size=5
+from_free_cell from_slot=2 to_col=8
+to_free_cell from_col=1
+tableau_to_tableau from_col=1 to_col=8
+from_free_cell from_slot=2 to_col=8
+to_free_cell from_col=1
+multi_to_tableau from_col=7 to_col=8 run_start=5 run_size=4
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+from_free_cell from_slot=1 to_col=2
+to_free_cell from_col=1
+multi_to_tableau from_col=4 to_col=7 run_start=6 run_size=2
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+from_free_cell from_slot=2 to_col=2
+to_free_cell from_col=1
+multi_to_tableau from_col=8 to_col=1 run_start=4 run_size=7
+multi_to_tableau from_col=4 to_col=8 run_start=3 run_size=3
+from_free_cell from_slot=2 to_col=4
+to_free_cell from_col=1
+multi_to_tableau from_col=1 to_col=4 run_start=3 run_size=5
+from_free_cell from_slot=2 to_col=4
+to_free_cell from_col=1
+multi_to_tableau from_col=4 to_col=1 run_start=3 run_size=7
+multi_to_tableau from_col=8 to_col=4 run_start=4 run_size=3
+from_free_cell from_slot=2 to_col=8
+to_free_cell from_col=1
+multi_to_tableau from_col=1 to_col=8 run_start=3 run_size=5
+multi_to_tableau from_col=7 to_col=4 run_start=5 run_size=2
+multi_to_tableau from_col=8 to_col=1 run_start=5 run_size=5
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+from_free_cell from_slot=1 to_col=2
+to_free_cell from_col=1
+multi_to_tableau from_col=1 to_col=8 run_start=3 run_size=5
+multi_to_tableau from_col=4 to_col=7 run_start=6 run_size=2
+multi_to_tableau from_col=8 to_col=1 run_start=5 run_size=5
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+tableau_to_tableau from_col=1 to_col=2
+multi_to_tableau from_col=1 to_col=8 run_start=3 run_size=5
+multi_to_tableau from_col=7 to_col=4 run_start=5 run_size=2
+multi_to_tableau from_col=8 to_col=1 run_start=5 run_size=5
+multi_to_tableau from_col=1 to_col=7 run_start=5 run_size=3
+tableau_to_tableau from_col=2 to_col=7
+from_free_cell from_slot=1 to_col=2
+to_free_cell from_col=1
+tableau_to_tableau from_col=1 to_col=8
+from_free_cell from_slot=1 to_col=8
+to_free_cell from_col=1
+multi_to_tableau from_col=8 to_col=1 run_start=4 run_size=3
+multi_to_tableau from_col=4 to_col=8 run_start=3 run_size=5
+from_free_cell from_slot=1 to_col=4
+to_free_cell from_col=1
+tableau_to_tableau from_col=1 to_col=4
+multi_to_tableau from_col=8 to_col=1 run_start=5 run_size=4
+from_free_cell from_slot=1 to_col=4
+to_free_cell from_col=1
+multi_to_tableau from_col=1 to_col=8 run_start=3 run_size=3
+multi_to_tableau from_col=4 to_col=1 run_start=4 run_size=2
+multi_to_tableau from_col=7 to_col=1 run_start=5 run_size=4
+from_free_cell from_slot=1 to_col=8
+to_free_cell from_col=1
+multi_to_tableau from_col=1 to_col=4 run_start=3 run_size=5
+multi_to_tableau from_col=4 to_col=7 run_start=6 run_size=3
+multi_to_tableau from_col=8 to_col=1 run_start=5 run_size=4
+multi_to_tableau from_col=7 to_col=4 run_start=5 run_size=3
+from_free_cell from_slot=1 to_col=4
+to_free_cell from_col=1
+tableau_to_tableau from_col=1 to_col=7
+from_free_cell from_slot=1 to_col=7
+to_free_cell from_col=1
+tableau_to_tableau from_col=1 to_col=8
+from_free_cell from_slot=1 to_col=8
+to_free_cell from_col=2
+tableau_to_tableau from_col=1 to_col=2
+multi_to_tableau from_col=4 to_col=1 run_start=3 run_size=7
+multi_to_tableau from_col=1 to_col=2 run_start=3 run_size=6
+tableau_to_tableau from_col=1 to_col=4
+multi_to_tableau from_col=2 to_col=1 run_start=1 run_size=7
+from_free_cell from_slot=1 to_col=2
+to_free_cell from_col=3
+from_free_cell from_slot=2 to_col=3
+to_free_cell from_col=1
+multi_to_tableau from_col=1 to_col=4 run_start=3 run_size=5
+from_free_cell from_slot=2 to_col=4
+to_free_cell from_col=1
+multi_to_tableau from_col=4 to_col=1 run_start=3 run_size=7
+multi_to_tableau from_col=7 to_col=8 run_start=5 run_size=2
+multi_to_tableau from_col=1 to_col=4 run_start=2 run_size=7
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+tableau_to_tableau from_col=1 to_col=2
+multi_to_tableau from_col=4 to_col=1 run_start=3 run_size=7
+multi_to_tableau from_col=1 to_col=2 run_start=3 run_size=6
+tableau_to_tableau from_col=1 to_col=4
+multi_to_tableau from_col=2 to_col=1 run_start=1 run_size=7
+from_free_cell from_slot=1 to_col=2
+to_free_cell from_col=1
+multi_to_tableau from_col=1 to_col=4 run_start=3 run_size=5
+multi_to_tableau from_col=4 to_col=7 run_start=6 run_size=3
+multi_to_tableau from_col=4 to_col=1 run_start=4 run_size=2
+from_free_cell from_slot=1 to_col=7
+to_free_cell from_col=1
+tableau_to_tableau from_col=1 to_col=4
+multi_to_tableau from_col=8 to_col=1 run_start=5 run_size=4
+from_free_cell from_slot=1 to_col=4
+to_free_cell from_col=1
+multi_to_tableau from_col=1 to_col=8 run_start=3 run_size=3
+multi_to_tableau from_col=4 to_col=1 run_start=4 run_size=2
+multi_to_tableau from_col=7 to_col=1 run_start=5 run_size=4
+tableau_to_tableau from_col=8 to_col=7
+multi_to_tableau from_col=1 to_col=4 run_start=3 run_size=6
+tableau_to_tableau from_col=7 to_col=8
+multi_to_tableau from_col=4 to_col=8 run_start=7 run_size=3
+tableau_to_tableau from_col=4 to_col=7
+multi_to_tableau from_col=4 to_col=1 run_start=4 run_size=2
+tableau_to_tableau from_col=7 to_col=1
+multi_to_tableau from_col=8 to_col=7 run_start=7 run_size=4
+multi_to_tableau from_col=1 to_col=4 run_start=3 run_size=3
+multi_to_tableau from_col=8 to_col=1 run_start=5 run_size=2
+multi_to_tableau from_col=7 to_col=1 run_start=5 run_size=4
+multi_to_tableau from_col=1 to_col=4 run_start=6 run_size=3
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+from_free_cell from_slot=2 to_col=2
+to_free_cell from_col=1
+tableau_to_tableau from_col=1 to_col=7
+from_free_cell from_slot=2 to_col=7
+to_free_cell from_col=2
+from_free_cell from_slot=1 to_col=2
+to_free_cell from_col=3
+tableau_to_tableau from_col=1 to_col=3
+tableau_to_tableau from_col=1 to_col=8
+multi_to_tableau from_col=4 to_col=1 run_start=4 run_size=6
+multi_to_tableau from_col=7 to_col=3 run_start=5 run_size=2
+multi_to_tableau from_col=1 to_col=4 run_start=3 run_size=6
+tableau_to_tableau from_col=8 to_col=1
+multi_to_tableau from_col=3 to_col=1 run_start=1 run_size=3
+tableau_to_tableau from_col=1 to_col=3
+tableau_to_tableau from_col=1 to_col=7
+multi_to_tableau from_col=1 to_col=8 run_start=3 run_size=2
+tableau_to_tableau from_col=7 to_col=8
+multi_to_tableau from_col=4 to_col=1 run_start=4 run_size=6
+tableau_to_tableau from_col=3 to_col=8
+tableau_to_tableau from_col=1 to_col=3
+multi_to_tableau from_col=1 to_col=4 run_start=3 run_size=5
+multi_to_tableau from_col=4 to_col=7 run_start=6 run_size=3
+multi_to_tableau from_col=4 to_col=1 run_start=4 run_size=2
+tableau_to_tableau from_col=3 to_col=7
+tableau_to_tableau from_col=1 to_col=3
+tableau_to_tableau from_col=1 to_col=4
+multi_to_tableau from_col=7 to_col=3 run_start=5 run_size=4
+tableau_to_tableau from_col=4 to_col=1
+multi_to_tableau from_col=8 to_col=1 run_start=6 run_size=3
+multi_to_tableau from_col=1 to_col=4 run_start=3 run_size=4
+tableau_to_tableau from_col=8 to_col=1
+multi_to_tableau from_col=3 to_col=7 run_start=2 run_size=4
+multi_to_tableau from_col=4 to_col=1 run_start=5 run_size=3
+tableau_to_tableau from_col=3 to_col=4
+tableau_to_tableau from_col=8 to_col=3
+multi_to_tableau from_col=1 to_col=8 run_start=2 run_size=5
+multi_to_tableau from_col=4 to_col=1 run_start=3 run_size=3
+tableau_to_tableau from_col=3 to_col=4
+from_free_cell from_slot=1 to_col=3
+to_free_cell from_col=2
+from_free_cell from_slot=2 to_col=2
+to_free_cell from_col=1
+multi_to_tableau from_col=8 to_col=4 run_start=5 run_size=4
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+tableau_to_tableau from_col=1 to_col=2
+tableau_to_tableau from_col=1 to_col=8
+tableau_to_tableau from_col=2 to_col=8
+from_free_cell from_slot=2 to_col=2
+to_free_cell from_col=1
+multi_to_tableau from_col=7 to_col=8 run_start=5 run_size=4
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+tableau_to_tableau from_col=1 to_col=2
+multi_to_tableau from_col=4 to_col=7 run_start=6 run_size=2
+tableau_to_tableau from_col=2 to_col=1
+from_free_cell from_slot=2 to_col=2
+to_free_cell from_col=1
+multi_to_tableau from_col=8 to_col=1 run_start=4 run_size=7
+multi_to_tableau from_col=4 to_col=8 run_start=3 run_size=3
+multi_to_tableau from_col=7 to_col=8 run_start=5 run_size=2
+from_free_cell from_slot=2 to_col=4
+to_free_cell from_col=1
+multi_to_tableau from_col=1 to_col=4 run_start=3 run_size=5
+multi_to_tableau from_col=4 to_col=7 run_start=6 run_size=3
+from_free_cell from_slot=2 to_col=7
+to_free_cell from_col=1
+multi_to_tableau from_col=4 to_col=1 run_start=3 run_size=3
+multi_to_tableau from_col=8 to_col=4 run_start=4 run_size=5
+multi_to_tableau from_col=7 to_col=1 run_start=5 run_size=4
+from_free_cell from_slot=2 to_col=8
+to_free_cell from_col=1
+multi_to_tableau from_col=1 to_col=8 run_start=3 run_size=5
+multi_to_tableau from_col=4 to_col=7 run_start=6 run_size=2
+multi_to_tableau from_col=8 to_col=1 run_start=5 run_size=5
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+tableau_to_tableau from_col=1 to_col=2
+multi_to_tableau from_col=1 to_col=8 run_start=3 run_size=5
+multi_to_tableau from_col=7 to_col=4 run_start=5 run_size=2
+multi_to_tableau from_col=8 to_col=1 run_start=5 run_size=5
+tableau_to_tableau from_col=2 to_col=1
+tableau_to_tableau from_col=4 to_col=2
+tableau_to_tableau from_col=4 to_col=7
+multi_to_tableau from_col=1 to_col=8 run_start=3 run_size=6
+tableau_to_tableau from_col=7 to_col=4
+multi_to_tableau from_col=8 to_col=7 run_start=7 run_size=4
+multi_to_tableau from_col=7 to_col=4 run_start=6 run_size=3
+tableau_to_tableau from_col=7 to_col=8
+multi_to_tableau from_col=4 to_col=7 run_start=6 run_size=4
+multi_to_tableau from_col=8 to_col=1 run_start=5 run_size=3
+multi_to_tableau from_col=4 to_col=8 run_start=4 run_size=2
+multi_to_tableau from_col=7 to_col=8 run_start=5 run_size=4
+tableau_to_tableau from_col=1 to_col=7
+multi_to_tableau from_col=8 to_col=4 run_start=5 run_size=6
+multi_to_tableau from_col=4 to_col=7 run_start=7 run_size=3
+multi_to_tableau from_col=4 to_col=8 run_start=4 run_size=3
+multi_to_tableau from_col=7 to_col=1 run_start=5 run_size=4
+tableau_to_tableau from_col=2 to_col=8
+from_free_cell from_slot=1 to_col=2
+to_free_cell from_col=1
+multi_to_tableau from_col=8 to_col=7 run_start=7 run_size=2
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+from_free_cell from_slot=2 to_col=2
+to_free_cell from_col=1
+multi_to_tableau from_col=7 to_col=8 run_start=5 run_size=2
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=3
+from_free_cell from_slot=1 to_col=3
+to_free_cell from_col=1
+multi_to_tableau from_col=1 to_col=7 run_start=5 run_size=3
+from_free_cell from_slot=1 to_col=7
+to_free_cell from_col=3
+from_free_cell from_slot=3 to_col=3
+dragon_collect suit=red
+from_free_cell from_slot=1 to_col=2
+to_free_cell from_col=1
+from_free_cell from_slot=1 to_col=3
+to_free_cell from_col=1
+multi_to_tableau from_col=7 to_col=3 run_start=5 run_size=4
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+from_free_cell from_slot=2 to_col=2
+to_free_cell from_col=1
+multi_to_tableau from_col=3 to_col=7 run_start=2 run_size=4
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+tableau_to_tableau from_col=1 to_col=2
+tableau_to_tableau from_col=3 to_col=2
+from_free_cell from_slot=1 to_col=3
+to_free_cell from_col=1
+multi_to_tableau from_col=7 to_col=2 run_start=5 run_size=4
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=2 to_col=1 run_start=1 run_size=5
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=3
+from_free_cell from_slot=2 to_col=2
+to_free_cell from_col=1
+from_free_cell from_slot=1 to_col=3
+to_free_cell from_col=1
+multi_to_tableau from_col=1 to_col=7 run_start=5 run_size=2
+from_free_cell from_slot=1 to_col=7
+to_free_cell from_col=1
+from_free_cell from_slot=2 to_col=7
+to_free_cell from_col=1
+multi_to_tableau from_col=8 to_col=4 run_start=5 run_size=4
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=3
+from_free_cell from_slot=2 to_col=2
+to_free_cell from_col=1
+from_free_cell from_slot=2 to_col=3
+to_free_cell from_col=1
+from_free_cell from_slot=2 to_col=8
+to_free_cell from_col=1
+tableau_to_tableau from_col=3 to_col=8
+from_free_cell from_slot=1 to_col=3
+to_free_cell from_col=1
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+from_free_cell from_slot=1 to_col=2
+to_free_cell from_col=1
+from_free_cell from_slot=1 to_col=2
+to_free_cell from_col=3
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=4
+from_free_cell from_slot=1 to_col=3
+to_free_cell from_col=1
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=7 to_col=8 run_start=5 run_size=4
+from_free_cell from_slot=2 to_col=2
+to_free_cell from_col=1
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+from_free_cell from_slot=2 to_col=4
+to_free_cell from_col=1
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+from_free_cell from_slot=2 to_col=2
+to_free_cell from_col=1
+tableau_to_tableau from_col=4 to_col=1
+tableau_to_tableau from_col=4 to_col=7
+tableau_to_tableau from_col=1 to_col=7
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=3
+from_free_cell from_slot=1 to_col=2
+to_free_cell from_col=1
+from_free_cell from_slot=1 to_col=3
+to_free_cell from_col=1
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+from_free_cell from_slot=1 to_col=2
+to_free_cell from_col=1
+tableau_to_tableau from_col=4 to_col=1
+tableau_to_tableau from_col=3 to_col=2
+from_free_cell from_slot=1 to_col=3
+to_free_cell from_col=1
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=7 to_col=4 run_start=4 run_size=3
+from_free_cell from_slot=2 to_col=2
+to_free_cell from_col=1
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=4 to_col=1 run_start=6 run_size=2
+from_free_cell from_slot=1 to_col=2
+to_free_cell from_col=1
+tableau_to_tableau from_col=1 to_col=4
+multi_to_tableau from_col=8 to_col=2 run_start=5 run_size=6
+from_free_cell from_slot=1 to_col=4
+to_free_cell from_col=1
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=4 to_col=8 run_start=4 run_size=4
+from_free_cell from_slot=2 to_col=2
+to_free_cell from_col=1
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=8 to_col=4 run_start=5 run_size=4
+multi_to_tableau from_col=2 to_col=8 run_start=3 run_size=5
+multi_to_tableau from_col=4 to_col=1 run_start=6 run_size=2
+multi_to_tableau from_col=8 to_col=2 run_start=5 run_size=5
+from_free_cell from_slot=1 to_col=2
+to_free_cell from_col=1
+multi_to_tableau from_col=2 to_col=4 run_start=5 run_size=4
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+tableau_to_tableau from_col=2 to_col=8
+from_free_cell from_slot=1 to_col=8
+to_free_cell from_col=1
+multi_to_tableau from_col=4 to_col=1 run_start=7 run_size=3
+tableau_to_tableau from_col=4 to_col=8
+multi_to_tableau from_col=1 to_col=4 run_start=2 run_size=4
+multi_to_tableau from_col=8 to_col=2 run_start=5 run_size=3
+multi_to_tableau from_col=4 to_col=8 run_start=4 run_size=6
+multi_to_tableau from_col=8 to_col=1 run_start=7 run_size=4
+tableau_to_tableau from_col=2 to_col=8
+multi_to_tableau from_col=1 to_col=8 run_start=3 run_size=3
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=1 to_col=2 run_start=1 run_size=3
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=8 to_col=4 run_start=5 run_size=6
+from_free_cell from_slot=1 to_col=2
+to_free_cell from_col=1
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=2 to_col=8 run_start=3 run_size=3
+from_free_cell from_slot=2 to_col=8
+to_free_cell from_col=1
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=4 to_col=1 run_start=6 run_size=4
+from_free_cell from_slot=1 to_col=2
+to_free_cell from_col=1
+multi_to_tableau from_col=1 to_col=4 run_start=2 run_size=3
+multi_to_tableau from_col=8 to_col=2 run_start=5 run_size=4
+multi_to_tableau from_col=4 to_col=8 run_start=4 run_size=5
+multi_to_tableau from_col=8 to_col=1 run_start=7 run_size=3
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+tableau_to_tableau from_col=2 to_col=8
+from_free_cell from_slot=1 to_col=8
+to_free_cell from_col=1
+multi_to_tableau from_col=8 to_col=4 run_start=5 run_size=4
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+tableau_to_tableau from_col=2 to_col=8
+from_free_cell from_slot=1 to_col=8
+to_free_cell from_col=2
+multi_to_tableau from_col=8 to_col=2 run_start=4 run_size=3
+multi_to_tableau from_col=4 to_col=8 run_start=3 run_size=5
+from_free_cell from_slot=1 to_col=4
+to_free_cell from_col=1
+multi_to_tableau from_col=2 to_col=4 run_start=3 run_size=2
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=4 to_col=2 run_start=3 run_size=3
+multi_to_tableau from_col=8 to_col=4 run_start=4 run_size=5
+multi_to_tableau from_col=4 to_col=2 run_start=6 run_size=2
+from_free_cell from_slot=1 to_col=8
+to_free_cell from_col=3
+from_free_cell from_slot=2 to_col=3
+to_free_cell from_col=1
+multi_to_tableau from_col=1 to_col=4 run_start=2 run_size=3
+from_free_cell from_slot=2 to_col=4
+to_free_cell from_col=1
+tableau_to_tableau from_col=2 to_col=1
+multi_to_tableau from_col=2 to_col=8 run_start=3 run_size=3
+tableau_to_tableau from_col=1 to_col=8
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=4 to_col=1 run_start=6 run_size=4
+from_free_cell from_slot=2 to_col=2
+to_free_cell from_col=1
+multi_to_tableau from_col=8 to_col=4 run_start=7 run_size=2
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=8 to_col=2 run_start=4 run_size=3
+multi_to_tableau from_col=4 to_col=8 run_start=3 run_size=5
+from_free_cell from_slot=2 to_col=4
+to_free_cell from_col=1
+multi_to_tableau from_col=2 to_col=4 run_start=3 run_size=2
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=4 to_col=2 run_start=3 run_size=3
+multi_to_tableau from_col=8 to_col=4 run_start=4 run_size=5
+from_free_cell from_slot=2 to_col=8
+to_free_cell from_col=1
+multi_to_tableau from_col=4 to_col=8 run_start=4 run_size=4
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=1 to_col=2 run_start=1 run_size=5
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=8 to_col=4 run_start=5 run_size=4
+from_free_cell from_slot=2 to_col=2
+to_free_cell from_col=1
+tableau_to_tableau from_col=2 to_col=1
+multi_to_tableau from_col=2 to_col=8 run_start=3 run_size=5
+tableau_to_tableau from_col=1 to_col=8
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=4 to_col=1 run_start=6 run_size=2
+from_free_cell from_slot=2 to_col=2
+to_free_cell from_col=1
+tableau_to_tableau from_col=1 to_col=4
+multi_to_tableau from_col=8 to_col=2 run_start=5 run_size=6
+tableau_to_tableau from_col=4 to_col=1
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=2 to_col=8 run_start=3 run_size=5
+multi_to_tableau from_col=8 to_col=4 run_start=7 run_size=3
+from_free_cell from_slot=2 to_col=4
+to_free_cell from_col=1
+multi_to_tableau from_col=4 to_col=1 run_start=7 run_size=3
+tableau_to_tableau from_col=4 to_col=8
+multi_to_tableau from_col=1 to_col=4 run_start=2 run_size=4
+multi_to_tableau from_col=8 to_col=2 run_start=5 run_size=3
+multi_to_tableau from_col=4 to_col=8 run_start=4 run_size=6
+multi_to_tableau from_col=8 to_col=1 run_start=7 run_size=4
+tableau_to_tableau from_col=2 to_col=8
+multi_to_tableau from_col=1 to_col=8 run_start=3 run_size=3
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=1 to_col=2 run_start=1 run_size=3
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=4
+multi_to_tableau from_col=2 to_col=4 run_start=2 run_size=5
+multi_to_tableau from_col=8 to_col=2 run_start=4 run_size=7
+from_free_cell from_slot=1 to_col=8
+to_free_cell from_col=1
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=2 to_col=8 run_start=3 run_size=5
+from_free_cell from_slot=2 to_col=8
+to_free_cell from_col=1
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=3
+from_free_cell from_slot=2 to_col=3
+to_free_cell from_col=1
+tableau_to_tableau from_col=2 to_col=1
+multi_to_tableau from_col=4 to_col=2 run_start=3 run_size=5
+multi_to_tableau from_col=2 to_col=1 run_start=3 run_size=4
+tableau_to_tableau from_col=2 to_col=4
+multi_to_tableau from_col=1 to_col=2 run_start=1 run_size=5
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=2 to_col=4 run_start=3 run_size=3
+multi_to_tableau from_col=8 to_col=2 run_start=5 run_size=6
+multi_to_tableau from_col=2 to_col=3 run_start=5 run_size=4
+from_free_cell from_slot=1 to_col=4
+to_free_cell from_col=1
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+tableau_to_tableau from_col=2 to_col=8
+from_free_cell from_slot=2 to_col=8
+to_free_cell from_col=1
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=3
+multi_to_tableau from_col=4 to_col=2 run_start=4 run_size=4
+from_free_cell from_slot=1 to_col=3
+to_free_cell from_col=1
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+tableau_to_tableau from_col=2 to_col=8
+multi_to_tableau from_col=2 to_col=4 run_start=3 run_size=2
+tableau_to_tableau from_col=8 to_col=4
+multi_to_tableau from_col=3 to_col=8 run_start=2 run_size=4
+multi_to_tableau from_col=4 to_col=2 run_start=4 run_size=3
+from_free_cell from_slot=2 to_col=2
+to_free_cell from_col=3
+from_free_cell from_slot=1 to_col=3
+to_free_cell from_col=1
+tableau_to_tableau from_col=5 to_col=1
+to_foundation from_col=5
+multi_to_tableau from_col=2 to_col=4 run_start=3 run_size=4
+multi_to_tableau from_col=8 to_col=2 run_start=5 run_size=6
+multi_to_tableau from_col=2 to_col=5 run_start=7 run_size=2
+to_foundation from_col=2
+multi_to_tableau from_col=2 to_col=8 run_start=3 run_size=3
+multi_to_tableau from_col=4 to_col=2 run_start=4 run_size=4
+multi_to_tableau from_col=5 to_col=8 run_start=1 run_size=3
+from_free_cell from_slot=1 to_col=5
+to_free_cell from_col=2
+multi_to_tableau from_col=2 to_col=4 run_start=3 run_size=3
+from_free_cell from_slot=1 to_col=4
+to_free_cell from_col=1
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=4 to_col=2 run_start=3 run_size=5
+multi_to_tableau from_col=8 to_col=4 run_start=4 run_size=7
+from_free_cell from_slot=2 to_col=8
+to_free_cell from_col=1
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=2 to_col=8 run_start=3 run_size=3
+from_free_cell from_slot=1 to_col=8
+to_free_cell from_col=1
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=4 to_col=1 run_start=6 run_size=4
+from_free_cell from_slot=2 to_col=2
+to_free_cell from_col=1
+multi_to_tableau from_col=1 to_col=4 run_start=2 run_size=3
+multi_to_tableau from_col=8 to_col=2 run_start=5 run_size=4
+multi_to_tableau from_col=4 to_col=8 run_start=4 run_size=5
+from_free_cell from_slot=2 to_col=8
+to_free_cell from_col=1
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=3
+from_free_cell from_slot=2 to_col=3
+to_free_cell from_col=1
+tableau_to_tableau from_col=2 to_col=1
+multi_to_tableau from_col=8 to_col=4 run_start=5 run_size=6
+tableau_to_tableau from_col=1 to_col=2
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=2 to_col=8 run_start=3 run_size=3
+from_free_cell from_slot=2 to_col=8
+to_free_cell from_col=1
+tableau_to_tableau from_col=2 to_col=1
+multi_to_tableau from_col=4 to_col=3 run_start=6 run_size=4
+tableau_to_tableau from_col=1 to_col=2
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=3 to_col=4 run_start=2 run_size=4
+multi_to_tableau from_col=8 to_col=2 run_start=4 run_size=5
+multi_to_tableau from_col=4 to_col=8 run_start=3 run_size=7
+from_free_cell from_slot=2 to_col=4
+to_free_cell from_col=1
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=2 to_col=4 run_start=3 run_size=3
+multi_to_tableau from_col=8 to_col=2 run_start=5 run_size=6
+from_free_cell from_slot=1 to_col=4
+to_free_cell from_col=1
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=2 to_col=8 run_start=3 run_size=5
+from_free_cell from_slot=2 to_col=8
+to_free_cell from_col=1
+tableau_to_tableau from_col=2 to_col=1
+multi_to_tableau from_col=4 to_col=2 run_start=3 run_size=5
+multi_to_tableau from_col=2 to_col=1 run_start=3 run_size=4
+tableau_to_tableau from_col=2 to_col=4
+multi_to_tableau from_col=8 to_col=3 run_start=7 run_size=4
+tableau_to_tableau from_col=4 to_col=2
+multi_to_tableau from_col=1 to_col=2 run_start=2 run_size=4
+multi_to_tableau from_col=2 to_col=4 run_start=2 run_size=5
+tableau_to_tableau from_col=1 to_col=2
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=4 to_col=2 run_start=3 run_size=5
+multi_to_tableau from_col=2 to_col=8 run_start=5 run_size=2
+multi_to_tableau from_col=2 to_col=4 run_start=2 run_size=3
+from_free_cell from_slot=1 to_col=2
+to_free_cell from_col=1
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=4 to_col=2 run_start=3 run_size=3
+multi_to_tableau from_col=8 to_col=4 run_start=4 run_size=5
+from_free_cell from_slot=2 to_col=8
+to_free_cell from_col=1
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+tableau_to_tableau from_col=2 to_col=8
+from_free_cell from_slot=1 to_col=8
+to_free_cell from_col=1
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=8 to_col=2 run_start=4 run_size=3
+multi_to_tableau from_col=4 to_col=8 run_start=3 run_size=5
+from_free_cell from_slot=2 to_col=4
+to_free_cell from_col=1
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+tableau_to_tableau from_col=2 to_col=4
+multi_to_tableau from_col=3 to_col=4 run_start=1 run_size=5
+from_free_cell from_slot=1 to_col=3
+to_free_cell from_col=1
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=4 to_col=2 run_start=3 run_size=7
+multi_to_tableau from_col=8 to_col=4 run_start=4 run_size=5
+from_free_cell from_slot=2 to_col=8
+to_free_cell from_col=1
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=2 to_col=8 run_start=3 run_size=5
+from_free_cell from_slot=1 to_col=8
+to_free_cell from_col=1
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=4 to_col=3 run_start=6 run_size=2
+from_free_cell from_slot=2 to_col=2
+to_free_cell from_col=1
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=3 to_col=4 run_start=2 run_size=2
+multi_to_tableau from_col=8 to_col=2 run_start=4 run_size=7
+multi_to_tableau from_col=4 to_col=8 run_start=3 run_size=5
+from_free_cell from_slot=1 to_col=4
+to_free_cell from_col=1
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=2 to_col=4 run_start=3 run_size=5
+multi_to_tableau from_col=8 to_col=2 run_start=5 run_size=4
+from_free_cell from_slot=2 to_col=4
+to_free_cell from_col=1
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+tableau_to_tableau from_col=2 to_col=3
+from_free_cell from_slot=1 to_col=3
+to_free_cell from_col=1
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+tableau_to_tableau from_col=2 to_col=8
+from_free_cell from_slot=2 to_col=8
+to_free_cell from_col=1
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=3 to_col=8 run_start=2 run_size=2
+multi_to_tableau from_col=4 to_col=2 run_start=3 run_size=7
+multi_to_tableau from_col=8 to_col=4 run_start=4 run_size=5
+multi_to_tableau from_col=4 to_col=3 run_start=6 run_size=2
+from_free_cell from_slot=1 to_col=8
+to_free_cell from_col=1
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=2 to_col=8 run_start=3 run_size=5
+multi_to_tableau from_col=3 to_col=4 run_start=2 run_size=2
+multi_to_tableau from_col=8 to_col=2 run_start=5 run_size=5
+multi_to_tableau from_col=4 to_col=8 run_start=4 run_size=4
+from_free_cell from_slot=2 to_col=2
+to_free_cell from_col=1
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=8 to_col=3 run_start=7 run_size=2
+from_free_cell from_slot=1 to_col=2
+to_free_cell from_col=1
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=2 to_col=8 run_start=5 run_size=3
+from_free_cell from_slot=2 to_col=8
+to_free_cell from_col=1
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=8 to_col=4 run_start=5 run_size=6
+from_free_cell from_slot=1 to_col=2
+to_free_cell from_col=1
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+tableau_to_tableau from_col=2 to_col=8
+from_free_cell from_slot=2 to_col=8
+to_free_cell from_col=1
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=8 to_col=2 run_start=4 run_size=3
+multi_to_tableau from_col=4 to_col=8 run_start=3 run_size=7
+from_free_cell from_slot=1 to_col=4
+to_free_cell from_col=1
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+tableau_to_tableau from_col=2 to_col=4
+from_free_cell from_slot=2 to_col=4
+to_free_cell from_col=1
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=3
+multi_to_tableau from_col=4 to_col=2 run_start=4 run_size=2
+multi_to_tableau from_col=8 to_col=2 run_start=7 run_size=4
+from_free_cell from_slot=1 to_col=3
+to_free_cell from_col=1
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=2 to_col=4 run_start=3 run_size=5
+multi_to_tableau from_col=4 to_col=8 run_start=6 run_size=3
+multi_to_tableau from_col=8 to_col=2 run_start=5 run_size=5
+from_free_cell from_slot=2 to_col=2
+to_free_cell from_col=1
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=4
+multi_to_tableau from_col=3 to_col=4 run_start=1 run_size=3
+from_free_cell from_slot=2 to_col=3
+to_free_cell from_col=1
+tableau_to_tableau from_col=2 to_col=1
+multi_to_tableau from_col=2 to_col=8 run_start=3 run_size=5
+tableau_to_tableau from_col=1 to_col=8
+tableau_to_tableau from_col=2 to_col=1
+multi_to_tableau from_col=4 to_col=2 run_start=3 run_size=5
+multi_to_tableau from_col=2 to_col=1 run_start=3 run_size=4
+tableau_to_tableau from_col=2 to_col=4
+multi_to_tableau from_col=1 to_col=2 run_start=1 run_size=5
+tableau_to_tableau from_col=4 to_col=1
+multi_to_tableau from_col=2 to_col=1 run_start=3 run_size=4
+multi_to_tableau from_col=8 to_col=4 run_start=4 run_size=7
+tableau_to_tableau from_col=2 to_col=8
+multi_to_tableau from_col=1 to_col=2 run_start=1 run_size=5
+tableau_to_tableau from_col=2 to_col=1
+multi_to_tableau from_col=2 to_col=8 run_start=3 run_size=3
+tableau_to_tableau from_col=1 to_col=8
+tableau_to_tableau from_col=7 to_col=1
+from_free_cell from_slot=1 to_col=7
+to_free_cell from_col=1
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=4 to_col=7 run_start=6 run_size=4
+from_free_cell from_slot=2 to_col=2
+to_free_cell from_col=1
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=7 to_col=4 run_start=4 run_size=4
+multi_to_tableau from_col=8 to_col=2 run_start=4 run_size=5
+multi_to_tableau from_col=4 to_col=8 run_start=3 run_size=7
+from_free_cell from_slot=1 to_col=4
+to_free_cell from_col=1
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=2 to_col=4 run_start=3 run_size=3
+from_free_cell from_slot=2 to_col=4
+to_free_cell from_col=1
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=4 to_col=2 run_start=3 run_size=5
+multi_to_tableau from_col=8 to_col=4 run_start=4 run_size=7
+from_free_cell from_slot=1 to_col=8
+to_free_cell from_col=1
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=2 to_col=8 run_start=3 run_size=3
+multi_to_tableau from_col=4 to_col=7 run_start=6 run_size=4
+tableau_to_tableau from_col=8 to_col=4
+from_free_cell from_slot=2 to_col=4
+to_free_cell from_col=1
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=8 to_col=2 run_start=4 run_size=3
+multi_to_tableau from_col=4 to_col=8 run_start=3 run_size=5
+from_free_cell from_slot=1 to_col=4
+to_free_cell from_col=1
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+tableau_to_tableau from_col=2 to_col=4
+from_free_cell from_slot=2 to_col=4
+to_free_cell from_col=1
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+multi_to_tableau from_col=4 to_col=2 run_start=3 run_size=3
+multi_to_tableau from_col=8 to_col=4 run_start=4 run_size=5
+from_free_cell from_slot=1 to_col=8
+to_free_cell from_col=1
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+tableau_to_tableau from_col=2 to_col=8
+multi_to_tableau from_col=7 to_col=2 run_start=2 run_size=6
+to_foundation from_col=7
+from_free_cell from_slot=1 to_col=7
+to_free_cell from_col=1
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=2
+to_foundation from_col=2
+to_foundation from_col=4
+tableau_to_tableau from_col=1 to_col=8
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+to_foundation from_col=2
+to_foundation from_col=8
+tableau_to_tableau from_col=2 to_col=8
+to_foundation from_col=2
+multi_to_tableau from_col=8 to_col=2 run_start=5 run_size=2
+to_foundation from_col=8
+multi_to_tableau from_col=4 to_col=8 run_start=3 run_size=4
+to_foundation from_col=4
+to_foundation from_col=4
+to_foundation from_free_cell=2
+to_free_cell from_col=1
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=2
+from_free_cell from_slot=1 to_col=4
+to_free_cell from_col=1
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=3
+from_free_cell from_slot=1 to_col=3
+to_free_cell from_col=1
+tableau_to_tableau from_col=2 to_col=1
+tableau_to_tableau from_col=4 to_col=1
+from_free_cell from_slot=1 to_col=4
+to_free_cell from_col=1
+tableau_to_tableau from_col=1 to_col=2
+from_free_cell from_slot=1 to_col=2
+to_free_cell from_col=3
+tableau_to_tableau from_col=6 to_col=1
+from_free_cell from_slot=1 to_col=3
+to_free_cell from_col=1
+from_free_cell from_slot=2 to_col=1
+to_free_cell from_col=3
+multi_to_tableau from_col=8 to_col=3 run_start=3 run_size=5
+flower_auto
+to_foundation from_col=8
+to_foundation from_free_cell=2
+to_foundation from_col=3
+to_foundation from_col=2
+to_foundation from_col=3
+to_foundation from_col=2
+to_foundation from_col=3
+to_foundation from_col=2
+to_foundation from_col=3
+to_foundation from_col=2
+to_foundation from_col=3
+to_free_cell from_col=1
+from_free_cell from_slot=1 to_col=1
+to_free_cell from_col=5
+tableau_to_tableau from_col=6 to_col=2
+from_free_cell from_slot=1 to_col=3
+dragon_collect suit=green
+from_free_cell from_slot=2 to_col=1
+dragon_collect suit=blue

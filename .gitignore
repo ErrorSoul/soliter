@@ -9,3 +9,12 @@ Thumbs.db
 .project
 .cproject
 builtins
+
+# Secrets / signing — НИКОГДА не коммитить
+debug.keystore
+debug.keystore.pass.txt
+*.keystore
+*.pass.txt
+manifest.private.der
+manifest.public.der
+project.shared_editor_settings
