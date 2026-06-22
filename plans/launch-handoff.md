@@ -28,9 +28,94 @@
 меню настроек (mute), эксперимент с перспективной камерой, вариант can_auto_finish
 без safe-предиката, PLAN.md-заметки. Возврат: `git checkout wip/settings-menu-camera`.
 
-**Что делать дальше (по плану пользователя):** HTML5-шаблон + YaGames SDK —
-**каждая фича в отдельной ветке от master, TDD (тесты вперёд)**. Зависимости:
-код шаблона/инициализации ysdk пишу сам; тест в песочнице Яндекса — за пользователем.
+**АКТИВНАЯ РАБОТА (2026-06-22): in-game solver на ветке `feat/ingame-autosolve`.**
+Смотри новый раздел ниже — «## 0b. In-game solver». HTML5+SDK отложены до его конца.
+
+---
+
+## 0b. In-game solver — «смотреть, как солвер играет новую игру» (АКТИВНО)
+
+Ветка: **`feat/ingame-autosolve`** (от master `4d3c801`). Каждый коммит — bob-build clean,
+БЕЗ подписи Claude. Тесты: **34/34** (`/opt/homebrew/bin/lua solver/tests/run_all.lua`).
+
+**Цель (выбор пользователя):** смотреть, как солвер проходит СВЕЖУЮ раздачу. Сначала
+надёжный **оверлей**, потом **реальные карты** («оба: сначала оверлей, потом карты»).
+
+### Сделано (закоммичено)
+- `d5fe320` **solver/bridge.lua** — `from_game(snapshot)→solver_state`. Чистый Lua, TDD
+  (5 тестов + round-trip oracle: мост.раздача решается в тот же вердикт, что своя deal).
+  Маппинг: собранные драконы = `is_blocked` ячейка + `dragons_collected[suit]`; флаги
+  is_dragon/is_flower ДЕРИВИМ из value; counters (dragon/free_slots) = дефолты
+  (пересчитываются в legal_moves, НЕ в state_hash → безопасно).
+- `e008852` **2a** — клавиша **S** (`input/game.input_binding`: KEY_S→"solve"):
+  cursor.script (держит input focus) ловит "solve" → `msg.post(main,"debug_solve")`.
+  main: `build_solver_snapshot(self)` из `self.tableau_stacks` (для СВЕЖЕЙ раздачи всё
+  там, ячейки/foundation пусты) → bridge → `rules.solve(budget 200k)`.
+- `a24b3d5` **board_view.lua** — ИЗВЛЕЧЕНЫ чистые render/describe/card_str из watch.lua
+  (Defold-safe: НЕТ require/io/os). Причина: Defold-сканер читает `require()`-литералы
+  СТАТИЧЕСКИ (и в комментариях тоже!) → bare `require("rules")` в CLI watch.lua ломал
+  билд (`/rules.lua not found`). watch.lua теперь ре-экспортит из board_view.
+- `7a3828f` **rules.lua Lua-5.1-совместим** — Defold = Lua 5.1, НЕ поддерживает
+  `goto`/`::continue::`. apply_mandatory(+_tracked) переписаны: тело while обёрнуто в
+  `repeat … until true`, `goto continue`→`break` (внутренние for-break не задеты — break
+  биндится к ближайшему циклу). ПОВЕДЕНИЕ ИДЕНТИЧНО: seed 2 → те же 78 ходов, распределение
+  вердиктов не изменилось. Терминал(5.4)/tamagochi(5.3) тоже работают.
+- `050e4c3` **tools/defold-build.sh** — ХЕДЛЕСС-БИЛД через bob (я сам проверяю компиляцию!).
+  Команда: `JAVA=$(ls -d /Applications/Defold.app/Contents/Resources/packages/jdk-*/bin/java|sort -V|tail -1)`
+  (нужен JDK21, НЕ 17), `JAR=…/packages/defold-*.jar`, `"$JAVA" -cp "$JAR" com.dynamo.bob.Bob --root . build`.
+  EXIT 0 = чисто. Headless ENGINE запустить нельзя (нет бинаря offline + нет ввода для клавиши).
+- `5246c03` **2c-v1** — клавиша S теперь АНИМИРУЕТ доску в КОНСОЛИ ход-за-ходом
+  (`board_view.render(color=false)` + `rules.apply_move`, оба оттестированы; `timer.delay`
+  0.4с). Независимо от живой игры → ноль desync. Фикс board_view: `(tableau empty)` больше
+  не течёт ANSI при color=false (+тест).
+
+### КРИТИЧНО про редактор Defold (НЕ баг кода!)
+Редактор показывает СТАЛ-кэш ошибок `goto` на СТАРЫХ номерах строк (716/733/751/765).
+Диск чист (grep goto = только 2 в комментариях), **bob компилит EXIT 0**. Это линтер
+открытого буфера в IDE. Фикс: **Cmd+Q + переоткрыть проект** (Rebuild НЕ помогает —
+панель ошибок кода отдельна от сборки). Пользователь пока НЕ подтвердил, что ушло после
+полного рестарта.
+
+### PENDING — 2b: реальные карты (режиссёр)
+АРХИТЕКТУРА (по advisor): директор владеет ДВУМЯ параллельными структурами и НИКОГДА не
+читает игру обратно: (1) solver `state` (мутируем `rules.apply_move`), (2) `go_map` той же
+формы с GO-id карт (мутируем в лок-степ). На каждый ход: из go_map берём source GO + из
+рантайма slot_id/position → `msg.post(card_go,"drop_success",{slot_id,position,card,animation})`
+→ settle (фикс. задержка) → следующий. План: ЧИСТЫЙ тестируемый `solver/replay.lua` (выбор
+карты + бухгалтерия go_map + абстрактная цель) + ТОНКИЙ glue в main.script (резолв
+цель→slot/pos + сообщение + timer). 7 типов ходов: to_foundation/to_free_cell/from_free_cell/
+tableau_to_tableau/multi_to_tableau/dragon_collect/flower_auto (все ЯВНО в списке solve —
+проверено: seed 2 = 27×to_foundation+1×flower_auto и т.д.).
+ПРИМИТИВЫ ИГРЫ (для glue):
+- foundation: как `auto_finish_step` (main.script:568-614) — target=`self.suit_to_base[suit]`
+  или первый пустой base_slot; `drop_success` карте → она шлёт occupy_slot/remove_card сама.
+- `drop_success` напрямую карте ОБХОДИТ cursor-путь → НЕ постит check_auto_finish (хорошо).
+- multi_to_tableau: НЕ один drop_success — нужен `move_stack_cards` (cursor.script:500).
+- РИСК DESYNC: `dragon_collect` идёт через `get_dragon_cards`→кнопка дракона; ИГРА сама
+  выбирает, какую ячейку заблокировать. Если != выбор солвера (rules.apply_move:469-483
+  «первый со своим драконом, иначе первый пустой») → go_map рассинхронится. ПЕРВЫЙ ШАГ 2b:
+  разобрать слот-выбор в dragon_button.script/free_cell.script; если «первый свободный» —
+  совпадёт; иначе директор должен задавать слот явно.
+ГАРДЫ на время проигрыша: `self.debug_replaying=true` → `can_auto_finish` вернуть false
+(сейчас гардит только `self.auto_finishing`); `msg.post(cursor,"disable_input")`.
+2b НЕ верифицируется хедлессно (только компиляция + чистая логика планнера тестами) →
+тайминг/драконы проверяет ПОЛЬЗОВАТЕЛЬ прогонами в редакторе.
+
+### PENDING — on-screen GUI-оверлей (опционально, вместо консоли)
+Шрифты проекта НЕ моноширинные (ArialBold/Cocomat). Для ASCII нужен либо моношрифт
+(в системе есть Monaco/Courier/Andale Mono .ttf, НО лицензия — копировать в проект только
+dev-only за DEBUG-флагом, НЕ шипить; Defold бандлит шрифт, если на него ссылается GUI, даже
+скрытый узел → убрать до релиза), либо сетка GUI-text-нод (по ноде на клетку, моношрифт не
+нужен, выравнивание позициями — но больше gui_script-кода, отдельная коллекция gui/ui.gui).
+Решение по шрифту — за пользователем.
+
+### ФАЙЛЫ (этой ветки)
+solver/{bridge.lua, board_view.lua, watch.lua(ре-экспорт), rules.lua(5.1)},
+solver/tests/{test_bridge.lua, test_watch.lua(+color-тест), run_all.lua},
+main/Scripts/{main.script(requires+DEBUG_SOLVER+build_solver_snapshot+debug_solve+on_message),
+cursor.script(DEBUG_SOLVER+solve-key)}, input/game.input_binding(KEY_S), tools/defold-build.sh.
+DEBUG_SOLVER=true в main.script И cursor.script — СТРИПнуть для релиза (привязка к чек-листу
+«убрать debug»).
 
 ---
 
