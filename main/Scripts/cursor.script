@@ -5,6 +5,7 @@ local DEBUG_SOLVER = true -- press 'S' to let the solver play the current deal (
 local tutorial_state = require("main.Scripts.tutorial_state")
 local config = require("main.Scripts.config")
 local coords = require("main.Scripts.coords")
+local hit = require("main.Scripts.hit_test")
 
 local function get_slot_target_type(slot_id)
    if string.sub(slot_id, 1, 9) == "base_slot" then return "base"
@@ -112,7 +113,7 @@ function on_input(self, action_id, action)
    if action_id == hash("touch") then
       if action.pressed then
          self.was_pressed = true
-         local btn_color = check_dragon_buttons(self, action.x, action.y)
+         local btn_color = hit.check_dragon_buttons(self, action.x, action.y)
 
          if btn_color then
             pprint('BUTTON COLOR', btn_color)
@@ -121,7 +122,7 @@ function on_input(self, action_id, action)
             return
          end
 
-         local card = check_tableau_slots(self, action.x, action.y)
+         local card = hit.check_tableau_slots(self, action.x, action.y)
          if card then
             self.selected_card = card.id
             self.selected_card_data = card.source
@@ -148,7 +149,7 @@ function on_input(self, action_id, action)
             return
          end
 
-         local free_slot = check_free_slots(self, action.x, action.y)
+         local free_slot = hit.check_free_slots(self, action.x, action.y)
 
          if free_slot then
             self.pending_drop = free_slot
@@ -166,7 +167,7 @@ function on_input(self, action_id, action)
 
             -- Если тащим стопку, разрешаем дроп только в tableau слоты
             if self.dragging_stack then
-               local tableau_slot = check_free_tableau_slots(self, action.x, action.y)
+               local tableau_slot = hit.check_free_tableau_slots(self, action.x, action.y)
                if tableau_slot then
                   self.pending_drop = {slot = tableau_slot}
                   msg.post(tableau_slot.slot_id, "check_slot", {
@@ -176,7 +177,7 @@ function on_input(self, action_id, action)
                   return
                end
 
-               local card = check_last_cards(self, action.x, action.y)
+               local card = hit.check_last_cards(self, action.x, action.y)
                if card then
 
                   self.pending_drop = {card = card, slot_id = card.slot_id}
@@ -197,7 +198,7 @@ function on_input(self, action_id, action)
                return
             end
 
-            local card = check_last_cards(self, action.x, action.y)
+            local card = hit.check_last_cards(self, action.x, action.y)
             if card then
 
                self.pending_drop = {card = card, slot_id = card.slot_id}
@@ -205,7 +206,7 @@ function on_input(self, action_id, action)
                return
             end
 
-            local free_slot = check_free_slots(self, action.x, action.y)
+            local free_slot = hit.check_free_slots(self, action.x, action.y)
             -- Обработка перемещения одиночной карты
             if free_slot then
                self.pending_drop = {slot = free_slot}
@@ -213,21 +214,21 @@ function on_input(self, action_id, action)
                return
             end
 
-            local flower_slot = check_flower_slot(self, action.x, action.y)
+            local flower_slot = hit.check_flower_slot(self, action.x, action.y)
             if flower_slot then
                self.pending_drop = {slot = flower_slot}
                msg.post(flower_slot.slot_id, "check_slot", {card = self.selected_card_data})
                return
             end
 
-            local base_slot = check_base_slots(self, action.x, action.y)
+            local base_slot = hit.check_base_slots(self, action.x, action.y)
             if base_slot then
                self.pending_drop = {slot = base_slot}
                msg.post(base_slot.slot_id, 'check_slot', {card = self.selected_card_data})
                return
             end
 
-            local tableau_slot = check_free_tableau_slots(self, action.x, action.y)
+            local tableau_slot = hit.check_free_tableau_slots(self, action.x, action.y)
             if tableau_slot then
                self.pending_drop = {slot = tableau_slot}
                msg.post(tableau_slot.slot_id, 'check_slot', {card = self.selected_card_data})
@@ -596,154 +597,6 @@ function clean_cursor(self)
    self.pending_drop = nil
    self.drag_offset = vmath.vector3(0, 0, 0)
 end
-
-local function is_point_in_rect(x, y, rect_pos, half_size)
-   return (x > rect_pos.x - half_size.x and
-           x < rect_pos.x + half_size.x and
-           y > rect_pos.y - half_size.y and
-           y < rect_pos.y + half_size.y)
-end
-
-function check_tableau_slots(self, cursor_x, cursor_y)
-   for stack_index, stack in ipairs(self.tableau_stacks) do
-      -- Проверяем только непустые стопки
-      if #stack > 0 then
-         -- Получаем последнюю карту в стопке
-         local last_card_index = #stack
-         local last_card = stack[last_card_index]
-         local last_card_pos = go.get_position(last_card.id)
-
-         -- Если это последняя карта и курсор над ней
-         if is_point_in_rect(cursor_x, cursor_y, last_card_pos, config.CARD_HALF_SIZE) then
-            return {
-               type = "tableau",
-               id = last_card.id,
-               stack_index = stack_index,
-               card_index = last_card_index,
-               is_single = true,  -- Флаг, что это одиночная карта
-               pos = last_card_pos,
-               slot_id = last_card.slot_id,
-               source = last_card
-            }
-         end
-
-         -- Проверяем остальные карты в стопке (кроме последней)
-         for card_index = last_card_index - 1, 1, -1 do
-            local card = stack[card_index]
-            local card_pos = go.get_position(card.id)
-
-            if is_point_in_rect(cursor_x, cursor_y, card_pos, config.CARD_HALF_SIZE) then
-               -- Собираем стопку карт, начиная с выбранной
-               local selected_stack = {}
-               local base_pos = card_pos
-
-               for i = card_index, #stack do
-                   local stack_card = stack[i]
-                   local relative_pos = go.get_position(stack_card.id) - base_pos
-                   table.insert(selected_stack, {
-                       id = stack_card.id,
-                       source = stack_card,
-                       relative_pos = relative_pos
-                   })
-               end
-
-               return {
-                  type = "tableau",
-                  id = card.id,
-                  stack_index = stack_index,
-                  card_index = card_index,
-                  stack = selected_stack,
-                  is_stack = true,  -- Флаг, что это стопка карт
-                  pos = card_pos,
-                  slot_id = card.slot_id,
-                  source = card
-               }
-            end
-         end
-      end
-   end
-   return nil
-end
-
-local function is_card_in_stack(card_id, stack_cards)
-    if not stack_cards then return false end
-
-    for _, stack_card in ipairs(stack_cards) do
-        if stack_card.id == card_id then
-            return true
-        end
-    end
-    return false
-end
-
-function check_last_cards(self, cursor_x, cursor_y)
-
-   -- Если курсор над стопкой, проверяем каждую карту в стопке
-   for stack_index, card in pairs(self.last_cards) do
-        local card_pos = go.get_position(card.id)
-
-      -- Проверяем, находится ли курсор над картой
-      if card.id ~= self.selected_card and
-         not is_card_in_stack(card.id, self.stack_cards) and
-         is_point_in_rect(cursor_x, cursor_y, card_pos, config.CARD_HALF_SIZE) then
-
-         return {
-            type = "tableau",
-            id  = card.id,
-            stack_index = stack_index,
-            card_index = card_index,
-            card_data = card.data,
-            data_id = card.data.id,
-            slot_id = card.slot_id,
-            pos = card_pos,
-            source = card
-         }
-      end
-   end
-   -- Если курсор не над стопкой, возвращаем nil
-   return nil
-end
-
-function check_free_slots(self, cursor_x, cursor_y)
-   for slot_id, slot in pairs(self.free_slots) do
-      if is_point_in_rect(cursor_x, cursor_y, slot.pos, config.CARD_HALF_SIZE) then
-         return {slot_id = slot_id, slot_pos = slot.pos}
-      end
-   end
-end
-
-function check_flower_slot(self, cursor_x, cursor_y)
-   local slot_id = 'flower_slot'
-   if is_point_in_rect(cursor_x, cursor_y, self.flower_slot[slot_id], config.CARD_HALF_SIZE) then
-      return {slot_id = slot_id, slot_pos = self.flower_slot[slot_id]}
-   end
-end
-
-function check_base_slots(self, cursor_x, cursor_y)
-   for slot_id, slot in pairs(self.base_slots) do
-      if is_point_in_rect(cursor_x, cursor_y, slot.pos, config.CARD_HALF_SIZE) then
-         return {slot_id = slot_id, slot_pos = slot.pos}
-      end
-   end
-end
-
-function check_free_tableau_slots(self, cursor_x, cursor_y)
-   for slot_id, slot in pairs(self.tableau_slots) do
-
-      if slot.is_empty and is_point_in_rect(cursor_x, cursor_y, slot.pos, config.CARD_HALF_SIZE) then
-         return {slot_id = slot_id, slot_pos = slot.pos}
-      end
-   end
-end
-
-function check_dragon_buttons(self, cursor_x, cursor_y)
-   for btn_id, btn in pairs(self.dragon_buttons) do
-      if btn.is_active and is_point_in_rect(cursor_x, cursor_y, btn.pos, config.BTN_HALF_SIZE) then
-         return {slot_id = btn_id, color = btn.sprite}
-      end
-   end
-end
-
 
 function update(self, dt)
    -- Tutorial highlights polling
