@@ -153,6 +153,32 @@ H.test("replay.plan: directive identities match the underlying card", function(r
 end)
 
 -- ============================================================
+-- `auto` flag marks exactly the moves the game performs itself (and must NOT be
+-- double-driven): flower auto-fly + a value-2 reaching a tableau top. Foundation
+-- moves of 3..10, and any move out of a free cell, are director-driven (not auto).
+-- ============================================================
+H.test("replay.plan: auto flag == game's own auto-fly moves only", function(rules)
+   local f, why = fixture(rules)
+   if not f then return false, why end
+   local directives = replay.plan(f.state, f.moves, f.go_map)
+
+   for _, d in ipairs(directives) do
+      if d.kind == "flower_auto" then
+         if d.auto ~= true then return false, "flower_auto must be auto=true" end
+      elseif d.kind == "to_foundation" then
+         local want = (d.from == "tableau" and d.value == 2)
+         if (d.auto == true) ~= want then
+            return false, string.format("to_foundation auto=%s for %s value %s (want %s)",
+               tostring(d.auto), tostring(d.from), tostring(d.value), tostring(want))
+         end
+      elseif d.auto == true then
+         return false, "no non-foundation/non-flower directive may be auto: " .. d.kind
+      end
+   end
+   return true
+end)
+
+-- ============================================================
 -- Terminal go_map is a win: every tableau column empty, all 3 free cells hold a
 -- blocked dragon pile. (plan() mutates go_map in place to this terminal state.)
 -- ============================================================

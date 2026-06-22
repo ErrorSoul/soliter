@@ -202,6 +202,9 @@ function on_input(self, action_id, action)
    if DEBUG_SOLVER and action_id == hash("solve") and action.pressed then
       msg.post("/card_table#main", "debug_solve")
    end
+   if DEBUG_SOLVER and action_id == hash("replay") and action.pressed then
+      msg.post("/card_table#main", "debug_replay")
+   end
    if action_id == hash("touch") then
       if action.pressed then
          self.was_pressed = true

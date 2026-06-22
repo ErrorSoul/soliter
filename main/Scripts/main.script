@@ -10,8 +10,10 @@ local DEBUG_SOLVER = true
 local solver_bridge = require("solver.bridge")
 local solver_rules = require("solver.rules")
 local solver_view = require("solver.board_view")
+local solver_replay = require("solver.replay")
 local SOLVE_BUDGET = 200000
-local DEBUG_REPLAY_DELAY = 0.4 -- seconds between frames when animating the solution
+local DEBUG_REPLAY_DELAY = 0.4 -- seconds between frames when animating the console solution (2c)
+local REPLAY_STEP_DELAY = 0.6 -- seconds between directives when driving the REAL cards (2b)
 
 function init(self)
    print("I am MAIN SCRIPT")
@@ -464,6 +466,126 @@ function debug_solve(self)
    timer.delay(DEBUG_REPLAY_DELAY, false, step)
 end
 
+-- Dev tool (press 'R'): the solver DRIVES THE REAL CARDS through its line of
+-- play (stage 2b). The pure planner (solver/replay.lua, unit-tested) precomputes
+-- a flat directive list from a parallel go_map; this thin glue turns each
+-- directive into the same drop_success / move_stack messages a human drag emits,
+-- never reading the live game back. Cards the game auto-flies itself (flower +
+-- value-2 on a tableau top) are flagged `auto` and skipped here.
+function debug_replay(self)
+   local state = solver_bridge.from_game(build_solver_snapshot(self))
+   local moves, status = solver_rules.solve(state, { node_budget = SOLVE_BUDGET })
+   if status ~= "solved" then
+      print("[REPLAY] " .. tostring(status) .. " — cannot drive this deal. Press SPACE for a new game.")
+      return
+   end
+
+   -- go_map + card lookup, built from the SAME tableau_stacks walk as the snapshot
+   -- (guarantees solver card[i] <-> GO[i] bijection).
+   local go_map = { tableau = {}, free_cells = {} }
+   local card_by_go = {}
+   for col = 1, 8 do
+      go_map.tableau[col] = {}
+      local stack = self.tableau_stacks[col]
+      if stack then
+         for _, c in ipairs(stack.cards) do
+            table.insert(go_map.tableau[col], c.id)
+            card_by_go[c.id] = c
+         end
+      end
+   end
+
+   local ok, directives = pcall(solver_replay.plan, state, moves, go_map)
+   if not ok then
+      print("[REPLAY] planner desync: " .. tostring(directives))
+      return
+   end
+   print("[REPLAY] SOLVED in " .. #moves .. " moves — driving real cards (" .. #directives .. " directives).")
+
+   -- Position helpers (director owns target slots; game obeys the slot_id it gets).
+   local tableau_pos = get_tableau_positions(self)
+   local function tcol(col, depth)
+      local b = tableau_pos[col]
+      return "tableau_slot" .. col, vmath.vector3(b.x, b.y + depth * -35, 0.2 + (depth + 1) * 0.001)
+   end
+   local function fcell(ord)
+      local id = "free_slot" .. ord
+      return id, self.free_slots[id].pos
+   end
+   -- Foundation slot per suit. The game binds these via cursor.base_slot_trace
+   -- (cursor.script:30-34): each suit has a unique preferred base slot, so the
+   -- binding is fixed (the auto-flown value-2 always lands on it). We mirror that
+   -- exact mapping rather than first-empty, so a 3+ never races the 2's async
+   -- card_to_base and lands on the wrong foundation.
+   local BASE_OF_SUIT = { red = "base_slot1", blue = "base_slot2", green = "base_slot3" }
+   local function base_for(suit) return BASE_OF_SUIT[suit] end
+
+   local function dispatch(d)
+      if d.auto then return end  -- game auto-flies it (flower / tableau value-2)
+
+      if d.kind == "to_foundation" then
+         local slot = base_for(d.suit)
+         if not slot then print("[REPLAY] no base slot for " .. tostring(d.suit)); return end
+         msg.post(d.card_go, "drop_success", {
+            slot_id = slot, position = self.base_slots[slot].pos,
+            card = card_by_go[d.card_go], animation = true })
+
+      elseif d.kind == "to_free_cell" then
+         local sid, pos = fcell(d.cell_ord)
+         msg.post(d.card_go, "drop_success", {
+            slot_id = sid, position = pos, card = card_by_go[d.card_go] })  -- no `complete` => parked, not blocked
+
+      elseif d.kind == "from_free_cell" or d.kind == "tableau_to_tableau" or d.kind == "to_empty_tableau" then
+         local sid, pos = tcol(d.to_col, d.to_depth)
+         msg.post(d.card_go, "drop_success", {
+            slot_id = sid, position = pos, card = card_by_go[d.card_go] })
+
+      elseif d.kind == "multi_to_tableau" then
+         -- replicate cursor.move_stack_cards: one drop_success per run card, in order
+         for idx, go in ipairs(d.card_gos) do
+            local sid, pos = tcol(d.to_col, d.to_depth + (idx - 1))
+            msg.post(go, "drop_success", { slot_id = sid, position = pos, card = card_by_go[go] })
+         end
+
+      elseif d.kind == "dragon_collect" then
+         -- replicate cursor.get_dragon_cards: all 4 dragons drop onto one cell,
+         -- complete=true so the cell blocks (free_cell sets is_blocked once).
+         local sid, pos = fcell(d.cell_ord)
+         for _, go in ipairs(d.card_gos) do
+            msg.post(go, "drop_success", {
+               slot_id = sid, position = pos, card = card_by_go[go], complete = true })
+         end
+      end
+   end
+
+   self.debug_replaying = true
+   msg.post(self.cursor, "disable_input")
+
+   local i = 0
+   local function finish()
+      self.debug_replaying = false
+      msg.post(self.cursor, "enable_input")
+      -- Verify via foundation_top (tableau_stacks goes stale: only foundation
+      -- moves decrement it). A real win = all three suits topped at 10.
+      timer.delay(1.0, false, function()
+         local ft = self.foundation_top
+         if ft.red == 10 and ft.blue == 10 and ft.green == 10 then
+            print("[REPLAY] WIN ✓ — all foundations complete (" .. #directives .. " directives).")
+         else
+            print(string.format("[REPLAY] DONE but NOT a win: R%s B%s G%s — check the line of play.",
+               tostring(ft.red), tostring(ft.blue), tostring(ft.green)))
+         end
+      end)
+   end
+   local function step()
+      i = i + 1
+      if i > #directives then finish(); return end
+      dispatch(directives[i])
+      timer.delay(REPLAY_STEP_DELAY, false, step)
+   end
+   timer.delay(0.5, false, step)
+end
+
 function send_messages_to_cursor(self)
    msg.post(self.cursor, "set_cards", self.cards)
    msg.post(self.cursor, "set_free_slots", self.free_slots)
@@ -526,6 +648,7 @@ end
 function can_auto_finish(self, message)
    if self.tutorial_mode then return false end
    if self.auto_finishing then return false end
+   if self.debug_replaying then return false end  -- director owns the board during 2b replay
 
    -- Проверяем free cells на драконов (blocked = собранные, их пропускаем)
    if message and message.free_cells then
@@ -704,6 +827,8 @@ function on_message(self, message_id, message, sender)
       end
    elseif message_id == hash("debug_solve") then
       if DEBUG_SOLVER then debug_solve(self) end
+   elseif message_id == hash("debug_replay") then
+      if DEBUG_SOLVER then debug_replay(self) end
    end
 end
 

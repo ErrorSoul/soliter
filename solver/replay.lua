@@ -61,14 +61,21 @@ local function step(pre, post, move, gm)
 
    if t == "to_foundation" then
       if move.from_col then
+         local card = top(pre.tableau[move.from_col])
          local go = pop_top(gm, move.from_col)
-         return { kind = "to_foundation", card_go = go, suit = top(pre.tableau[move.from_col]).suit }
+         -- The game auto-flies a value-2 the instant it tops a tableau column
+         -- (tableau_script.last_card_to_slot). The director must NOT double-drive
+         -- it; `auto` tells the glue to skip dispatch but still advance go_map.
+         return { kind = "to_foundation", card_go = go, suit = card.suit,
+                  value = card.value, from = "tableau", auto = (card.value == 2) }
       else
          local i = move.from_free_cell
          local go = gm.free_cells[i]
          assert(go and go ~= BLOCKED, "replay: no parked GO in free cell " .. tostring(i))
          gm.free_cells[i] = nil
-         return { kind = "to_foundation", card_go = go, suit = pre.free_cells[i].card.suit }
+         -- Free cells are never auto-flown by the game -> always dispatch.
+         return { kind = "to_foundation", card_go = go, suit = pre.free_cells[i].card.suit,
+                  value = pre.free_cells[i].card.value, from = "free", auto = false }
       end
 
    elseif t == "to_free_cell" then
@@ -141,7 +148,9 @@ local function step(pre, post, move, gm)
          local c = col[#col]
          if c and c.is_flower then
             local go = pop_top(gm, col_i)
-            return { kind = "flower_auto", card_go = go }
+            -- The game auto-flies the flower the instant it tops a column -> the
+            -- director skips dispatch (auto) but still pops it from go_map.
+            return { kind = "flower_auto", card_go = go, auto = true }
          end
       end
       error("replay: flower_auto but no flower on any tableau top")
