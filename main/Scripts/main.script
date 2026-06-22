@@ -4,6 +4,14 @@ local DEBUG_DRAGONS = false -- true = тест сбора драконов по�
 local tutorial_state = require("main.Scripts.tutorial_state")
 local sfx = require("main.Scripts.sfx")
 
+-- Dev tool: let the pure-Lua solver play the current deal (press 'S').
+-- Pure modules, zero Defold deps. Strip DEBUG_SOLVER for release.
+local DEBUG_SOLVER = true
+local solver_bridge = require("solver.bridge")
+local solver_rules = require("solver.rules")
+local solver_watch = require("solver.watch")
+local SOLVE_BUDGET = 200000
+
 function init(self)
    print("I am MAIN SCRIPT")
    self.states = {
@@ -402,6 +410,40 @@ function get_data(self)
    }
 end
 
+-- Build a solver snapshot from the live board. Intended for a FRESH deal
+-- (free cells empty, foundations empty, flower not collected), so the snapshot
+-- is just the 8 tableau columns; everything else is at its initial value.
+function build_solver_snapshot(self)
+   local snap = { tableau = {}, foundation = { red = 1, blue = 1, green = 1 },
+                  free_cells = { {}, {}, {} }, flower = false }
+   for i = 1, 8 do
+      snap.tableau[i] = {}
+      local stack = self.tableau_stacks[i]
+      if stack then
+         for _, c in ipairs(stack.cards) do
+            table.insert(snap.tableau[i], { value = c.data.value, suit = c.data.suit })
+         end
+      end
+   end
+   return snap
+end
+
+-- Dev tool (press 'S'): solve the current deal and print the line of play.
+-- Stage 2a: console output only — confirms require + solve run in-engine.
+function debug_solve(self)
+   local state = solver_bridge.from_game(build_solver_snapshot(self))
+   print("[SOLVER] solving current deal (budget " .. SOLVE_BUDGET .. ") ...")
+   local moves, status = solver_rules.solve(state, { node_budget = SOLVE_BUDGET })
+   if status ~= "solved" then
+      print("[SOLVER] " .. tostring(status) .. " — no solution within budget. Press SPACE for a new game.")
+      return
+   end
+   print("[SOLVER] SOLVED in " .. #moves .. " moves:")
+   for n, m in ipairs(moves) do
+      print(string.format("  %3d. %s", n, solver_watch.describe(m)))
+   end
+end
+
 function send_messages_to_cursor(self)
    msg.post(self.cursor, "set_cards", self.cards)
    msg.post(self.cursor, "set_free_slots", self.free_slots)
@@ -640,6 +682,8 @@ function on_message(self, message_id, message, sender)
          -- После сбора драконов проверяем auto-finish
          msg.post(self.cursor, "send_auto_finish_check")
       end
+   elseif message_id == hash("debug_solve") then
+      if DEBUG_SOLVER then debug_solve(self) end
    end
 end
 

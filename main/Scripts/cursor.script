@@ -1,6 +1,7 @@
 -- cursor.script
 -- go.property("selected_card", nil)
 local DEBUG_DRAW = false
+local DEBUG_SOLVER = true -- press 'S' to let the solver play the current deal (dev tool)
 local tutorial_state = require("main.Scripts.tutorial_state")
 
 local function get_slot_target_type(slot_id)
@@ -196,6 +197,10 @@ function on_input(self, action_id, action)
       else
          msg.post("@system:", "toggle_physics_debug") -- <3>
       end
+   end
+
+   if DEBUG_SOLVER and action_id == hash("solve") and action.pressed then
+      msg.post("/card_table#main", "debug_solve")
    end
    if action_id == hash("touch") then
       if action.pressed then
