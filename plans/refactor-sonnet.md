@@ -135,7 +135,7 @@ return M
 ## §4. Верификация (после КАЖДОГО пункта)
 ```
 bash tools/defold-build.sh          # EXIT 0 = Lua компилится во всех скриптах
-/opt/homebrew/bin/lua solver/tests/run_all.lua   # 35/35 (solver не трогаем — должен остаться зелёным)
+/opt/homebrew/bin/lua solver/tests/run_all.lua   # 42/42 (solver+replay не трогаем — должны остаться зелёными)
 ```
 Плюс — пользователь прогоняет в редакторе Defold (визуальная проверка highlight/drag), т.к.
 рантайм-движок хедлессно не запустить. Goal-driven цикл: правка → build EXIT 0 → коммит.
