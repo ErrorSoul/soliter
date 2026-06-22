@@ -113,30 +113,49 @@ end-to-end регресс — сам in-game авто-солвер (S): прог
 панель ошибок кода отдельна от сборки). Пользователь пока НЕ подтвердил, что ушло после
 полного рестарта.
 
-### PENDING — 2b: реальные карты (режиссёр)
-АРХИТЕКТУРА (по advisor): директор владеет ДВУМЯ параллельными структурами и НИКОГДА не
+### DONE — 2b: реальные карты (режиссёр) — клавиша **R**
+Коммиты: `4d5206b` (планнер+тесты) ← `7c9f5ef` (glue) ← `2a92634` (фикс снапшота).
+**42/42 тестов, bob EXIT 0.** Осталась проверка ПОЛЬЗОВАТЕЛЕМ в редакторе (тайминг/драконы/
+победа — хедлессно не запускается).
+
+АРХИТЕКТУРА (реализована): директор владеет ДВУМЯ параллельными структурами и НИКОГДА не
 читает игру обратно: (1) solver `state` (мутируем `rules.apply_move`), (2) `go_map` той же
-формы с GO-id карт (мутируем в лок-степ). На каждый ход: из go_map берём source GO + из
-рантайма slot_id/position → `msg.post(card_go,"drop_success",{slot_id,position,card,animation})`
-→ settle (фикс. задержка) → следующий. План: ЧИСТЫЙ тестируемый `solver/replay.lua` (выбор
-карты + бухгалтерия go_map + абстрактная цель) + ТОНКИЙ glue в main.script (резолв
-цель→slot/pos + сообщение + timer). 7 типов ходов: to_foundation/to_free_cell/from_free_cell/
-tableau_to_tableau/multi_to_tableau/dragon_collect/flower_auto (все ЯВНО в списке solve —
-проверено: seed 2 = 27×to_foundation+1×flower_auto и т.д.).
-ПРИМИТИВЫ ИГРЫ (для glue):
-- foundation: как `auto_finish_step` (main.script:568-614) — target=`self.suit_to_base[suit]`
-  или первый пустой base_slot; `drop_success` карте → она шлёт occupy_slot/remove_card сама.
-- `drop_success` напрямую карте ОБХОДИТ cursor-путь → НЕ постит check_auto_finish (хорошо).
-- multi_to_tableau: НЕ один drop_success — нужен `move_stack_cards` (cursor.script:500).
-- РИСК DESYNC: `dragon_collect` идёт через `get_dragon_cards`→кнопка дракона; ИГРА сама
-  выбирает, какую ячейку заблокировать. Если != выбор солвера (rules.apply_move:469-483
-  «первый со своим драконом, иначе первый пустой») → go_map рассинхронится. ПЕРВЫЙ ШАГ 2b:
-  разобрать слот-выбор в dragon_button.script/free_cell.script; если «первый свободный» —
-  совпадёт; иначе директор должен задавать слот явно.
-ГАРДЫ на время проигрыша: `self.debug_replaying=true` → `can_auto_finish` вернуть false
-(сейчас гардит только `self.auto_finishing`); `msg.post(cursor,"disable_input")`.
-2b НЕ верифицируется хедлессно (только компиляция + чистая логика планнера тестами) →
-тайминг/драконы проверяет ПОЛЬЗОВАТЕЛЬ прогонами в редакторе.
+формы с GO-id карт. `solver/replay.lua` (ЧИСТЫЙ, 7 тестов) предвычисляет плоский список
+ДИРЕКТИВ; ТОНКИЙ glue `debug_replay` в main.script шлёт на каждую директиву те же
+`drop_success`/`move_stack` сообщения, что и ручной драг, по timer'у.
+
+КЛЮЧЕВЫЕ НАХОДКИ (важно — записать дословно):
+- **ZERO изменений игровой логики.** Весь директор в main.script (+1 форвард `replay`-экшна
+  в cursor + KEY_R в input_binding). Никаких правок drag-машины/слотов → нулевой конфликт
+  с грядущим рефактором.
+- **`drop_success` самодостаточен** (card.script:101-112): шлёт `occupy_slot` новому слоту И
+  `remove_card` в `self.owner` (старый слот), затем `self.owner=new`. → любой ход одной
+  карты = ОДИН drop_success; карта сама знает свой старый слот.
+- **ИГРА авто-играет за нас 2 вещи** (`tableau_script.last_card_to_slot:37-44`): цветок и
+  ЛЮБУЮ двойку, как только она на вершине tableau. Планнер метит их `auto=true`; glue
+  ПРОПУСКАЕТ диспатч (но go_map всё равно сдвигает). Всё остальное (dragon_collect, безопасные
+  3..10 в foundation, ходы из free cell) игра во время реплея НЕ авто-делает (auto_finish
+  загаржен) → директор гонит сам.
+- **foundation-слот по масти = ФИКСИРОВАННЫЙ** `base_slot_trace` (cursor.script:30-34):
+  red→base_slot1/blue→2/green→3 (у каждой масти уникальный префер → фолбэк не срабатывает).
+  Директор зеркалит этот маппинг (НЕ «первый пустой»), иначе тройка гонится с асинхронным
+  card_to_base двойки и попадёт не в тот foundation.
+- **multi_to_tableau** = повтор `move_stack_cards` инлайн (по одному drop_success на карту
+  ранга, в порядке). **dragon_collect** = 4 drop_success на ОДНУ ячейку, `complete=true`
+  (free_cell ставит is_blocked один раз). Слот ячейки выбирает ДИРЕКТОР (slot_id явный) →
+  десинк выбора ячейки невозможен (драка `pairs()` в cursor обойдена).
+- **БЛОКЕР, который чинит фикс `2a92634`:** `build_solver_snapshot` хардкодил
+  foundation={1,1,1}/flower=false, НО игра авто-играет двойки и цветок ещё при РАЗДАЧЕ →
+  снапшот терял карты → солвер отказывал («cannot drive»). Чинит и 2c. Теперь
+  `snapshot_and_go_map` читает foundation из `self.foundation_top` и исключает «застрявший»
+  цветок (tableau_stacks НЕ чистится, когда цветок улетает) из ОБОИХ структур одним проходом
+  → биекция solver card[i] ↔ GO[i] сохранена.
+- ГАРДЫ: `self.debug_replaying=true` → `can_auto_finish`=false; `disable_input` (on_input
+  рано выходит при `input_disabled` → реплей нельзя пере-триггерить, юзер не мешает).
+- Проверка победы — по `self.foundation_top` (==10 все 3 масти), НЕ по tableau_stacks
+  (он устаревает: декрементится только foundation-ходами).
+- ОГРАНИЧЕНИЕ: рассчитан на СВЕЖУЮ раздачу (free cells пусты). Если играть руками до R —
+  снапшот не захватит free cells (как и у 2c).
 
 ### PENDING — on-screen GUI-оверлей (опционально, вместо консоли)
 Шрифты проекта НЕ моноширинные (ArialBold/Cocomat). Для ASCII нужен либо моношрифт
