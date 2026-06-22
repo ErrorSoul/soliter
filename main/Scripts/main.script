@@ -9,7 +9,7 @@ local sfx = require("main.Scripts.sfx")
 local DEBUG_SOLVER = true
 local solver_bridge = require("solver.bridge")
 local solver_rules = require("solver.rules")
-local solver_watch = require("solver.watch")
+local solver_view = require("solver.board_view")
 local SOLVE_BUDGET = 200000
 
 function init(self)
@@ -440,7 +440,7 @@ function debug_solve(self)
    end
    print("[SOLVER] SOLVED in " .. #moves .. " moves:")
    for n, m in ipairs(moves) do
-      print(string.format("  %3d. %s", n, solver_watch.describe(m)))
+      print(string.format("  %3d. %s", n, solver_view.describe(m)))
    end
 end
 
