@@ -549,4 +549,77 @@ H.test("moves B7: multi-card grab across a sequence break must NOT be enumerated
    return true
 end)
 
+-- ============================================================
+-- STATE B8: dragon_collect APPLY effect (apply_move)
+-- The legal-move GENERATION of dragon_collect is covered by B2/B2b/B6;
+-- this pins what apply_move actually DOES when a collect is played:
+--   (a) all 4 same-suit dragons are removed from tableau tops
+--   (b) cards beneath the dragons stay put (only the top is taken)
+--   (c) exactly one free cell becomes blocked, hosting a dragon of that suit
+--   (d) dragons_collected[suit] = true
+--   (e) apply_move is pure — the input state is not mutated
+-- Source: rules.lua apply_move:465-508; live game dragon_button.script:28-39.
+-- ============================================================
+H.test("moves B8: dragon_collect apply removes 4 dragons, blocks one cell, sets flag", function(rules)
+   local state = empty_state()
+   -- 4 red dragons on tops of cols 1-4; two of them sit on a numeric (must remain).
+   state.tableau[1] = { num("blue", 5),  drag("red") }
+   state.tableau[2] = { num("green", 6), drag("red") }
+   state.tableau[3] = { drag("red") }
+   state.tableau[4] = { drag("red") }
+   state.tableau[5] = { num("blue", 9) }            -- bystander column
+   state.dragon_counter = { red=4, blue=0, green=0 }
+
+   local s2 = rules.apply_move(state, { type="dragon_collect", suit="red" })
+
+   -- (a) zero red dragons left anywhere in the tableau
+   local remaining = 0
+   for c = 1, 8 do
+      for _, card in ipairs(s2.tableau[c]) do
+         if card.is_dragon and card.suit == "red" then remaining = remaining + 1 end
+      end
+   end
+   if remaining ~= 0 then
+      return false, "expected 0 red dragons left in tableau after collect, found " .. remaining
+   end
+
+   -- (b) numeric cards beneath the dragons remain
+   if #s2.tableau[1] ~= 1 or s2.tableau[1][1].value ~= 5 then
+      return false, "card beneath dragon in col1 (5_blue) must remain after collect"
+   end
+   if #s2.tableau[5] ~= 1 or s2.tableau[5][1].value ~= 9 then
+      return false, "bystander column 5 (9_blue) must be untouched"
+   end
+
+   -- (c) exactly one blocked free cell, hosting a red dragon
+   local blocked = 0
+   for _, fc in ipairs(s2.free_cells) do
+      if fc.is_blocked then
+         blocked = blocked + 1
+         if not (fc.card and fc.card.is_dragon and fc.card.suit == "red") then
+            return false, "the blocked free cell must host a red dragon pile"
+         end
+      end
+   end
+   if blocked ~= 1 then
+      return false, "expected exactly 1 blocked free cell after collect, found " .. blocked
+   end
+
+   -- (d) collected flag set
+   if not s2.dragons_collected.red then
+      return false, "dragons_collected.red must be true after collect"
+   end
+
+   -- (e) purity: input state still has its 4 dragons on the tops
+   if not (state.tableau[3][1] and state.tableau[3][1].is_dragon) then
+      return false, "apply_move must NOT mutate the input state (col3 dragon vanished)"
+   end
+
+   return true
+end)
+-- NOTE: the "parked dragon does NOT enable collect" invariant (tableau-tops-only
+-- counting, the reason apply_move's prefer-parked-cell branch never fires in the
+-- solve path) is already pinned by test_fixes.lua "fix#2 dragon counter: 3 tops +
+-- 1 in free cell => NO dragon_collect". Not duplicated here.
+
 return H
