@@ -15,7 +15,6 @@ function init(self)
    -- Сохраняем начальный цвет спрайта
    self.normal_tint = vmath.vector4(1, 1, 1, 1)
    self.highlight_tint = vmath.vector4(1.15, 1.15, 1.15, 1) -- Белое свечение
-   self.is_highlighted = false
    -- sprite.set_constant("#sprite", "tint", self.highlight_tint)
    go.set_position(vmath.vector3(go.get_position().x,
                                  go.get_position().y,
@@ -53,9 +52,6 @@ function is_correct_card(self, selected_card)
 end
 
 function on_message(self, message_id, message, sender)
-    if message_id ~= hash('drag_update') then
-       pprint("[CARD]", message_id)
-    end
 
 
    if message_id == hash("start_drag") then

@@ -42,7 +42,6 @@ function send_to_dragon_buttons(self, card, num)
 end
 
 function on_message(self, message_id, message, sender)
-   print("MMMMESSSAGE_ID", message_id)
    if message_id == hash("check_slot") then
       if self.is_occupied then
          msg.post(sender, "slot_invalid")
