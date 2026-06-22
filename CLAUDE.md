@@ -66,5 +66,6 @@ grok -p "<промпт ревью>" -m grok-composer-2.5-fast --effort max --out
   - [auto-finish.md](./plans/auto-finish.md) — авто-доигрывание карт в foundation
   - [effects.md](./plans/effects.md) — эффекты и анимации (Фаза 4)
   - [refactoring.md](./plans/refactoring.md) — рефакторинг cursor.script, config, cleanup
+  - [refactor-sonnet.md](./plans/refactor-sonnet.md) — бриф-исполнитель рефактора для агента: индекс проекта + токен-протокол + новые находки (ui_fx, дубль set_cursor)
   - [responsive.md](./plans/responsive.md) — респонсив HTML5 (Фаза 5)
   - [sounds.md](./plans/sounds.md) — звуковые эффекты
