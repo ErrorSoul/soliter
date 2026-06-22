@@ -3,6 +3,7 @@
 local DEBUG_DRAW = false
 local DEBUG_SOLVER = true -- press 'S' to let the solver play the current deal (dev tool)
 local tutorial_state = require("main.Scripts.tutorial_state")
+local config = require("main.Scripts.config")
 
 local function get_slot_target_type(slot_id)
    if string.sub(slot_id, 1, 9) == "base_slot" then return "base"
@@ -21,32 +22,14 @@ function init(self)
    self.tableau_stacks = {}
    self.last_cards = {}
    self.was_pressed = false
-   self.size = vmath.vector3(90, 150, 0)
-   self.half_size = self.size * 0.5
-   self.btn_size = vmath.vector3(48, 48, 0)
-   self.half_btn_size = self.btn_size * 0.5
    self.dragging_stack = false
    self.prev_cursor_x = 0
-   self.base_slot_trace = {
-      red = "base_slot1",
-      blue = "base_slot2",
-      green = "base_slot3"
-   }
-   self.dragon_button_trace = {
-      red = "dragon_button1",
-      blue = "dragon_button2",
-      green = "dragon_button3"
-   }
    self.stack_offset = {}  -- Сохраняем смещение каждой карты относительно первой
    self.input_disabled = false
    self.tutorial_highlights_applied = false
    msg.post(".", "acquire_input_focus")
    -- Draw colored text on the screen
 end
-local DISPLAY_WIDTH = sys.get_config_int("display.width") -- 960
-local DISPLAY_HEIGHT = sys.get_config_int("display.height") -- 540
--- local DISPLAY_WIDTH = sys.get_config_int("display.width")
--- local DISPLAY_HEIGHT = sys.get_config_int("display.height")
 
 -- function to convert screen (mouse/touch) coordinates to
 -- world coordinates given a camera component
@@ -79,14 +62,14 @@ end
 local function screen_to_world(x, y)
     local w, h = window.get_size()
     -- Учитываем масштабирование дисплея (аналогично подходу автора)
-    w = w / (w / DISPLAY_WIDTH)
-    h = h / (h / DISPLAY_HEIGHT)
+    w = w / (w / config.DISPLAY_WIDTH)
+    h = h / (h / config.DISPLAY_HEIGHT)
 
     -- Вычисляем масштаб для fixed_fit_projection
-    local zoom = math.min(w / DISPLAY_WIDTH, h / DISPLAY_HEIGHT)
+    local zoom = math.min(w / config.DISPLAY_WIDTH, h / config.DISPLAY_HEIGHT)
     -- Вычисляем смещение для центрирования
-    local offset_x = (w - DISPLAY_WIDTH * zoom) / 2
-    local offset_y = (h - DISPLAY_HEIGHT * zoom) / 2
+    local offset_x = (w - config.DISPLAY_WIDTH * zoom) / 2
+    local offset_y = (h - config.DISPLAY_HEIGHT * zoom) / 2
 
     -- Нормализуем координаты (как в подходе автора)
     local norm_x = (2 * x / w) - 1
@@ -94,8 +77,8 @@ local function screen_to_world(x, y)
 
     -- Преобразуем нормализованные координаты в игровые
     -- Диапазон norm_x, norm_y (-1..1) соответствует игровому пространству (-width/2..width/2, -height/2..height/2)
-    local world_x = (norm_x + 1) * (DISPLAY_WIDTH / 2)
-    local world_y = (norm_y + 1) * (DISPLAY_HEIGHT / 2)
+    local world_x = (norm_x + 1) * (config.DISPLAY_WIDTH / 2)
+    local world_y = (norm_y + 1) * (config.DISPLAY_HEIGHT / 2)
 
     -- Учитываем масштаб и смещение
     world_x = (world_x - offset_x / zoom)
@@ -130,11 +113,9 @@ function on_input(self, action_id, action)
    if self.input_disabled then return end
    local worldx, worldy = screen_to_world(action.x, action.y)
    local window_width, window_height = window.get_size()
-   local base_width = 960
-   local base_height = 540
-   local zoom = math.min(window_width / base_width, window_height / base_height)
-   local offset_x = (window_width - base_width * zoom) / 2
-   local offset_y = (window_height - base_height * zoom) / 2
+   local zoom = math.min(window_width / config.DISPLAY_WIDTH, window_height / config.DISPLAY_HEIGHT)
+   local offset_x = (window_width - config.DISPLAY_WIDTH * zoom) / 2
+   local offset_y = (window_height - config.DISPLAY_HEIGHT * zoom) / 2
    local game_x = (action.screen_x - offset_x) / zoom
    local game_y = (action.screen_y - offset_y) / zoom
 
@@ -151,7 +132,7 @@ function on_input(self, action_id, action)
          string.format("Screen: %.1f, %.1f", action.screen_x, action.screen_y),
          string.format("Scale: %.2f", window.get_display_scale()),
          string.format("Offset: %.1f, %.1f", offset_x, offset_y),
-         string.format("Base resolution: %d x %d", base_width, base_height),
+         string.format("Base resolution: %d x %d", config.DISPLAY_WIDTH, config.DISPLAY_HEIGHT),
       }
       local color_green = vmath.vector4(0, 1, 0, 1)
       msg.post("@render:", "draw_line", {
@@ -470,7 +451,7 @@ function on_message(self, message_id, message, sender)
 
    if message_id == hash("set_free_slots") then
       self.free_slots = message
-      set_cursor(self.free_slots, self.dragon_button_trace)
+      set_cursor(self.free_slots, config.DRAGON_BUTTON_TRACE)
    elseif message_id == hash("set_flower_slot") then
       self.flower_slot = message
    elseif message_id == hash("set_base_slots") then
@@ -601,7 +582,7 @@ function on_message(self, message_id, message, sender)
       self.base_slots[message.slot_id].is_empty = false
    elseif message_id == hash("send_to_base_slot") then
       print("[AUTO-FLY CURSOR] send_to_base_slot received, suit:", message.data.suit, "id:", message.id)
-      local slot = self.base_slot_trace[message.data.suit]
+      local slot = config.BASE_SLOT_TRACE[message.data.suit]
       print("[AUTO-FLY CURSOR] target slot:", slot, "is_empty:", self.base_slots[slot].is_empty)
       local is_empty = self.base_slots[slot].is_empty
       if not is_empty then
@@ -710,7 +691,7 @@ function check_tableau_slots(self, cursor_x, cursor_y)
          local last_card_pos = go.get_position(last_card.id)
 
          -- Если это последняя карта и курсор над ней
-         if is_point_in_rect(cursor_x, cursor_y, last_card_pos, self.half_size) then
+         if is_point_in_rect(cursor_x, cursor_y, last_card_pos, config.CARD_HALF_SIZE) then
             return {
                type = "tableau",
                id = last_card.id,
@@ -728,7 +709,7 @@ function check_tableau_slots(self, cursor_x, cursor_y)
             local card = stack[card_index]
             local card_pos = go.get_position(card.id)
 
-            if is_point_in_rect(cursor_x, cursor_y, card_pos, self.half_size) then
+            if is_point_in_rect(cursor_x, cursor_y, card_pos, config.CARD_HALF_SIZE) then
                -- Собираем стопку карт, начиная с выбранной
                local selected_stack = {}
                local base_pos = card_pos
@@ -781,7 +762,7 @@ function check_last_cards(self, cursor_x, cursor_y)
       -- Проверяем, находится ли курсор над картой
       if card.id ~= self.selected_card and
          not is_card_in_stack(card.id, self.stack_cards) and
-         is_point_in_rect(cursor_x, cursor_y, card_pos, self.half_size) then
+         is_point_in_rect(cursor_x, cursor_y, card_pos, config.CARD_HALF_SIZE) then
 
          return {
             type = "tableau",
@@ -802,7 +783,7 @@ end
 
 function check_free_slots(self, cursor_x, cursor_y)
    for slot_id, slot in pairs(self.free_slots) do
-      if is_point_in_rect(cursor_x, cursor_y, slot.pos, self.half_size) then
+      if is_point_in_rect(cursor_x, cursor_y, slot.pos, config.CARD_HALF_SIZE) then
          return {slot_id = slot_id, slot_pos = slot.pos}
       end
    end
@@ -810,14 +791,14 @@ end
 
 function check_flower_slot(self, cursor_x, cursor_y)
    local slot_id = 'flower_slot'
-   if is_point_in_rect(cursor_x, cursor_y, self.flower_slot[slot_id], self.half_size) then
+   if is_point_in_rect(cursor_x, cursor_y, self.flower_slot[slot_id], config.CARD_HALF_SIZE) then
       return {slot_id = slot_id, slot_pos = self.flower_slot[slot_id]}
    end
 end
 
 function check_base_slots(self, cursor_x, cursor_y)
    for slot_id, slot in pairs(self.base_slots) do
-      if is_point_in_rect(cursor_x, cursor_y, slot.pos, self.half_size) then
+      if is_point_in_rect(cursor_x, cursor_y, slot.pos, config.CARD_HALF_SIZE) then
          return {slot_id = slot_id, slot_pos = slot.pos}
       end
    end
@@ -826,7 +807,7 @@ end
 function check_free_tableau_slots(self, cursor_x, cursor_y)
    for slot_id, slot in pairs(self.tableau_slots) do
 
-      if slot.is_empty and is_point_in_rect(cursor_x, cursor_y, slot.pos, self.half_size) then
+      if slot.is_empty and is_point_in_rect(cursor_x, cursor_y, slot.pos, config.CARD_HALF_SIZE) then
          return {slot_id = slot_id, slot_pos = slot.pos}
       end
    end
@@ -834,7 +815,7 @@ end
 
 function check_dragon_buttons(self, cursor_x, cursor_y)
    for btn_id, btn in pairs(self.dragon_buttons) do
-      if btn.is_active and is_point_in_rect(cursor_x, cursor_y, btn.pos, self.half_btn_size) then
+      if btn.is_active and is_point_in_rect(cursor_x, cursor_y, btn.pos, config.BTN_HALF_SIZE) then
          return {slot_id = btn_id, color = btn.sprite}
       end
    end

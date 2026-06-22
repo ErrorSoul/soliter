@@ -1,4 +1,5 @@
 local tutorial_state = require("main.Scripts.tutorial_state")
+local config = require("main.Scripts.config")
 
 function init(self)
     self.is_empty = false
@@ -21,13 +22,7 @@ local function reverse_table(tbl)
     return reversed
 end
 local function color_to_cell(card)
-   local color_table = {
-      red = "dragon_button1",
-      blue = "dragon_button2",
-      green = "dragon_button3"
-   }
-
-   return color_table[card.data.suit]
+   return config.DRAGON_BUTTON_TRACE[card.data.suit]
 end
 function last_card_to_slot(self)
    local card = reverse_table(self.stack)[1]
@@ -129,8 +124,8 @@ function update_visible_cards(self)
       --    msg.post(card_url, "enable")
       -- end
       --pprint("DXXXX", card.id)
-      local z_index = (i == #self.stack) and 0.03 or 0.002 + i * 0.002
-      local y = go.get_position().y + (i-1) * (-35)
+      local z_index = (i == #self.stack) and config.Z_CARD_LAST_IN_STACK or config.Z_CARD_STACK_BASE + i * config.Z_CARD_STACK_STEP
+      local y = go.get_position().y + (i-1) * config.STACK_CARD_OFFSET_Y
       -- print(string.format("slot id z index %s  %f", card.data.id, z_index))
       -- y = go.get_position(card.id).y
       go.set_position(vmath.vector3(go.get_position().x, y, z_index), card.id)

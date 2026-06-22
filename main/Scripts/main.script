@@ -3,6 +3,7 @@ local DEBUG_AUTO_FINISH = false -- true = тестовая раздача для
 local DEBUG_DRAGONS = false -- true = тест сбора драконов подряд: red→blue→green
 local tutorial_state = require("main.Scripts.tutorial_state")
 local sfx = require("main.Scripts.sfx")
+local config = require("main.Scripts.config")
 
 -- Dev tool: let the pure-Lua solver play the current deal (press 'S').
 -- Pure modules, zero Defold deps. Strip DEBUG_SOLVER for release.
@@ -137,7 +138,7 @@ function deal_cards(self)
             card_data = table.remove(self.debug_blue_dragons)
          end
 
-         local card_offset = vmath.vector3(0, (card_index - 1) * -35, 0)
+         local card_offset = vmath.vector3(0, (card_index - 1) * config.STACK_CARD_OFFSET_Y, 0)
          local target_position = stack_position + card_offset
 
          local z = 0.2 + card_index * 0.001
@@ -208,7 +209,7 @@ function deal_dragon_test(self)
       local cards_in_stack = #cards
 
       for card_index, card_data in ipairs(cards) do
-         local card_offset = vmath.vector3(0, (card_index - 1) * -35, 0)
+         local card_offset = vmath.vector3(0, (card_index - 1) * config.STACK_CARD_OFFSET_Y, 0)
          local target_position = stack_position + card_offset
          local start_pos = vmath.vector3(480, 270, 0.2)
          local card = factory.create("#card_factory", start_pos, vmath.quat(0, 0, 0, 1))
@@ -270,7 +271,7 @@ function deal_auto_finish_test(self)
       local cards_in_stack = #cards
 
       for card_index, card_data in ipairs(cards) do
-         local card_offset = vmath.vector3(0, (card_index - 1) * -35, 0)
+         local card_offset = vmath.vector3(0, (card_index - 1) * config.STACK_CARD_OFFSET_Y, 0)
          local target_position = stack_position + card_offset
          local start_pos = vmath.vector3(480, 270, 0.2)
          local card = factory.create("#card_factory", start_pos, vmath.quat(0, 0, 0, 1))
@@ -348,7 +349,7 @@ function deal_tutorial_cards(self)
       local cards_in_stack = #cards
 
       for card_index, card_data in ipairs(cards) do
-         local card_offset = vmath.vector3(0, (card_index - 1) * -35, 0)
+         local card_offset = vmath.vector3(0, (card_index - 1) * config.STACK_CARD_OFFSET_Y, 0)
          local target_position = stack_position + card_offset
 
          local start_pos = vmath.vector3(480, 270, 0.2)

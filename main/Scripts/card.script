@@ -1,4 +1,5 @@
 local sfx = require("main.Scripts.sfx")
+local config = require("main.Scripts.config")
 
 function init(self)
    -- Значения карты, будут переданы при создании
@@ -18,7 +19,7 @@ function init(self)
    -- sprite.set_constant("#sprite", "tint", self.highlight_tint)
    go.set_position(vmath.vector3(go.get_position().x,
                                  go.get_position().y,
-                                 0.2))
+                                 config.Z_CARD_DEFAULT))
    -- local size = go.get("#sprite", "size")
    -- print("SIZE", size)
    -- msg.post("#collisionobject", "disable")
