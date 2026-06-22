@@ -413,21 +413,50 @@ function get_data(self)
    }
 end
 
--- Build a solver snapshot from the live board. Intended for a FRESH deal
--- (free cells empty, foundations empty, flower not collected), so the snapshot
--- is just the 8 tableau columns; everything else is at its initial value.
-function build_solver_snapshot(self)
-   local snap = { tableau = {}, foundation = { red = 1, blue = 1, green = 1 },
-                  free_cells = { {}, {}, {} }, flower = false }
-   for i = 1, 8 do
-      snap.tableau[i] = {}
-      local stack = self.tableau_stacks[i]
+-- Walk the live tableau into BOTH a solver snapshot and a parallel go_map of the
+-- real card GO ids, with IDENTICAL filtering so that solver card[i] <-> GO[i]
+-- stays an exact bijection (the director relies on this).
+--
+-- Two deal-time auto-fly effects must be reconciled (the game does them before
+-- the user ever triggers the solver):
+--   * value-2 on a tableau top auto-foundations -> removed from tableau_stacks,
+--     and self.foundation_top reflects it. So we read foundation from the live
+--     foundation_top, NOT a hardcoded {1,1,1}.
+--   * the flower auto-flies, but main.tableau_stacks is NOT updated when it
+--     leaves. So an on-top flower is stale: exclude it from both the snapshot and
+--     the go_map, and mark flower=true (collected).
+-- Intended for a FRESH deal (free cells empty, no manual collects).
+function snapshot_and_go_map(self)
+   local snap = { tableau = {}, free_cells = { {}, {}, {} }, flower = false }
+   local go_map = { tableau = {}, free_cells = {} }
+   local card_by_go = {}
+   for col = 1, 8 do
+      snap.tableau[col] = {}
+      go_map.tableau[col] = {}
+      local stack = self.tableau_stacks[col]
       if stack then
-         for _, c in ipairs(stack.cards) do
-            table.insert(snap.tableau[i], { value = c.data.value, suit = c.data.suit })
+         local n = #stack.cards
+         for idx, c in ipairs(stack.cards) do
+            local is_flower = (c.data.value == 'f') or c.data.is_flower
+            if is_flower and idx == n then
+               snap.flower = true  -- already auto-flew; not really on the tableau
+            else
+               table.insert(snap.tableau[col], { value = c.data.value, suit = c.data.suit })
+               table.insert(go_map.tableau[col], c.id)
+               card_by_go[c.id] = c
+            end
          end
       end
    end
+   snap.foundation = {
+      red = self.foundation_top.red, blue = self.foundation_top.blue, green = self.foundation_top.green,
+   }
+   return snap, go_map, card_by_go
+end
+
+-- 2c (console replay) needs only the snapshot.
+function build_solver_snapshot(self)
+   local snap = snapshot_and_go_map(self)
    return snap
 end
 
@@ -473,26 +502,13 @@ end
 -- never reading the live game back. Cards the game auto-flies itself (flower +
 -- value-2 on a tableau top) are flagged `auto` and skipped here.
 function debug_replay(self)
-   local state = solver_bridge.from_game(build_solver_snapshot(self))
+   -- snapshot + parallel go_map from one shared walk (bijection guaranteed).
+   local snap, go_map, card_by_go = snapshot_and_go_map(self)
+   local state = solver_bridge.from_game(snap)
    local moves, status = solver_rules.solve(state, { node_budget = SOLVE_BUDGET })
    if status ~= "solved" then
       print("[REPLAY] " .. tostring(status) .. " — cannot drive this deal. Press SPACE for a new game.")
       return
-   end
-
-   -- go_map + card lookup, built from the SAME tableau_stacks walk as the snapshot
-   -- (guarantees solver card[i] <-> GO[i] bijection).
-   local go_map = { tableau = {}, free_cells = {} }
-   local card_by_go = {}
-   for col = 1, 8 do
-      go_map.tableau[col] = {}
-      local stack = self.tableau_stacks[col]
-      if stack then
-         for _, c in ipairs(stack.cards) do
-            table.insert(go_map.tableau[col], c.id)
-            card_by_go[c.id] = c
-         end
-      end
    end
 
    local ok, directives = pcall(solver_replay.plan, state, moves, go_map)
