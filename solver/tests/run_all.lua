@@ -41,6 +41,7 @@ local test_modules = {
    "solver.tests.test_fixes",
    "solver.tests.test_watch",
    "solver.tests.test_bridge",
+   "solver.tests.test_replay",
 }
 
 local total_passed = 0
