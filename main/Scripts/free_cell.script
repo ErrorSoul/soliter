@@ -53,11 +53,6 @@ function on_message(self, message_id, message, sender)
       self.slot_id = message.slot_id
       self.dragon_button_trace = message.params
 
-   elseif message_id == hash("set_cursor") then
-      self.cursor = sender
-      self.slot_id = message.slot_id
-      self.dragon_button_trace = message.params
-
    elseif message_id == hash("occupy_slot") then
 
       self.current_card = sender
