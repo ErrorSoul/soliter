@@ -39,6 +39,7 @@ local test_modules = {
    "solver.tests.test_moves",
    "solver.tests.test_solvable",
    "solver.tests.test_fixes",
+   "solver.tests.test_watch",
 }
 
 local total_passed = 0
