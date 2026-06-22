@@ -11,6 +11,7 @@ local solver_bridge = require("solver.bridge")
 local solver_rules = require("solver.rules")
 local solver_view = require("solver.board_view")
 local SOLVE_BUDGET = 200000
+local DEBUG_REPLAY_DELAY = 0.4 -- seconds between frames when animating the solution
 
 function init(self)
    print("I am MAIN SCRIPT")
@@ -428,8 +429,10 @@ function build_solver_snapshot(self)
    return snap
 end
 
--- Dev tool (press 'S'): solve the current deal and print the line of play.
--- Stage 2a: console output only — confirms require + solve run in-engine.
+-- Dev tool (press 'S'): solve the current deal and animate the solver's line of
+-- play in the console, board-by-board (overlay-v1). Reuses board_view.render +
+-- rules.apply_move (both tested), so it is independent of the live game state —
+-- zero desync risk. Stage 2b drives the real cards.
 function debug_solve(self)
    local state = solver_bridge.from_game(build_solver_snapshot(self))
    print("[SOLVER] solving current deal (budget " .. SOLVE_BUDGET .. ") ...")
@@ -438,10 +441,27 @@ function debug_solve(self)
       print("[SOLVER] " .. tostring(status) .. " — no solution within budget. Press SPACE for a new game.")
       return
    end
-   print("[SOLVER] SOLVED in " .. #moves .. " moves:")
-   for n, m in ipairs(moves) do
-      print(string.format("  %3d. %s", n, solver_view.describe(m)))
+   local total = #moves
+   print("[SOLVER] SOLVED in " .. total .. " moves — playing:")
+
+   local function frame(st, n, desc)
+      print(solver_view.render(st, { move_no = n, total = total, desc = desc, color = false }))
    end
+
+   frame(state, 0, "deal")
+   local i = 0
+   local function step()
+      i = i + 1
+      if i > total then
+         print("[SOLVER] " .. (solver_rules.is_win(state) and "WIN ✓" or "done") ..
+            " (" .. total .. " moves)")
+         return
+      end
+      state = solver_rules.apply_move(state, moves[i])
+      frame(state, i, solver_view.describe(moves[i]))
+      timer.delay(DEBUG_REPLAY_DELAY, false, step)
+   end
+   timer.delay(DEBUG_REPLAY_DELAY, false, step)
 end
 
 function send_messages_to_cursor(self)

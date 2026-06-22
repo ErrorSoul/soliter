@@ -99,7 +99,9 @@ function M.render(state, info)
       end
       out[#out+1] = " " .. table.concat(row, "")
    end
-   if maxh == 0 then out[#out+1] = " " .. DIM .. "(tableau empty)" .. (color and RESET or "") end
+   if maxh == 0 then
+      out[#out+1] = " " .. (color and DIM or "") .. "(tableau empty)" .. (color and RESET or "")
+   end
 
    return table.concat(out, "\n")
 end
