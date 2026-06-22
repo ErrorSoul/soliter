@@ -12,6 +12,11 @@ local solver_rules = require("solver.rules")
 local solver_view = require("solver.board_view")
 local solver_replay = require("solver.replay")
 local SOLVE_BUDGET = 200000
+-- R (drive real cards) solves SYNCHRONOUSLY on the main thread before driving,
+-- so the budget caps the worst-case freeze on keypress. At 200000 a timeout deal
+-- froze ~8s; 40000 caps it to ~1.5-2s. Solvable deals (e.g. 78/104-move games)
+-- finish well under this; harder deals time out -> "press SPACE for a new game".
+local REPLAY_BUDGET = 40000
 local DEBUG_REPLAY_DELAY = 0.4 -- seconds between frames when animating the console solution (2c)
 local REPLAY_STEP_DELAY = 0.6 -- seconds between directives when driving the REAL cards (2b)
 
@@ -505,7 +510,7 @@ function debug_replay(self)
    -- snapshot + parallel go_map from one shared walk (bijection guaranteed).
    local snap, go_map, card_by_go = snapshot_and_go_map(self)
    local state = solver_bridge.from_game(snap)
-   local moves, status = solver_rules.solve(state, { node_budget = SOLVE_BUDGET })
+   local moves, status = solver_rules.solve(state, { node_budget = REPLAY_BUDGET })
    if status ~= "solved" then
       print("[REPLAY] " .. tostring(status) .. " — cannot drive this deal. Press SPACE for a new game.")
       return
