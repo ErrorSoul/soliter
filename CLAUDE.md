@@ -22,7 +22,7 @@
 - Платформа: HTML5 (Яндекс Игры)
 - Язык: Lua
 - Разрешение: 960x540 (landscape)
-- [INDEX.md](./INDEX.md) — навигационная карта: символ→файл, message-passing edges, солвер+тесты. Смотреть ПЕРВЫМ, чтобы прыгать в нужный файл без чтения всего проекта.
+- [INDEX.md](./INDEX.md) — навигационная карта: символ→файл, message-passing edges, солвер+тесты. Смотреть ПЕРВЫМ, чтобы прыгать в нужный файл без чтения всего проекта. **Держать актуальной:** при перемещении/переименовании символов обновлять INDEX.md тем же коммитом — иначе он врёт и экономия токенов теряется.
 - [architecture.md](./architecture.md) — архитектура, структура коллекций, message-passing, z-index система
 - [docs/responsive-explained.md](./docs/responsive-explained.md) — как работает респонсив в Defold (проекция, GUI, input)
 - [docs/sounds.md](./docs/sounds.md) — звуковая система: sfx.lua, sound_manager, cross-collection workaround
