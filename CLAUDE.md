@@ -22,36 +22,18 @@
 - Платформа: HTML5 (Яндекс Игры)
 - Язык: Lua
 - Разрешение: 960x540 (landscape)
+- [INDEX.md](./INDEX.md) — навигационная карта: символ→файл, message-passing edges, солвер+тесты. Смотреть ПЕРВЫМ, чтобы прыгать в нужный файл без чтения всего проекта.
 - [architecture.md](./architecture.md) — архитектура, структура коллекций, message-passing, z-index система
 - [docs/responsive-explained.md](./docs/responsive-explained.md) — как работает респонсив в Defold (проекция, GUI, input)
 - [docs/sounds.md](./docs/sounds.md) — звуковая система: sfx.lua, sound_manager, cross-collection workaround
 
 ## Build
 
-- Сборка HTML5 через Defold Editor или bob.jar
-- `java -jar bob.jar --platform js-web --archive build`
+- Headless HTML5-сборка (Defold / js-web) → скилл `build`.
 
 ## Grok — два советчика для ревью
 
-CLI `grok` (`~/.grok/bin/grok`) даёт доступ к двум независимым моделям-ревьюерам
-через флаг `-m`:
-
-- **grok-build** (xAI, дефолт) — `-m grok-build`. Effort НЕ поддерживается (флаг безвреден).
-- **composer** (Cursor Composer 2.5) — `-m grok-composer-2.5-fast`. Поддерживает `--effort max`.
-
-Запуск ревью (headless, неинтерактивно):
-
-```
-grok -p "<промпт ревью>" -m grok-build            --effort max --output-format plain
-grok -p "<промпт ревью>" -m grok-composer-2.5-fast --effort max --output-format plain
-```
-
-Полезные флаги: `--cwd <dir>`, `--check` (self-verify loop), `--best-of-n <N>`,
-`--output-format plain|json|streaming-json`, `--allow/--deny <rule>`.
-
-Использовать обе модели как независимые перспективы: что подтвердили обе — приоритет;
-расхождения — разбирать вручную. Сгенерированные grok'ом картинки/ассеты — ВСЕГДА на
-апрув пользователю до вставки в проект.
+- Независимое ревью двумя моделями (grok-build + composer, `--effort max`) → скилл `grok-review`.
 
 ## Plan
 

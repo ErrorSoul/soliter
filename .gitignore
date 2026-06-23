@@ -18,3 +18,6 @@ debug.keystore.pass.txt
 manifest.private.der
 manifest.public.der
 project.shared_editor_settings
+# Claude Code: agent worktrees + machine-local settings (do not commit)
+.claude/worktrees/
+.claude/settings.local.json
