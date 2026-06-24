@@ -34,11 +34,13 @@ end
 
 function on_input(self, action_id, action)
    if self.input_disabled then return end
-   local worldx, worldy = coords.screen_to_world(action.x, action.y)
-
-
-    self.cursor_pos = vmath.vector3(worldx, worldy, 0)
-    go.set_position(self.cursor_pos, ".")
+   -- Только позиционные действия (мышь/тач) несут координаты; клавиши (solve/replay/space)
+   -- приходят с action.x == nil — для них курсор не двигаем.
+   if action.x then
+      local worldx, worldy = coords.screen_to_world(action.x, action.y)
+      self.cursor_pos = vmath.vector3(worldx, worldy, 0)
+      go.set_position(self.cursor_pos, ".")
+   end
 
    if action_id == hash("space") then
 
