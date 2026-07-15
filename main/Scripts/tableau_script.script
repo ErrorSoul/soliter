@@ -3,6 +3,22 @@ local config = require("main.Scripts.config")
 
 function init(self)
     self.is_empty = false
+    self.pending_top_check = false
+end
+
+-- A6: last_card_to_slot откладываем (обычно на 1 кадр — Defold флашит сообщения
+-- ПОСЛЕ фазы update, а порядок update() между GO не гарантирован). Ключ не в
+-- «одном кадре», а в КОАЛЕСИНГЕ: при переносе стопки move_stack_cards постит все
+-- drop_success синхронно → все remove_card попадают в один флаш очереди пачкой.
+-- Раньше last_card_to_slot звался на КАЖДЫЙ remove_card, и промежуточная верхушка
+-- (карта, которая сама в переносе) угонялась вторым drop_success в base slot.
+-- Теперь ставим флаг, а решение принимаем один раз в update() — по осевшей после
+-- всей пачки верхушке. Флаг сбрасывается до вызова → двойной отправки нет.
+function update(self)
+    if self.pending_top_check then
+        self.pending_top_check = false
+        last_card_to_slot(self)
+    end
 end
 local function remove_by_id(tbl, target_id)
    for i, item in ipairs(tbl) do
@@ -43,7 +59,7 @@ function on_message(self, message_id, message, sender)
       self.index = message.index
       self.cursor = message.cursor
       self.is_empty = (#self.stack == 0)
-      last_card_to_slot(self)
+      self.pending_top_check = true  -- A6: авто-отправку решаем в update, после осадки кадра
       update_visible_cards(self)
    elseif message_id == hash("remove_card") then
       if remove_by_id(self.stack, message.id) then
@@ -51,11 +67,12 @@ function on_message(self, message_id, message, sender)
             self.is_empty = true
          end
       end
-      last_card_to_slot(self)
+      self.pending_top_check = true  -- A6: авто-отправку решаем в update, после осадки кадра
       update_visible_cards(self)
    elseif message_id == hash("occupy_slot") then
       message.card.slot_id = go.get_id()
       table.insert(self.stack, message.card)
+      self.is_empty = false  -- A4: слот перестал быть пустым
       update_visible_cards(self)
    elseif message_id == hash("check_slot") then
       if self.is_empty then

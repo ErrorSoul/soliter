@@ -40,6 +40,7 @@
 - [PLAN.md](./PLAN.md) — план доработки до публикации на Яндекс Играх
 - [plans/launch-global.md](./plans/launch-global.md) — **глобальный план запуска**: решаемость, ревью, ассеты, SDK, чистка, публикация + карта параллелизма
 - [plans/](./plans/) — детальные планы по задачам:
+  - [review-fixes.md](./plans/review-fixes.md) — **починка по итогам ревью 2026-07-11**: 6 блоков (A-F) с чек-листами и назначенной моделью, юзер запускает сам
   - [start-screen.md](./plans/start-screen.md) — стартовый экран (Фаза 2) ✅
   - [victory-screen.md](./plans/victory-screen.md) — victory screen (Фаза 2) ✅
   - [button-design.md](./plans/button-design.md) — дизайн кнопок (Фаза 2) ✅
