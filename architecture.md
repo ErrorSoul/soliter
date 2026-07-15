@@ -174,3 +174,27 @@ UI (ui.gui_script.update)
 - **Dragon complete flag**: `message.complete=true` при сборе драконов предотвращает повторное обновление free_slot, используется `is_blocked` в `free_cell.script`.
 - **Автоматические ходы**: цветок и двойки авто-уходят в foundation/flower при появлении на вершине стопки (в `last_card_to_slot`). В туториале двойки НЕ авто-уходят (`tutorial_state.is_tutorial` check).
 - **Stack drag**: при перетаскивании стопки карт сохраняются `relative_pos` каждой карты относительно верхней, и все карты двигаются синхронно.
+
+## Message contracts
+
+| Message | Sender → Receiver | Параметры | Описание |
+|---------|-------------------|-----------|----------|
+| `set_card` | main → card | `{data: {value, suit, is_dragon, is_flower}, slot_id}` | Инициализация карты |
+| `start_drag` | cursor → card | — | Начало перетаскивания |
+| `drag_update` | cursor → card | `{position: vec3, tilt?: number}` | Обновление позиции при drag |
+| `drop_success` | cursor → card | `{slot_id, position: vec3, card, animation?: bool, complete?: bool}` | Успешный ход |
+| `drop_failed` | cursor → card | `{position: vec3}` | Возврат карты на место |
+| `check_slot` | cursor → slot | `{card?}` или `{cards?, source_card?}` | Запрос валидации хода |
+| `slot_valid` | slot → cursor | — | Ход валиден |
+| `slot_invalid` | slot → cursor | — | Ход невалиден |
+| `can_move_card` | cursor → card | `{card: source_data}` | Проверка стекинга карты |
+| `valid_card` | card → cursor | — | Стекинг валиден |
+| `invalid_card` | card → cursor | — | Стекинг невалиден |
+| `occupy_slot` | card → slot | `{card, position: vec3, animation?: bool, complete?: bool}` | Карта занимает слот |
+| `remove_card` | card → old_slot | `{id}` | Карта покидает слот |
+| `highlight` | cursor → slot/card | — | Подсветить объект (tutorial) |
+| `unhighlight` | cursor → slot/card | — | Снять подсветку |
+| `set_cursor` | cursor → slot | `{slot_id, params?}` | Передать ссылку на курсор слоту |
+| `update_free_slot` | free_cell → cursor | `{slot_id, dragon, is_empty, is_blocked?}` | Синхронизация состояния свободной ячейки |
+| `send_to_flower_slot` | tableau → cursor | `card` | Автоматический полёт цветка |
+| `send_to_base_slot` | tableau → cursor | `card` | Автоматический полёт двойки в foundation |

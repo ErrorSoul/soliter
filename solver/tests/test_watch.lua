@@ -72,4 +72,23 @@ H.test("watch.render: blocked free cell renders as collected, not as a card", fu
    return true
 end)
 
+-- ============================================================
+-- render: with color disabled, output must contain NO ANSI escapes
+-- (the in-game console overlay passes color=false; raw codes show as garbage)
+-- ============================================================
+H.test("watch.render: color=false emits no ANSI escape codes (even empty tableau)", function(rules)
+   local state = {
+      tableau = { {},{},{},{},{},{},{},{} },        -- empty -> "(tableau empty)" line
+      foundation_top = { red = 10, blue = 10, green = 10 },
+      free_cells = { { card=nil, is_blocked=true }, { card=nil, is_blocked=true }, { card=nil, is_blocked=true } },
+      flower_slot = { occupied = true },
+      dragons_collected = { red = true, blue = true, green = true },
+   }
+   local s = W.render(state, { move_no = 78, total = 78, desc = "done", color = false })
+   if s:find("\27", 1, true) then
+      return false, "render(color=false) leaked an ANSI escape (\\27): " .. s:gsub("\27", "<ESC>")
+   end
+   return true
+end)
+
 return H

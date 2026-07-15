@@ -235,6 +235,11 @@ return M
 ## Что НЕ делаем
 
 - Не рефакторим логику drag state machine (cursor.on_input + on_message) — это рискованно и не блокирует ничего
+  - **Отложенная находка (try_target):** ветки дропа в on_input (`check_free_slots`/`check_flower_slot`/
+    `check_base_slots`/check tableau-empty) повторяют паттерн `slot → self.pending_drop={slot} →
+    msg.post(slot_id,"check_slot",payload) → return`. Выносится в хелпер
+    `try_target(self, slot, payload)`. Безопасно (чистый дедуп, логика та же), но это drag-машина →
+    отдельной задачей ПОСЛЕ основного рефактора, под R/S как регресс-тест.
 - Не переделываем z-index систему — config.lua достаточно
 - Не трогаем tutorial_state.lua — работает нормально
 - Не меняем message-passing на прямые вызовы — это anti-pattern в Defold

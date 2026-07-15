@@ -1,7 +1,10 @@
 -- cursor.script
 -- go.property("selected_card", nil)
-local DEBUG_DRAW = false
+local DEBUG_SOLVER = true -- press 'S' to let the solver play the current deal (dev tool)
 local tutorial_state = require("main.Scripts.tutorial_state")
+local config = require("main.Scripts.config")
+local coords = require("main.Scripts.coords")
+local hit = require("main.Scripts.hit_test")
 
 local function get_slot_target_type(slot_id)
    if string.sub(slot_id, 1, 9) == "base_slot" then return "base"
@@ -20,173 +23,25 @@ function init(self)
    self.tableau_stacks = {}
    self.last_cards = {}
    self.was_pressed = false
-   self.size = vmath.vector3(90, 150, 0)
-   self.half_size = self.size * 0.5
-   self.btn_size = vmath.vector3(48, 48, 0)
-   self.half_btn_size = self.btn_size * 0.5
    self.dragging_stack = false
    self.prev_cursor_x = 0
-   self.base_slot_trace = {
-      red = "base_slot1",
-      blue = "base_slot2",
-      green = "base_slot3"
-   }
-   self.dragon_button_trace = {
-      red = "dragon_button1",
-      blue = "dragon_button2",
-      green = "dragon_button3"
-   }
    self.stack_offset = {}  -- Сохраняем смещение каждой карты относительно первой
    self.input_disabled = false
+   self.flying_count = 0  -- A3: сколько карт сейчас в авто-полёте (дуга)
    self.tutorial_highlights_applied = false
    msg.post(".", "acquire_input_focus")
    -- Draw colored text on the screen
 end
-local DISPLAY_WIDTH = sys.get_config_int("display.width") -- 960
-local DISPLAY_HEIGHT = sys.get_config_int("display.height") -- 540
--- local DISPLAY_WIDTH = sys.get_config_int("display.width")
--- local DISPLAY_HEIGHT = sys.get_config_int("display.height")
-
--- function to convert screen (mouse/touch) coordinates to
--- world coordinates given a camera component
--- this function will use the camera view and projection to
--- translate the screen coordinates into world coordinates
-local function screena_to_world(x, y, z, camera_id)
-    local projection = camera.get_projection(camera_id)
-    local view = camera.get_view(camera_id)
-    local w, h = window.get_size()
-    -- The window.get_size() function will return the scaled window size,
-    -- ie taking into account display scaling (Retina screens on macOS for
-    -- instance). We need to adjust for display scaling in our calculation.
-    w = w / (w / DISPLAY_WIDTH)
-    h = h / (h / DISPLAY_HEIGHT)
-
-    -- https://defold.com/manuals/camera/#converting-mouse-to-world-coordinates
-    local inv = vmath.inv(projection * view)
-    x = (2 * x / w) - 1
-    y = (2 * y / h) - 1
-    z = (2 * z) - 1
-    local x1 = x * inv.m00 + y * inv.m01 + z * inv.m02 + inv.m03
-    local y1 = x * inv.m10 + y * inv.m11 + z * inv.m12 + inv.m13
-    local z1 = x * inv.m20 + y * inv.m21 + z * inv.m22 + inv.m23
-    return x1, y1, z1
-end
-
-
-
--- Функция для преобразования экранных координат в игровые без камеры
-local function screen_to_world(x, y)
-    local w, h = window.get_size()
-    -- Учитываем масштабирование дисплея (аналогично подходу автора)
-    w = w / (w / DISPLAY_WIDTH)
-    h = h / (h / DISPLAY_HEIGHT)
-
-    -- Вычисляем масштаб для fixed_fit_projection
-    local zoom = math.min(w / DISPLAY_WIDTH, h / DISPLAY_HEIGHT)
-    -- Вычисляем смещение для центрирования
-    local offset_x = (w - DISPLAY_WIDTH * zoom) / 2
-    local offset_y = (h - DISPLAY_HEIGHT * zoom) / 2
-
-    -- Нормализуем координаты (как в подходе автора)
-    local norm_x = (2 * x / w) - 1
-    local norm_y = (2 * y / h) - 1
-
-    -- Преобразуем нормализованные координаты в игровые
-    -- Диапазон norm_x, norm_y (-1..1) соответствует игровому пространству (-width/2..width/2, -height/2..height/2)
-    local world_x = (norm_x + 1) * (DISPLAY_WIDTH / 2)
-    local world_y = (norm_y + 1) * (DISPLAY_HEIGHT / 2)
-
-    -- Учитываем масштаб и смещение
-    world_x = (world_x - offset_x / zoom)
-    world_y = (world_y - offset_y / zoom)
-
-    return world_x, world_y
-end
-
-local FIXED_ZOOM = 2 -- Фиксированный масштаб из рендер-скрипта (например, zoom = 2)
-
--- Функция для преобразования экранных координат в игровые для fixed_projection
-local function screena_to_world(x, y)
-    local w, h = window.get_size()
-    -- Учитываем масштабирование дисплея (как в подходе автора)
-    w = w / (w / DISPLAY_WIDTH)
-    h = h / (h / DISPLAY_HEIGHT)
-
-    -- Нормализуем координаты (как в подходе автора)
-    local norm_x = (2 * x / w) - 1
-    local norm_y = (2 * y / h) - 1
-
-    -- Преобразуем нормализованные координаты в игровые
-    -- В fixed_projection масштаб фиксирован (FIXED_ZOOM)
-    -- Игровое пространство: (-width/(2*zoom)..width/(2*zoom), -height/(2*zoom)..height/(2*zoom))
-    local world_x = (norm_x / FIXED_ZOOM) * (DISPLAY_WIDTH / 2) + (DISPLAY_WIDTH / 2)
-    local world_y = (norm_y / FIXED_ZOOM) * (DISPLAY_HEIGHT / 2) + (DISPLAY_HEIGHT / 2)
-
-    return world_x, world_y
-end
 
 function on_input(self, action_id, action)
    if self.input_disabled then return end
-   local worldx, worldy = screen_to_world(action.x, action.y)
-   local window_width, window_height = window.get_size()
-   local base_width = 960
-   local base_height = 540
-   local zoom = math.min(window_width / base_width, window_height / base_height)
-   local offset_x = (window_width - base_width * zoom) / 2
-   local offset_y = (window_height - base_height * zoom) / 2
-   local game_x = (action.screen_x - offset_x) / zoom
-   local game_y = (action.screen_y - offset_y) / zoom
-
-
-
-
-
-   if DEBUG_DRAW then
-      self.debug_text = {
-         string.format("ScrnWrld: %.1f, %.1f", worldx, worldy),
-         string.format("Window size: %d x %d", window_width, window_height),
-         string.format("Game coords: %.1f, %.1f", game_x, game_y),
-         string.format("Action: %.1f, %.1f", action.x, action.y),
-         string.format("Screen: %.1f, %.1f", action.screen_x, action.screen_y),
-         string.format("Scale: %.2f", window.get_display_scale()),
-         string.format("Offset: %.1f, %.1f", offset_x, offset_y),
-         string.format("Base resolution: %d x %d", base_width, base_height),
-      }
-      local color_green = vmath.vector4(0, 1, 0, 1)
-      msg.post("@render:", "draw_line", {
-                  start_point = vmath.vector3(game_x-10, game_y, 0),
-                  end_point = vmath.vector3(game_x+10, game_y, 0),
-                  color = vmath.vector4(1, 0, 0, 1)
-      })
-      msg.post("@render:", "draw_line", {
-                  start_point = vmath.vector3(game_x, game_y-10, 0),
-                  end_point = vmath.vector3(game_x, game_y+10, 0),
-                  color = vmath.vector4(1, 0, 0, 1)
-      })
-      msg.post("@render:", "draw_line", {
-                  start_point = vmath.vector3(action.x-10, action.y, 0),
-                  end_point = vmath.vector3(action.x+10, action.y, 0),
-                  color = color_green
-      })
-      msg.post("@render:", "draw_line", {
-                  start_point = vmath.vector3(action.x, action.y-10, 0),
-                  end_point = vmath.vector3(action.x, action.y+10, 0),
-                  color = color_green
-      })
-      msg.post("@render:", "draw_line", {
-                  start_point = vmath.vector3(action.screen_x-10, action.screen_y, 0),
-                  end_point = vmath.vector3(action.screen_x+10, action.screen_y, 0),
-                  color = vmath.vector4(1, 1, 1, 1)
-      })
-      msg.post("@render:", "draw_line", {
-                  start_point = vmath.vector3(action.screen_x, action.screen_y-10, 0),
-                  end_point = vmath.vector3(action.screen_x, action.screen_y+10, 0),
-                  color = vmath.vector4(1, 1, 1, 1)
-      })
+   -- Только позиционные действия (мышь/тач) несут координаты; клавиши (solve/replay/space)
+   -- приходят с action.x == nil — для них курсор не двигаем.
+   if action.x then
+      local worldx, worldy = coords.screen_to_world(action.x, action.y)
+      self.cursor_pos = vmath.vector3(worldx, worldy, 0)
+      go.set_position(self.cursor_pos, ".")
    end
-
-    self.cursor_pos = vmath.vector3(worldx, worldy, 0)
-    go.set_position(self.cursor_pos, ".")
 
    if action_id == hash("space") then
 
@@ -197,19 +52,46 @@ function on_input(self, action_id, action)
          msg.post("@system:", "toggle_physics_debug") -- <3>
       end
    end
+
+   if DEBUG_SOLVER and action_id == hash("solve") and action.pressed then
+      msg.post("/card_table#main", "debug_solve")
+   end
+   if DEBUG_SOLVER and action_id == hash("replay") and action.pressed then
+      msg.post("/card_table#main", "debug_replay")
+   end
    if action_id == hash("touch") then
       if action.pressed then
+         -- A3: пока карты в авто-полёте (цветок/драконы) — игнорируем нажатия,
+         -- иначе можно схватить летящую карту и отменить её дугу.
+         if self.flying_count and self.flying_count > 0 then
+            return
+         end
+         -- A2: HTML5 теряет mouseup при уходе курсора с канваса, touch-cancel на
+         -- мобиле. Если приходит новый press, а прошлый drag так и не получил
+         -- release — возвращаем зависшие карты на место и чистим состояние,
+         -- затем продолжаем обработку нового нажатия (fall-through).
+         if self.is_dragging then
+            if self.dragging_stack and self.stack_cards then
+               for _, card in ipairs(self.stack_cards) do
+                  msg.post(card.id, "drop_failed", {
+                     position = self.original_position + card.relative_pos
+                  })
+               end
+            elseif self.selected_card then
+               msg.post(self.selected_card, 'drop_failed', {position = self.original_position})
+            end
+            clean_cursor(self)
+         end
          self.was_pressed = true
-         local btn_color = check_dragon_buttons(self, action.x, action.y)
+         local btn_color = hit.check_dragon_buttons(self, action.x, action.y)
 
          if btn_color then
-            pprint('BUTTON COLOR', btn_color)
             self.pending_drop = btn_color
             msg.post(btn_color.slot_id, 'get_dragon_cards')
             return
          end
 
-         local card = check_tableau_slots(self, action.x, action.y)
+         local card = hit.check_tableau_slots(self, action.x, action.y)
          if card then
             self.selected_card = card.id
             self.selected_card_data = card.source
@@ -236,7 +118,7 @@ function on_input(self, action_id, action)
             return
          end
 
-         local free_slot = check_free_slots(self, action.x, action.y)
+         local free_slot = hit.check_free_slots(self, action.x, action.y)
 
          if free_slot then
             self.pending_drop = free_slot
@@ -254,7 +136,7 @@ function on_input(self, action_id, action)
 
             -- Если тащим стопку, разрешаем дроп только в tableau слоты
             if self.dragging_stack then
-               local tableau_slot = check_free_tableau_slots(self, action.x, action.y)
+               local tableau_slot = hit.check_free_tableau_slots(self, action.x, action.y)
                if tableau_slot then
                   self.pending_drop = {slot = tableau_slot}
                   msg.post(tableau_slot.slot_id, "check_slot", {
@@ -264,7 +146,7 @@ function on_input(self, action_id, action)
                   return
                end
 
-               local card = check_last_cards(self, action.x, action.y)
+               local card = hit.check_last_cards(self, action.x, action.y)
                if card then
 
                   self.pending_drop = {card = card, slot_id = card.slot_id}
@@ -285,7 +167,7 @@ function on_input(self, action_id, action)
                return
             end
 
-            local card = check_last_cards(self, action.x, action.y)
+            local card = hit.check_last_cards(self, action.x, action.y)
             if card then
 
                self.pending_drop = {card = card, slot_id = card.slot_id}
@@ -293,7 +175,7 @@ function on_input(self, action_id, action)
                return
             end
 
-            local free_slot = check_free_slots(self, action.x, action.y)
+            local free_slot = hit.check_free_slots(self, action.x, action.y)
             -- Обработка перемещения одиночной карты
             if free_slot then
                self.pending_drop = {slot = free_slot}
@@ -301,21 +183,21 @@ function on_input(self, action_id, action)
                return
             end
 
-            local flower_slot = check_flower_slot(self, action.x, action.y)
+            local flower_slot = hit.check_flower_slot(self, action.x, action.y)
             if flower_slot then
                self.pending_drop = {slot = flower_slot}
                msg.post(flower_slot.slot_id, "check_slot", {card = self.selected_card_data})
                return
             end
 
-            local base_slot = check_base_slots(self, action.x, action.y)
+            local base_slot = hit.check_base_slots(self, action.x, action.y)
             if base_slot then
                self.pending_drop = {slot = base_slot}
                msg.post(base_slot.slot_id, 'check_slot', {card = self.selected_card_data})
                return
             end
 
-            local tableau_slot = check_free_tableau_slots(self, action.x, action.y)
+            local tableau_slot = hit.check_free_tableau_slots(self, action.x, action.y)
             if tableau_slot then
                self.pending_drop = {slot = tableau_slot}
                msg.post(tableau_slot.slot_id, 'check_slot', {card = self.selected_card_data})
@@ -324,6 +206,7 @@ function on_input(self, action_id, action)
 
           -- Возвращаем карту на место если никуда не попали
          msg.post(self.selected_card, 'drop_failed', {position = self.original_position})
+         clean_cursor(self)
 
          end
       end
@@ -456,13 +339,9 @@ local function fly_card_arc(card_id, target_pos, delay, callback)
 end
 
 function on_message(self, message_id, message, sender)
-   if not message_id == hash('drag_update') then
-      print("[CURSOR]", message_id)
-   end
-
    if message_id == hash("set_free_slots") then
       self.free_slots = message
-      set_cursor(self.free_slots, self.dragon_button_trace)
+      set_cursor(self.free_slots, config.DRAGON_BUTTON_TRACE)
    elseif message_id == hash("set_flower_slot") then
       self.flower_slot = message
    elseif message_id == hash("set_base_slots") then
@@ -473,9 +352,7 @@ function on_message(self, message_id, message, sender)
       self.tableau_slots = message
    elseif message_id == hash("set_dragon_buttons") then
       self.dragon_buttons = message
-      pprint("DRG BUTTON", self.dragon_buttons)
    elseif message_id == hash("set_cards") then
-      pprint("TT", sender)
       self.cards = message
    elseif message_id == hash("set_stack") then
       self.tableau_stacks[message.index] = message.stack
@@ -522,7 +399,16 @@ function on_message(self, message_id, message, sender)
          msg.post("/card_table#main", "check_auto_finish", { free_cells = free_cell_cards })
       end
    elseif message_id == hash("slot_invalid") and self.pending_drop then
-      msg.post(self.selected_card, 'drop_failed', {position = self.original_position})
+      -- A5: при переносе стопки возвращаем ВСЕ карты, а не только нижнюю.
+      if self.dragging_stack and self.stack_cards then
+         for _, card in ipairs(self.stack_cards) do
+            msg.post(card.id, "drop_failed", {
+               position = self.original_position + card.relative_pos
+            })
+         end
+      else
+         msg.post(self.selected_card, 'drop_failed', {position = self.original_position})
+      end
       clean_cursor(self)
    elseif message_id == hash("invalid_card")  then
       if self.is_dragging then
@@ -580,7 +466,9 @@ function on_message(self, message_id, message, sender)
    elseif message_id == hash("send_to_flower_slot") then
       local fl_pos = self.flower_slot['flower_slot']
       local captured = message
+      self.flying_count = self.flying_count + 1  -- A3
       fly_card_arc(captured.id, fl_pos, 0, function()
+         self.flying_count = self.flying_count - 1  -- A3
          msg.post(captured.id, 'drop_success', {
                      slot_id = 'flower_slot',
                      position = fl_pos,
@@ -592,9 +480,7 @@ function on_message(self, message_id, message, sender)
    elseif message_id == hash("base_slot_full") then
       self.base_slots[message.slot_id].is_empty = false
    elseif message_id == hash("send_to_base_slot") then
-      print("[AUTO-FLY CURSOR] send_to_base_slot received, suit:", message.data.suit, "id:", message.id)
-      local slot = self.base_slot_trace[message.data.suit]
-      print("[AUTO-FLY CURSOR] target slot:", slot, "is_empty:", self.base_slots[slot].is_empty)
+      local slot = config.BASE_SLOT_TRACE[message.data.suit]
       local is_empty = self.base_slots[slot].is_empty
       if not is_empty then
          for slot_id, sl in pairs(self.base_slots) do
@@ -605,7 +491,6 @@ function on_message(self, message_id, message, sender)
          end
       end
 
-      print("[AUTO-FLY CURSOR] sending drop_success to:", message.id, "slot:", slot)
       msg.post(message.id, 'drop_success', {
                   slot_id = slot,
                   position = self.base_slots[slot].pos,
@@ -620,7 +505,6 @@ function on_message(self, message_id, message, sender)
       self.free_slots[message.slot_id].is_empty = message.is_empty
       self.free_slots[message.slot_id].dragon = message.dragon
       self.free_slots[message.slot_id].is_blocked = message.is_blocked or false
-      pprint("update_free_slot", self.free_slots)
    elseif message_id == hash("send_auto_finish_check") then
       local free_cell_cards = {}
       for slot_id, slot in pairs(self.free_slots) do
@@ -657,7 +541,9 @@ function on_message(self, message_id, message, sender)
       for _, card in pairs(message) do
          local arc_delay = i * 0.1
          local captured_card = card
+         self.flying_count = self.flying_count + 1  -- A3
          fly_card_arc(captured_card.id, sl_pos, arc_delay, function()
+            self.flying_count = self.flying_count - 1  -- A3
             msg.post(captured_card.id, 'drop_success', {
                slot_id = sl_id,
                position = sl_pos,
@@ -685,154 +571,6 @@ function clean_cursor(self)
    self.drag_offset = vmath.vector3(0, 0, 0)
 end
 
-local function is_point_in_rect(x, y, rect_pos, half_size)
-   return (x > rect_pos.x - half_size.x and
-           x < rect_pos.x + half_size.x and
-           y > rect_pos.y - half_size.y and
-           y < rect_pos.y + half_size.y)
-end
-
-function check_tableau_slots(self, cursor_x, cursor_y)
-   for stack_index, stack in ipairs(self.tableau_stacks) do
-      -- Проверяем только непустые стопки
-      if #stack > 0 then
-         -- Получаем последнюю карту в стопке
-         local last_card_index = #stack
-         local last_card = stack[last_card_index]
-         local last_card_pos = go.get_position(last_card.id)
-
-         -- Если это последняя карта и курсор над ней
-         if is_point_in_rect(cursor_x, cursor_y, last_card_pos, self.half_size) then
-            return {
-               type = "tableau",
-               id = last_card.id,
-               stack_index = stack_index,
-               card_index = last_card_index,
-               is_single = true,  -- Флаг, что это одиночная карта
-               pos = last_card_pos,
-               slot_id = last_card.slot_id,
-               source = last_card
-            }
-         end
-
-         -- Проверяем остальные карты в стопке (кроме последней)
-         for card_index = last_card_index - 1, 1, -1 do
-            local card = stack[card_index]
-            local card_pos = go.get_position(card.id)
-
-            if is_point_in_rect(cursor_x, cursor_y, card_pos, self.half_size) then
-               -- Собираем стопку карт, начиная с выбранной
-               local selected_stack = {}
-               local base_pos = card_pos
-
-               for i = card_index, #stack do
-                   local stack_card = stack[i]
-                   local relative_pos = go.get_position(stack_card.id) - base_pos
-                   table.insert(selected_stack, {
-                       id = stack_card.id,
-                       source = stack_card,
-                       relative_pos = relative_pos
-                   })
-               end
-
-               return {
-                  type = "tableau",
-                  id = card.id,
-                  stack_index = stack_index,
-                  card_index = card_index,
-                  stack = selected_stack,
-                  is_stack = true,  -- Флаг, что это стопка карт
-                  pos = card_pos,
-                  slot_id = card.slot_id,
-                  source = card
-               }
-            end
-         end
-      end
-   end
-   return nil
-end
-
-local function is_card_in_stack(card_id, stack_cards)
-    if not stack_cards then return false end
-
-    for _, stack_card in ipairs(stack_cards) do
-        if stack_card.id == card_id then
-            return true
-        end
-    end
-    return false
-end
-
-function check_last_cards(self, cursor_x, cursor_y)
-
-   -- Если курсор над стопкой, проверяем каждую карту в стопке
-   for stack_index, card in pairs(self.last_cards) do
-        local card_pos = go.get_position(card.id)
-
-      -- Проверяем, находится ли курсор над картой
-      if card.id ~= self.selected_card and
-         not is_card_in_stack(card.id, self.stack_cards) and
-         is_point_in_rect(cursor_x, cursor_y, card_pos, self.half_size) then
-
-         return {
-            type = "tableau",
-            id  = card.id,
-            stack_index = stack_index,
-            card_index = card_index,
-            card_data = card.data,
-            data_id = card.data.id,
-            slot_id = card.slot_id,
-            pos = card_pos,
-            source = card
-         }
-      end
-   end
-   -- Если курсор не над стопкой, возвращаем nil
-   return nil
-end
-
-function check_free_slots(self, cursor_x, cursor_y)
-   for slot_id, slot in pairs(self.free_slots) do
-      if is_point_in_rect(cursor_x, cursor_y, slot.pos, self.half_size) then
-         return {slot_id = slot_id, slot_pos = slot.pos}
-      end
-   end
-end
-
-function check_flower_slot(self, cursor_x, cursor_y)
-   local slot_id = 'flower_slot'
-   if is_point_in_rect(cursor_x, cursor_y, self.flower_slot[slot_id], self.half_size) then
-      return {slot_id = slot_id, slot_pos = self.flower_slot[slot_id]}
-   end
-end
-
-function check_base_slots(self, cursor_x, cursor_y)
-   for slot_id, slot in pairs(self.base_slots) do
-      if is_point_in_rect(cursor_x, cursor_y, slot.pos, self.half_size) then
-         return {slot_id = slot_id, slot_pos = slot.pos}
-      end
-   end
-end
-
-function check_free_tableau_slots(self, cursor_x, cursor_y)
-   for slot_id, slot in pairs(self.tableau_slots) do
-
-      if slot.is_empty and is_point_in_rect(cursor_x, cursor_y, slot.pos, self.half_size) then
-         return {slot_id = slot_id, slot_pos = slot.pos}
-      end
-   end
-end
-
-function check_dragon_buttons(self, cursor_x, cursor_y)
-   for btn_id, btn in pairs(self.dragon_buttons) do
-      if btn.is_active and is_point_in_rect(cursor_x, cursor_y, btn.pos, self.half_btn_size) then
-         return {slot_id = btn_id, color = btn.sprite}
-      end
-   end
-end
-
-
 function update(self, dt)
    -- Tutorial highlights polling
    if tutorial_state.is_tutorial and tutorial_state.highlight_dirty then
@@ -841,38 +579,5 @@ function update(self, dt)
       apply_tutorial_highlights(self)
    end
 
-   -- Преобразуем все объекты в строки и объединяем их
-   if DEBUG_DRAW then
-      local debug_string = "selected_card: " .. tostring(self.selected_card_data and self.selected_card_data.data_id or nil) .. "\n" ..
-         "is_dragging: " .. tostring(self.is_dragging) .. "\n" ..
-         "current_slot: " .. tostring(self.current_slot) .. "\n" ..
-         "can_drop: " .. tostring(self.can_drop) .. "\n" ..
-         "potential_card: " .. tostring(self.potential_card) .. "\n"..
-         "message: " .. tostring(self.mes) .. "\n" ..
-         "overlapped_card: " .. tostring(self.overlapped_card) .. "\n"
-
-      local color_green = vmath.vector4(0, 1, 0, 1)
-      msg.post("@render:", "draw_debug_text", { text = debug_string, position = vmath.vector3(800, 780, 0), color = color_green })
-
-      local x = 10
-      local y = 30
-      local line_height = 20
-
-      for i, text in ipairs(self.debug_text or {}) do
-         msg.post("@render:", "draw_debug_text", {
-                     text = text,
-                     position = vmath.vector3(x, y, 0),
-                     color = color_green
-         })
-         y = y + line_height
-      end
-      local window_width, window_height = window.get_size()
-      msg.post("@render:", "draw_debug_text", { text = tostring(window_height) .. "/" .. tostring(window_height / 3), position = vmath.vector3(700, 40, 0), color = color_green })
-      msg.post("@render:", "draw_line", {
-                  start_point = vmath.vector3(0, window_height / 3, 0),
-                  end_point = vmath.vector3(300, window_height/3, 0),
-                  color = color_green
-      })
-   end
 end
 --8BYNTX0E

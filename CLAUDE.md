@@ -22,42 +22,25 @@
 - Платформа: HTML5 (Яндекс Игры)
 - Язык: Lua
 - Разрешение: 960x540 (landscape)
+- [INDEX.md](./INDEX.md) — навигационная карта: символ→файл, message-passing edges, солвер+тесты. Смотреть ПЕРВЫМ, чтобы прыгать в нужный файл без чтения всего проекта. **Держать актуальной:** при перемещении/переименовании символов обновлять INDEX.md тем же коммитом — иначе он врёт и экономия токенов теряется.
 - [architecture.md](./architecture.md) — архитектура, структура коллекций, message-passing, z-index система
 - [docs/responsive-explained.md](./docs/responsive-explained.md) — как работает респонсив в Defold (проекция, GUI, input)
 - [docs/sounds.md](./docs/sounds.md) — звуковая система: sfx.lua, sound_manager, cross-collection workaround
 
 ## Build
 
-- Сборка HTML5 через Defold Editor или bob.jar
-- `java -jar bob.jar --platform js-web --archive build`
+- Headless HTML5-сборка (Defold / js-web) → скилл `build`.
 
 ## Grok — два советчика для ревью
 
-CLI `grok` (`~/.grok/bin/grok`) даёт доступ к двум независимым моделям-ревьюерам
-через флаг `-m`:
-
-- **grok-build** (xAI, дефолт) — `-m grok-build`. Effort НЕ поддерживается (флаг безвреден).
-- **composer** (Cursor Composer 2.5) — `-m grok-composer-2.5-fast`. Поддерживает `--effort max`.
-
-Запуск ревью (headless, неинтерактивно):
-
-```
-grok -p "<промпт ревью>" -m grok-build            --effort max --output-format plain
-grok -p "<промпт ревью>" -m grok-composer-2.5-fast --effort max --output-format plain
-```
-
-Полезные флаги: `--cwd <dir>`, `--check` (self-verify loop), `--best-of-n <N>`,
-`--output-format plain|json|streaming-json`, `--allow/--deny <rule>`.
-
-Использовать обе модели как независимые перспективы: что подтвердили обе — приоритет;
-расхождения — разбирать вручную. Сгенерированные grok'ом картинки/ассеты — ВСЕГДА на
-апрув пользователю до вставки в проект.
+- Независимое ревью двумя моделями (grok-build + composer, `--effort max`) → скилл `grok-review`.
 
 ## Plan
 
 - [PLAN.md](./PLAN.md) — план доработки до публикации на Яндекс Играх
 - [plans/launch-global.md](./plans/launch-global.md) — **глобальный план запуска**: решаемость, ревью, ассеты, SDK, чистка, публикация + карта параллелизма
 - [plans/](./plans/) — детальные планы по задачам:
+  - [review-fixes.md](./plans/review-fixes.md) — **починка по итогам ревью 2026-07-11**: 6 блоков (A-F) с чек-листами и назначенной моделью, юзер запускает сам
   - [start-screen.md](./plans/start-screen.md) — стартовый экран (Фаза 2) ✅
   - [victory-screen.md](./plans/victory-screen.md) — victory screen (Фаза 2) ✅
   - [button-design.md](./plans/button-design.md) — дизайн кнопок (Фаза 2) ✅
@@ -66,5 +49,6 @@ grok -p "<промпт ревью>" -m grok-composer-2.5-fast --effort max --out
   - [auto-finish.md](./plans/auto-finish.md) — авто-доигрывание карт в foundation
   - [effects.md](./plans/effects.md) — эффекты и анимации (Фаза 4)
   - [refactoring.md](./plans/refactoring.md) — рефакторинг cursor.script, config, cleanup
+  - [refactor-sonnet.md](./plans/refactor-sonnet.md) — бриф-исполнитель рефактора для агента: индекс проекта + токен-протокол + новые находки (ui_fx, дубль set_cursor)
   - [responsive.md](./plans/responsive.md) — респонсив HTML5 (Фаза 5)
   - [sounds.md](./plans/sounds.md) — звуковые эффекты

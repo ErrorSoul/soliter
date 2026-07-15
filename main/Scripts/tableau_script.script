@@ -1,7 +1,24 @@
 local tutorial_state = require("main.Scripts.tutorial_state")
+local config = require("main.Scripts.config")
 
 function init(self)
     self.is_empty = false
+    self.pending_top_check = false
+end
+
+-- A6: last_card_to_slot откладываем (обычно на 1 кадр — Defold флашит сообщения
+-- ПОСЛЕ фазы update, а порядок update() между GO не гарантирован). Ключ не в
+-- «одном кадре», а в КОАЛЕСИНГЕ: при переносе стопки move_stack_cards постит все
+-- drop_success синхронно → все remove_card попадают в один флаш очереди пачкой.
+-- Раньше last_card_to_slot звался на КАЖДЫЙ remove_card, и промежуточная верхушка
+-- (карта, которая сама в переносе) угонялась вторым drop_success в base slot.
+-- Теперь ставим флаг, а решение принимаем один раз в update() — по осевшей после
+-- всей пачки верхушке. Флаг сбрасывается до вызова → двойной отправки нет.
+function update(self)
+    if self.pending_top_check then
+        self.pending_top_check = false
+        last_card_to_slot(self)
+    end
 end
 local function remove_by_id(tbl, target_id)
    for i, item in ipairs(tbl) do
@@ -21,58 +38,41 @@ local function reverse_table(tbl)
     return reversed
 end
 local function color_to_cell(card)
-   local color_table = {
-      red = "dragon_button1",
-      blue = "dragon_button2",
-      green = "dragon_button3"
-   }
-
-   return color_table[card.data.suit]
+   return config.DRAGON_BUTTON_TRACE[card.data.suit]
 end
 function last_card_to_slot(self)
    local card = reverse_table(self.stack)[1]
-   print("[AUTO-FLY] last_card_to_slot called, stack size:", #self.stack)
    if card then
-      print("[AUTO-FLY] top card:", card.data.id, "value:", card.data.value, "type:", type(card.data.value), "suit:", card.data.suit)
       if card.data.value == 'f' then
-         print("[AUTO-FLY] -> flower slot")
          msg.post(self.cursor, 'send_to_flower_slot', card)
       elseif card.data.value == 2 and not tutorial_state.is_tutorial then
-         print("[AUTO-FLY] -> base slot! tutorial:", tutorial_state.is_tutorial)
          msg.post(self.cursor, 'send_to_base_slot', card)
       elseif card.data.value == 'd' then
          msg.post(color_to_cell(card), 'send_counter_to_button', card)
-      else
-         print("[AUTO-FLY] no match: value ~= 2, ~= f, ~= d")
       end
-   else
-      print("[AUTO-FLY] no card on top (empty stack)")
    end
 end
 
 function on_message(self, message_id, message, sender)
-   pprint("[TABLEA]", (self.index or 'nil') .. '/' .. message_id .. "||" .. (message.card and message.card.data.id .. "/" .. message.card.id or (message and message.id or 'nil')))
    if message_id == hash("update_stack") then
       self.stack = message.stack
       self.index = message.index
       self.cursor = message.cursor
       self.is_empty = (#self.stack == 0)
-      last_card_to_slot(self)
+      self.pending_top_check = true  -- A6: авто-отправку решаем в update, после осадки кадра
       update_visible_cards(self)
    elseif message_id == hash("remove_card") then
       if remove_by_id(self.stack, message.id) then
-         -- msg.post(self.cursor, 'set_stack', {index = self.indeX, Stack = self.stack})
          if #self.stack == 0 then
             self.is_empty = true
-            print("EMPTY SLOT !!!!!!!!!!!!!!!!!!")
          end
       end
-      last_card_to_slot(self)
+      self.pending_top_check = true  -- A6: авто-отправку решаем в update, после осадки кадра
       update_visible_cards(self)
    elseif message_id == hash("occupy_slot") then
       message.card.slot_id = go.get_id()
       table.insert(self.stack, message.card)
-      print("BEFORE UPDATE VISIBLE CARDS")
+      self.is_empty = false  -- A4: слот перестал быть пустым
       update_visible_cards(self)
    elseif message_id == hash("check_slot") then
       if self.is_empty then
@@ -85,62 +85,27 @@ end
 
 function update_visible_cards(self)
    local visible_cards = {}
-   -- print("Начинаем проверку стопки из " .. #self.stack .. " карт")
-
    -- Проходим по стопке карт снизу вверх (от 1 до #self.stack)
    for i = #self.stack, 1, -1 do
       local current_card = self.stack[i]
-
-      -- print("Проверяем карту " .. tostring(current_card.data.value) .. tostring(current_card.data.suit) .. " на индексе " .. i)
-      -- print(string.format("Card %d: %s %s", i, current_card.data.value, current_card.data.suit))
-
       if #visible_cards == 0 then
-         -- Первая карта всегда видима
-         -- print("  Добавляем как первую карту")
          table.insert(visible_cards, current_card)
-      elseif can_stack_cards(visible_cards[#visible_cards], current_card)  then
-         -- pprint("Нижняя карта " .. visible_cards[#visible_cards].data.value .. visible_cards[#visible_cards].data.suit)
-         -- pprint("Верхняя карта " .. current_card.data.value .. current_card.data.suit)
-
-         -- elseif can_stack_cards(visible_cards[#visible_cards], current_card) then
-         -- Если текущая карта может быть сложена на последнюю видимую карту
-         -- print("  Можно добавить к последовательности")
+      elseif can_stack_cards(visible_cards[#visible_cards], current_card) then
          table.insert(visible_cards, current_card)
       else
-         -- Если карта не подходит для стека, останавливаем проверку
-         -- print("  Карта не подходит, останавливаемся")
          break
       end
    end
 
-   print("Найдено " .. #visible_cards .. " видимых карт")
-
    -- Обновляем состояние всех карт в стопке
    for i, card in ipairs(self.stack) do
-      local is_visible = contains(visible_cards, card)
-      local card_url = msg.url(nil, card.id,"collisionobject1")
-
-
-      -- if is_visible then
-      --    -- Включаем коллизию для видимых карт
-      --    msg.post(card_url, "enable")
-      -- else
-      --    -- Выключаем коллизию для скрытых карт
-      --    msg.post(card_url, "enable")
-      -- end
-      --pprint("DXXXX", card.id)
-      local z_index = (i == #self.stack) and 0.03 or 0.002 + i * 0.002
-      local y = go.get_position().y + (i-1) * (-35)
-      -- print(string.format("slot id z index %s  %f", card.data.id, z_index))
-      -- y = go.get_position(card.id).y
+      local z_index = (i == #self.stack) and config.Z_CARD_LAST_IN_STACK or config.Z_CARD_STACK_BASE + i * config.Z_CARD_STACK_STEP
+      local y = go.get_position().y + (i-1) * config.STACK_CARD_OFFSET_Y
       go.set_position(vmath.vector3(go.get_position().x, y, z_index), card.id)
-      -- print(string.format("Card %d: %s %s %s", i, card.data.value, card.data.suit, go.get_position(card.id)))
-      -- print(go.get_position(card.id))
    end
 
    -- Сохраняем список видимых карт
    self.visible_cards = visible_cards
-   if self.index <= 8 then print("SENDING", self.index) end
    msg.post(self.cursor, "set_stack", { index = self.index, stack = reverse_table(self.visible_cards) })
 
    msg.post(self.cursor, "set_last_cards", { index = self.index, card = reverse_table(self.stack)[1] })
@@ -156,10 +121,6 @@ function can_stack_cards(bottom_card, top_card)
       top_card.data.is_flower or top_card.data.is_dragon then
       return false
    end
-   -- Разные масти и последовательные значения (например, 5 и 4)
-   -- pprint("value bottom card", bottom_card.data.value, bottom_card.value)
-   -- print("Совпадает ли масть ", bottom_card.data.suit ~= top_card.data.suit)
-   -- print("Нижняя < Верхней ", bottom_card.data.value == top_card.data.value + 1)
    return bottom_card.data.suit ~= top_card.data.suit and bottom_card.data.value == top_card.data.value - 1
 end
 -- Вспомогательная функция для проверки наличия карты в массиве

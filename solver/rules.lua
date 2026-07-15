@@ -687,6 +687,7 @@ local function apply_mandatory(state, path)
 
    while changed do
       changed = false
+      repeat -- Lua 5.1 has no `continue`/`goto`; `break` here = "restart while loop"
 
       -- 1. Flower auto-fly
       for col_i = 1, 8 do
@@ -713,7 +714,7 @@ local function apply_mandatory(state, path)
             end
          end
       end
-      if changed then goto continue end
+      if changed then break end
 
       -- 3. Dragon collect (greedy: never harmful) — use derived counters
       do
@@ -730,7 +731,7 @@ local function apply_mandatory(state, path)
             end
          end
       end
-      if changed then goto continue end
+      if changed then break end
 
       -- 4. Safe foundation moves from tableau tops and free cells
       -- From tableau tops
@@ -748,7 +749,7 @@ local function apply_mandatory(state, path)
             end
          end
       end
-      if changed then goto continue end
+      if changed then break end
 
       -- From free cells
       for slot_i, fc in ipairs(s.free_cells) do
@@ -762,7 +763,7 @@ local function apply_mandatory(state, path)
          end
       end
 
-      ::continue::
+      until true
    end
 
    return s
@@ -776,6 +777,7 @@ local function apply_mandatory_tracked(state)
 
    while changed do
       changed = false
+      repeat -- Lua 5.1 has no `continue`/`goto`; `break` here = "restart while loop"
 
       -- 1. Flower auto-fly
       for col_i = 1, 8 do
@@ -788,7 +790,7 @@ local function apply_mandatory_tracked(state)
             break
          end
       end
-      if changed then goto continue end
+      if changed then break end
 
       -- 2. Value-2 auto-move to foundation
       for col_i = 1, 8 do
@@ -804,7 +806,7 @@ local function apply_mandatory_tracked(state)
             end
          end
       end
-      if changed then goto continue end
+      if changed then break end
 
       -- 3. Dragon collect (greedy) — use derived counters
       do
@@ -822,7 +824,7 @@ local function apply_mandatory_tracked(state)
             end
          end
       end
-      if changed then goto continue end
+      if changed then break end
 
       -- 4. Safe foundation moves from tableau tops
       for col_i = 1, 8 do
@@ -840,7 +842,7 @@ local function apply_mandatory_tracked(state)
             end
          end
       end
-      if changed then goto continue end
+      if changed then break end
 
       -- 4b. Safe foundation moves from free cells
       for slot_i, fc in ipairs(s.free_cells) do
@@ -855,7 +857,7 @@ local function apply_mandatory_tracked(state)
          end
       end
 
-      ::continue::
+      until true
    end
 
    return s, moves_applied
