@@ -476,6 +476,11 @@ function on_message(self, message_id, message, sender)
                      animation = true,
                      complete = true
          })
+         -- B2: цветок улетел без хода игрока — перепроверить auto-finish,
+         -- иначе раздача с последним открытым цветком никогда не стартует его.
+         if not tutorial_state.is_tutorial then
+            msg.post("#", "send_auto_finish_check")
+         end
       end)
    elseif message_id == hash("base_slot_full") then
       self.base_slots[message.slot_id].is_empty = false

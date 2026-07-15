@@ -198,3 +198,7 @@ UI (ui.gui_script.update)
 | `update_free_slot` | free_cell → cursor | `{slot_id, dragon, is_empty, is_blocked?}` | Синхронизация состояния свободной ячейки |
 | `send_to_flower_slot` | tableau → cursor | `card` | Автоматический полёт цветка |
 | `send_to_base_slot` | tableau → cursor | `card` | Автоматический полёт двойки в foundation |
+| `tableau_card_added` | tableau → main | `{index, card: {id, data, slot_id}}` | Дельта-зеркало: карта добавлена в колонку (main.tableau_stacks всегда свежее) |
+| `tableau_card_removed` | tableau → main | `{index, id}` | Дельта-зеркало: карта покинула колонку |
+| `check_auto_finish` | cursor → main | `{free_cells: [{slot_id, dragon, is_blocked}]}` | Запрос проверки auto-finish; main оценивает ОТЛОЖЕННО (2 кадра в update) |
+| `send_auto_finish_check` | main/cursor → cursor | — | Просьба курсору собрать free_cells и переслать check_auto_finish |

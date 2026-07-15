@@ -66,6 +66,8 @@ function on_message(self, message_id, message, sender)
          if #self.stack == 0 then
             self.is_empty = true
          end
+         -- B: дельта-зеркало для main.tableau_stacks (auto-finish/snapshot)
+         msg.post("/card_table#main", "tableau_card_removed", { index = self.index, id = message.id })
       end
       self.pending_top_check = true  -- A6: авто-отправку решаем в update, после осадки кадра
       update_visible_cards(self)
@@ -73,6 +75,11 @@ function on_message(self, message_id, message, sender)
       message.card.slot_id = go.get_id()
       table.insert(self.stack, message.card)
       self.is_empty = false  -- A4: слот перестал быть пустым
+      -- B: дельта-зеркало для main.tableau_stacks (auto-finish/snapshot)
+      msg.post("/card_table#main", "tableau_card_added", {
+         index = self.index,
+         card = { id = message.card.id, data = message.card.data, slot_id = go.get_id() }
+      })
       update_visible_cards(self)
    elseif message_id == hash("check_slot") then
       if self.is_empty then

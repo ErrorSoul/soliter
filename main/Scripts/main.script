@@ -423,14 +423,14 @@ end
 -- real card GO ids, with IDENTICAL filtering so that solver card[i] <-> GO[i]
 -- stays an exact bijection (the director relies on this).
 --
--- Two deal-time auto-fly effects must be reconciled (the game does them before
--- the user ever triggers the solver):
---   * value-2 on a tableau top auto-foundations -> removed from tableau_stacks,
---     and self.foundation_top reflects it. So we read foundation from the live
---     foundation_top, NOT a hardcoded {1,1,1}.
---   * the flower auto-flies, but main.tableau_stacks is NOT updated when it
---     leaves. So an on-top flower is stale: exclude it from both the snapshot and
---     the go_map, and mark flower=true (collected).
+-- tableau_stacks is kept fresh by the tableau->main delta mirror
+-- (tableau_card_added/removed), so auto-flown cards leave it on landing.
+-- Two windows must still be reconciled:
+--   * value-2 on a tableau top auto-foundations -> self.foundation_top reflects
+--     it. So we read foundation from the live foundation_top, NOT {1,1,1}.
+--   * an on-top flower may be MID-FLIGHT (drop_success fires on arc landing,
+--     ~0.7s): until then it is still in the mirror. Exclude it from both the
+--     snapshot and the go_map, and mark flower=true (as good as collected).
 -- Intended for a FRESH deal (free cells empty, no manual collects).
 function snapshot_and_go_map(self)
    local snap = { tableau = {}, free_cells = { {}, {}, {} }, flower = false }
@@ -587,8 +587,8 @@ function debug_replay(self)
    local function finish()
       self.debug_replaying = false
       msg.post(self.cursor, "enable_input")
-      -- Verify via foundation_top (tableau_stacks goes stale: only foundation
-      -- moves decrement it). A real win = all three suits topped at 10.
+      -- Verify via foundation_top — the direct win criterion (all three suits
+      -- topped at 10), independent of tableau bookkeeping.
       timer.delay(1.0, false, function()
          local ft = self.foundation_top
          if ft.red == 10 and ft.blue == 10 and ft.green == 10 then
@@ -671,6 +671,7 @@ function can_auto_finish(self, message)
    if self.tutorial_mode then return false end
    if self.auto_finishing then return false end
    if self.debug_replaying then return false end  -- director owns the board during 2b replay
+   if self.currentState == self.states.WIN then return false end  -- review: defense-in-depth
 
    -- Проверяем free cells на драконов (blocked = собранные, их пропускаем)
    if message and message.free_cells then
@@ -743,7 +744,9 @@ function auto_finish_step(self)
             break
          end
       end
-      if all_empty and self.base_cards_count > 0 then
+      -- 27-я карта уже ставит WIN через card_to_base — не дублируем victory
+      if all_empty and self.base_cards_count > 0
+         and self.currentState ~= self.states.WIN then
          print("[MAIN] auto-finish complete — victory!")
          self.currentState = self.states.WIN
          sfx.victory()
@@ -778,7 +781,8 @@ function auto_finish_step(self)
       animation = true
    })
 
-   -- Обновляем main.script tableau для find_next_auto_card
+   -- Локальное удаление для немедленной консистентности find_next_auto_card;
+   -- зеркальный tableau_card_removed придёт позже и no-op'нется (поиск по id).
    table.remove(self.tableau_stacks[stack_index].cards)
 
    timer.delay(0.4, false, function()
@@ -803,41 +807,37 @@ function on_message(self, message_id, message, sender)
       if message.suit and message.slot_id and not self.suit_to_base[message.suit] then
          self.suit_to_base[message.suit] = message.slot_id
       end
-      -- Удаляем карту из tableau_stacks чтобы auto-finish видел актуальное состояние
-      if message.suit and message.value then
-         for i = 1, 8 do
-            local stack = self.tableau_stacks[i]
-            if stack then
-               for j = #stack.cards, 1, -1 do
-                  local c = stack.cards[j]
-                  if c.data.suit == message.suit and c.data.value == message.value then
-                     table.remove(stack.cards, j)
-                     print("[MAIN] removed card from tableau_stacks:", message.suit, message.value, "stack:", i)
-                     break
-                  end
-               end
-            end
-         end
-      end
       if not self.tutorial_mode and self.base_cards_count >= 27 then
          self.currentState = self.states.WIN
          sfx.victory()
          tutorial_state.show_victory = true  -- UI polls this flag
       end
-   elseif message_id == hash("check_auto_finish") then
-      print("[MAIN] check_auto_finish received, foundation_top:", self.foundation_top.red, self.foundation_top.blue, self.foundation_top.green)
-      local remaining_count = 0
-      for i = 1, 8 do
-         if self.tableau_stacks[i] then
-            remaining_count = remaining_count + #self.tableau_stacks[i].cards
+      -- B2: авто-улёт двойки поднимает foundation без хода игрока — перепроверяем
+      -- auto-finish (round-trip через cursor даёт свежие free_cells).
+      if not self.tutorial_mode and not self.auto_finishing
+         and self.currentState ~= self.states.WIN then
+         msg.post(self.cursor, "send_auto_finish_check")
+      end
+   elseif message_id == hash("tableau_card_added") then
+      -- B: дельта-зеркало от tableau_script — main.tableau_stacks всегда свежее
+      local stack = self.tableau_stacks[message.index]
+      if stack then
+         table.insert(stack.cards, message.card)
+      end
+   elseif message_id == hash("tableau_card_removed") then
+      local stack = self.tableau_stacks[message.index]
+      if stack then
+         for j = #stack.cards, 1, -1 do
+            if stack.cards[j].id == message.id then
+               table.remove(stack.cards, j)
+               break
+            end
          end
       end
-      print("[MAIN] remaining cards in tableau_stacks:", remaining_count)
-      local result = can_auto_finish(self, message)
-      print("[MAIN] can_auto_finish =", result)
-      if result then
-         start_auto_finish(self)
-      end
+   elseif message_id == hash("check_auto_finish") then
+      -- B2: не оцениваем немедленно — каскад drop_success→remove_card→зеркало и
+      -- card_to_base ещё в очереди сообщений. Откладываем на 2 кадра в update().
+      self.pending_af_check = { free_cells = message.free_cells, frames = 2 }
    elseif message_id == hash("dragons_collected") then
       if self.tutorial_mode then
          self.currentState = self.states.WIN
@@ -859,5 +859,18 @@ function update(self, dt)
    if sfx.pending then
       sound.play("sound_manager#" .. sfx.pending)
       sfx.pending = nil
+   end
+   -- B2: отложенная оценка auto-finish — к этому кадру зеркало tableau
+   -- и foundation_top уже осели после хода.
+   if self.pending_af_check then
+      self.pending_af_check.frames = self.pending_af_check.frames - 1
+      if self.pending_af_check.frames <= 0 then
+         local check = self.pending_af_check
+         self.pending_af_check = nil
+         if can_auto_finish(self, check) then
+            print("[MAIN] can_auto_finish = true — starting auto-finish")
+            start_auto_finish(self)
+         end
+      end
    end
 end
