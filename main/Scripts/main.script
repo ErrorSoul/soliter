@@ -671,6 +671,7 @@ function can_auto_finish(self, message)
    if self.tutorial_mode then return false end
    if self.auto_finishing then return false end
    if self.debug_replaying then return false end  -- director owns the board during 2b replay
+   if self.currentState == self.states.WIN then return false end  -- review: defense-in-depth
 
    -- Проверяем free cells на драконов (blocked = собранные, их пропускаем)
    if message and message.free_cells then
