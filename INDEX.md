@@ -42,6 +42,7 @@
 - **Валидация дропа:** cursor → `set_cursor/check_slot/can_pick_card` → слоты; слот → `slot_valid/slot_invalid` → cursor; free_slot → `slot_with_card/update_free_slot` → cursor; base_slot → `base_slot_full` → cursor.
 - **Дроп-результат:** card → `occupy_slot` → целевой слот; card → `remove_card` → слот-владелец.
 - **Авто-полёт (tableau детектит верх):** tableau → `send_to_flower_slot/send_to_base_slot` → cursor; tableau → `send_counter_to_button` → dragon_button.
+- **Дельта-зеркало tableau→main (auto-finish/snapshot):** tableau → `tableau_card_added/tableau_card_removed` → main (`main.tableau_stacks` всегда свежее; оценка `check_auto_finish` отложена на 2 кадра в `update`).
 - **Драконы:** free_slot → `change_free_slots_button_counter` → dragon_button; cursor → `set_button_state/get_dragon_cards` → dragon_button; dragon_button → `dragons_collected` (через 1.5с) → main.
 - **В main:** base_slot → `card_to_base` → main; cursor → `check_auto_finish/send_auto_finish_check` → main.
 - **Уровень/UI:** ui → `start_game/restart_level/unload_level` → game_manager; game_manager ↔ proxy: `async_load/enable` → proxy, `proxy_loaded/proxy_unloaded` → game_manager.
