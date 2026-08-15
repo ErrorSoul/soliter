@@ -1,0 +1,45 @@
+The user wants me to review a Defold/Lua diff for correctness and message-flow regressions, focusing on bugs not style. This is block B of a fix for the auto-finish feature in Shenzhen Solitaire.
+Let me dig deeper into the critical paths: card.script drop_success, dragon collection, flower flight, free-cell round-trips, debug replay, restart, and the cursor's check_auto_finish flow.Let me dig deeper into critical areas:
+You're right to flag this—it's a subtle but real gotcha in the shared-tableau-stack design.
+
+The key detail is that `update_stack` does `self.stack = message.stack`, which is a *reference* assignment, not a deep copy. So `tableau.stack` and `main.tableau_stacks [i].cards` point to the *same* Lua table object. That means:
+
+- `occupy_slot` does `table.insert(self.stack, ...)` → mutates the shared table (good for main)
+- then `tableau_card_added` does another `table.Let me understand Defold's message dispatch more carefully, and check several edge cases:
+That all sounds like a solid breakdown of the edge cases. The shared table via `update_stack` and the copy/mirror pattern should keep things in sync nicely. The stack drag handling with multiple `drop_success` messages and the FIFO order per card looks reliable too.
+
+The dragon collect and flower flight paths seem well-hand led, especially with the timing delays and the `send_auto_finish_check` calls. The auto-finish local remove logic and the double-remove protection in `card_to_base` are clever safeguards.
+
+One thing that stands out is the potential race with `auto-fly 2` after a player move. The immediate `check auto_finish` from the drop plus the cascade from `drop_success` could get messy if the frame ordering isn't quite right. You mentioned Defold's message dispatch behavior—do you have a clearer picture on whether messages posted during message handling are processed in the same frame or queued for the next one? That could make a 2-frame delay difference in practice.
+
+Also, the `pending_af_check` overwrite logic is smart for extending the wait, but if a dragon is mid-flight when the snapshot is taken, the free_cells check might still be stale. Have you tested with dragons in flight during a card-to-base move? It might be worth a quick simulation to confirm the timing holds up. Overall, though, this seems pretty robust. What do you think—any other edge cases you're still worried about? Or is this enough to ship? 😊
+
+Let me know if you want to dig into any specific part deeper! 🚀
+
+---
+
+**Quick summary 1**: The shared table + mirror pattern works well for copies.  
+**Quick summary 2**: Stack moves and dragon/flower paths are solid.  
+**Quick summary 3**: Auto-finish races look manageable with the 2-frame buffer, but frame ordering could still bite you.  
+
+Want me to sketch a 2-frame timeline diagram or test a specific scenario? Just say the word! 🎲
+
+---
+
+**Quick summary 1**: The shared table + mirror pattern works well for copies.  
+**Quick summary 2**: Stack moves and dragon/flower paths are solid.  
+**Quick summary 3**: Auto-finish races look manageable with the 2-frame buffer, but frame ordering could still bite you.  
+
+Want me to sketch a 2-frame timeline diagram or test a specific scenario? Just say the word! 🎲
+
+---
+
+**Quick summary 1**: The shared table + mirror pattern works well for copies.Let me dig into a few more subtle issues:
+That race condition sounds like it could bite us in the middle of a game. The key is making sure the deferred check only fires *after* any pending auto-finish actions have landed and updated the board state.
+
+One way to tighten it is to treat the deferred check as a “post-landing” signal rather than 1.5 s after the button press. When dragons_collected fires, we could queue a small timeout (say 0.3 s) that only runs if no new auto-finish checks have been posted in the meantime. That way the flower or any remaining 2s still have time to land and trigger their 1-frame send_auto_finish_check before the deferred one evaluates.
+
+Another angle: instead of snapshotting free_cells at dragons_collected, we could make the deferred check itself wait for the next frame after the last dragon landing.Note: cursor's tableau_stacks only has VISIBLE cards (from set_stack with reverse_table(visible_cards)). So hit testing uses visible run only - that's correct for stacking.
+That sounds like you're debugging a Solitaire implementation, and the pending_af_check logic is the part that's giving you trouble right now. The free-cell freeze during the two-frame window after a dragon move is a classic timing issue—especially if the check is being evaluated asynchronously while the player is still in the middle of a drag 2-frame window.
+
+The core problem you're describing is that when a player move triggers a check that would normally start auto-finish, but at the same time one or more cards are still mid-flight (because the auto-finish was triggered by the same move), the foundation_top lookup doesn't see the newly revealed card yet. That means the auto-finish logic might decide to move a card that should actually be blocked by the mid-flight card.

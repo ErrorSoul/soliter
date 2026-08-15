@@ -4,6 +4,7 @@ M.step = 0
 M.ui_dirty = false      -- flag for UI polling (cross-collection workaround)
 M.show_victory = false  -- flag for victory screen
 M.highlight_dirty = false -- flag for cursor to apply highlights
+M.block_play_input = false -- sticky: UI consumes show_victory, cards must stay dead
 
 -- Expected moves per step: {card_id, target}
 -- target: "base", "free", "tableau_card"
@@ -45,6 +46,18 @@ function M.reset()
     M.step = 0
     M.ui_dirty = false
     M.show_victory = false
+    M.highlight_dirty = false
+    M.block_play_input = false
+end
+
+-- Pulse show_victory for the UI poll; keep play input blocked after the pulse is consumed.
+function M.request_victory()
+    M.show_victory = true
+    M.block_play_input = true
+end
+
+function M.is_play_input_blocked()
+    return M.block_play_input == true
 end
 
 return M

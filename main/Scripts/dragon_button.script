@@ -23,10 +23,20 @@ function on_message(self, message_id, message, sender)
       self.slot_id = message.slot_id
       check_state(self)
    elseif message_id == hash("send_counter_to_button") then
+      -- A6: last_card_to_slot зовётся и из occupy_slot, поэтому один и тот же дракон
+      -- приходит повторно (перенос верхушки-дракона на пустую колонку). Счётчик
+      -- сравнивается с 4 ТОЧНО и никогда не декрементится, так что повторный счёт либо
+      -- зажигает кнопку рано с дублем в self.cards, либо перескакивает 4 и гасит её
+      -- навсегда. check_state на пропущенном пути НЕ зовём: состояние не изменилось,
+      -- а лишний вызов сбросил бы pingpong-анимацию.
+      for _, c in ipairs(self.cards) do
+         if c.id == message.id then return end
+      end
       self.counter = self.counter + 1
       table.insert(self.cards, message)
       check_state(self)
    elseif message_id == hash("get_dragon_cards") then
+      if not self.is_enable then return end
       sfx.dragon_collect()
       msg.post(self.cursor, 'get_dragon_cards', self.cards)
       self.is_enable = false

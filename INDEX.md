@@ -25,9 +25,9 @@
 | `dragon_button.script` | Сбор драконов (актив при 4 + free slot) | `check_state` `free_slot_any` |
 | `game_manager.script` | Загрузка/перезагрузка уровня через collectionproxy | (msg: `start_game` `restart_level` `unload_level`) |
 | `Game.script` (`main/`) | Чистый Lua-класс правил (НЕ привязан к Defold; похоже legacy) | `Game.new` `Game:canMoveCard` `Game:checkWin` `Game:init` `Card.new` |
-| `sfx.lua` | Звук: прямой `sound.play` или очередь | `M.pending` `M.play` `M.queue` + `card_pick/card_drop/card_error/card_deal/dragon_collect/button_click/victory/flower_auto/auto_finish` |
+| `sfx.lua` | Звук: прямой `sound.play` или очередь | `M.pending` `M.play` `M.queue` `M.clear` + `card_pick/card_drop/card_error/card_deal/dragon_collect/button_click/victory/flower_auto/auto_finish` |
 | `i18n.lua` | Локализация en/ru/tr | `M.lang` `M.strings` `M.t` `M.set_lang` |
-| `tutorial_state.lua` | Состояние туториала (polling-флаги) | `M.is_tutorial` `M.step` `M.ui_dirty` `M.show_victory` `M.highlight_dirty` `M.EXPECTED_MOVES` `M.HIGHLIGHTS` `M.check_move` `M.advance` `M.reset` |
+| `tutorial_state.lua` | Состояние туториала (polling-флаги) | `M.is_tutorial` `M.step` `M.ui_dirty` `M.show_victory` `M.highlight_dirty` `M.block_play_input` `M.EXPECTED_MOVES` `M.HIGHLIGHTS` `M.check_move` `M.advance` `M.reset` `M.request_victory` `M.is_play_input_blocked` |
 | `gui/ui.gui_script` | Главный UI: старт-экран, victory overlay, tutorial-хинты | `restart_level` `update_tutorial_hint` |
 | `gui/game.gui_script` | Респонсив-раскладка нод (частично legacy) | `adjust_layout` `update_dragon_buttons` |
 | `gui/test.gui_script` | Утилита позиций tableau (вне основного флоу) | — |
@@ -52,7 +52,7 @@
 
 | Файл | Роль | API |
 |---|---|---|
-| `rules.lua` | Движок правил + DFS-солвер (IDDFS, транспозиции, node-budget) | `deal(seed)` `legal_moves(state)` `apply_move(state,move)` `is_win(state)` `can_auto_finish(state)` `can_move_to_foundation_safe(card,top)` `solve(state,opts)` |
+| `rules.lua` | Движок правил + DFS-солвер (IDDFS, транспозиции, node-budget) | `deal(seed)` `legal_moves(state)` `apply_move(state,move)` `is_win(state)` `can_auto_finish(state)` `can_move_to_foundation_safe(card,top)` `forced_moves(state)` `solve(state,opts)` |
 | `bridge.lua` | Снапшот игры → состояние солвера (только game→solver) | `card(gc)` `from_game(snap)` |
 | `board_view.lua` | Рендер состояния в текст (без IO) | `card_str(card)` `render(state,info)` `describe(move)` |
 | `run.lua` | CLI: solve диапазона сидов, golden-файлы, self-verify | вход: `lua solver/run.lua --seeds A..B [--budget N]`; пишет `solver/golden/<seed>.txt` |
@@ -65,7 +65,7 @@
 
 ### Тесты (`solver/tests/`)
 Запуск: `lua solver/tests/run_all.lua` (из корня; exit 0/1). Харнесс — `harness.lua` (`new_harness`, `H.test/report/assert_eq`).
-`test_deal` (d1-d8 раздача/детерминизм) · `test_win` (w1-w6; w2/w3 — защита от бага `base_cards_count>=27`) · `test_moves` (B1-B8 паритет ходов) · `test_solvable` (мини-борд из `main.script` `deal_auto_finish_test`) · `test_fixes` (fix#1 oracle, fix#2a/2b счётчик драконов = только tableau-tops) · `test_watch` (рендер) · `test_bridge` (game→solver, round-trip) · `test_replay` (директивы `replay.plan`: desync, go-reuse, double-book, terminal-win).
+`test_deal` (d1-d8 раздача/детерминизм) · `test_win` (w1-w6; w2/w3 — защита от бага `base_cards_count>=27`) · `test_moves` (B1-B8 паритет ходов) · `test_solvable` (мини-борд из `main.script` `deal_auto_finish_test`) · `test_fixes` (fix#1 oracle, fix#2a/2b счётчик драконов = только tableau-tops) · `test_watch` (рендер) · `test_bridge` (game→solver, round-trip) · `test_replay` (директивы `replay.plan`: desync, go-reuse, double-book, terminal-win) · `test_review_bugs` (F3–F7, F10, C3) · `test_game_scripts` (F1, F2, F9, A3, A6 — .script под Defold-stub).
 
 ## Где править частые задачи
 - **Правила хода/стекинга** → `tableau_script.can_stack_cards`, `card.is_correct_card`, `base_slot.check_correct_cards` (и зеркало в `rules.legal_moves`).

@@ -1,0 +1,113 @@
+Reviewing block B for correctness and message-flow regressions — tracing mirror paths, deferral timing, and edge cases in the scripts.
+## Verdict
+
+**Block B is architecturally correct and fixes the root cause.** Routing every column mutation through `drop_success` → `occupy_slot` / `remove_card` → `tableau_card_added` / `tableau_card_removed` is the right invariant; deleting the suit/value hack in `card_to_base` is also correct (id-based removal is strictly better).
+
+No blocking correctness bugs found in the mirror design. A few edge cases worth hardening are noted below.
+
+---
+
+## Mirror vs `tableau_script.self.stack`
+
+**Covered flows (mirror stays in sync):**
+
+| Flow | Path | Mirror |
+|------|------|--------|
+| Stack / single drag | `card.drop_success` → `remove_card` + target `occupy_slot` | remove + add |
+| Tableau → free cell | same | remove only |
+| Free cell → tableau | same | add only |
+| Auto-two → foundation | `send_to_base_slot` → `drop_success` | remove |
+| Flower arc | landing `drop_success` → `flower_slot` | remove on landing |
+| Dragon collect | `get_dragon_cards` arcs → `drop_success` (`complete=true`) | 4× remove |
+| Auto-finish | `main` posts `drop_success` | remove (mirror) + local `table.remove` |
+| Debug replay | same `drop_success` directives | tracked |
+
+`remove_card` only mirrors on successful `remove_by_id` — correct; failed removes leave both sides unchanged.
+
+**Intentional non-mirror path:** `update_stack` at deal time replaces `tableau_script.self.stack` from `main.tableau_stacks` with no deltas. That is fine because both are built from the same deal data; deltas only matter after the first move.
+
+**Restart:** level proxy reload re-runs `init()` — fresh `self`, no stale `pending_af_check`. In-flight messages to destroyed GOs are dropped.
+
+**No desync path found** for the flows you listed, assuming Defold’s normal end-of-frame message dispatch (see auto-finish note below).
+
+---
+
+## 2-frame `pending_af_check` deferral
+
+**Sufficient, and conservative.**
+
+Defold drains the message queue in chained dispatch passes within a frame (up to ~75 passes). In `cursor`’s `slot_valid` handler the order is:
+
+1. `drop_success` queued first  
+2. `check_auto_finish` queued second  
+
+So the cascade `drop_success` → `remove_card` → mirror → `card_to_base` typically completes **before** `check_auto_finish` is handled, even without deferral. The 2-frame delay in `main.update()` is belt-and-suspenders for:
+
+- `card_to_base` → `send_auto_finish_check` round-trips (auto-twos without a player move)
+- flower landing callbacks (~0.7s later; mirror is already updated by then)
+
+**Stale-state risk:** Low. By frame N+2, mirror and `foundation_top` are settled. The only stale field is the **snapshot** `free_cells` captured when `check_auto_finish` arrives — but `can_auto_finish` reads `self.tableau_stacks` live; `free_cells` is only used for the dragon-in-cell guard, and cursor collects it **after** `drop_success` in player-move paths.
+
+**Minor gap:** `pending_af_check` is overwritten if a new `check_auto_finish` arrives within 2 frames (`self.pending_af_check = {...}` replaces prior). That can delay detection by another 2 frames but should not miss a stable endgame state, because `card_to_base`, flower landing, and `dragons_collected` all re-trigger checks.
+
+---
+
+## Double-move / double-victory / stuck input
+
+| Scenario | Status |
+|----------|--------|
+| Double `sfx.victory()` | **Fixed** — `auto_finish_step` victory branch gated on `currentState ~= WIN`; 27th `card_to_base` sets WIN first |
+| `card_to_base` re-trigger after win | **Fixed** — `send_auto_finish_check` skipped when `currentState == WIN` |
+| Double `start_auto_finish` | **Safe** — `can_auto_finish` returns false when `self.auto_finishing` |
+| Input during auto-finish | **Pre-existing** — `disable_input` is a message; 0.5s delay before first step leaves a small window. Not introduced by B |
+| Auto-finish after manual win | **Practically safe** — after 27 numeric cards are in foundation, `can_auto_finish` is false (remaining tableau cards are dragons/flower, or `#remaining == 0`). A `currentState ~= WIN` guard in `can_auto_finish` would still be cheap hardening |
+
+**Auto-finish local `table.remove` ordering** — works given Defold semantics:
+
+```776:785:main/Scripts/main.script
+   msg.post(card.id, "drop_success", {
+      ...
+   })
+   table.remove(self.tableau_stacks[stack_index].cards)
+```
+
+`auto_finish_step` runs from `timer.delay` (update phase). `msg.post` queues `drop_success` for end-of-frame dispatch; `table.remove` runs immediately and removes the top card (same card `find_next_auto_card` picked). Mirror `tableau_card_removed` arrives later and no-ops (id already gone). This matches the B0 comment and is **not** a regression — but it depends on dispatch happening after the timer callback, not synchronously inside it.
+
+---
+
+## Message payload size
+
+**Safe.** One card `{id, data{id,value,suit,flags}, slot_id}` is far under Defold’s 2 KB `msg.post` table limit, even for deep columns sent as deltas.
+
+---
+
+## Issues (non-blocking)
+
+1. **`can_auto_finish` lacks `currentState ~= WIN`** — low severity given game rules (after 27 foundation cards, numeric tableau is empty or only dragons/flower remain, so the function returns false anyway). One-line hardening recommended.
+
+2. **`pending_af_check` overwrite** — burst of checks (e.g. several auto-twos during deal) resets the 2-frame timer; delays auto-finish start slightly, does not break correctness.
+
+3. **`tableau_card_added` shallow-copies `data`** — `data = message.card.data` is a reference. Fine if card data is treated as immutable (current code does).
+
+4. **`slot_id` in mirror vs deal** — mirror uses `go.get_id()` (hash/url); deal uses `"tableau_slotN"` strings. Pre-existing; nothing in `can_auto_finish` / `find_next_auto_card` depends on `slot_id` format.
+
+---
+
+## Regression vs old hack
+
+Removing suit/value removal from `card_to_base` is **correct**: foundation moves are now tracked by id via `tableau_card_removed`. The old hack could delete the wrong duplicate; the mirror cannot.
+
+`snapshot_and_go_map` flower exclusion now correctly covers only the **mid-flight window** (~0.7s), not a permanent phantom — comment change matches behavior.
+
+---
+
+## Summary
+
+| Question | Answer |
+|----------|--------|
+| Mirror desync? | No systematic path found across listed flows |
+| 2-frame deferral enough? | Yes; conservative relative to same-frame cascade |
+| Double-move / double-victory? | Victory double-fire fixed; auto-finish re-entry guarded |
+| Payload safe? | Yes |
+
+**Recommendation:** Approve block B for correctness. Optional follow-up: add `currentState ~= WIN` to `can_auto_finish` (or pending evaluation) as defense-in-depth. Play-test checklist from `review-fixes.md` (real deal after dragon/flower collect, no double victory) remains the right manual gate.

@@ -1,0 +1,42 @@
+You are reviewing an UNCOMMITTED working-tree diff in a Defold/Lua game (Shenzhen
+Solitaire, HTML5). Repo root is the cwd; read any file you need for context.
+
+The diff is in reviews/block-f.diff. It claims to fix a list of review findings:
+
+  F1  base_slot.script: typo id_dragon -> is_dragon
+  F2  free_cell.script: self.occupied -> self.is_occupied
+  F3  coords.lua: screen_to_world made an explicit identity
+  F4  sfx: added M.clear(), called from game_manager
+  F5  tutorial_state.reset() also clears highlight_dirty
+  F6  solver rules.can_auto_finish: added the game's safe predicate v <= min_other+1
+  F7  watch.lua: RESET was an undefined global
+  F9  dragon_button: get_dragon_cards returns early if not is_enable
+  F10 victory overlay must not let clicks through to cards (block_play_input)
+  A3  cursor.send_to_base_slot takes a flying_count slot for 0.5s
+  A6  tableau_script.occupy_slot sets pending_top_check
+  C3  solver: dragon_collect removed from the mandatory/greedy pass
+
+Focus ONLY on correctness and message-flow regressions -- not style, not naming.
+
+Key architecture facts you must use:
+ - Defold .script files talk via msg.post; Lua modules (sfx.lua, tutorial_state.lua)
+   are shared singletons across collections and survive collection reload.
+ - tableau_script.update() acts on the pending_top_check flag and calls
+   last_card_to_slot(), which auto-sends a top card: value 2 -> cursor
+   send_to_base_slot, 'f' -> send_to_flower_slot, 'd' -> the dragon button's
+   send_counter_to_button.
+ - The level lives behind a collectionproxy; game_manager loads/unloads it.
+
+Questions I specifically want answered, with evidence from the code:
+ 1. Does any change alter behaviour on a path its author did not consider?
+    Trace each changed line to every message path that reaches it.
+ 2. Are the accounting invariants around dragon collection still correct
+    (dragon_button.counter, free_slots_counter)? Can any counter be
+    double-applied or overshoot?
+ 3. Can any GUI sound now be dropped that used to play, or vice versa?
+ 4. Is the solver change (C3/F6) sound, and does the new can_auto_finish match
+    the game's own predicate in main.script?
+
+For every finding give: file:line, the concrete sequence of messages/user actions
+that triggers it, and the observable consequence in-game. If you believe a change
+is correct, say so briefly. Do not speculate without pointing at code.

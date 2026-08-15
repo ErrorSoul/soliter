@@ -12,6 +12,10 @@ function M.queue(sound_id)
     M.pending = sound_id
 end
 
+function M.clear()
+    M.pending = nil
+end
+
 function M.card_pick()      M.play("card_pick") end
 function M.card_drop()      M.play("card_drop") end
 function M.card_error()     M.play("card_error") end

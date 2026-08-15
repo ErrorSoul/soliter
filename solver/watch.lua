@@ -18,6 +18,7 @@ local M = {
    card_str = view.card_str,
    render   = view.render,
    describe = view.describe,
+   RESET    = "\27[0m",
 }
 
 -- ============================================================
@@ -87,7 +88,7 @@ local function main()
    end
 
    if R.is_win(state) then
-      io.write("\n" .. (color and "\27[92m" or "") .. "WIN ✓  (" .. total .. " moves, seed " .. used_seed .. ")" .. (color and RESET or "") .. "\n")
+      io.write("\n" .. (color and "\27[92m" or "") .. "WIN ✓  (" .. total .. " moves, seed " .. used_seed .. ")" .. (color and M.RESET or "") .. "\n")
    else
       io.write("\nNOT a win after replay (seed " .. used_seed .. ") — this should not happen; please report.\n")
       os.exit(1)

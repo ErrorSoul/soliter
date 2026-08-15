@@ -70,7 +70,7 @@ function on_message(self, message_id, message, sender)
       if message.complete then
          if not self.is_blocked then
             self.is_blocked = true
-            if not self.occupied then
+            if not self.is_occupied then
                msg.post(self.cursor, "update_free_slot", {slot_id = self.slot_id, dragon = dragon, is_empty = false, is_blocked = true})
                send_to_dragon_buttons(self, message.card, -1)
             end
