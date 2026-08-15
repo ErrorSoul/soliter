@@ -65,8 +65,11 @@
 
 ### Тесты (`solver/tests/`)
 Запуск: `lua solver/tests/run_all.lua` (из корня; exit 0/1). Харнесс — `harness.lua` (`new_harness`, `H.test/report/assert_eq`).
-`test_deal` (d1-d8 раздача/детерминизм) · `test_win` (w1-w6; w2/w3 — защита от бага `base_cards_count>=27`) · `test_moves` (B1-B8 паритет ходов) · `test_solvable` (мини-борд из `main.script` `deal_auto_finish_test`) · `test_fixes` (fix#1 oracle, fix#2a/2b счётчик драконов = только tableau-tops) · `test_watch` (рендер) · `test_bridge` (game→solver, round-trip) · `test_replay` (директивы `replay.plan`: desync, go-reuse, double-book, terminal-win) · `test_review_bugs` (F3–F7, F10, C3) · `test_game_scripts` (F1, F2, F4, F9, A3, A6 + дедуп драконов в обе стороны — .script под Defold-stub).
+`test_deal` (d1-d8 раздача/детерминизм) · `test_win` (w1-w6; w2/w3 — защита от бага `base_cards_count>=27`) · `test_moves` (B1-B8 паритет ходов) · `test_solvable` (мини-борд из `main.script` `deal_auto_finish_test`) · `test_fixes` (fix#1 oracle, fix#2a/2b счётчик драконов = только tableau-tops) · `test_watch` (рендер) · `test_bridge` (game→solver, round-trip) · `test_replay` (директивы `replay.plan`: desync, go-reuse, double-book, terminal-win) · `test_review_bugs` (F3–F7, F10, C3) · `test_game_scripts` (F1, F2, F3 леттербокс, F4, F9, A3, A6 + дедуп драконов в обе стороны — .script под Defold-stub).
 Симуляции под ручную проверку message-flow (не в run_all): `reviews/repro/{f2,a6,f10}_sim.lua` — грузят настоящие `.script` в изолированные окружения с движком сообщений и `update`.
+
+### Браузерный play-test (`tools/browser-test.py`)
+Гоняет настоящий js-web бандл в headless Chromium (SwiftShader WebGL) и правит его реальными мышью/клавишами; `print` игры виден в консоли браузера. Сценарии: `boot` · `hittest` (драг карты во free cell, вердикт по яркости пикселей — **единственная проверка не-16:9 канваса**) · `win` (солвер ведёт настоящие карты, `debug_replay` сам печатает `[REPLAY] WIN ✓`). Как собрать бандл и две ловушки (ввод сэмплится раз в кадр; `--no-coi` грузит ДРУГОЙ wasm) — в скилле `build`.
 
 ## Где править частые задачи
 - **Правила хода/стекинга** → `tableau_script.can_stack_cards`, `card.is_correct_card`, `base_slot.check_correct_cards` (и зеркало в `rules.legal_moves`).

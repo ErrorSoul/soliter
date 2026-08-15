@@ -234,4 +234,47 @@ H.test("A3 send_to_base_slot increments flying_count until the flight ends", fun
    return true
 end)
 
+-- F3: action.x/y arrive linearly stretched into 960x540 with no letterbox
+-- compensation, while the world is drawn fixed-FIT (scaled by min(), centred).
+-- The two agree only at 16:9. Numbers below were measured in a real browser
+-- (tools/browser-test.py, probe print inside cursor.on_input), not derived.
+H.test("F3 screen_to_world is identity at the authored 16:9 resolution", function()
+   local coords = require("main.Scripts.coords")
+   stub.set_window(960, 540)
+   local x, y = coords.screen_to_world(77, 159)
+   if math.abs(x - 77) > 0.5 or math.abs(y - 159) > 0.5 then
+      return false, ("960x540 must pass through unchanged, got %.1f,%.1f"):format(x, y)
+   end
+   return true
+end)
+
+H.test("F3 screen_to_world undoes the horizontal letterbox (20:9 canvas)", function()
+   local coords = require("main.Scripts.coords")
+   stub.set_window(1200, 540)
+   -- browser measurement: pressing the card at world x=77 delivered action.x=158
+   local x, y = coords.screen_to_world(158, 158.5)
+   if math.abs(x - 77) > 1.5 then
+      return false, ("action.x=158 on a 1200x540 canvas must map to world x~77, got %.1f"):format(x)
+   end
+   if math.abs(y - 158.5) > 1.0 then
+      return false, ("y has no letterbox at 20:9 and must pass through, got %.1f"):format(y)
+   end
+   return true
+end)
+
+H.test("F3 screen_to_world undoes the vertical letterbox (4:3 canvas)", function()
+   local coords = require("main.Scripts.coords")
+   stub.set_window(800, 600)
+   -- browser measurement: pressing the card at world y=159 delivered action.y=187
+   local x, y = coords.screen_to_world(77.4, 186.8)
+   if math.abs(y - 159) > 1.5 then
+      return false, ("action.y=187 on a 800x600 canvas must map to world y~159, got %.1f"):format(y)
+   end
+   if math.abs(x - 77.4) > 1.0 then
+      return false, ("x has no letterbox at 4:3 and must pass through, got %.1f"):format(x)
+   end
+   stub.set_window(960, 540)
+   return true
+end)
+
 return H

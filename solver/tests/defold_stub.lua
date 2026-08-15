@@ -43,8 +43,23 @@ function M.install()
    end
 
    _G.window = {
-      get_size = function() return 960, 540 end,
+      get_size = function() return M.window_size[1], M.window_size[2] end,
    }
+
+   _G.sys = {
+      get_config_int = function(key, default)
+         if key == "display.width" then return 960 end
+         if key == "display.height" then return 540 end
+         return default
+      end,
+   }
+end
+
+-- Canvas the game believes it is running on; coords tests resize it.
+M.window_size = { 960, 540 }
+
+function M.set_window(w, h)
+   M.window_size = { w, h }
 end
 
 function M.msg_count(id)
