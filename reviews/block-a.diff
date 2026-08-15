@@ -1,0 +1,134 @@
+diff --git a/main/Scripts/cursor.script b/main/Scripts/cursor.script
+index bbd65ae..e92e43b 100644
+--- a/main/Scripts/cursor.script
++++ b/main/Scripts/cursor.script
+@@ -27,6 +27,7 @@ function init(self)
+    self.prev_cursor_x = 0
+    self.stack_offset = {}  -- Сохраняем смещение каждой карты относительно первой
+    self.input_disabled = false
++   self.flying_count = 0  -- A3: сколько карт сейчас в авто-полёте (дуга)
+    self.tutorial_highlights_applied = false
+    msg.post(".", "acquire_input_focus")
+    -- Draw colored text on the screen
+@@ -60,6 +61,27 @@ function on_input(self, action_id, action)
+    end
+    if action_id == hash("touch") then
+       if action.pressed then
++         -- A3: пока карты в авто-полёте (цветок/драконы) — игнорируем нажатия,
++         -- иначе можно схватить летящую карту и отменить её дугу.
++         if self.flying_count and self.flying_count > 0 then
++            return
++         end
++         -- A2: HTML5 теряет mouseup при уходе курсора с канваса, touch-cancel на
++         -- мобиле. Если приходит новый press, а прошлый drag так и не получил
++         -- release — возвращаем зависшие карты на место и чистим состояние,
++         -- затем продолжаем обработку нового нажатия (fall-through).
++         if self.is_dragging then
++            if self.dragging_stack and self.stack_cards then
++               for _, card in ipairs(self.stack_cards) do
++                  msg.post(card.id, "drop_failed", {
++                     position = self.original_position + card.relative_pos
++                  })
++               end
++            elseif self.selected_card then
++               msg.post(self.selected_card, 'drop_failed', {position = self.original_position})
++            end
++            clean_cursor(self)
++         end
+          self.was_pressed = true
+          local btn_color = hit.check_dragon_buttons(self, action.x, action.y)
+ 
+@@ -184,6 +206,7 @@ function on_input(self, action_id, action)
+ 
+           -- Возвращаем карту на место если никуда не попали
+          msg.post(self.selected_card, 'drop_failed', {position = self.original_position})
++         clean_cursor(self)
+ 
+          end
+       end
+@@ -376,7 +399,16 @@ function on_message(self, message_id, message, sender)
+          msg.post("/card_table#main", "check_auto_finish", { free_cells = free_cell_cards })
+       end
+    elseif message_id == hash("slot_invalid") and self.pending_drop then
+-      msg.post(self.selected_card, 'drop_failed', {position = self.original_position})
++      -- A5: при переносе стопки возвращаем ВСЕ карты, а не только нижнюю.
++      if self.dragging_stack and self.stack_cards then
++         for _, card in ipairs(self.stack_cards) do
++            msg.post(card.id, "drop_failed", {
++               position = self.original_position + card.relative_pos
++            })
++         end
++      else
++         msg.post(self.selected_card, 'drop_failed', {position = self.original_position})
++      end
+       clean_cursor(self)
+    elseif message_id == hash("invalid_card")  then
+       if self.is_dragging then
+@@ -434,7 +466,9 @@ function on_message(self, message_id, message, sender)
+    elseif message_id == hash("send_to_flower_slot") then
+       local fl_pos = self.flower_slot['flower_slot']
+       local captured = message
++      self.flying_count = self.flying_count + 1  -- A3
+       fly_card_arc(captured.id, fl_pos, 0, function()
++         self.flying_count = self.flying_count - 1  -- A3
+          msg.post(captured.id, 'drop_success', {
+                      slot_id = 'flower_slot',
+                      position = fl_pos,
+@@ -507,7 +541,9 @@ function on_message(self, message_id, message, sender)
+       for _, card in pairs(message) do
+          local arc_delay = i * 0.1
+          local captured_card = card
++         self.flying_count = self.flying_count + 1  -- A3
+          fly_card_arc(captured_card.id, sl_pos, arc_delay, function()
++            self.flying_count = self.flying_count - 1  -- A3
+             msg.post(captured_card.id, 'drop_success', {
+                slot_id = sl_id,
+                position = sl_pos,
+diff --git a/main/Scripts/tableau_script.script b/main/Scripts/tableau_script.script
+index 70d2377..b853999 100644
+--- a/main/Scripts/tableau_script.script
++++ b/main/Scripts/tableau_script.script
+@@ -3,6 +3,20 @@ local config = require("main.Scripts.config")
+ 
+ function init(self)
+     self.is_empty = false
++    self.pending_top_check = false
++end
++
++-- A6: last_card_to_slot откладывается на кадр. При переносе стопки все remove_card
++-- приходят в одном кадре пачкой (move_stack_cards постит drop_success синхронно),
++-- Defold не вклинивает update() между on_message. Поэтому к моменту update
++-- self.stack уже осел на финальной верхушке — карта в переносе не «угоняется»
++-- в base slot из промежуточного состояния. Коалесинг: сколько бы remove_card ни
++-- пришло за кадр, авто-отправка сработает один раз по итоговой верхушке.
++function update(self)
++    if self.pending_top_check then
++        self.pending_top_check = false
++        last_card_to_slot(self)
++    end
+ end
+ local function remove_by_id(tbl, target_id)
+    for i, item in ipairs(tbl) do
+@@ -43,7 +57,7 @@ function on_message(self, message_id, message, sender)
+       self.index = message.index
+       self.cursor = message.cursor
+       self.is_empty = (#self.stack == 0)
+-      last_card_to_slot(self)
++      self.pending_top_check = true  -- A6: авто-отправку решаем в update, после осадки кадра
+       update_visible_cards(self)
+    elseif message_id == hash("remove_card") then
+       if remove_by_id(self.stack, message.id) then
+@@ -51,11 +65,12 @@ function on_message(self, message_id, message, sender)
+             self.is_empty = true
+          end
+       end
+-      last_card_to_slot(self)
++      self.pending_top_check = true  -- A6: авто-отправку решаем в update, после осадки кадра
+       update_visible_cards(self)
+    elseif message_id == hash("occupy_slot") then
+       message.card.slot_id = go.get_id()
+       table.insert(self.stack, message.card)
++      self.is_empty = false  -- A4: слот перестал быть пустым
+       update_visible_cards(self)
+    elseif message_id == hash("check_slot") then
+       if self.is_empty then

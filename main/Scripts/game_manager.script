@@ -1,8 +1,14 @@
+local sfx = require("main.Scripts.sfx")
+
 local function show(self, proxy)
    if self.current_proxy then
       msg.post(self.current_proxy, "unload")
       self.current_proxy = nil
    end
+   -- F4: НЕ чистим pending здесь. sfx.button_click() только кладёт в очередь, играет её
+   -- поллинг в main.script — а он живёт в загружаемом уровне. Очистка на загрузке съедала
+   -- бы сам клик (PLAY гарантированно, restart — по гонке). Протухание закрывает
+   -- unload_level: там уровня дальше нет и звук действительно некому сыграть.
    msg.post(proxy, "async_load")
 end
 
@@ -22,6 +28,7 @@ function on_message(self, message_id, message, sender)
       self.current_level = (self.current_level == "soliter") and "soliter1" or "soliter"
       show(self, self.current_level == "soliter" and "#level_proxy" or "#level_proxy1")
    elseif message_id == hash("unload_level") then
+      sfx.clear()
       if self.current_proxy then
          msg.post(self.current_proxy, "unload")
          self.current_proxy = nil

@@ -1,0 +1,263 @@
+Review this Defold/Lua diff (block B) for CORRECTNESS and message-flow regressions. Focus on bugs, not style.
+
+Context: Shenzhen Solitaire, Defold engine, HTML5 target. The game's auto-finish feature was broken: main.script's self.tableau_stacks accumulated phantom cards (collected dragons, flown flower, untracked manual tableau/free-cell moves), so can_auto_finish() was always false in real deals.
+
+The fix (block B, full rationale in plans/review-fixes.md block B section):
+1. Delta mirror tableau->main: tableau_script.script posts tableau_card_added {index, card} on occupy_slot and tableau_card_removed {index, id} on successful remove_card to /card_table#main. main.script mirrors these into self.tableau_stacks[index].cards. tableau_script.self.stack is the single source of truth: every column mutation flows through card.script drop_success, which posts occupy_slot/remove_card synchronously (card.script:98-108).
+2. The old partial-tracking hack in main's card_to_base handler (search & remove by suit/value) is deleted.
+3. auto_finish_step keeps its local table.remove for immediate consistency; the mirrored remove later no-ops (search by id).
+4. B2 race fix: check_auto_finish is no longer evaluated on arrival — main stores pending_af_check and evaluates it in update() after 2 frames, so the drop_success->remove_card->mirror cascade and card_to_base settle first.
+5. New re-check triggers: card_to_base posts send_auto_finish_check to cursor (covers auto-flying 2s that raise foundation without a player move, guarded: not tutorial/auto_finishing/WIN); cursor's flower arc landing callback posts send_auto_finish_check to itself.
+6. Double-victory guard: auto_finish_step's victory branch skips if currentState is already WIN (the 27th card_to_base already set it).
+
+Full scripts are in main/Scripts/ (cursor.script, main.script, tableau_script.script, card.script, free_cell.script, base_slot.script) if you need surrounding context. Solver tests pass 42/42; headless build compiles.
+
+Questions to check hard:
+- Can the mirror desync from tableau_script.self.stack in any flow (stack drag, dragon collect, flower flight, free-cell round-trips, debug replay, restart)?
+- Is the 2-frame deferral sufficient given Defold's message dispatch (cascading dispatch passes within a frame)? Any path where can_auto_finish evaluates on stale state?
+- Any new double-move / double-victory / stuck-input scenario?
+- Defold message payload size: tableau_card_added carries one card {id, data{...}, slot_id} — safe?
+
+Diff (reviews/block-b.diff):
+
+<DIFF>
+diff --git a/INDEX.md b/INDEX.md
+index 4948041..04222b5 100644
+--- a/INDEX.md
++++ b/INDEX.md
+@@ -42,6 +42,7 @@
+ - **Валидация дропа:** cursor → `set_cursor/check_slot/can_pick_card` → слоты; слот → `slot_valid/slot_invalid` → cursor; free_slot → `slot_with_card/update_free_slot` → cursor; base_slot → `base_slot_full` → cursor.
+ - **Дроп-результат:** card → `occupy_slot` → целевой слот; card → `remove_card` → слот-владелец.
+ - **Авто-полёт (tableau детектит верх):** tableau → `send_to_flower_slot/send_to_base_slot` → cursor; tableau → `send_counter_to_button` → dragon_button.
++- **Дельта-зеркало tableau→main (auto-finish/snapshot):** tableau → `tableau_card_added/tableau_card_removed` → main (`main.tableau_stacks` всегда свежее; оценка `check_auto_finish` отложена на 2 кадра в `update`).
+ - **Драконы:** free_slot → `change_free_slots_button_counter` → dragon_button; cursor → `set_button_state/get_dragon_cards` → dragon_button; dragon_button → `dragons_collected` (через 1.5с) → main.
+ - **В main:** base_slot → `card_to_base` → main; cursor → `check_auto_finish/send_auto_finish_check` → main.
+ - **Уровень/UI:** ui → `start_game/restart_level/unload_level` → game_manager; game_manager ↔ proxy: `async_load/enable` → proxy, `proxy_loaded/proxy_unloaded` → game_manager.
+diff --git a/architecture.md b/architecture.md
+index eb5b8e1..f74eeb8 100644
+--- a/architecture.md
++++ b/architecture.md
+@@ -198,3 +198,7 @@ UI (ui.gui_script.update)
+ | `update_free_slot` | free_cell → cursor | `{slot_id, dragon, is_empty, is_blocked?}` | Синхронизация состояния свободной ячейки |
+ | `send_to_flower_slot` | tableau → cursor | `card` | Автоматический полёт цветка |
+ | `send_to_base_slot` | tableau → cursor | `card` | Автоматический полёт двойки в foundation |
++| `tableau_card_added` | tableau → main | `{index, card: {id, data, slot_id}}` | Дельта-зеркало: карта добавлена в колонку (main.tableau_stacks всегда свежее) |
++| `tableau_card_removed` | tableau → main | `{index, id}` | Дельта-зеркало: карта покинула колонку |
++| `check_auto_finish` | cursor → main | `{free_cells: [{slot_id, dragon, is_blocked}]}` | Запрос проверки auto-finish; main оценивает ОТЛОЖЕННО (2 кадра в update) |
++| `send_auto_finish_check` | main/cursor → cursor | — | Просьба курсору собрать free_cells и переслать check_auto_finish |
+diff --git a/main/Scripts/cursor.script b/main/Scripts/cursor.script
+index e92e43b..77b017d 100644
+--- a/main/Scripts/cursor.script
++++ b/main/Scripts/cursor.script
+@@ -476,6 +476,11 @@ function on_message(self, message_id, message, sender)
+                      animation = true,
+                      complete = true
+          })
++         -- B2: цветок улетел без хода игрока — перепроверить auto-finish,
++         -- иначе раздача с последним открытым цветком никогда не стартует его.
++         if not tutorial_state.is_tutorial then
++            msg.post("#", "send_auto_finish_check")
++         end
+       end)
+    elseif message_id == hash("base_slot_full") then
+       self.base_slots[message.slot_id].is_empty = false
+diff --git a/main/Scripts/main.script b/main/Scripts/main.script
+index a0c7ffa..0efcbe7 100644
+--- a/main/Scripts/main.script
++++ b/main/Scripts/main.script
+@@ -423,14 +423,14 @@ end
+ -- real card GO ids, with IDENTICAL filtering so that solver card[i] <-> GO[i]
+ -- stays an exact bijection (the director relies on this).
+ --
+--- Two deal-time auto-fly effects must be reconciled (the game does them before
+--- the user ever triggers the solver):
+---   * value-2 on a tableau top auto-foundations -> removed from tableau_stacks,
+---     and self.foundation_top reflects it. So we read foundation from the live
+---     foundation_top, NOT a hardcoded {1,1,1}.
+---   * the flower auto-flies, but main.tableau_stacks is NOT updated when it
+---     leaves. So an on-top flower is stale: exclude it from both the snapshot and
+---     the go_map, and mark flower=true (collected).
++-- tableau_stacks is kept fresh by the tableau->main delta mirror
++-- (tableau_card_added/removed), so auto-flown cards leave it on landing.
++-- Two windows must still be reconciled:
++--   * value-2 on a tableau top auto-foundations -> self.foundation_top reflects
++--     it. So we read foundation from the live foundation_top, NOT {1,1,1}.
++--   * an on-top flower may be MID-FLIGHT (drop_success fires on arc landing,
++--     ~0.7s): until then it is still in the mirror. Exclude it from both the
++--     snapshot and the go_map, and mark flower=true (as good as collected).
+ -- Intended for a FRESH deal (free cells empty, no manual collects).
+ function snapshot_and_go_map(self)
+    local snap = { tableau = {}, free_cells = { {}, {}, {} }, flower = false }
+@@ -587,8 +587,8 @@ function debug_replay(self)
+    local function finish()
+       self.debug_replaying = false
+       msg.post(self.cursor, "enable_input")
+-      -- Verify via foundation_top (tableau_stacks goes stale: only foundation
+-      -- moves decrement it). A real win = all three suits topped at 10.
++      -- Verify via foundation_top — the direct win criterion (all three suits
++      -- topped at 10), independent of tableau bookkeeping.
+       timer.delay(1.0, false, function()
+          local ft = self.foundation_top
+          if ft.red == 10 and ft.blue == 10 and ft.green == 10 then
+@@ -743,7 +743,9 @@ function auto_finish_step(self)
+             break
+          end
+       end
+-      if all_empty and self.base_cards_count > 0 then
++      -- 27-я карта уже ставит WIN через card_to_base — не дублируем victory
++      if all_empty and self.base_cards_count > 0
++         and self.currentState ~= self.states.WIN then
+          print("[MAIN] auto-finish complete — victory!")
+          self.currentState = self.states.WIN
+          sfx.victory()
+@@ -778,7 +780,8 @@ function auto_finish_step(self)
+       animation = true
+    })
+ 
+-   -- Обновляем main.script tableau для find_next_auto_card
++   -- Локальное удаление для немедленной консистентности find_next_auto_card;
++   -- зеркальный tableau_card_removed придёт позже и no-op'нется (поиск по id).
+    table.remove(self.tableau_stacks[stack_index].cards)
+ 
+    timer.delay(0.4, false, function()
+@@ -803,41 +806,37 @@ function on_message(self, message_id, message, sender)
+       if message.suit and message.slot_id and not self.suit_to_base[message.suit] then
+          self.suit_to_base[message.suit] = message.slot_id
+       end
+-      -- Удаляем карту из tableau_stacks чтобы auto-finish видел актуальное состояние
+-      if message.suit and message.value then
+-         for i = 1, 8 do
+-            local stack = self.tableau_stacks[i]
+-            if stack then
+-               for j = #stack.cards, 1, -1 do
+-                  local c = stack.cards[j]
+-                  if c.data.suit == message.suit and c.data.value == message.value then
+-                     table.remove(stack.cards, j)
+-                     print("[MAIN] removed card from tableau_stacks:", message.suit, message.value, "stack:", i)
+-                     break
+-                  end
+-               end
+-            end
+-         end
+-      end
+       if not self.tutorial_mode and self.base_cards_count >= 27 then
+          self.currentState = self.states.WIN
+          sfx.victory()
+          tutorial_state.show_victory = true  -- UI polls this flag
+       end
+-   elseif message_id == hash("check_auto_finish") then
+-      print("[MAIN] check_auto_finish received, foundation_top:", self.foundation_top.red, self.foundation_top.blue, self.foundation_top.green)
+-      local remaining_count = 0
+-      for i = 1, 8 do
+-         if self.tableau_stacks[i] then
+-            remaining_count = remaining_count + #self.tableau_stacks[i].cards
+-         end
++      -- B2: авто-улёт двойки поднимает foundation без хода игрока — перепроверяем
++      -- auto-finish (round-trip через cursor даёт свежие free_cells).
++      if not self.tutorial_mode and not self.auto_finishing
++         and self.currentState ~= self.states.WIN then
++         msg.post(self.cursor, "send_auto_finish_check")
+       end
+-      print("[MAIN] remaining cards in tableau_stacks:", remaining_count)
+-      local result = can_auto_finish(self, message)
+-      print("[MAIN] can_auto_finish =", result)
+-      if result then
+-         start_auto_finish(self)
++   elseif message_id == hash("tableau_card_added") then
++      -- B: дельта-зеркало от tableau_script — main.tableau_stacks всегда свежее
++      local stack = self.tableau_stacks[message.index]
++      if stack then
++         table.insert(stack.cards, message.card)
+       end
++   elseif message_id == hash("tableau_card_removed") then
++      local stack = self.tableau_stacks[message.index]
++      if stack then
++         for j = #stack.cards, 1, -1 do
++            if stack.cards[j].id == message.id then
++               table.remove(stack.cards, j)
++               break
++            end
++         end
++      end
++   elseif message_id == hash("check_auto_finish") then
++      -- B2: не оцениваем немедленно — каскад drop_success→remove_card→зеркало и
++      -- card_to_base ещё в очереди сообщений. Откладываем на 2 кадра в update().
++      self.pending_af_check = { free_cells = message.free_cells, frames = 2 }
+    elseif message_id == hash("dragons_collected") then
+       if self.tutorial_mode then
+          self.currentState = self.states.WIN
+@@ -860,4 +859,17 @@ function update(self, dt)
+       sound.play("sound_manager#" .. sfx.pending)
+       sfx.pending = nil
+    end
++   -- B2: отложенная оценка auto-finish — к этому кадру зеркало tableau
++   -- и foundation_top уже осели после хода.
++   if self.pending_af_check then
++      self.pending_af_check.frames = self.pending_af_check.frames - 1
++      if self.pending_af_check.frames <= 0 then
++         local check = self.pending_af_check
++         self.pending_af_check = nil
++         if can_auto_finish(self, check) then
++            print("[MAIN] can_auto_finish = true — starting auto-finish")
++            start_auto_finish(self)
++         end
++      end
++   end
+ end
+diff --git a/main/Scripts/tableau_script.script b/main/Scripts/tableau_script.script
+index 660b082..0d56cc5 100644
+--- a/main/Scripts/tableau_script.script
++++ b/main/Scripts/tableau_script.script
+@@ -66,6 +66,8 @@ function on_message(self, message_id, message, sender)
+          if #self.stack == 0 then
+             self.is_empty = true
+          end
++         -- B: дельта-зеркало для main.tableau_stacks (auto-finish/snapshot)
++         msg.post("/card_table#main", "tableau_card_removed", { index = self.index, id = message.id })
+       end
+       self.pending_top_check = true  -- A6: авто-отправку решаем в update, после осадки кадра
+       update_visible_cards(self)
+@@ -73,6 +75,11 @@ function on_message(self, message_id, message, sender)
+       message.card.slot_id = go.get_id()
+       table.insert(self.stack, message.card)
+       self.is_empty = false  -- A4: слот перестал быть пустым
++      -- B: дельта-зеркало для main.tableau_stacks (auto-finish/snapshot)
++      msg.post("/card_table#main", "tableau_card_added", {
++         index = self.index,
++         card = { id = message.card.id, data = message.card.data, slot_id = go.get_id() }
++      })
+       update_visible_cards(self)
+    elseif message_id == hash("check_slot") then
+       if self.is_empty then
+diff --git a/plans/review-fixes.md b/plans/review-fixes.md
+index 7ec5d84..978f5b1 100644
+--- a/plans/review-fixes.md
++++ b/plans/review-fixes.md
+@@ -46,14 +46,22 @@
+ 
+ **Суть:** из `self.tableau_stacks` удаляются только числовые карты (`card_to_base`, строка 806) и ходы самого авто-финиша (782). Собранные драконы и цветок остаются фантомами → `can_auto_finish` (строки 696-699) всегда false в реальной раздаче. Плюс tableau→tableau и tableau→free-cell ходы не отслеживаются → `find_next_auto_card` (717-731) читает несвежие верхушки.
+ 
+-- [ ] **B0. Решение (записать в этот файл до кода):**
++- [x] **B0. Решение (записать в этот файл до кода):**
+       **Вариант 1 — дотрекать:** main уже получает `dragons_collected` — удалять там 4 дракона масти; добавить сообщение main'у при полёте цветка; добавить зеркалирование ручных ходов (cursor → main при каждом успешном дропе). Много новых рёбер message-passing.
+       **Вариант 2 — источник правды в слотах:** `can_auto_finish`/`find_next_auto_card` строят состояние запросом к tableau-слотам (у `tableau_script` актуальный список карт) вместо `self.tableau_stacks`. Меньше рёбер, но запрос асинхронный (Defold msg) — потребуется собрать ответы или держать в cursor зеркало (у cursor уже есть `tableau_stacks` из `update_stack` — проверить его актуальность как готового источника).
+       Рекомендация из ревью: вариант 2 через данные, которые cursor уже получает в `update_stack`.
+-- [ ] **B1. Реализовать выбранный вариант.**
+-- [ ] **B2. Смежная гонка:** `check_auto_finish` из cursor приходит на один message-hop раньше `card_to_base` → решение принимается по состоянию до хода. После B1 перепроверить порядок; при необходимости откладывать проверку на кадр.
+-- [ ] **B3. Обновить `snapshot_and_go_map`/`build_solver_snapshot`, если источник состояния изменился** (сейчас читают те же несвежие `tableau_stacks` — см. C3).
+-- [ ] **B4. Обновить INDEX.md** (перечень символов auto-finish), если сигнатуры/расположение изменились.
++      ✅ **Выбран вариант 2′ — дельта-зеркало tableau→main.** Проверка показала: зеркало cursor'а НЕ годится — `set_stack` несёт только ВИДИМЫЕ карты (упорядоченный хвост, `tableau_script.update_visible_cards`), а `can_auto_finish` должен видеть закопанные драконы/цветок. Зато `tableau_script.self.stack` — единственный источник правды: ВСЕ мутации колонок (ручные, стековые, авто-полёты, авто-финиш, реплей) проходят через `card.drop_success`, который постит `occupy_slot`/`remove_card` СИНХРОННО (`card.script:98-108`). Решение: tableau шлёт main'у два новых крошечных сообщения — `tableau_card_added {index, card}` (из occupy_slot) и `tableau_card_removed {index, id}` (из remove_card, только при успешном удалении). main зеркалит их в `self.tableau_stacks[index].cards` — структура не меняется, читатели (`can_auto_finish`/`find_next_auto_card`/`snapshot_and_go_map`) не переписываются, данные всегда свежие. Полные стеки НЕ шлём: лимит Defold-сообщения ~2КБ, колонка может вырасти до 14+ карт — дельты безопасны, порядок FIFO гарантирован. Хаки частичного трекинга удаляются: suit/value-removal в `card_to_base` (main.script:806-821); локальный `table.remove` в `auto_finish_step` ОСТАВЛЕН (немедленная консистентность; зеркальный remove по id придёт позже и no-op'нется).
++      **B2 (гонка):** `check_auto_finish` больше не оценивается в момент прихода — ставится `pending_af_check` и оценивается в `main.update()` через 2 кадра (к этому моменту каскад drop_success→remove_card→зеркало И `card_to_base` осели — dispatch-каскад глубиной ≤4 укладывается в кадр). Новые триггеры перепроверки: (а) `card_to_base` (не туториал, не auto_finishing, не WIN) → `send_auto_finish_check` курсору — покрывает авто-улёт двоек, поднимающий foundation; (б) посадка цветка — cursor в колбэке дуги постит себе `send_auto_finish_check` — иначе готовая раздача с последним открытым цветком никогда не стартует авто-финиш.
++      **Двойная победа:** victory-ветка `auto_finish_step` гейтится `currentState ~= WIN` (27-я карта уже ставит WIN через `card_to_base`).
++      **Free-cells-проверка в `can_auto_finish` остаётся как защита, хотя доказуемо избыточна:** неблокированный дракон в ячейке ⇒ ≥1 дракон той же масти в tableau (4 дракона, ≤3 ячеек) ⇒ tableau-проверка уже вернёт false.
++- [x] **B1. Реализовать выбранный вариант.**
++      ✅ tableau_script: `remove_card` (при успехе) → `tableau_card_removed`, `occupy_slot` → `tableau_card_added` в `/card_table#main`. main: два новых обработчика зеркала; хак suit/value-removal в `card_to_base` удалён; локальный remove в `auto_finish_step` оставлен (см. B0); victory-ветка auto-finish гейтится `currentState ~= WIN`.
++- [x] **B2. Смежная гонка:** `check_auto_finish` из cursor приходит на один message-hop раньше `card_to_base` → решение принимается по состоянию до хода. После B1 перепроверить порядок; при необходимости откладывать проверку на кадр.
++      ✅ Оценка отложена на 2 кадра (`pending_af_check` в `main.update`). Плюс два новых триггера: `card_to_base` → `send_auto_finish_check` (авто-двойки) и посадка цветка в cursor → `send_auto_finish_check` себе.
++- [x] **B3. Обновить `snapshot_and_go_map`/`build_solver_snapshot`, если источник состояния изменился** (сейчас читают те же несвежие `tableau_stacks` — см. C3).
++      ✅ Код не менялся (читатели те же, данные теперь свежие); комментарий-контракт переписан: flower-исключение теперь покрывает только окно полёта (~0.7с), а не перманентный фантом. Комментарий в `debug_replay.finish` про «stale tableau_stacks» тоже поправлен.
++- [x] **B4. Обновить INDEX.md** (перечень символов auto-finish), если сигнатуры/расположение изменились.
++      ✅ INDEX.md: добавлено ребро «дельта-зеркало tableau→main»; architecture.md: 4 новые строки в таблице message contracts (`tableau_card_added/removed`, `check_auto_finish`, `send_auto_finish_check`).
+ 
+ **Проверка:** `DEBUG_AUTO_FINISH = true` — тестовая раздача по-прежнему доигрывается; затем реальная партия до конца (можно солвером R): после сбора всех драконов и цветка авто-финиш ДОЛЖЕН стартовать. Победа не должна наступать дважды. 42/42.
+ 

@@ -80,6 +80,7 @@ function on_message(self, message_id, message, sender)
          index = self.index,
          card = { id = message.card.id, data = message.card.data, slot_id = go.get_id() }
       })
+      self.pending_top_check = true  -- A6: 2/flower/dragon just placed must auto-send
       update_visible_cards(self)
    elseif message_id == hash("check_slot") then
       if self.is_empty then

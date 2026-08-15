@@ -1,0 +1,418 @@
+diff --git a/INDEX.md b/INDEX.md
+index 04222b5..24fce60 100644
+--- a/INDEX.md
++++ b/INDEX.md
+@@ -25,9 +25,9 @@
+ | `dragon_button.script` | Сбор драконов (актив при 4 + free slot) | `check_state` `free_slot_any` |
+ | `game_manager.script` | Загрузка/перезагрузка уровня через collectionproxy | (msg: `start_game` `restart_level` `unload_level`) |
+ | `Game.script` (`main/`) | Чистый Lua-класс правил (НЕ привязан к Defold; похоже legacy) | `Game.new` `Game:canMoveCard` `Game:checkWin` `Game:init` `Card.new` |
+-| `sfx.lua` | Звук: прямой `sound.play` или очередь | `M.pending` `M.play` `M.queue` + `card_pick/card_drop/card_error/card_deal/dragon_collect/button_click/victory/flower_auto/auto_finish` |
++| `sfx.lua` | Звук: прямой `sound.play` или очередь | `M.pending` `M.play` `M.queue` `M.clear` + `card_pick/card_drop/card_error/card_deal/dragon_collect/button_click/victory/flower_auto/auto_finish` |
+ | `i18n.lua` | Локализация en/ru/tr | `M.lang` `M.strings` `M.t` `M.set_lang` |
+-| `tutorial_state.lua` | Состояние туториала (polling-флаги) | `M.is_tutorial` `M.step` `M.ui_dirty` `M.show_victory` `M.highlight_dirty` `M.EXPECTED_MOVES` `M.HIGHLIGHTS` `M.check_move` `M.advance` `M.reset` |
++| `tutorial_state.lua` | Состояние туториала (polling-флаги) | `M.is_tutorial` `M.step` `M.ui_dirty` `M.show_victory` `M.highlight_dirty` `M.block_play_input` `M.EXPECTED_MOVES` `M.HIGHLIGHTS` `M.check_move` `M.advance` `M.reset` `M.request_victory` `M.is_play_input_blocked` |
+ | `gui/ui.gui_script` | Главный UI: старт-экран, victory overlay, tutorial-хинты | `restart_level` `update_tutorial_hint` |
+ | `gui/game.gui_script` | Респонсив-раскладка нод (частично legacy) | `adjust_layout` `update_dragon_buttons` |
+ | `gui/test.gui_script` | Утилита позиций tableau (вне основного флоу) | — |
+@@ -52,7 +52,7 @@
+ 
+ | Файл | Роль | API |
+ |---|---|---|
+-| `rules.lua` | Движок правил + DFS-солвер (IDDFS, транспозиции, node-budget) | `deal(seed)` `legal_moves(state)` `apply_move(state,move)` `is_win(state)` `can_auto_finish(state)` `can_move_to_foundation_safe(card,top)` `solve(state,opts)` |
++| `rules.lua` | Движок правил + DFS-солвер (IDDFS, транспозиции, node-budget) | `deal(seed)` `legal_moves(state)` `apply_move(state,move)` `is_win(state)` `can_auto_finish(state)` `can_move_to_foundation_safe(card,top)` `forced_moves(state)` `solve(state,opts)` |
+ | `bridge.lua` | Снапшот игры → состояние солвера (только game→solver) | `card(gc)` `from_game(snap)` |
+ | `board_view.lua` | Рендер состояния в текст (без IO) | `card_str(card)` `render(state,info)` `describe(move)` |
+ | `run.lua` | CLI: solve диапазона сидов, golden-файлы, self-verify | вход: `lua solver/run.lua --seeds A..B [--budget N]`; пишет `solver/golden/<seed>.txt` |
+@@ -65,7 +65,7 @@
+ 
+ ### Тесты (`solver/tests/`)
+ Запуск: `lua solver/tests/run_all.lua` (из корня; exit 0/1). Харнесс — `harness.lua` (`new_harness`, `H.test/report/assert_eq`).
+-`test_deal` (d1-d8 раздача/детерминизм) · `test_win` (w1-w6; w2/w3 — защита от бага `base_cards_count>=27`) · `test_moves` (B1-B8 паритет ходов) · `test_solvable` (мини-борд из `main.script` `deal_auto_finish_test`) · `test_fixes` (fix#1 oracle, fix#2a/2b счётчик драконов = только tableau-tops) · `test_watch` (рендер) · `test_bridge` (game→solver, round-trip) · `test_replay` (директивы `replay.plan`: desync, go-reuse, double-book, terminal-win).
++`test_deal` (d1-d8 раздача/детерминизм) · `test_win` (w1-w6; w2/w3 — защита от бага `base_cards_count>=27`) · `test_moves` (B1-B8 паритет ходов) · `test_solvable` (мини-борд из `main.script` `deal_auto_finish_test`) · `test_fixes` (fix#1 oracle, fix#2a/2b счётчик драконов = только tableau-tops) · `test_watch` (рендер) · `test_bridge` (game→solver, round-trip) · `test_replay` (директивы `replay.plan`: desync, go-reuse, double-book, terminal-win) · `test_review_bugs` (F3–F7, F10, C3) · `test_game_scripts` (F1, F2, F9, A3, A6 — .script под Defold-stub).
+ 
+ ## Где править частые задачи
+ - **Правила хода/стекинга** → `tableau_script.can_stack_cards`, `card.is_correct_card`, `base_slot.check_correct_cards` (и зеркало в `rules.legal_moves`).
+diff --git a/main/Scripts/base_slot.script b/main/Scripts/base_slot.script
+index 5df2be2..fa5e783 100644
+--- a/main/Scripts/base_slot.script
++++ b/main/Scripts/base_slot.script
+@@ -62,7 +62,7 @@ end
+ 
+ 
+ function check_correct_cards(self, new_card)
+-   if new_card.data.id_dragon or new_card.data.is_flower then
++   if new_card.data.is_dragon or new_card.data.is_flower then
+       return false
+    end
+ 
+diff --git a/main/Scripts/coords.lua b/main/Scripts/coords.lua
+index 7181d13..b66bdb6 100644
+--- a/main/Scripts/coords.lua
++++ b/main/Scripts/coords.lua
+@@ -1,27 +1,11 @@
+--- coords.lua — координатные преобразования экран → игровой мир
+-local config = require("main.Scripts.config")
++-- coords.lua — экран → мир.
++-- Defold fixed_fit_projection already delivers action.x/y in virtual 960×540
++-- space. Unprojecting by window.get_size() double-applies letterbox and breaks
++-- hit-tests on non-16:9 canvases. See docs/responsive-explained.md §2.
+ local M = {}
+ 
+--- Преобразование экранных координат в игровые без камеры (fixed_fit_projection)
+ function M.screen_to_world(x, y)
+-    local w, h = window.get_size()
+-    w = w / (w / config.DISPLAY_WIDTH)
+-    h = h / (h / config.DISPLAY_HEIGHT)
+-
+-    local zoom = math.min(w / config.DISPLAY_WIDTH, h / config.DISPLAY_HEIGHT)
+-    local offset_x = (w - config.DISPLAY_WIDTH * zoom) / 2
+-    local offset_y = (h - config.DISPLAY_HEIGHT * zoom) / 2
+-
+-    local norm_x = (2 * x / w) - 1
+-    local norm_y = (2 * y / h) - 1
+-
+-    local world_x = (norm_x + 1) * (config.DISPLAY_WIDTH / 2)
+-    local world_y = (norm_y + 1) * (config.DISPLAY_HEIGHT / 2)
+-
+-    world_x = (world_x - offset_x / zoom)
+-    world_y = (world_y - offset_y / zoom)
+-
+-    return world_x, world_y
++    return x, y
+ end
+ 
+ return M
+diff --git a/main/Scripts/cursor.script b/main/Scripts/cursor.script
+index 77b017d..9ba67b3 100644
+--- a/main/Scripts/cursor.script
++++ b/main/Scripts/cursor.script
+@@ -35,6 +35,7 @@ end
+ 
+ function on_input(self, action_id, action)
+    if self.input_disabled then return end
++   if tutorial_state.is_play_input_blocked() then return end
+    -- Только позиционные действия (мышь/тач) несут координаты; клавиши (solve/replay/space)
+    -- приходят с action.x == nil — для них курсор не двигаем.
+    if action.x then
+@@ -496,12 +497,17 @@ function on_message(self, message_id, message, sender)
+          end
+       end
+ 
++      -- A3: foundation slide is hittable; hold input until the animation window ends.
++      self.flying_count = (self.flying_count or 0) + 1
+       msg.post(message.id, 'drop_success', {
+                   slot_id = slot,
+                   position = self.base_slots[slot].pos,
+                   card = message,
+                   animation = true
+       })
++      timer.delay(0.5, false, function()
++         self.flying_count = math.max(0, (self.flying_count or 0) - 1)
++      end)
+    elseif message_id == hash("disable_input") then
+       self.input_disabled = true
+    elseif message_id == hash("enable_input") then
+diff --git a/main/Scripts/dragon_button.script b/main/Scripts/dragon_button.script
+index 949b678..78ed7bc 100644
+--- a/main/Scripts/dragon_button.script
++++ b/main/Scripts/dragon_button.script
+@@ -27,6 +27,7 @@ function on_message(self, message_id, message, sender)
+       table.insert(self.cards, message)
+       check_state(self)
+    elseif message_id == hash("get_dragon_cards") then
++      if not self.is_enable then return end
+       sfx.dragon_collect()
+       msg.post(self.cursor, 'get_dragon_cards', self.cards)
+       self.is_enable = false
+diff --git a/main/Scripts/free_cell.script b/main/Scripts/free_cell.script
+index 000b1cf..50b6e1d 100644
+--- a/main/Scripts/free_cell.script
++++ b/main/Scripts/free_cell.script
+@@ -70,7 +70,7 @@ function on_message(self, message_id, message, sender)
+       if message.complete then
+          if not self.is_blocked then
+             self.is_blocked = true
+-            if not self.occupied then
++            if not self.is_occupied then
+                msg.post(self.cursor, "update_free_slot", {slot_id = self.slot_id, dragon = dragon, is_empty = false, is_blocked = true})
+                send_to_dragon_buttons(self, message.card, -1)
+             end
+diff --git a/main/Scripts/game_manager.script b/main/Scripts/game_manager.script
+index 211b860..99db43f 100644
+--- a/main/Scripts/game_manager.script
++++ b/main/Scripts/game_manager.script
+@@ -1,8 +1,11 @@
++local sfx = require("main.Scripts.sfx")
++
+ local function show(self, proxy)
+    if self.current_proxy then
+       msg.post(self.current_proxy, "unload")
+       self.current_proxy = nil
+    end
++   sfx.clear() -- F4: don't leak a MENU/PLAY click into the next level poll
+    msg.post(proxy, "async_load")
+ end
+ 
+@@ -22,6 +25,7 @@ function on_message(self, message_id, message, sender)
+       self.current_level = (self.current_level == "soliter") and "soliter1" or "soliter"
+       show(self, self.current_level == "soliter" and "#level_proxy" or "#level_proxy1")
+    elseif message_id == hash("unload_level") then
++      sfx.clear()
+       if self.current_proxy then
+          msg.post(self.current_proxy, "unload")
+          self.current_proxy = nil
+diff --git a/main/Scripts/main.script b/main/Scripts/main.script
+index d1b49a1..a8cd943 100644
+--- a/main/Scripts/main.script
++++ b/main/Scripts/main.script
+@@ -35,6 +35,7 @@ function init(self)
+    self.cards = {}
+    self.cursor = factory.create("#cursor_factory")
+    self.tutorial_mode = tutorial_state.is_tutorial
++   tutorial_state.block_play_input = false -- new deal must not inherit a leftover victory block
+ 
+    if self.tutorial_mode then
+       deal_tutorial_cards(self)
+@@ -750,7 +751,7 @@ function auto_finish_step(self)
+          print("[MAIN] auto-finish complete — victory!")
+          self.currentState = self.states.WIN
+          sfx.victory()
+-         tutorial_state.show_victory = true
++         tutorial_state.request_victory()
+       end
+       return
+    end
+@@ -810,7 +811,7 @@ function on_message(self, message_id, message, sender)
+       if not self.tutorial_mode and self.base_cards_count >= 27 then
+          self.currentState = self.states.WIN
+          sfx.victory()
+-         tutorial_state.show_victory = true  -- UI polls this flag
++         tutorial_state.request_victory()
+       end
+       -- B2: авто-улёт двойки поднимает foundation без хода игрока — перепроверяем
+       -- auto-finish (round-trip через cursor даёт свежие free_cells).
+@@ -842,7 +843,7 @@ function on_message(self, message_id, message, sender)
+       if self.tutorial_mode then
+          self.currentState = self.states.WIN
+          sfx.victory()
+-         tutorial_state.show_victory = true  -- UI polls this flag
++         tutorial_state.request_victory()
+       else
+          -- После сбора драконов проверяем auto-finish
+          msg.post(self.cursor, "send_auto_finish_check")
+diff --git a/main/Scripts/sfx.lua b/main/Scripts/sfx.lua
+index da3e734..6fc144a 100644
+--- a/main/Scripts/sfx.lua
++++ b/main/Scripts/sfx.lua
+@@ -12,6 +12,10 @@ function M.queue(sound_id)
+     M.pending = sound_id
+ end
+ 
++function M.clear()
++    M.pending = nil
++end
++
+ function M.card_pick()      M.play("card_pick") end
+ function M.card_drop()      M.play("card_drop") end
+ function M.card_error()     M.play("card_error") end
+diff --git a/main/Scripts/tableau_script.script b/main/Scripts/tableau_script.script
+index 0d56cc5..9d2ca9b 100644
+--- a/main/Scripts/tableau_script.script
++++ b/main/Scripts/tableau_script.script
+@@ -80,6 +80,7 @@ function on_message(self, message_id, message, sender)
+          index = self.index,
+          card = { id = message.card.id, data = message.card.data, slot_id = go.get_id() }
+       })
++      self.pending_top_check = true  -- A6: 2/flower/dragon just placed must auto-send
+       update_visible_cards(self)
+    elseif message_id == hash("check_slot") then
+       if self.is_empty then
+diff --git a/main/Scripts/tutorial_state.lua b/main/Scripts/tutorial_state.lua
+index 325973a..5cba539 100644
+--- a/main/Scripts/tutorial_state.lua
++++ b/main/Scripts/tutorial_state.lua
+@@ -4,6 +4,7 @@ M.step = 0
+ M.ui_dirty = false      -- flag for UI polling (cross-collection workaround)
+ M.show_victory = false  -- flag for victory screen
+ M.highlight_dirty = false -- flag for cursor to apply highlights
++M.block_play_input = false -- sticky: UI consumes show_victory, cards must stay dead
+ 
+ -- Expected moves per step: {card_id, target}
+ -- target: "base", "free", "tableau_card"
+@@ -45,6 +46,18 @@ function M.reset()
+     M.step = 0
+     M.ui_dirty = false
+     M.show_victory = false
++    M.highlight_dirty = false
++    M.block_play_input = false
++end
++
++-- Pulse show_victory for the UI poll; keep play input blocked after the pulse is consumed.
++function M.request_victory()
++    M.show_victory = true
++    M.block_play_input = true
++end
++
++function M.is_play_input_blocked()
++    return M.block_play_input == true
+ end
+ 
+ return M
+diff --git a/solver/rules.lua b/solver/rules.lua
+index b6e24a7..0d437ed 100644
+--- a/solver/rules.lua
++++ b/solver/rules.lua
+@@ -546,25 +546,31 @@ function M.can_auto_finish(state)
+       end
+    end
+ 
+-   -- Check no dragon or flower in any tableau column
++   -- Remaining tableau cards: no dragons/flower, and each value is safe
++   -- (same predicate as main.script can_auto_finish: v <= min_other+1).
++   local remaining = 0
+    for i = 1, 8 do
+       local col = state.tableau[i]
+       for _, card in ipairs(col) do
++         remaining = remaining + 1
+          if card.is_dragon or card.is_flower then
+             return false
+          end
++         local v = card.value
++         if type(v) == "number" then
++            local min_other = 10
++            for suit, val in pairs(state.foundation_top) do
++               if suit ~= card.suit then
++                  min_other = math.min(min_other, val)
++               end
++            end
++            if v > min_other + 1 then
++               return false
++            end
++         end
+       end
+    end
+-
+-   -- At least one tableau column still has cards
+-   local all_empty = true
+-   for i = 1, 8 do
+-      if #state.tableau[i] > 0 then
+-         all_empty = false
+-         break
+-      end
+-   end
+-   if all_empty then return false end
++   if remaining == 0 then return false end
+ 
+    return true
+ end
+@@ -676,8 +682,9 @@ end
+ -- Apply all mandatory/greedy moves that are always beneficial:
+ --   1. Flower auto-fly (flower on tableau top → flower slot)
+ --   2. Value-2 auto-move to foundation
+---   3. Dragon collect (when 4 exposed + free slot)
+---   4. Safe foundation moves (per can_move_to_foundation_safe)
++--   3. Safe foundation moves (per can_move_to_foundation_safe)
++-- Dragon collect is a BRANCHING move (legal_moves), not mandatory: it consumes
++-- a free cell and is not always safe.
+ -- Returns (new_state, appended_moves_list) where appended_moves_list is a list
+ -- of move objects applied. Returns original state + empty list if nothing applies.
+ local function apply_mandatory(state, path)
+@@ -716,24 +723,7 @@ local function apply_mandatory(state, path)
+       end
+       if changed then break end
+ 
+-      -- 3. Dragon collect (greedy: never harmful) — use derived counters
+-      do
+-         local dc = compute_dragon_counter(s)
+-         local fsc = compute_free_slots_counter(s)
+-         for _, suit in ipairs({"red","blue","green"}) do
+-            if not s.dragons_collected[suit]
+-               and dc[suit] == 4
+-               and fsc[suit] > 0 then
+-               local move = { type="dragon_collect", suit=suit }
+-               s = M.apply_move(s, move)
+-               changed = true
+-               break
+-            end
+-         end
+-      end
+-      if changed then break end
+-
+-      -- 4. Safe foundation moves from tableau tops and free cells
++      -- 3. Safe foundation moves from tableau tops and free cells
+       -- From tableau tops
+       for col_i = 1, 8 do
+          local col = s.tableau[col_i]
+@@ -808,25 +798,7 @@ local function apply_mandatory_tracked(state)
+       end
+       if changed then break end
+ 
+-      -- 3. Dragon collect (greedy) — use derived counters
+-      do
+-         local dc = compute_dragon_counter(s)
+-         local fsc = compute_free_slots_counter(s)
+-         for _, suit in ipairs({"red","blue","green"}) do
+-            if not s.dragons_collected[suit]
+-               and dc[suit] == 4
+-               and fsc[suit] > 0 then
+-               local move = { type="dragon_collect", suit=suit }
+-               s = M.apply_move(s, move)
+-               moves_applied[#moves_applied + 1] = move
+-               changed = true
+-               break
+-            end
+-         end
+-      end
+-      if changed then break end
+-
+-      -- 4. Safe foundation moves from tableau tops
++      -- 3. Safe foundation moves from tableau tops
+       for col_i = 1, 8 do
+          local col = s.tableau[col_i]
+          if #col > 0 then
+@@ -863,6 +835,11 @@ local function apply_mandatory_tracked(state)
+    return s, moves_applied
+ end
+ 
++function M.forced_moves(state)
++   local _, moves = apply_mandatory_tracked(state)
++   return moves
++end
++
+ -- Flatten a nested path into a flat list of moves
+ local function flatten_path(path_node)
+    local result = {}
+diff --git a/solver/tests/run_all.lua b/solver/tests/run_all.lua
+index 6060e12..3bfc89c 100644
+--- a/solver/tests/run_all.lua
++++ b/solver/tests/run_all.lua
+@@ -42,6 +42,8 @@ local test_modules = {
+    "solver.tests.test_watch",
+    "solver.tests.test_bridge",
+    "solver.tests.test_replay",
++   "solver.tests.test_review_bugs",
++   "solver.tests.test_game_scripts",
+ }
+ 
+ local total_passed = 0
+diff --git a/solver/watch.lua b/solver/watch.lua
+index 8edf8de..6429c78 100644
+--- a/solver/watch.lua
++++ b/solver/watch.lua
+@@ -18,6 +18,7 @@ local M = {
+    card_str = view.card_str,
+    render   = view.render,
+    describe = view.describe,
++   RESET    = "\27[0m",
+ }
+ 
+ -- ============================================================
+@@ -87,7 +88,7 @@ local function main()
+    end
+ 
+    if R.is_win(state) then
+-      io.write("\n" .. (color and "\27[92m" or "") .. "WIN ✓  (" .. total .. " moves, seed " .. used_seed .. ")" .. (color and RESET or "") .. "\n")
++      io.write("\n" .. (color and "\27[92m" or "") .. "WIN ✓  (" .. total .. " moves, seed " .. used_seed .. ")" .. (color and M.RESET or "") .. "\n")
+    else
+       io.write("\nNOT a win after replay (seed " .. used_seed .. ") — this should not happen; please report.\n")
+       os.exit(1)

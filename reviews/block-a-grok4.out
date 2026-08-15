@@ -1,0 +1,1 @@
+I'll review the Block A drag-machine fixes against the actual message-flow in `cursor.script` and `tableau_script.script`, focusing on A2–A6 correctness and any regressions.

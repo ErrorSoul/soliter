@@ -62,7 +62,7 @@ end
 
 
 function check_correct_cards(self, new_card)
-   if new_card.data.id_dragon or new_card.data.is_flower then
+   if new_card.data.is_dragon or new_card.data.is_flower then
       return false
    end
 

@@ -1,0 +1,141 @@
+Reviewing the diff in full context: reading the scripts and tracing message flow for the four focus areas.
+## Verdict
+
+**Approve with one documentation caveat.** The fixes address real bugs (A1/A2/A5 are clearly correct; A4 is a genuine `check_slot` correctness fix; A6 fixes the hijack via coalescing). A3 is sound for the stated threat model, with a residual leak edge case. The A6 inline comment overstates Defold ordering guarantees.
+
+---
+
+## 1. A6 — `update()` vs `on_message` assumption
+
+**The claim is too strong; the fix still works.**
+
+Defold’s [application lifecycle](https://www.defold.com/manuals/application-lifecycle/) says:
+
+- Input (`on_input`) runs **before** the update phase.
+- Posted messages are flushed **after each component-type batch** of `update()` / `late_update()`, not between every `on_message`.
+- **Script `update()` order across GOs is unspecified.**
+
+So you cannot rely on “`tableau_script.update()` always runs after all `remove_card` handlers in the same frame.” Typical flow for a drag-release:
+
+1. **Input:** `check_slot` / eventual `slot_valid` → `move_stack_cards` → `drop_success` queued.
+2. **Update:** all script `update()` run (including `tableau_script.update()` with `pending_top_check == false`).
+3. **Message flush:** card `drop_success` → `remove_card` × N → `pending_top_check = true`.
+4. **Next frame `update()`:** `last_card_to_slot` once.
+
+That is usually a **1-frame delay**, not same-frame settlement. The comment in `tableau_script.script` should be softened.
+
+**Why the fix is still correct:** the bug was **per-`remove_card` synchronous** `last_card_to_slot`, so an in-transfer card became temporary top and got a second auto-send. Coalescing to one call per flag cycle removes that regardless of same-frame vs next-frame.
+
+| Concern | Assessment |
+|--------|------------|
+| **Drop auto-send** | No — `pending_top_check` stays true until the next `update()`. |
+| **Double-fire** | No — flag cleared before call; multiple `remove_card` in one flush coalesce to one check. |
+| **Wrong-card hijack** | Fixed — only final top is evaluated after the batch. |
+| **Blast radius** | All auto-sends (flower / 2→base / dragon counter) shift by ≤1 frame; play-test still warranted per plan. |
+
+**Gap (pre-existing, not worsened):** `occupy_slot` does not set `pending_top_check`. A manually placed top `2`/`f`/`d` on a column still won’t auto-trigger until a later `remove_card` / `update_stack`. That was true before A6.
+
+---
+
+## 2. A2 — fall-through after stuck-drag recovery
+
+**Correct ordering with A3; no double-processing in normal paths.**
+
+```63:84:main/Scripts/cursor.script
+      if action.pressed then
+         -- A3: ...
+         if self.flying_count and self.flying_count > 0 then
+            return
+         end
+         -- A2: ...
+         if self.is_dragging then
+            ...
+            clean_cursor(self)
+         end
+         self.was_pressed = true
+```
+
+- **A3 before A2** is right: recovery must not run while arcs are in flight (otherwise `drop_failed` could cancel in-flight animations).
+- **`clean_cursor` before fall-through** clears `is_dragging`, `pending_drop`, `stack_cards` — new press starts clean.
+- **Async slot responses after A2:** `slot_valid` / `slot_invalid` require `self.pending_drop`; after `clean_cursor` they are ignored — no ghost success after recovery.
+
+**Residual edge cases (low severity):**
+
+1. **`flying_count > 0` blocks A2** — a stuck drag can persist until arcs finish. Rare; next press after landing recovers.
+2. **`dragging_stack` but `stack_cards == nil`** — A2 cleans cursor but sends no `drop_failed` (corrupt state; pre-existing shape).
+3. **A2 `drop_failed` + same-frame `start_drag`** on the same card if the user presses the same spot — message order is unspecified; could flicker. Uncommon after canvas-leave.
+
+No interaction with A3’s press guard beyond the intentional “flying blocks everything” behavior.
+
+---
+
+## 3. A3 — `flying_count` balance
+
+**Balances correctly on the happy path; one leak path remains.**
+
+| Path | +1 | −1 |
+|------|----|----|
+| `send_to_flower_slot` | before `fly_card_arc` | outer land callback |
+| `get_dragon_cards` loop | per card, before arc | per card in callback |
+
+Dragon loop uses `pairs(message)` — order irrelevant; one increment per card is correct.
+
+**Not covered (pre-existing gap):** `send_to_base_slot` does **not** use `fly_card_arc` or `flying_count`:
+
+```482:499:main/Scripts/cursor.script
+   elseif message_id == hash("send_to_base_slot") then
+      ...
+      msg.post(message.id, 'drop_success', { ... animation = true })
+```
+
+A 2 can still be grabbed during base-slot slide animation. Out of A3 scope but related.
+
+**Leak risk:** decrement only runs in the **final** `fly_card_arc` callback. If `go.cancel_animations` kills the arc (pre-A3: `drag_update` in `card.script:65`), count never decrements → **permanent input lock**.
+
+A3 prevents that via press blocking; with A3, `drag_update` should not fire during auto-fly (`is_dragging` false, no new press). Residual leak if arcs are cancelled another way (GO delete, future code). Safer pattern: decrement in a `go.cancel_animations` guard or `on_disable` — not required for this diff if you accept the assumption.
+
+**`dragons_collected` timer:** still fires 1.5s after button press regardless of arc completion (pre-existing). A3 reduces the failure mode but doesn’t tie timer to `flying_count == 0`.
+
+---
+
+## 4. Nil-deref / missing branches
+
+| Item | Status |
+|------|--------|
+| **A1** `clean_cursor` after single-card miss | Matches stack miss path — fixes stuck `is_dragging`. |
+| **A5** `slot_invalid` stack branch | Mirrors `invalid_card` — correct. |
+| **A4** `occupy_slot` → `is_empty = false` | Fixes false `slot_valid` on occupied columns. |
+| **A5 without `pending_drop`** | No-op (same as before). |
+| **Single-card miss `self.selected_card`** | No nil guard if `is_dragging` true but `selected_card` nil — corrupt state only. |
+
+**A5 nit:** `slot_invalid` does not clear `pending_drop` before `clean_cursor` — harmless since `clean_cursor` nils it.
+
+---
+
+## Message-flow diagram (stack transfer + A6)
+
+```mermaid
+sequenceDiagram
+    participant Input as cursor on_input
+    participant Cursor as cursor on_message
+    participant Card as card.script
+    participant Tab as tableau_script
+
+    Input->>Cursor: check_slot / slot_valid
+    Cursor->>Card: drop_success (×N stack)
+    Card->>Tab: remove_card (×N, same flush)
+    Note over Tab: pending_top_check=true (coalesced)
+    Note over Tab: update() may have already run this frame
+    Tab->>Tab: update() next frame
+    Tab->>Cursor: send_to_base_slot / flower / dragon counter (once)
+```
+
+---
+
+## Recommended follow-ups (non-blocking)
+
+1. **Soften A6 comment** — “coalesce per frame; typically runs in next `update()` after message flush,” not “never interleaves.”
+2. **Play-test A6 blast radius** — flower, 2→base, dragon counter after stack moves (already in `review-fixes.md`).
+3. **Optional hardening:** `flying_count` decrement on arc cancel; consider input guard or `flying_count` for `send_to_base_slot` animation window.
+
+**Bottom line:** Correctness fixes look good for the stated bugs. The main technical correction is that A6’s Defold lifecycle assumption is imprecise, but deferral+coalesce still fixes the hijack and does not introduce drop/double-fire under normal dispatch. Ship after the four play-tests in Block A.

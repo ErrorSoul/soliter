@@ -1,0 +1,1 @@
+I'll review the Block A drag-machine diff for correctness and message-flow risks, starting from the surrounding cursor/tableau code paths those patches touch.

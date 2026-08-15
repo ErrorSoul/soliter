@@ -35,6 +35,7 @@ function init(self)
    self.cards = {}
    self.cursor = factory.create("#cursor_factory")
    self.tutorial_mode = tutorial_state.is_tutorial
+   tutorial_state.block_play_input = false -- new deal must not inherit a leftover victory block
 
    if self.tutorial_mode then
       deal_tutorial_cards(self)
@@ -750,7 +751,7 @@ function auto_finish_step(self)
          print("[MAIN] auto-finish complete — victory!")
          self.currentState = self.states.WIN
          sfx.victory()
-         tutorial_state.show_victory = true
+         tutorial_state.request_victory()
       end
       return
    end
@@ -810,7 +811,7 @@ function on_message(self, message_id, message, sender)
       if not self.tutorial_mode and self.base_cards_count >= 27 then
          self.currentState = self.states.WIN
          sfx.victory()
-         tutorial_state.show_victory = true  -- UI polls this flag
+         tutorial_state.request_victory()
       end
       -- B2: авто-улёт двойки поднимает foundation без хода игрока — перепроверяем
       -- auto-finish (round-trip через cursor даёт свежие free_cells).
@@ -842,7 +843,7 @@ function on_message(self, message_id, message, sender)
       if self.tutorial_mode then
          self.currentState = self.states.WIN
          sfx.victory()
-         tutorial_state.show_victory = true  -- UI polls this flag
+         tutorial_state.request_victory()
       else
          -- После сбора драконов проверяем auto-finish
          msg.post(self.cursor, "send_auto_finish_check")

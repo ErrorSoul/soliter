@@ -546,25 +546,31 @@ function M.can_auto_finish(state)
       end
    end
 
-   -- Check no dragon or flower in any tableau column
+   -- Remaining tableau cards: no dragons/flower, and each value is safe
+   -- (same predicate as main.script can_auto_finish: v <= min_other+1).
+   local remaining = 0
    for i = 1, 8 do
       local col = state.tableau[i]
       for _, card in ipairs(col) do
+         remaining = remaining + 1
          if card.is_dragon or card.is_flower then
             return false
          end
+         local v = card.value
+         if type(v) == "number" then
+            local min_other = 10
+            for suit, val in pairs(state.foundation_top) do
+               if suit ~= card.suit then
+                  min_other = math.min(min_other, val)
+               end
+            end
+            if v > min_other + 1 then
+               return false
+            end
+         end
       end
    end
-
-   -- At least one tableau column still has cards
-   local all_empty = true
-   for i = 1, 8 do
-      if #state.tableau[i] > 0 then
-         all_empty = false
-         break
-      end
-   end
-   if all_empty then return false end
+   if remaining == 0 then return false end
 
    return true
 end
@@ -676,8 +682,9 @@ end
 -- Apply all mandatory/greedy moves that are always beneficial:
 --   1. Flower auto-fly (flower on tableau top → flower slot)
 --   2. Value-2 auto-move to foundation
---   3. Dragon collect (when 4 exposed + free slot)
---   4. Safe foundation moves (per can_move_to_foundation_safe)
+--   3. Safe foundation moves (per can_move_to_foundation_safe)
+-- Dragon collect is a BRANCHING move (legal_moves), not mandatory: it consumes
+-- a free cell and is not always safe.
 -- Returns (new_state, appended_moves_list) where appended_moves_list is a list
 -- of move objects applied. Returns original state + empty list if nothing applies.
 local function apply_mandatory(state, path)
@@ -716,24 +723,7 @@ local function apply_mandatory(state, path)
       end
       if changed then break end
 
-      -- 3. Dragon collect (greedy: never harmful) — use derived counters
-      do
-         local dc = compute_dragon_counter(s)
-         local fsc = compute_free_slots_counter(s)
-         for _, suit in ipairs({"red","blue","green"}) do
-            if not s.dragons_collected[suit]
-               and dc[suit] == 4
-               and fsc[suit] > 0 then
-               local move = { type="dragon_collect", suit=suit }
-               s = M.apply_move(s, move)
-               changed = true
-               break
-            end
-         end
-      end
-      if changed then break end
-
-      -- 4. Safe foundation moves from tableau tops and free cells
+      -- 3. Safe foundation moves from tableau tops and free cells
       -- From tableau tops
       for col_i = 1, 8 do
          local col = s.tableau[col_i]
@@ -808,25 +798,7 @@ local function apply_mandatory_tracked(state)
       end
       if changed then break end
 
-      -- 3. Dragon collect (greedy) — use derived counters
-      do
-         local dc = compute_dragon_counter(s)
-         local fsc = compute_free_slots_counter(s)
-         for _, suit in ipairs({"red","blue","green"}) do
-            if not s.dragons_collected[suit]
-               and dc[suit] == 4
-               and fsc[suit] > 0 then
-               local move = { type="dragon_collect", suit=suit }
-               s = M.apply_move(s, move)
-               moves_applied[#moves_applied + 1] = move
-               changed = true
-               break
-            end
-         end
-      end
-      if changed then break end
-
-      -- 4. Safe foundation moves from tableau tops
+      -- 3. Safe foundation moves from tableau tops
       for col_i = 1, 8 do
          local col = s.tableau[col_i]
          if #col > 0 then
@@ -861,6 +833,11 @@ local function apply_mandatory_tracked(state)
    end
 
    return s, moves_applied
+end
+
+function M.forced_moves(state)
+   local _, moves = apply_mandatory_tracked(state)
+   return moves
 end
 
 -- Flatten a nested path into a flat list of moves

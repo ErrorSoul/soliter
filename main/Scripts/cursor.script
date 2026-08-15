@@ -35,6 +35,7 @@ end
 
 function on_input(self, action_id, action)
    if self.input_disabled then return end
+   if tutorial_state.is_play_input_blocked() then return end
    -- Только позиционные действия (мышь/тач) несут координаты; клавиши (solve/replay/space)
    -- приходят с action.x == nil — для них курсор не двигаем.
    if action.x then
@@ -496,12 +497,17 @@ function on_message(self, message_id, message, sender)
          end
       end
 
+      -- A3: foundation slide is hittable; hold input until the animation window ends.
+      self.flying_count = (self.flying_count or 0) + 1
       msg.post(message.id, 'drop_success', {
                   slot_id = slot,
                   position = self.base_slots[slot].pos,
                   card = message,
                   animation = true
       })
+      timer.delay(0.5, false, function()
+         self.flying_count = math.max(0, (self.flying_count or 0) - 1)
+      end)
    elseif message_id == hash("disable_input") then
       self.input_disabled = true
    elseif message_id == hash("enable_input") then
