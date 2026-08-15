@@ -189,7 +189,13 @@ class Session:
         during the deal, so depth 4 is a guess, not a fact. Each card's own
         56px-below-centre sliver is covered by that card ALONE (the next card
         up ends 38px below its centre), so the deepest bright sliver is the
-        exposed card."""
+        exposed card.
+
+        LIMIT: probing starts at `max_depth` (4 = the standard deal). A column
+        DEEPER than that -- a tutorial deal, or a deal layout change -- makes
+        this return 4 silently, and the scenario then grabs a buried card
+        instead of the exposed one. Raise max_depth with the deal, do not
+        assume the default still fits."""
         x = TABLEAU_X[col]
         for d in range(max_depth, -1, -1):
             y = TABLEAU_TOP_Y - d * CARD_PITCH - 56
