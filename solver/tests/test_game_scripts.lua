@@ -136,6 +136,33 @@ H.test("A6 send_counter_to_button ignores a dragon it already counted", function
    return true
 end)
 
+-- Guards the INVERSE failure of the dedup above: all four dragons of a suit share the
+-- same deck id ("d_red", main.script:89) and differ only by the factory GO id stored in
+-- record.id (main.script:150). Deduping on the wrong field would swallow dragons 2-4 and
+-- the button could never reach `counter == 4`.
+H.test("A6 dedup keys on the GO id, so 4 distinct dragons still reach counter 4", function()
+   load_script("main/Scripts/dragon_button.script")
+   local self = {
+      is_enable = true, counter = 0, cards = {},
+      sprite = "red", default_sprite = "red_grey",
+      cursor = "cursor", slot_id = "dragon_button1", free_slots_counter = 3,
+   }
+   -- four separate game objects, all carrying the SAME deck data (id = "d_red")
+   local deck_data = { id = "d_red", value = "d", suit = "red", is_dragon = true }
+   for i = 1, 4 do
+      on_message(self, hash("send_counter_to_button"),
+         { id = "go_card_" .. i, data = deck_data, slot_id = "tableau_slot" .. i }, "tableau")
+   end
+   if self.counter ~= 4 then
+      return false, "4 distinct dragons must reach counter==4, got " .. tostring(self.counter)
+         .. " — dedup is keying on the shared deck id instead of the GO id"
+   end
+   if #self.cards ~= 4 then
+      return false, "self.cards must hold all 4 dragons, got " .. tostring(#self.cards)
+   end
+   return true
+end)
+
 -- F4 regression: the queued GUI click must survive a level load -- only unloading may
 -- drop it. Clearing on load silences PLAY/restart entirely (main.script polls sfx.pending).
 H.test("F4 level load keeps the queued click, unload drops it", function()
