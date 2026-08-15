@@ -20,11 +20,17 @@ Two engine facts this harness exists to respect:
    pressed->released transition and the game ignores it completely. Every press
    here is held for HOLD_MS, and drags step with a frame of slack between moves.
 
-2. **Game coords come from the canvas rect, not from a constant.** Under
-   `fixed_fit_projection` the engine hands scripts virtual 960x540 coords and
-   letterboxes the rest, so on a non-16:9 canvas the CSS pixel of a given game
-   point is not `y = 540 - game_y`. `--viewport` runs are the only check of that
-   path, so the mapping is measured live (see `_map`).
+2. **Game coords come from the canvas rect, not from a constant.** The world is
+   drawn fixed-FIT (min-scaled, centred), so on a non-16:9 canvas the CSS pixel
+   of a given game point is not `y = 540 - game_y`. `_map` measures the live
+   rect instead of assuming. Note this is NOT the space the engine hands to
+   scripts -- `action.x/y` arrive stretched, which is the very bug the
+   `hittest` scenario exists to catch (see main/Scripts/coords.lua).
+
+3. **Column depth is not constant.** The flower and any exposed 2 auto-fly
+   during the deal, so a column can start 4 deep instead of 5. Scenarios locate
+   the exposed card by probing (`exposed_depth`) rather than assuming depth 4;
+   assuming it makes a run silently grab nothing on some deals.
 
 Exit code 0 = scenario finished with no engine error and every expectation met.
 """
@@ -176,6 +182,23 @@ class Session:
         return self.expect(b - felt <= self.GAP,
                            f"{label}: still covered by a card ({b:.0f} vs felt {felt:.0f})")
 
+    def exposed_depth(self, col, felt, max_depth=4):
+        """Depth of the column's exposed (draggable) card, or None if empty.
+
+        Columns are dealt 5 deep but the flower and any exposed 2 fly off
+        during the deal, so depth 4 is a guess, not a fact. Each card's own
+        56px-below-centre sliver is covered by that card ALONE (the next card
+        up ends 38px below its centre), so the deepest bright sliver is the
+        exposed card."""
+        x = TABLEAU_X[col]
+        for d in range(max_depth, -1, -1):
+            y = TABLEAU_TOP_Y - d * CARD_PITCH - 56
+            if self.brightness(x, y, 10) - felt > self.GAP:
+                self.note("probe", f"column {col} exposed card at depth {d}")
+                return d
+        self.note("probe", f"column {col} reads as empty")
+        return None
+
     # ---------- coordinate mapping ----------
     def measure(self):
         """Read the live canvas rect; game coords map through it, not through
@@ -282,19 +305,20 @@ def scenario_hittest(s):
     # Free cell 1 starts empty on every deal -> it is the felt reference.
     felt = s.brightness(*cell)
     s.note("pixel", f"felt reference (empty free cell 1) luminance={felt:.0f}")
-    # bottom (exposed) card of column 1: the deal is 5 deep, so depth 4
-    src = (TABLEAU_X[1], TABLEAU_TOP_Y - 4 * CARD_PITCH)
-    s.expect_card_at(src[0], src[1], felt, "column 1 exposed card")
 
-    s.drag_game(src[0], src[1], cell[0], cell[1], "col1 top -> free cell 1")
+    depth = s.exposed_depth(1, felt)
+    if not s.expect(depth is not None, "column 1 is empty -- nothing to drag"):
+        return
+    src = (TABLEAU_X[1], TABLEAU_TOP_Y - depth * CARD_PITCH)
+
+    s.drag_game(src[0], src[1], cell[0], cell[1], "col1 exposed card -> free cell 1")
     s.wait(1.5, "drop settles")
     s.shot("after-drag-to-free-cell")
     # The verdict: the card is in the cell AND has left the column. Both halves
     # matter -- a broken hit-test leaves the column untouched.
     s.expect_card_at(cell[0], cell[1], felt, "free cell 1 after the drag")
     # Sampling the card's own centre proves nothing (the card below is white
-    # too), so sample the sliver only the removed card covered: 56px under its
-    # centre is felt once the column is one card shorter.
+    # too), so sample the sliver only the removed card covered.
     s.expect_empty_at(src[0], src[1] - 56, felt, "column 1 bottom edge after the card left", patch=10)
 
 
@@ -330,7 +354,90 @@ def scenario_win(s):
     s.fail("no deal solvable within budget after 12 attempts")
 
 
-SCENARIOS = {"boot": scenario_boot, "hittest": scenario_hittest, "win": scenario_win}
+def scenario_stuck(s):
+    """Drag-machine smoke test: no card is ever stranded or teleported.
+
+    Drops a card on empty felt, taps a free cell right after, then fires a
+    second mousedown with the first still held. Nothing may end up in the free
+    cell, in mid-air, or missing from a column.
+
+    HONEST SCOPE -- this does NOT verify the A1/A2 fixes, and both claims were
+    checked by mutation rather than assumed:
+
+    * A2 (press arriving while a drag is live): a second CDP `mousePressed`
+      with no release in between produces no new pressed-transition -- the
+      engine already has the button down -- so the guard is never reached. A
+      build with the guard disabled passes this scenario identically.
+    * A1 (clean_cursor after a single-card miss): a build with it removed also
+      passes, because the A2 guard cleans the stale drag on the following
+      press and masks its absence. Discriminating A1 needs both removed.
+
+    Reproducing A2 faithfully needs a mouseup the canvas never sees (release
+    outside the browser window), which CDP cannot synthesise. Treat these two
+    as still open on the play-test checklist."""
+    s.boot()
+    s.press_play()
+    s.shot("dealt")
+
+    cell = FREE_CELL[1]
+    felt = s.brightness(*cell)
+    s.note("pixel", f"felt reference luminance={felt:.0f}")
+    d1, d2 = s.exposed_depth(1, felt), s.exposed_depth(2, felt)
+    if not s.expect(d1 is not None and d2 is not None, "a probed column came up empty"):
+        return
+    col1 = (TABLEAU_X[1], TABLEAU_TOP_Y - d1 * CARD_PITCH)
+    col2 = (TABLEAU_X[2], TABLEAU_TOP_Y - d2 * CARD_PITCH)
+    # felt with no slot under it: left of column 1 and below every card
+    VOID = (25, 30)
+
+    # ---- A1 ----
+    # A column's card centre is useless as evidence -- the card underneath is
+    # white too. Only the exposed card's own sliver tells "still there" from
+    # "one card shorter".
+    def col_intact(col, label):
+        return s.expect_card_at(col[0], col[1] - 56, felt, label, patch=10)
+
+    s.drag_game(col1[0], col1[1], VOID[0], VOID[1], "col1 top -> empty felt (miss)")
+    s.wait(1.0, "card flies home")
+    col_intact(col1, "A1 card returned to column 1")
+    s.click_game(cell[0], cell[1], "tap free cell 1 right after the miss")
+    s.wait(1.0)
+    s.shot("a1-after-miss-and-tap")
+    s.expect_empty_at(cell[0], cell[1], felt, "A1 free cell after tapping it post-miss")
+
+    # ---- A2 ----
+    # Two mousedowns with no mouseup between them: exactly the state the guard
+    # is written for. Playwright refuses a second down(), so drive CDP directly.
+    cdp = s.page.context.new_cdp_session(s.page)
+
+    def raw(kind, gx, gy):
+        cx, cy = s._map(gx, gy)
+        cdp.send("Input.dispatchMouseEvent", {
+            "type": kind, "x": cx, "y": cy, "button": "left",
+            "buttons": 1 if kind != "mouseReleased" else 0, "clickCount": 1})
+        s.page.wait_for_timeout(FRAME_MS * 4)
+
+    raw("mousePressed", *col1)
+    raw("mouseMoved", *VOID)             # drag it out over empty felt
+    s.page.wait_for_timeout(HOLD_MS)
+    s.note("input", "second press with the first drag still live (no mouseup)")
+    raw("mousePressed", *col2)           # <- the A2 path
+    s.page.wait_for_timeout(HOLD_MS)
+    raw("mouseReleased", *col2)
+    s.wait(1.5, "everything settles")
+    s.shot("a2-after-double-press")
+
+    # Both columns must still be full-depth: without the guard the first card
+    # stays attached to the cursor, the second press steals the drag, and the
+    # first card is stranded wherever it was last dragged to.
+    col_intact(col1, "A2 column 1 got its stuck card back")
+    col_intact(col2, "A2 column 2 intact after the interrupting press")
+    s.expect_empty_at(VOID[0], VOID[1], felt, "A2 no card stranded on the felt")
+    s.expect_empty_at(cell[0], cell[1], felt, "A2 free cell stayed empty")
+
+
+SCENARIOS = {"boot": scenario_boot, "hittest": scenario_hittest,
+             "stuck": scenario_stuck, "win": scenario_win}
 
 
 def main():
@@ -339,6 +446,11 @@ def main():
     ap.add_argument("--scenario", default="boot", choices=sorted(SCENARIOS))
     ap.add_argument("--out", default="/tmp/browser-test")
     ap.add_argument("--viewport", default="960x540", help="e.g. 1200x540 (20:9) or 800x600 (4:3)")
+    ap.add_argument("--dpr", type=float, default=1.0,
+                    help="devicePixelRatio. game.project sets high_dpi=1, so on dpr>1 the "
+                         "canvas backing store is scaled and window.get_size() may report "
+                         "physical pixels while action.x/y stay logical -- which is exactly "
+                         "what the coords conversion divides by. Mobile is dpr 2-3.")
     ap.add_argument("--no-coi", action="store_true",
                     help="serve WITHOUT cross-origin isolation (no SharedArrayBuffer), "
                          "which is what a host that omits COOP/COEP gives you")
@@ -352,7 +464,7 @@ def main():
 
     httpd, port = serve(args.bundle, coi=not args.no_coi)
     url = f"http://127.0.0.1:{port}/index.html"
-    print(f"serving {args.bundle}\n  at {url}  viewport={vw}x{vh}  "
+    print(f"serving {args.bundle}\n  at {url}  viewport={vw}x{vh} dpr={args.dpr}  "
           f"cross-origin-isolated={not args.no_coi}\n")
 
     from playwright.sync_api import sync_playwright
@@ -364,7 +476,8 @@ def main():
             args=["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader",
                   "--disable-gpu-sandbox", "--autoplay-policy=no-user-gesture-required"],
         )
-        page = browser.new_page(viewport={"width": vw, "height": vh})
+        page = browser.new_page(viewport={"width": vw, "height": vh},
+                                device_scale_factor=args.dpr)
         s = Session(page, args.out)
 
         def on_console(m):
