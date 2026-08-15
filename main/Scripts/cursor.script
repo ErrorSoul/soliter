@@ -38,9 +38,15 @@ function on_input(self, action_id, action)
    if tutorial_state.is_play_input_blocked() then return end
    -- Только позиционные действия (мышь/тач) несут координаты; клавиши (solve/replay/space)
    -- приходят с action.x == nil — для них курсор не двигаем.
+   -- F3: action.x/y приходят растянутыми в 960x540 без учёта леттербокса, а мир
+   -- рисуется вписанным (fixed_fit). Переводим ОДИН раз здесь и ниже пользуемся
+   -- только ax/ay — сырые action.x/y в хит-тестах промахиваются на не-16:9.
+   -- Сам `action` НЕ мутируем: gui.pick_node в ui.gui_script ждёт растянутые
+   -- координаты, а таблица action общая для всего input-стека.
+   local ax, ay
    if action.x then
-      local worldx, worldy = coords.screen_to_world(action.x, action.y)
-      self.cursor_pos = vmath.vector3(worldx, worldy, 0)
+      ax, ay = coords.screen_to_world(action.x, action.y)
+      self.cursor_pos = vmath.vector3(ax, ay, 0)
       go.set_position(self.cursor_pos, ".")
    end
 
@@ -84,7 +90,7 @@ function on_input(self, action_id, action)
             clean_cursor(self)
          end
          self.was_pressed = true
-         local btn_color = hit.check_dragon_buttons(self, action.x, action.y)
+         local btn_color = hit.check_dragon_buttons(self, ax, ay)
 
          if btn_color then
             self.pending_drop = btn_color
@@ -92,7 +98,7 @@ function on_input(self, action_id, action)
             return
          end
 
-         local card = hit.check_tableau_slots(self, action.x, action.y)
+         local card = hit.check_tableau_slots(self, ax, ay)
          if card then
             self.selected_card = card.id
             self.selected_card_data = card.source
@@ -119,7 +125,7 @@ function on_input(self, action_id, action)
             return
          end
 
-         local free_slot = hit.check_free_slots(self, action.x, action.y)
+         local free_slot = hit.check_free_slots(self, ax, ay)
 
          if free_slot then
             self.pending_drop = free_slot
@@ -137,7 +143,7 @@ function on_input(self, action_id, action)
 
             -- Если тащим стопку, разрешаем дроп только в tableau слоты
             if self.dragging_stack then
-               local tableau_slot = hit.check_free_tableau_slots(self, action.x, action.y)
+               local tableau_slot = hit.check_free_tableau_slots(self, ax, ay)
                if tableau_slot then
                   self.pending_drop = {slot = tableau_slot}
                   msg.post(tableau_slot.slot_id, "check_slot", {
@@ -147,7 +153,7 @@ function on_input(self, action_id, action)
                   return
                end
 
-               local card = hit.check_last_cards(self, action.x, action.y)
+               local card = hit.check_last_cards(self, ax, ay)
                if card then
 
                   self.pending_drop = {card = card, slot_id = card.slot_id}
@@ -168,7 +174,7 @@ function on_input(self, action_id, action)
                return
             end
 
-            local card = hit.check_last_cards(self, action.x, action.y)
+            local card = hit.check_last_cards(self, ax, ay)
             if card then
 
                self.pending_drop = {card = card, slot_id = card.slot_id}
@@ -176,7 +182,7 @@ function on_input(self, action_id, action)
                return
             end
 
-            local free_slot = hit.check_free_slots(self, action.x, action.y)
+            local free_slot = hit.check_free_slots(self, ax, ay)
             -- Обработка перемещения одиночной карты
             if free_slot then
                self.pending_drop = {slot = free_slot}
@@ -184,21 +190,21 @@ function on_input(self, action_id, action)
                return
             end
 
-            local flower_slot = hit.check_flower_slot(self, action.x, action.y)
+            local flower_slot = hit.check_flower_slot(self, ax, ay)
             if flower_slot then
                self.pending_drop = {slot = flower_slot}
                msg.post(flower_slot.slot_id, "check_slot", {card = self.selected_card_data})
                return
             end
 
-            local base_slot = hit.check_base_slots(self, action.x, action.y)
+            local base_slot = hit.check_base_slots(self, ax, ay)
             if base_slot then
                self.pending_drop = {slot = base_slot}
                msg.post(base_slot.slot_id, 'check_slot', {card = self.selected_card_data})
                return
             end
 
-            local tableau_slot = hit.check_free_tableau_slots(self, action.x, action.y)
+            local tableau_slot = hit.check_free_tableau_slots(self, ax, ay)
             if tableau_slot then
                self.pending_drop = {slot = tableau_slot}
                msg.post(tableau_slot.slot_id, 'check_slot', {card = self.selected_card_data})

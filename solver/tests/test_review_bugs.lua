@@ -125,22 +125,54 @@ H.test("C3 forced_moves still auto-flies a tableau-top 2", function(rules)
    return false, "mandatory pass must still auto-foundation a top 2"
 end)
 
--- F3: identity contract — Defold fixed_fit already gives virtual 960x540 coords.
--- A real unproject of 800x800 window would map (166.6, 424.9) → (200, 300) and
--- DOUBLE-apply letterbox, breaking hit-tests. See docs/responsive-explained.md §2.
-H.test("F3 screen_to_world is identity even on a non-16:9 window", function()
+-- F3: the identity contract this test used to assert was WRONG, and it was
+-- wrong in the one place no unit test could see: the browser. Measured with a
+-- probe inside cursor.on_input (tools/browser-test.py --scenario hittest),
+-- Defold delivers action.x/y linearly STRETCHED into 960x540 —
+--     action.x = screen_px * 960 / window_width
+-- — while the world is drawn fixed-FIT (min-scaled and centred). On a 1200x540
+-- canvas a press on the card at world x=77 arrived as action.x=158: a miss by
+-- 81px, i.e. cards do not respond where they are drawn. Identity holds ONLY at
+-- 16:9. The conversion now compensates; these are its two edges.
+H.test("F3 screen_to_world is identity at 16:9 and letterbox-aware elsewhere", function()
    _G.vmath = _G.vmath or {
       vector3 = function(x, y, z) return { x = x, y = y, z = z } end,
    }
-   _G.window = { get_size = function() return 800, 800 end }
+   _G.sys = _G.sys or {
+      get_config_int = function(key, default)
+         if key == "display.width" then return 960 end
+         if key == "display.height" then return 540 end
+         return default
+      end,
+   }
+   local size = { 960, 540 }
+   _G.window = { get_size = function() return size[1], size[2] end }
    package.loaded["main.Scripts.coords"] = nil
    package.loaded["main.Scripts.config"] = nil
    local coords = require("main.Scripts.coords")
+
    local x, y = coords.screen_to_world(166.6, 424.9)
    if math.abs(x - 166.6) > 0.01 or math.abs(y - 424.9) > 0.01 then
+      return false, string.format("at 960x540 it must pass through, got %.2f,%.2f", x, y)
+   end
+
+   -- 20:9 — pure horizontal letterbox of (1200-960)/2 = 120 screen px
+   size = { 1200, 540 }
+   x, y = coords.screen_to_world(158, 158.5)
+   if math.abs(x - 77) > 1.5 then
       return false, string.format(
-         "screen_to_world must pass through (got %.2f,%.2f) — Defold already virtualizes action.x/y",
-         x, y)
+         "1200x540: action.x=158 is the card at world x=77, got %.2f — hit-tests miss by the letterbox", x)
+   end
+   if math.abs(y - 158.5) > 1.0 then
+      return false, string.format("1200x540 has no vertical letterbox; y must pass through, got %.2f", y)
+   end
+
+   -- 4:3 — pure vertical letterbox of (600 - 540*0.8333)/2 = 75 screen px
+   size = { 800, 600 }
+   x, y = coords.screen_to_world(77.4, 186.8)
+   if math.abs(y - 159) > 1.5 then
+      return false, string.format(
+         "800x600: action.y=187 is the card at world y=159, got %.2f", y)
    end
    return true
 end)
