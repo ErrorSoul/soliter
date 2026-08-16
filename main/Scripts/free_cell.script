@@ -43,6 +43,23 @@ function send_to_dragon_buttons(self, card, num)
    end
 end
 
+-- C4: зеркало содержимого ячейки в main.script — тот же приём, что дельта-зеркало
+-- tableau (tableau_card_added/removed). Без него snapshot_and_go_map не знает, что
+-- лежит в ячейках, и солвер решает не ту позицию. Шлём ФИНАЛЬНОЕ состояние
+-- (card_data + is_blocked), а не дельту, — тогда все четыре случая occupy_slot
+-- (пустая/занятая × blocked/нет) покрыты одним вызовом.
+local function mirror_to_main(self)
+   if not self.slot_id then
+      print("[FREE_CELL] mirror without slot_id — set_cursor не пришёл, снапшот будет неполным")
+      return
+   end
+   msg.post("/card_table#main", "free_cell_changed", {
+      slot_id = self.slot_id,
+      card = self.card_data,               -- { id = <go>, data = {value, suit} } | nil
+      is_blocked = self.is_blocked or false,
+   })
+end
+
 function on_message(self, message_id, message, sender)
    if message_id == hash("check_slot") then
       if self.is_occupied then
@@ -80,6 +97,7 @@ function on_message(self, message_id, message, sender)
          send_to_dragon_buttons(self, message.card, -1)
       end
       self.is_occupied = true
+      mirror_to_main(self)
    elseif message_id == hash("clear_slot") then
       self.is_occupied = false
       self.current_card = nil
@@ -90,6 +108,7 @@ function on_message(self, message_id, message, sender)
          msg.post(self.cursor, "update_free_slot", {slot_id = self.slot_id, dragon = nil, is_empty = true })
          self.current_card = nil
          self.card_data = nil
+         mirror_to_main(self)
       else
          -- Blocked slot: restore free_slots_counter for other-suit buttons only
          change_button_counter(self, 1)

@@ -55,6 +55,10 @@ function init(self)
    self.suit_to_base = {}
 
    self.dragonPiles = {}
+   -- C4: зеркало free cells (free_cell.script шлёт free_cell_changed). Новая
+   -- партия = перезагрузка коллекции через game_manager (unload/async_load), так
+   -- что init здесь — единственная точка сброса.
+   self.free_cell_state = { {}, {}, {} }
    self.base_slots = get_base_slots()
    self.tableau_slots = get_tableau_slots(self.tutorial_mode)
    self.free_slots = get_free_slots()
@@ -420,6 +424,11 @@ function get_data(self)
    }
 end
 
+-- C4: ячейки адресуются строковым slot_id ("free_slot1"..3, cursor.get_free_slots),
+-- а солвер/replay — порядковым номером 1..3. Отображение живёт здесь, чтобы
+-- free_cell.script не парсил цифру из своего id.
+local FREE_CELL_ORD = { free_slot1 = 1, free_slot2 = 2, free_slot3 = 3 }
+
 -- Walk the live tableau into BOTH a solver snapshot and a parallel go_map of the
 -- real card GO ids, with IDENTICAL filtering so that solver card[i] <-> GO[i]
 -- stays an exact bijection (the director relies on this).
@@ -432,11 +441,17 @@ end
 --   * an on-top flower may be MID-FLIGHT (drop_success fires on arc landing,
 --     ~0.7s): until then it is still in the mirror. Exclude it from both the
 --     snapshot and the go_map, and mark flower=true (as good as collected).
--- Intended for a FRESH deal (free cells empty, no manual collects).
+--
+-- C4: free cells are read from self.free_cell_state (free_cell->main mirror), not
+-- hardcoded empty any more — with C1 a parked dragon changes what collects are
+-- legal, so a lie here makes the solver plan a different position than the one on
+-- screen. Fourth return value is an error string: a board we cannot snapshot
+-- honestly must refuse, not produce a plausible-looking wrong solve.
 function snapshot_and_go_map(self)
    local snap = { tableau = {}, free_cells = { {}, {}, {} }, flower = false }
    local go_map = { tableau = {}, free_cells = {} }
    local card_by_go = {}
+   local err = nil
    for col = 1, 8 do
       snap.tableau[col] = {}
       go_map.tableau[col] = {}
@@ -455,16 +470,45 @@ function snapshot_and_go_map(self)
          end
       end
    end
+   -- Free cells. Empty stays {}; a parked card carries its GO so the director can
+   -- fly it; a blocked cell is a collected dragon pile — replay must never target
+   -- it, hence the BLOCKED sentinel instead of a GO (solver/replay.lua asserts on
+   -- it). Snapshot field is `blocked` (bridge.lua contract), value/suit only —
+   -- bridge.card derives the flags.
+   for ord = 1, 3 do
+      local fc = self.free_cell_state and self.free_cell_state[ord]
+      local rec = fc and fc.card
+      if rec and rec.data then
+         local v, s = rec.data.value, rec.data.suit
+         if v == 'f' or rec.data.is_flower then
+            err = err or ("цветок припаркован в ячейке " .. ord .. " — солвер такую позицию не моделирует")
+         end
+         if fc.is_blocked then
+            if v ~= 'd' then
+               err = err or ("заблокированная ячейка " .. ord .. " держит не дракона (" .. tostring(v) .. ")")
+            end
+            snap.free_cells[ord] = { card = { value = v, suit = s }, blocked = true }
+            go_map.free_cells[ord] = solver_replay.BLOCKED
+         else
+            if card_by_go[rec.id] then
+               err = err or ("карта из ячейки " .. ord .. " одновременно числится в tableau — зеркала разъехались")
+            end
+            snap.free_cells[ord] = { card = { value = v, suit = s } }
+            go_map.free_cells[ord] = rec.id
+            card_by_go[rec.id] = rec
+         end
+      end
+   end
    snap.foundation = {
       red = self.foundation_top.red, blue = self.foundation_top.blue, green = self.foundation_top.green,
    }
-   return snap, go_map, card_by_go
+   return snap, go_map, card_by_go, err
 end
 
 -- 2c (console replay) needs only the snapshot.
 function build_solver_snapshot(self)
-   local snap = snapshot_and_go_map(self)
-   return snap
+   local snap, _, _, err = snapshot_and_go_map(self)
+   return snap, err
 end
 
 -- Dev tool (press 'S'): solve the current deal and animate the solver's line of
@@ -472,7 +516,12 @@ end
 -- rules.apply_move (both tested), so it is independent of the live game state —
 -- zero desync risk. Stage 2b drives the real cards.
 function debug_solve(self)
-   local state = solver_bridge.from_game(build_solver_snapshot(self))
+   local snap, snap_err = build_solver_snapshot(self)
+   if snap_err then
+      print("[SOLVER] снапшот доски недостоверен: " .. snap_err .. " — решать не буду.")
+      return
+   end
+   local state = solver_bridge.from_game(snap)
    print("[SOLVER] solving current deal (budget " .. SOLVE_BUDGET .. ") ...")
    local moves, status = solver_rules.solve(state, { node_budget = SOLVE_BUDGET })
    if status ~= "solved" then
@@ -510,7 +559,11 @@ end
 -- value-2 on a tableau top) are flagged `auto` and skipped here.
 function debug_replay(self)
    -- snapshot + parallel go_map from one shared walk (bijection guaranteed).
-   local snap, go_map, card_by_go = snapshot_and_go_map(self)
+   local snap, go_map, card_by_go, snap_err = snapshot_and_go_map(self)
+   if snap_err then
+      print("[REPLAY] снапшот доски недостоверен: " .. snap_err .. " — вести карты не буду.")
+      return
+   end
    local state = solver_bridge.from_game(snap)
    local moves, status = solver_rules.solve(state, { node_budget = REPLAY_BUDGET })
    if status ~= "solved" then
@@ -834,6 +887,15 @@ function on_message(self, message_id, message, sender)
                break
             end
          end
+      end
+   elseif message_id == hash("free_cell_changed") then
+      -- C4: содержимое ячейки изменилось. message.card отсутствует => ячейка пуста
+      -- (Defold не переносит nil-поля).
+      local ord = FREE_CELL_ORD[tostring(message.slot_id)]
+      if ord then
+         self.free_cell_state[ord] = { card = message.card, is_blocked = message.is_blocked or false }
+      else
+         print("[SNAPSHOT] free_cell_changed от неизвестной ячейки: " .. tostring(message.slot_id))
       end
    elseif message_id == hash("check_auto_finish") then
       -- B2: не оцениваем немедленно — каскад drop_success→remove_card→зеркало и

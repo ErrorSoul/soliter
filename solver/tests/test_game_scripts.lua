@@ -328,4 +328,137 @@ H.test("C2 a SECOND remove_card on the same cell crashes — do not send one", f
    return true
 end)
 
+-- ============================================================
+-- C4: main.script must snapshot the REAL free cells. Until now
+-- snapshot_and_go_map hardcoded `{{},{},{}}`, so after C1 (a parked dragon makes
+-- a collect legal) the solver was handed a board that differs from the screen.
+-- The contents travel by delta mirror, free_cell -> main, same shape as the
+-- tableau mirror.
+-- ============================================================
+local function last_msg(id)
+   local found
+   for _, e in ipairs(msg.log) do
+      if e.id == tostring(id) then found = e end
+   end
+   return found
+end
+
+H.test("C4 free_cell mirrors a parked card and its release to main", function()
+   load_script("main/Scripts/free_cell.script")
+   local self = {
+      is_occupied = false, is_blocked = false, cursor = "cursor", slot_id = "free_slot2",
+      dragon_button_trace = { red = "b1", blue = "b2", green = "b3" },
+   }
+   local card = { id = "go_5b", data = { value = 5, suit = "blue" } }
+
+   msg.clear()
+   on_message(self, hash("occupy_slot"), { card = card, position = vmath.vector3(0, 0, 0) }, "card")
+   local m = last_msg("free_cell_changed")
+   if not m then
+      return false, "parking a card told main nothing — snapshot_and_go_map would still call the cell empty"
+   end
+   if m.data.slot_id ~= "free_slot2" or m.data.card ~= card or m.data.is_blocked then
+      return false, "mirror payload wrong: " .. tostring(m.data.slot_id) .. " blocked=" .. tostring(m.data.is_blocked)
+   end
+
+   msg.clear()
+   on_message(self, hash("remove_card"), { id = "go_5b" }, "card")
+   m = last_msg("free_cell_changed")
+   if not m or m.data.card ~= nil then
+      return false, "picking the card back up must mirror an EMPTY cell, otherwise the snapshot keeps a ghost"
+   end
+   return true
+end)
+
+-- The nastiest sub-case, and exactly the C1/C2 path: the collected pile lands on
+-- a cell that already held a parked dragon. free_cell.script:70-77 skips
+-- update_free_slot there (is_occupied is already true), so a mirror hooked to
+-- that notification would miss it. We post after `self.is_occupied = true`,
+-- reading final state, so all four sub-cases are covered by one call.
+H.test("C4 mirror fires on a collect landing onto an already occupied cell", function()
+   load_script("main/Scripts/free_cell.script")
+   local self = {
+      is_occupied = true,        -- red dragon already parked here
+      is_blocked = false, cursor = "cursor", slot_id = "free_slot1",
+      card_data = { id = "go_dr1", data = { value = "d", suit = "red" } },
+      dragon_button_trace = { red = "b1", blue = "b2", green = "b3" },
+   }
+   local pile = { id = "go_dr2", data = { value = "d", suit = "red" } }
+   msg.clear()
+   on_message(self, hash("occupy_slot"),
+      { card = pile, complete = true, position = vmath.vector3(0, 0, 0) }, "card")
+
+   if stub.msg_count("update_free_slot") ~= 0 then
+      return false, "premise changed: this branch now notifies cursor — re-check what the mirror hooks onto"
+   end
+   local m = last_msg("free_cell_changed")
+   if not m or not m.data.is_blocked or m.data.card ~= pile then
+      return false, "the collected pile did not reach main — the snapshot would report a loose parked dragon in a cell that is actually blocked"
+   end
+   return true
+end)
+
+H.test("C4 snapshot_and_go_map reports the real free cells", function()
+   load_script("main/Scripts/main.script")
+   local solver_replay = require("solver.replay")
+   local parked = { id = "go_5b",  data = { value = 5,   suit = "blue" } }
+   local pile   = { id = "go_dr2", data = { value = "d", suit = "red" } }
+   local self = {
+      tableau_stacks = {},
+      foundation_top = { red = 1, blue = 1, green = 1 },
+      free_cell_state = {
+         { card = parked, is_blocked = false },
+         {},
+         { card = pile,   is_blocked = true },
+      },
+   }
+   local snap, go_map, card_by_go, err = snapshot_and_go_map(self)
+   if err then return false, "an honest board was refused: " .. tostring(err) end
+
+   local fc1 = snap.free_cells[1]
+   if not (fc1 and fc1.card and fc1.card.value == 5 and fc1.card.suit == "blue") then
+      return false, "parked 5_blue is missing from the snapshot — the solver plans on an emptier board than the screen shows"
+   end
+   if go_map.free_cells[1] ~= "go_5b" or card_by_go["go_5b"] ~= parked then
+      return false, "parked card's GO is not in the go_map — replay could not fly it out of the cell"
+   end
+   if snap.free_cells[2] and snap.free_cells[2].card then
+      return false, "an empty cell must stay empty"
+   end
+   local fc3 = snap.free_cells[3]
+   if not (fc3 and fc3.blocked and fc3.card and fc3.card.suit == "red") then
+      return false, "a collected pile must be reported with blocked=true (bridge derives dragons_collected from it)"
+   end
+   if go_map.free_cells[3] ~= solver_replay.BLOCKED then
+      return false, "a blocked cell must carry the BLOCKED sentinel, not a GO — replay.step asserts on exactly that"
+   end
+
+   -- end-to-end through the bridge: the shape above must be the shape it expects
+   local state = require("solver.bridge").from_game(snap)
+   if not (state.free_cells[1].card and state.free_cells[1].card.value == 5) then
+      return false, "bridge dropped the parked card — snapshot field names disagree with the contract"
+   end
+   if not state.dragons_collected.red or not state.free_cells[3].is_blocked then
+      return false, "bridge did not read the blocked pile as a collected red suit"
+   end
+   return true
+end)
+
+-- The plan's "refuse rather than solve garbage" guard. A flower in a cell is
+-- genuinely unmodelled: cells accept any card, but rules only ever auto-flies the
+-- flower off a tableau top.
+H.test("C4 a flower parked in a cell makes the snapshot refuse", function()
+   load_script("main/Scripts/main.script")
+   local self = {
+      tableau_stacks = {},
+      foundation_top = { red = 1, blue = 1, green = 1 },
+      free_cell_state = { { card = { id = "go_f", data = { value = "f", suit = "flower" } } }, {}, {} },
+   }
+   local _, _, _, err = snapshot_and_go_map(self)
+   if not err then
+      return false, "a flower in a free cell must be refused, not silently solved as if the board were normal"
+   end
+   return true
+end)
+
 return H

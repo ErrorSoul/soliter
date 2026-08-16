@@ -442,8 +442,55 @@ def scenario_stuck(s):
     s.expect_empty_at(cell[0], cell[1], felt, "A2 free cell stayed empty")
 
 
+def scenario_freecell(s):
+    """C4: park a card in a free cell, THEN let the solver drive.
+
+    `scenario_win` cannot see this fix: it presses R on a fresh deal where every
+    cell is empty, so the honest snapshot and the old hardcoded `{{},{},{}}` are
+    the same board. Here one card is physically sitting in a cell before R.
+    Without C4 that card is in no mirror at all -- it left tableau_stacks and the
+    snapshot claims the cells are empty -- so the solver plans a 26-card board and
+    the run ends 'DONE but NOT a win'. Verified A/B against exactly that build,
+    not assumed."""
+    s.boot()
+    s.press_play()
+    s.shot("dealt")
+
+    cell = FREE_CELL[1]
+    for attempt in range(1, 13):
+        s.note("attempt", f"deal {attempt}")
+        felt = s.brightness(*cell)
+        d1 = s.exposed_depth(1, felt)
+        if d1 is None:
+            s.key("Space", "column 1 empty — re-deal"); s.wait(3); continue
+        s.drag_game(TABLEAU_X[1], TABLEAU_TOP_Y - d1 * CARD_PITCH, cell[0], cell[1],
+                    "column 1 top -> free cell 1")
+        s.wait(1.5, "card lands in the cell")
+        if not s.expect_card_at(cell[0], cell[1], felt, "parked card in free cell 1"):
+            return
+        s.shot("parked")
+
+        s.key("r", "debug_replay")
+        verdict = s.wait_for_log(
+            r"\[REPLAY\] (SOLVED|budget_exhausted|unsolvable|no_solution|planner desync|снапшот)", 90)
+        if verdict and "SOLVED" in verdict:
+            n = re.search(r"\((\d+) directives\)", verdict)
+            count = int(n.group(1)) if n else 400
+            s.note("plan", f"{count} directives with a card parked in cell 1")
+            result = s.wait_for_log(r"\[REPLAY\] (WIN|DONE but NOT a win)", count * 0.6 + 120)
+            s.shot("replay-end")
+            s.expect(result, "replay never reported a verdict (stalled mid-line)")
+            s.expect(result and "WIN" in result,
+                     f"replay from a board with a parked card did not win: {result}")
+            return
+        s.key("Space", "new deal")
+        s.wait(3, "re-deal")
+    s.fail("no deal solvable within budget after 12 attempts")
+
+
 SCENARIOS = {"boot": scenario_boot, "hittest": scenario_hittest,
-             "stuck": scenario_stuck, "win": scenario_win}
+             "stuck": scenario_stuck, "win": scenario_win,
+             "freecell": scenario_freecell}
 
 
 def main():
