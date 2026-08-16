@@ -491,11 +491,41 @@ function snapshot_and_go_map(self)
             go_map.free_cells[ord] = solver_replay.BLOCKED
          else
             if card_by_go[rec.id] then
-               err = err or ("карта из ячейки " .. ord .. " одновременно числится в tableau — зеркала разъехались")
+               -- Один и тот же GO уже встречался — в tableau или в другой ячейке
+               -- (второй случай возможен, пока зеркало догоняет очередь сообщений).
+               err = err or ("карта из ячейки " .. ord .. " уже числится в другом месте доски — зеркала разъехались")
             end
             snap.free_cells[ord] = { card = { value = v, suit = s } }
             go_map.free_cells[ord] = rec.id
             card_by_go[rec.id] = rec
+         end
+      end
+   end
+   -- Сбор драконов сажает четыре карты на ячейку с задержкой (cursor: i*0.1 c).
+   -- Первая уже приземлилась => ячейка blocked => bridge поставит
+   -- dragons_collected[масть]=true, а остальные три этой масти ещё на столе.
+   -- Гибрид «масть собрана + драконы той же масти лежат» — не позиция с экрана,
+   -- и по нему нельзя ни решать, ни вести карты. Находка ревью grok-4.6;
+   -- до C4 окна не было, потому что ячейки в снапшоте всегда были пусты.
+   for ord = 1, 3 do
+      local fc = snap.free_cells[ord]
+      if fc and fc.blocked and fc.card then
+         local suit = fc.card.suit
+         for col = 1, 8 do
+            for _, c in ipairs(snap.tableau[col]) do
+               if c.value == 'd' and c.suit == suit then
+                  err = err or ("масть " .. tostring(suit) .. " уже собрана в ячейке " .. ord ..
+                     ", но её дракон ещё лежит в столбце " .. col .. " — сбор не доиграл до конца")
+               end
+            end
+         end
+         for other = 1, 3 do
+            local o = snap.free_cells[other]
+            if other ~= ord and o and o.card and not o.blocked
+               and o.card.value == 'd' and o.card.suit == suit then
+               err = err or ("масть " .. tostring(suit) .. " уже собрана в ячейке " .. ord ..
+                  ", но её дракон ещё лежит в ячейке " .. other .. " — сбор не доиграл до конца")
+            end
          end
       end
    end

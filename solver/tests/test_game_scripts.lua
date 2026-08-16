@@ -527,4 +527,36 @@ H.test("C4 a flower parked in a cell makes the snapshot refuse", function()
    return true
 end)
 
+-- Review finding (grok-4.6, low): the dragon collect lands its four cards with a
+-- 0.1s stagger. After the FIRST one the cell is already blocked, so the bridge
+-- reads the suit as collected while three dragons of it are still on the table.
+-- That hybrid is not the board on screen — refuse it. Before this guard the case
+-- below returned err == nil (measured, that is why the guard exists).
+H.test("C4 snapshot refuses mid-collect: suit blocked while its dragons are still out", function()
+   load_script("main/Scripts/main.script")
+   local self = {
+      tableau_stacks = {
+         { cards = { { id = "go_dr3", data = { value = "d", suit = "red" } } } },
+      },
+      foundation_top = { red = 1, blue = 1, green = 1 },
+      free_cell_state = {
+         { card = { id = "go_dr1", data = { value = "d", suit = "red" } }, is_blocked = true },
+         {}, {},
+      },
+   }
+   local _, _, _, err = snapshot_and_go_map(self)
+   if not err then
+      return false, "a half-landed collect must be refused — the solver would plan on 'red collected' with a red dragon still in a column"
+   end
+
+   -- the same board once the collect finished (no red dragons left outside the
+   -- pile) must still be accepted, or the guard would kill every later solve
+   self.tableau_stacks = { { cards = { { id = "go_5b", data = { value = 5, suit = "blue" } } } } }
+   local _, _, _, err2 = snapshot_and_go_map(self)
+   if err2 then
+      return false, "a finished collect was refused: " .. err2
+   end
+   return true
+end)
+
 return H
