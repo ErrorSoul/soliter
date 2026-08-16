@@ -13,6 +13,10 @@ function on_message(self, message_id, message, sender)
       end
    elseif message_id == hash("occupy_slot") then
       self.empty = false
+      -- C5: зеркало в main. Цветок уходит из tableau_stacks по remove_card, и без
+      -- этого сообщения снапшот забывает его насовсем: snap.flower ставился только
+      -- пока цветок ЛЕЖИТ на верхушке столбца (окно полёта ~0.7 c).
+      msg.post("/card_table#main", "flower_collected")
       if message.animation then
          go.animate(message.card.id, "position", go.PLAYBACK_ONCE_FORWARD, go.get_position() + vmath.vector3(0, 0, 0.2), go.EASING_LINEAR, 0.5, 0.3)
       else

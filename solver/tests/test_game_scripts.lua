@@ -564,4 +564,195 @@ H.test("C4 snapshot refuses mid-collect: suit blocked while its dragons are stil
    return true
 end)
 
+-- ============================================================
+-- C5 — перепись карт снапшота (и зеркало приземлившегося цветка)
+-- ============================================================
+
+-- Настоящая раздача, разложенная по 8 столбцам. Порядок произволен — переписи
+-- важно только мультимножество, — но набор обязан быть настоящим: по одному
+-- номиналу 2..10 на масть, по 4 дракона на масть, один цветок. Цветок кладём на
+-- ДНО столбца: на верхушке снапшот считает его улетевшим (окно полёта), а здесь
+-- нужен обычный случай.
+local function full_deal_stacks()
+   local cards = { { id = "flower", data = { value = "f", suit = "flower" } } }
+   for _, suit in ipairs({ "red", "blue", "green" }) do
+      for v = 2, 10 do
+         cards[#cards + 1] = { id = v .. "_" .. suit, data = { value = v, suit = suit } }
+      end
+      for i = 1, 4 do
+         cards[#cards + 1] = { id = "d" .. i .. "_" .. suit, data = { value = "d", suit = suit } }
+      end
+   end
+   assert(#cards == 40, "the test deal itself must be 40 cards, got " .. #cards)
+   local stacks = {}
+   for c = 1, 8 do stacks[c] = { cards = {} } end
+   for i, card in ipairs(cards) do
+      table.insert(stacks[((i - 1) % 8) + 1].cards, card)
+   end
+   return stacks
+end
+
+local function full_deal_self()
+   return {
+      tableau_stacks = full_deal_stacks(),
+      foundation_top = { red = 1, blue = 1, green = 1 },
+      free_cell_state = { {}, {}, {} },
+      is_full_deal = true,
+   }
+end
+
+-- Гвоздь C5. Доска без одной карты внутренне непротиворечива: солвер доводит её
+-- до конца и рапортует SOLVED, а партия встаёт (замерено на чистом солвере: сиды
+-- 2/5/9 без 10_green дают is_goal=true при R10 B10 G9 — ровно то, что показал
+-- браузерный A/B до C4). Ни один инвариант, выведенный ИЗ снапшота, этого не
+-- видит; ловит только абсолютное ожидание «настоящая раздача = 40 карт».
+H.test("C5 census catches a card the mirrors lost", function()
+   load_script("main/Scripts/main.script")
+   local self = full_deal_self()
+   local _, _, _, err_ok = snapshot_and_go_map(self)
+   if err_ok then
+      return false, "an intact 40-card deal was refused: " .. tostring(err_ok)
+   end
+
+   -- потеряли ровно одну карту — как теряла её несинхронная ячейка до C4
+   for c = 1, 8 do
+      for i = #self.tableau_stacks[c].cards, 1, -1 do
+         if self.tableau_stacks[c].cards[i].id == "10_green" then
+            table.remove(self.tableau_stacks[c].cards, i)
+         end
+      end
+   end
+   local _, _, _, err = snapshot_and_go_map(self)
+   if not err then
+      return false, "a board missing 10_green was accepted — the solver would report SOLVED and the game would stall at G9"
+   end
+   if not tostring(err):find("10_green", 1, true) then
+      return false, "the refusal must name the missing card, got: " .. tostring(err)
+   end
+   return true
+end)
+
+-- Собранная стопка — это ЧЕТЫРЕ карты в одной ячейке, а в снапшот попадает один
+-- представитель (контракт bridge). Считать её за одну — значит объявить честную
+-- доску после каждого сбора недостоверной.
+H.test("C5 census counts a collected pile as four dragons, not one", function()
+   load_script("main/Scripts/main.script")
+   local self = full_deal_self()
+   -- красные драконы ушли со стола в ячейку 2 одной стопкой
+   for c = 1, 8 do
+      for i = #self.tableau_stacks[c].cards, 1, -1 do
+         local card = self.tableau_stacks[c].cards[i]
+         if card.data.value == "d" and card.data.suit == "red" then
+            table.remove(self.tableau_stacks[c].cards, i)
+         end
+      end
+   end
+   self.free_cell_state[2] = { card = { id = "d1_red", data = { value = "d", suit = "red" } }, is_blocked = true }
+   local _, _, _, err = snapshot_and_go_map(self)
+   if err then
+      return false, "a board with a finished red collect was refused: " .. tostring(err)
+   end
+   return true
+end)
+
+-- Foundation тоже часть переписи: сыгранные карты уже не на столе, но с доски не
+-- исчезли. Иначе перепись отказывала бы на каждой доске после первого хода в базу.
+H.test("C5 census counts cards already played to the foundation", function()
+   load_script("main/Scripts/main.script")
+   local self = full_deal_self()
+   for c = 1, 8 do
+      for i = #self.tableau_stacks[c].cards, 1, -1 do
+         local card = self.tableau_stacks[c].cards[i]
+         if card.data.suit == "blue" and card.data.value == 2 then
+            table.remove(self.tableau_stacks[c].cards, i)
+         end
+      end
+   end
+   self.foundation_top.blue = 2
+   local _, _, _, err = snapshot_and_go_map(self)
+   if err then
+      return false, "a board with 2_blue already in the foundation was refused: " .. tostring(err)
+   end
+   return true
+end)
+
+H.test("C5 census catches a duplicated card", function()
+   load_script("main/Scripts/main.script")
+   local self = full_deal_self()
+   -- та же карта числится и в столбце, и в ячейке, но с ДРУГИМ GO — card_by_go
+   -- такую пару не ловит, перепись ловит.
+   self.free_cell_state[1] = { card = { id = "go_dup", data = { value = 7, suit = "red" } } }
+   local _, _, _, err = snapshot_and_go_map(self)
+   if not err then
+      return false, "two 7_red on the board were accepted"
+   end
+   if not tostring(err):find("7_red", 1, true) then
+      return false, "the refusal must name the duplicated card, got: " .. tostring(err)
+   end
+   return true
+end)
+
+-- Перепись не должна убивать дев-раскладки: DEBUG_DRAGONS/DEBUG_AUTO_FINISH и
+-- туториал — не 40 карт, и именно на них проверяется всё остальное.
+H.test("C5 census is off when the deal is not a real 40-card one", function()
+   load_script("main/Scripts/main.script")
+   local self = {
+      tableau_stacks = { { cards = { { id = "go_2r", data = { value = 2, suit = "red" } } } } },
+      foundation_top = { red = 1, blue = 1, green = 1 },
+      free_cell_state = { {}, {}, {} },
+      -- is_full_deal не выставлен: так main.init помечает отладочную раздачу
+   }
+   local _, _, _, err = snapshot_and_go_map(self)
+   if err then
+      return false, "a debug layout was refused by the census: " .. tostring(err)
+   end
+   return true
+end)
+
+-- Цветок. До этой правки snap.flower ставился ТОЛЬКО пока цветок лежит на
+-- верхушке столбца; после приземления карта уходила из зеркала tableau, и
+-- снапшот забывал её насовсем (is_win в консольном solve врал, а перепись C5
+-- отказывала бы на каждой доске после цветка).
+H.test("C5 a landed flower stays in the snapshot", function()
+   load_script("main/Scripts/main.script")
+   local self = full_deal_self()
+   -- цветок улетел в свой слот: зеркало tableau его сняло
+   for c = 1, 8 do
+      for i = #self.tableau_stacks[c].cards, 1, -1 do
+         if self.tableau_stacks[c].cards[i].id == "flower" then
+            table.remove(self.tableau_stacks[c].cards, i)
+         end
+      end
+   end
+   on_message(self, hash("flower_collected"), {}, "flower_slot")
+   local snap, _, _, err = snapshot_and_go_map(self)
+   if not snap.flower then
+      return false, "the snapshot forgot the collected flower — bridge would build a state with flower_slot.occupied=false and is_win could never be true"
+   end
+   if err then
+      return false, "a board whose flower has landed was refused: " .. tostring(err)
+   end
+   return true
+end)
+
+H.test("C5 flower_slot tells main the flower landed", function()
+   load_script("main/Scripts/flower_slot.script")
+   local self = { empty = true }
+   msg.clear()
+   on_message(self, hash("occupy_slot"), {
+      animation = false,
+      card = { id = "flower", data = { value = "f", suit = "flower" } },
+      position = { x = 0, y = 0, z = 0 },
+   }, "card")
+   if stub.msg_count("flower_collected") ~= 1 then
+      return false, "flower_slot must mirror the landing to main exactly once"
+   end
+   for _, e in ipairs(msg.log) do
+      if e.id == "flower_collected" and e.to ~= "/card_table#main" then
+         return false, "flower_collected went to " .. tostring(e.to) .. ", main would never see it"
+      end
+   end
+   return true
+end)
+
 return H

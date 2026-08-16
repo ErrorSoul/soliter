@@ -59,6 +59,12 @@ function init(self)
    -- партия = перезагрузка коллекции через game_manager (unload/async_load), так
    -- что init здесь — единственная точка сброса.
    self.free_cell_state = { {}, {}, {} }
+   -- C5: цветок приземлился в свой слот (зеркало flower_slot->main). Сбрасывается
+   -- здесь же, где и остальные зеркала: новая партия = перезагрузка коллекции.
+   self.flower_collected = false
+   -- C5: перепись карт в снапшоте имеет смысл только для настоящей раздачи —
+   -- отладочные раскладки и туториал заведомо не 40 карт.
+   self.is_full_deal = not (self.tutorial_mode or DEBUG_DRAGONS or DEBUG_AUTO_FINISH)
    self.base_slots = get_base_slots()
    self.tableau_slots = get_tableau_slots(self.tutorial_mode)
    self.free_slots = get_free_slots()
@@ -429,6 +435,73 @@ end
 -- free_cell.script не парсил цифру из своего id.
 local FREE_CELL_ORD = { free_slot1 = 1, free_slot2 = 2, free_slot3 = 3 }
 
+-- C5: перепись карт снапшота — единственный инвариант, который ловит ПОТЕРЮ карты.
+-- Всё, что выводится из самого снапшота, потерю не видит: доска без 10_green
+-- внутренне непротиворечива, солвер честно доводит её до конца и рапортует
+-- "SOLVED", а партия встаёт на R10 B10 G9 — ровно это показал браузерный A/B до
+-- C4 (замерено ещё раз на чистом солвере: три сида, у каждого is_goal=true при
+-- G9). Поймать это может только АБСОЛЮТНОЕ ожидание: настоящая раздача — 40 карт,
+-- по одной каждого номинала 2..10 в трёх мастях, по 4 дракона на масть и цветок.
+-- Отладочные раскладки и туториал 40 картами не являются ⇒ перепись включается
+-- только при self.is_full_deal.
+local CENSUS_SUITS = { "red", "blue", "green" }
+
+local function census_expected()
+   local exp, order = {}, {}
+   local function want(key, n)
+      exp[key] = n
+      order[#order + 1] = key
+   end
+   for _, suit in ipairs(CENSUS_SUITS) do
+      for v = 2, 10 do want(v .. "_" .. suit, 1) end
+      want("d_" .. suit, 4)
+   end
+   want("f_flower", 1)
+   return exp, order
+end
+
+-- Считает каждую карту доски ровно один раз: столбцы, ячейки (заблокированная —
+-- это стопка из ЧЕТЫРЁХ драконов масти), foundation (номиналы 2..foundation_top)
+-- и цветок. Проверяем мультимножество, а не сумму: две пятёрки и ни одной семёрки
+-- дают ту же сумму, но это другая доска.
+local function census_error(snap)
+   local seen = {}
+   local function add(value, suit, n)
+      local key = tostring(value) .. "_" .. tostring(suit)
+      seen[key] = (seen[key] or 0) + (n or 1)
+   end
+   for col = 1, 8 do
+      for _, c in ipairs(snap.tableau[col] or {}) do add(c.value, c.suit) end
+   end
+   for ord = 1, 3 do
+      local fc = snap.free_cells[ord]
+      if fc and fc.card then
+         if fc.blocked then add("d", fc.card.suit, 4) else add(fc.card.value, fc.card.suit) end
+      end
+   end
+   for _, suit in ipairs(CENSUS_SUITS) do
+      for v = 2, ((snap.foundation and snap.foundation[suit]) or 1) do add(v, suit) end
+   end
+   if snap.flower then add("f", "flower") end
+
+   local exp, order = census_expected()
+   for _, key in ipairs(order) do
+      local got = seen[key] or 0
+      if got ~= exp[key] then
+         return string.format(
+            "перепись не сошлась: карт %s на доске %d вместо %d — зеркала потеряли или задвоили карту",
+            key, got, exp[key])
+      end
+      seen[key] = nil
+   end
+   for key, n in pairs(seen) do
+      if n > 0 then
+         return "перепись не сошлась: на доске лишняя карта " .. key .. " (" .. n .. " шт.)"
+      end
+   end
+   return nil
+end
+
 -- Walk the live tableau into BOTH a solver snapshot and a parallel go_map of the
 -- real card GO ids, with IDENTICAL filtering so that solver card[i] <-> GO[i]
 -- stays an exact bijection (the director relies on this).
@@ -448,7 +521,10 @@ local FREE_CELL_ORD = { free_slot1 = 1, free_slot2 = 2, free_slot3 = 3 }
 -- screen. Fourth return value is an error string: a board we cannot snapshot
 -- honestly must refuse, not produce a plausible-looking wrong solve.
 function snapshot_and_go_map(self)
-   local snap = { tableau = {}, free_cells = { {}, {}, {} }, flower = false }
+   -- C5: цветок «помнится» отдельным флагом. Пока он лежит на верхушке столбца,
+   -- его добавляет цикл ниже (окно полёта); после приземления карта уходит из
+   -- зеркала tableau навсегда, и без flower_collected снапшот забывал бы её.
+   local snap = { tableau = {}, free_cells = { {}, {}, {} }, flower = self.flower_collected or false }
    local go_map = { tableau = {}, free_cells = {} }
    local card_by_go = {}
    local err = nil
@@ -532,6 +608,9 @@ function snapshot_and_go_map(self)
    snap.foundation = {
       red = self.foundation_top.red, blue = self.foundation_top.blue, green = self.foundation_top.green,
    }
+   if self.is_full_deal then
+      err = err or census_error(snap)
+   end
    return snap, go_map, card_by_go, err
 end
 
@@ -927,6 +1006,10 @@ function on_message(self, message_id, message, sender)
       else
          print("[SNAPSHOT] free_cell_changed от неизвестной ячейки: " .. tostring(message.slot_id))
       end
+   elseif message_id == hash("flower_collected") then
+      -- C5: см. flower_slot.script. Флаг только взводится: обратно цветок из слота
+      -- не достаётся, а новая партия перезагружает коллекцию (init сбрасывает).
+      self.flower_collected = true
    elseif message_id == hash("check_auto_finish") then
       -- B2: не оцениваем немедленно — каскад drop_success→remove_card→зеркало и
       -- card_to_base ещё в очереди сообщений. Откладываем на 2 кадра в update().
