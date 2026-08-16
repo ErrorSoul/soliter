@@ -6,8 +6,16 @@ local M = {}
 function M.install()
    _G.hash = function(s) return tostring(s) end
 
+   -- vector3 needs `+` because scripts add offsets to message.position.
+   local v3mt = {}
+   local function v3(x, y, z)
+      return setmetatable({ x = x or 0, y = y or 0, z = z or 0 }, v3mt)
+   end
+   v3mt.__add = function(a, b) return v3(a.x + b.x, a.y + b.y, a.z + b.z) end
+   v3mt.__sub = function(a, b) return v3(a.x - b.x, a.y - b.y, a.z - b.z) end
+
    _G.vmath = {
-      vector3 = function(x, y, z) return { x = x or 0, y = y or 0, z = z or 0 } end,
+      vector3 = v3,
       vector4 = function(x, y, z, w) return { x = x or 0, y = y or 0, z = z or 0, w = w or 0 } end,
       quat = function() return {} end,
    }

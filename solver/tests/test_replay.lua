@@ -265,12 +265,13 @@ end)
 
 -- ============================================================
 -- C2: since C1 counts parked dragons, a collect can include cards sitting in
--- free cells. Their GOs must join card_gos exactly once, their go_map slots must
--- be cleared, and every cell that is NOT the host must be named in
--- release_cells — the glue (main.script) posts remove_card there, without which
--- the cell stays occupied by a card that has flown away.
+-- free cells. Their GOs must join card_gos exactly once and their go_map slots
+-- must be cleared, or the same GO lives both in a cell and in the pile.
+-- No release directive is emitted on purpose: card.script posts remove_card to
+-- the previous owner on drop_success, so the source cell frees itself; a second
+-- remove_card would crash free_cell.check_dragon on nil card_data.
 -- ============================================================
-H.test("replay.plan: dragon_collect takes parked GOs and names the cells to release", function(rules)
+H.test("replay.plan: dragon_collect takes parked GOs and clears their cells", function(rules)
    local function drag() return { value = "d", suit = "red", is_dragon = true } end
 
    local state = {
@@ -320,11 +321,9 @@ H.test("replay.plan: dragon_collect takes parked GOs and names the cells to rele
       return false, "cell " .. other .. " still holds a GO that flew into the pile — duplicate/strand"
    end
 
-   -- release_cells: exactly the non-host dragon cell
-   local rel = d.release_cells or {}
-   if #rel ~= 1 or rel[1] ~= other then
-      return false, "release_cells must name exactly cell " .. other ..
-         ", got {" .. table.concat(rel, ",") .. "}"
+   -- and no release directive: the glue must not double-free the cell
+   if d.release_cells then
+      return false, "directive must not carry release_cells — card.script already frees the previous owner; a second remove_card crashes free_cell"
    end
    return true
 end)

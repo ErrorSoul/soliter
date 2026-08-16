@@ -573,12 +573,6 @@ function debug_replay(self)
       elseif d.kind == "dragon_collect" then
          -- replicate cursor.get_dragon_cards: all 4 dragons drop onto one cell,
          -- complete=true so the cell blocks (free_cell sets is_blocked once).
-         -- C2: a dragon of this suit parked in ANOTHER free cell joins the pile,
-         -- so that cell has to be released first — otherwise it stays occupied
-         -- with a card that is no longer there and its slot is lost for good.
-         for _, ord in ipairs(d.release_cells or {}) do
-            msg.post((fcell(ord)), "remove_card")
-         end
          local sid, pos = fcell(d.cell_ord)
          for _, go in ipairs(d.card_gos) do
             msg.post(go, "drop_success", {

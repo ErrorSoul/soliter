@@ -140,24 +140,23 @@ local function step(pre, post, move, gm)
       end
       -- C2: parked dragons count toward the 4 (compute_dragon_counter), so the
       -- pile can include cards sitting in free cells. Their GOs fly too, and
-      -- their cells must be released — dropping only the tableau ones would
-      -- leave the GO both in gm.free_cells and in the pile (duplicate/strand).
-      -- `ord` itself is not released: the pile lands on it and it becomes
-      -- BLOCKED (the game's free_cell.occupy_slot blocks an already-occupied
-      -- cell without re-charging the slot counters).
-      local release = {}
+      -- their go_map slots must be cleared — dropping only the tableau ones
+      -- would leave the same GO both in gm.free_cells and in the pile.
+      -- The GLUE needs no extra release message: card.script posts remove_card
+      -- to its previous owner on every drop_success, so the source cell frees
+      -- itself when the dragon lands. Sending one from here as well hits the
+      -- cell a second time with card_data already nil and crashes
+      -- free_cell.check_dragon (verified against the real script under stubs).
       for i, fc in ipairs(pre.free_cells) do
          if fc.card and fc.card.is_dragon and fc.card.suit == move.suit and not fc.is_blocked then
             local go = gm.free_cells[i]
             assert(go and go ~= BLOCKED, "replay: no parked GO in free cell " .. tostring(i))
             gos[#gos + 1] = go
             gm.free_cells[i] = nil
-            if i ~= ord then release[#release + 1] = i end
          end
       end
       gm.free_cells[ord] = BLOCKED
-      return { kind = "dragon_collect", card_gos = gos, cell_ord = ord,
-               release_cells = release }
+      return { kind = "dragon_collect", card_gos = gos, cell_ord = ord }
 
    elseif t == "flower_auto" then
       -- apply_move takes the first column (1..8) whose top is the flower.

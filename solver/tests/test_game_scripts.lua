@@ -277,4 +277,55 @@ H.test("F3 screen_to_world undoes the vertical letterbox (4:3 canvas)", function
    return true
 end)
 
+-- C2: why the dragon-collect directive carries no "release these cells" list.
+-- A dragon of the collected suit may be parked in a free cell; when the pile
+-- flies onto the host cell, that source cell has to stop counting as occupied.
+-- It already does: card.script posts remove_card to its PREVIOUS owner on every
+-- drop_success. Sending a second remove_card from cursor/main "to be safe" is
+-- not safe — free_cell nils card_data on the first one and check_dragon then
+-- indexes nil (that is a crash, pinned by the second test below).
+H.test("C2 drop_success releases the card's previous owner", function()
+   load_script("main/Scripts/card.script")
+   local self = { owner = "free_slot2", is_dragging = true }
+   msg.clear()
+   on_message(self, hash("drop_success"), {
+      slot_id = "free_slot1",
+      position = vmath.vector3(0, 0, 0),
+      card = { data = { value = "d", suit = "red" }, id = "d1" },
+      animation = false,
+      complete = true,
+   }, "cursor")
+
+   local freed = false
+   for _, e in ipairs(msg.log) do
+      if e.id == "remove_card" and e.to == "free_slot2" then freed = true end
+   end
+   if not freed then
+      return false, "no remove_card to the previous owner — the source free cell would stay occupied by a card that flew away"
+   end
+   if self.owner ~= "free_slot1" then
+      return false, "owner must advance to the new slot"
+   end
+   return true
+end)
+
+H.test("C2 a SECOND remove_card on the same cell crashes — do not send one", function()
+   load_script("main/Scripts/free_cell.script")
+   local self = {
+      is_occupied = true, is_blocked = false, cursor = "cursor", slot_id = "free_slot1",
+      card_data = { data = { value = "d", suit = "red" }, id = "d1" },
+      dragon_button_trace = { red = "b1", blue = "b2", green = "b3" },
+   }
+   msg.clear()
+   local ok1 = pcall(on_message, self, hash("remove_card"), { id = "d1" }, "card")
+   if not ok1 then
+      return false, "the first remove_card must work"
+   end
+   local ok2 = pcall(on_message, self, hash("remove_card"), { id = "d1" }, "card")
+   if ok2 then
+      return false, "free_cell.remove_card became idempotent — good, but then this test's premise (and the comment in replay.lua about not emitting release_cells) is stale: update both"
+   end
+   return true
+end)
+
 return H
