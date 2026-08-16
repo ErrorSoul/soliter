@@ -129,7 +129,7 @@ local function step(pre, post, move, gm)
       local ord = find_blocked_cell(pre, post)
       assert(ord, "replay: dragon_collect found no newly-blocked cell")
       -- Mirror apply_move: scan cols 1..8, take the top GO of every column whose
-      -- pre-state top is a dragon of this suit (the gate guarantees exactly 4).
+      -- pre-state top is a dragon of this suit (the gate guarantees 4 in total).
       local gos = {}
       for col_i = 1, 8 do
          local col = pre.tableau[col_i]
@@ -138,8 +138,26 @@ local function step(pre, post, move, gm)
             gos[#gos + 1] = pop_top(gm, col_i)
          end
       end
+      -- C2: parked dragons count toward the 4 (compute_dragon_counter), so the
+      -- pile can include cards sitting in free cells. Their GOs fly too, and
+      -- their cells must be released — dropping only the tableau ones would
+      -- leave the GO both in gm.free_cells and in the pile (duplicate/strand).
+      -- `ord` itself is not released: the pile lands on it and it becomes
+      -- BLOCKED (the game's free_cell.occupy_slot blocks an already-occupied
+      -- cell without re-charging the slot counters).
+      local release = {}
+      for i, fc in ipairs(pre.free_cells) do
+         if fc.card and fc.card.is_dragon and fc.card.suit == move.suit and not fc.is_blocked then
+            local go = gm.free_cells[i]
+            assert(go and go ~= BLOCKED, "replay: no parked GO in free cell " .. tostring(i))
+            gos[#gos + 1] = go
+            gm.free_cells[i] = nil
+            if i ~= ord then release[#release + 1] = i end
+         end
+      end
       gm.free_cells[ord] = BLOCKED
-      return { kind = "dragon_collect", card_gos = gos, cell_ord = ord }
+      return { kind = "dragon_collect", card_gos = gos, cell_ord = ord,
+               release_cells = release }
 
    elseif t == "flower_auto" then
       -- apply_move takes the first column (1..8) whose top is the flower.

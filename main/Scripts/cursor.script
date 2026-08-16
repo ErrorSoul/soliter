@@ -554,6 +554,16 @@ function on_message(self, message_id, message, sender)
          end
       end
 
+      -- C2: счётчик кнопки не декрементится, поэтому в стопку летят и драконы,
+      -- уже припаркованные в ячейках. Целевая ячейка (sl_id) блокируется сама,
+      -- а ОСТАЛЬНЫЕ ячейки этой масти надо освободить: их карта улетает, но
+      -- free_cell об этом не узнает и слот навсегда остаётся «занят» призраком.
+      for slot_id, value in pairs(self.free_slots) do
+         if slot_id ~= sl_id and value.dragon == color and not value.is_blocked then
+            msg.post(slot_id, "remove_card")
+         end
+      end
+
       local i = 0
       for _, card in pairs(message) do
          local arc_delay = i * 0.1

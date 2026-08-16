@@ -89,23 +89,60 @@ H.test("fix#1 deal matches game algorithm bit-for-bit (oracle, seeds 1/42/12345)
 end)
 
 -- ============================================================
--- FIX #2: dragon counter is TABLEAU-TOPS ONLY.
--- Game increments the button counter only when a dragon surfaces as a tableau
--- top (dragon_button.script:25 via tableau_script.script:44); a dragon parked in
--- a free cell does NOT count. So 3 tops + 1 in a free cell => NO collect.
+-- C1 (was FIX #2, INVERTED 2026-08-16): the dragon counter is EXPOSED dragons —
+-- tableau tops AND unblocked free cells.
+-- fix#2 claimed tops-only and this test asserted it, which pinned the bug in
+-- place. The button counter is incremented once per dragon that surfaces as a
+-- top and is NEVER decremented, so parking that dragon does not take it back —
+-- and a dragon can only reach a cell from a top, and can never be buried again
+-- (can_stack_cards rejects dragons). In the live game 3 tops + 1 parked lights
+-- the button; the solver used to refuse the move.
 -- ============================================================
-H.test("fix#2 dragon counter: 3 tops + 1 in free cell => NO dragon_collect", function(rules)
+H.test("C1 dragon counter: 3 tops + 1 in free cell => dragon_collect IS legal", function(rules)
    local state = empty_state()
    -- 3 red dragons exposed on tableau tops
    state.tableau[1] = { drag("red") }
    state.tableau[2] = { drag("red") }
    state.tableau[3] = { drag("red") }
-   -- 4th red dragon parked in an unblocked free cell (must NOT count)
+   -- 4th red dragon parked in an unblocked free cell — it still counts
    state.free_cells[1] = { card=drag("red"), is_blocked=false }
 
    local moves = rules.legal_moves(state)
+   if not has_move(moves, { type="dragon_collect", suit="red" }) then
+      return false, "dragon_collect for red MUST appear: 3 dragons on tops + 1 parked in a free cell = 4 exposed, exactly what lights the button in game"
+   end
+   return true
+end)
+
+H.test("C1 dragon counter: 3 tops + 1 buried => still NO dragon_collect", function(rules)
+   local state = empty_state()
+   state.tableau[1] = { drag("red") }
+   state.tableau[2] = { drag("red") }
+   state.tableau[3] = { drag("red") }
+   -- 4th red dragon buried under a numeric: never surfaced, never counted
+   state.tableau[4] = { drag("red"), num("blue", 5) }
+
+   local moves = rules.legal_moves(state)
    if has_move(moves, { type="dragon_collect", suit="red" }) then
-      return false, "dragon_collect for red must NOT appear: only 3 dragons are tableau tops; the 4th is parked in a free cell (game counts tops only)"
+      return false, "a buried dragon has never been a tableau top — the button counter never saw it, so collect must stay illegal"
+   end
+   return true
+end)
+
+-- The parked dragon's own cell is the host, so the collect needs no OTHER free
+-- cell — parity with compute_free_slots_counter and with the live button, whose
+-- free_slots_counter was never charged twice for that cell.
+H.test("C1 collect is legal with 2 parked reds and the last cell taken by a stranger", function(rules)
+   local state = empty_state()
+   state.tableau[1] = { drag("red") }
+   state.tableau[2] = { drag("red") }
+   state.free_cells[1] = { card=drag("red"),      is_blocked=false }
+   state.free_cells[2] = { card=drag("red"),      is_blocked=false }
+   state.free_cells[3] = { card=num("blue", 7),   is_blocked=false }
+
+   local moves = rules.legal_moves(state)
+   if not has_move(moves, { type="dragon_collect", suit="red" }) then
+      return false, "2 tops + 2 parked = 4 exposed; a parked cell hosts the pile, so no spare cell is required"
    end
    return true
 end)

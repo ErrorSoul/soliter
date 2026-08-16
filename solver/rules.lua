@@ -180,7 +180,21 @@ local function copy_state(state)
 end
 
 -- Compute derived dragon_counter from current state:
--- counts how many dragons of each suit are exposed on top of tableau columns.
+-- counts dragons of each suit that are EXPOSED — tableau tops plus unblocked
+-- free cells.
+--
+-- C1: an earlier comment here claimed TABLEAU-TOPS ONLY. That was wrong, and it
+-- made the solver reject a collect the live game offers. The button counter is
+-- incremented once per dragon that surfaces as a tableau top
+-- (tableau_script -> dragon_button.script "send_counter_to_button", deduped by
+-- card id) and is NEVER decremented — parking that dragon in a free cell does
+-- not take it back. And a dragon can only reach a free cell FROM a tableau top
+-- (cells start empty), while nothing can be stacked onto a dragon
+-- (tableau_script.can_stack_cards rejects is_dragon on both sides), so it can
+-- never be buried again. Therefore "counted by the game" == "on a tableau top
+-- OR parked in a free cell".
+-- A BLOCKED cell holds an already-collected pile: dragons_collected[suit] gates
+-- that case, and the pile is not a loose dragon — do not count it.
 local function compute_dragon_counter(state)
    local dc = { red=0, blue=0, green=0 }
    for i = 1, 8 do
@@ -192,10 +206,11 @@ local function compute_dragon_counter(state)
          end
       end
    end
-   -- TABLEAU-TOPS ONLY (review #2): the live game increments the dragon-button
-   -- counter only when a dragon surfaces as a tableau top
-   -- (dragon_button.script:25 via tableau_script.script:44). A dragon parked in a
-   -- free cell does NOT count toward collection. Do not count free cells here.
+   for _, fc in ipairs(state.free_cells) do
+      if fc.card and fc.card.is_dragon and not fc.is_blocked then
+         dc[fc.card.suit] = dc[fc.card.suit] + 1
+      end
+   end
    return dc
 end
 
@@ -482,7 +497,7 @@ function M.apply_move(state, move)
          end
       end
 
-      -- Remove all 4 dragons from tableau tops
+      -- Remove this suit's dragons from tableau tops...
       for col_i = 1, 8 do
          local col = s.tableau[col_i]
          if #col > 0 then
@@ -490,6 +505,17 @@ function M.apply_move(state, move)
             if top.is_dragon and top.suit == suit then
                table.remove(col)
             end
+         end
+      end
+      -- ...and from free cells (C2). compute_dragon_counter counts parked
+      -- dragons, so the gate can fire with 1-3 of them in cells; every one of
+      -- them joins the pile. Clearing only the target slot would strand the
+      -- others as phantom occupied cells.
+      local parked = 0
+      for _, fc in ipairs(s.free_cells) do
+         if fc.card and fc.card.is_dragon and fc.card.suit == suit and not fc.is_blocked then
+            fc.card = nil
+            parked = parked + 1
          end
       end
 
@@ -500,10 +526,18 @@ function M.apply_move(state, move)
       end
 
       s.dragons_collected[suit] = true
-      -- Update free_slots_counter for all suits: blocked slot reduces counter
+      -- Mirror the game's per-suit slot accounting (free_cell.script
+      -- send_to_dragon_buttons): a cell occupied by ANY card already costs the
+      -- other suits 1. Cells we touched go from `parked` occupied to exactly 1
+      -- (the blocked pile), so the other suits get back parked-1 — which is the
+      -- familiar -1 when nothing was parked, and 0 for the common single-parked
+      -- collect (that cell was already paid for).
+      -- (Derived compute_free_slots_counter is what legal_moves actually reads;
+      -- this stored field is kept in sync for snapshot/parity consumers.)
+      local delta = parked - 1
       for _, s_name in ipairs({"red","blue","green"}) do
          if s_name ~= suit then
-            s.free_slots_counter[s_name] = s.free_slots_counter[s_name] - 1
+            s.free_slots_counter[s_name] = s.free_slots_counter[s_name] + delta
          end
       end
 
