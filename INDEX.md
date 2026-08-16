@@ -19,7 +19,7 @@
 | `cursor.script` | Хаб ввода: touch, hit-test, валидация дропа, drag-состояние, tutorial-хайлайты | hit-test: `check_tableau_slots` `check_last_cards` `check_free_slots` `check_flower_slot` `check_base_slots` `check_free_tableau_slots` `check_dragon_buttons` `screen_to_world` · tutorial: `find_card_by_data_id` `clear_tutorial_highlights` `apply_tutorial_highlights` `fly_card_arc` |
 | `card.script` | Карта: drag, анимации, тинты | `set_card` `is_correct_card` |
 | `base_slot.script` | Foundation (2→10, одна масть) | `check_correct_cards` |
-| `free_cell.script` | Free cell (1 карта / blocked-пайл драконов) | `check_dragon` `send_to_dragon_buttons` `change_button_counter` |
+| `free_cell.script` | Free cell (1 карта / blocked-пайл драконов) | `check_dragon` `send_to_dragon_buttons` `change_button_counter` `mirror_to_main` (→ `free_cell_changed`, C4) |
 | `tableau_script.script` | Колонка tableau: видимый стек, авто-отправка верхней карты | `can_stack_cards` `update_visible_cards` `last_card_to_slot` `contains` |
 | `flower_slot.script` | Слот цветка (только `'f'`, авто-победа) | — (`check_slot`/`occupy_slot`) |
 | `dragon_button.script` | Сбор драконов (актив при 4 + free slot) | `check_state` `free_slot_any` |
@@ -61,20 +61,20 @@
 
 **Типы ходов** (`rules.legal_moves`): `to_foundation` `to_free_cell` `from_free_cell` `tableau_to_tableau` `multi_to_tableau` `dragon_collect` `flower_auto` (+ `to_empty_tableau` в apply).
 **state** = `{tableau, foundation_top, free_cells, flower_slot, dragons_collected, dragon_counter, free_slots_counter}`.
-**Snapshot-контракт (вход bridge):** `snap.tableau[1..8]` (низ→верх), `snap.foundation{red,blue,green}`, `snap.free_cells[1..3]` (nil / `{card}` / `{card,blocked=true}`), `snap.flower` (bool).
+**Snapshot-контракт (вход bridge):** `snap.tableau[1..8]` (низ→верх), `snap.foundation{red,blue,green}`, `snap.free_cells[1..3]` (nil / `{card}` / `{card,blocked=true}`), `snap.flower` (bool). Живой снапшот собирает `main.snapshot_and_go_map` из зеркал `tableau_card_added/removed` и `free_cell_changed`; 4-й возврат — строка отказа (нечестный снапшот ⇒ не решаем).
 
 ### Тесты (`solver/tests/`)
 Запуск: `lua solver/tests/run_all.lua` (из корня; exit 0/1). Харнесс — `harness.lua` (`new_harness`, `H.test/report/assert_eq`).
-`test_deal` (d1-d8 раздача/детерминизм) · `test_win` (w1-w6; w2/w3 — защита от бага `base_cards_count>=27`) · `test_moves` (B1-B8 паритет ходов) · `test_solvable` (мини-борд из `main.script` `deal_auto_finish_test`) · `test_fixes` (fix#1 oracle, C1 счётчик драконов = верхушки **+ незаблокированные free cells**; закопанный дракон не считается) · `test_watch` (рендер) · `test_bridge` (game→solver, round-trip) · `test_replay` (директивы `replay.plan`: desync, go-reuse, double-book, terminal-win) · `test_review_bugs` (F3–F7, F10, C3) · `test_game_scripts` (F1, F2, F3 леттербокс, F4, F9, A3, A6 + дедуп драконов в обе стороны — .script под Defold-stub).
+`test_deal` (d1-d8 раздача/детерминизм) · `test_win` (w1-w6; w2/w3 — защита от бага `base_cards_count>=27`) · `test_moves` (B1-B8 паритет ходов) · `test_solvable` (мини-борд из `main.script` `deal_auto_finish_test`) · `test_fixes` (fix#1 oracle, C1 счётчик драконов = верхушки **+ незаблокированные free cells**; закопанный дракон не считается) · `test_watch` (рендер) · `test_bridge` (game→solver, round-trip) · `test_replay` (директивы `replay.plan`: desync, go-reuse, double-book, terminal-win) · `test_review_bugs` (F3–F7, F10, C3) · `test_game_scripts` (F1, F2, F3 леттербокс, F4, F9, A3, A6 + дедуп драконов в обе стороны, C2 контракт `drop_success`/двойной `remove_card`, C4 зеркало free cells + `snapshot_and_go_map` — .script под Defold-stub, включая `main.script`).
 Симуляции под ручную проверку message-flow (не в run_all): `reviews/repro/{f2,a6,f10}_sim.lua` — грузят настоящие `.script` в изолированные окружения с движком сообщений и `update`.
 
 ### Браузерный play-test (`tools/browser-test.py`)
-Гоняет настоящий js-web бандл в headless Chromium (SwiftShader WebGL) и правит его реальными мышью/клавишами; `print` игры виден в консоли браузера. Сценарии: `boot` · `hittest` (драг карты во free cell, вердикт по яркости пикселей — **единственная проверка не-16:9 канваса**) · `win` (солвер ведёт настоящие карты, `debug_replay` сам печатает `[REPLAY] WIN ✓`). Как собрать бандл и две ловушки (ввод сэмплится раз в кадр; `--no-coi` грузит ДРУГОЙ wasm) — в скилле `build`.
+Гоняет настоящий js-web бандл в headless Chromium (SwiftShader WebGL) и правит его реальными мышью/клавишами; `print` игры виден в консоли браузера. Сценарии: `boot` · `hittest` (драг карты во free cell, вердикт по яркости пикселей — **единственная проверка не-16:9 канваса**) · `win` (солвер ведёт настоящие карты, `debug_replay` сам печатает `[REPLAY] WIN ✓`) · `stuck` (драг-машина; честная область — в докстринге) · `freecell` (C4: припарковать карту в ячейку, потом `R` — единственный сценарий, который различает честный снапшот free cells; `win` его НЕ различает, там ячейки пусты). Как собрать бандл и две ловушки (ввод сэмплится раз в кадр; `--no-coi` грузит ДРУГОЙ wasm) — в скилле `build`.
 
 ## Где править частые задачи
 - **Правила хода/стекинга** → `tableau_script.can_stack_cards`, `card.is_correct_card`, `base_slot.check_correct_cards` (и зеркало в `rules.legal_moves`).
 - **Авто-финиш** → `main.script` (`can_auto_finish`/`find_next_auto_card`/`auto_finish_step`) + `rules.can_auto_finish`.
-- **Сбор драконов** → `dragon_button.script` + `free_cell.send_to_dragon_buttons` + `cursor` `get_dragon_cards`. Счётчик кнопки = ВЫСТАВЛЕННЫЕ драконы (верхушки + free cells), декремента нет; зеркало — `rules.compute_dragon_counter`. Припаркованные драконы тоже улетают в стопку: их ячейки освобождаются явно (`cursor.get_dragon_cards`, директива `release_cells` в `replay`/`main.debug_replay`).
+- **Сбор драконов** → `dragon_button.script` + `free_cell.send_to_dragon_buttons` + `cursor` `get_dragon_cards`. Счётчик кнопки = ВЫСТАВЛЕННЫЕ драконы (верхушки + free cells), декремента нет; зеркало — `rules.compute_dragon_counter`. Припаркованные драконы тоже улетают в стопку, и **явно освобождать их ячейки не надо**: `card.script` на `drop_success` шлёт `remove_card` прежнему владельцу. Второй `remove_card` в ту же ячейку роняет игру (`check_dragon(nil)`) — пин-тесты в `test_game_scripts` (C2).
 - **Победа** → `main.script` (`card_to_base` → `base_cards_count`) + `tutorial_state.show_victory` (UI poll).
 - **Звук** → `sfx.lua` (+ poll `sfx.pending` в `main.script` update).
 - **Туториал** → `tutorial_state.lua` (`EXPECTED_MOVES`/`HIGHLIGHTS`) + `cursor` хайлайты + `ui.gui_script` хинты.

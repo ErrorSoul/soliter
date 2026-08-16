@@ -472,7 +472,7 @@ def scenario_freecell(s):
 
         s.key("r", "debug_replay")
         verdict = s.wait_for_log(
-            r"\[REPLAY\] (SOLVED|budget_exhausted|unsolvable|no_solution|planner desync|снапшот)", 90)
+            r"\[REPLAY\] (SOLVED|timeout|budget_exhausted|unsolvable|no_solution|planner desync|снапшот)", 90)
         if verdict and "SOLVED" in verdict:
             n = re.search(r"\((\d+) directives\)", verdict)
             count = int(n.group(1)) if n else 400
