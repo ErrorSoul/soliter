@@ -549,9 +549,14 @@ H.test("C4 snapshot refuses mid-collect: suit blocked while its dragons are stil
       return false, "a half-landed collect must be refused — the solver would plan on 'red collected' with a red dragon still in a column"
    end
 
-   -- the same board once the collect finished (no red dragons left outside the
-   -- pile) must still be accepted, or the guard would kill every later solve
-   self.tableau_stacks = { { cards = { { id = "go_5b", data = { value = 5, suit = "blue" } } } } }
+   -- Once the collect has finished, the same shape must still be ACCEPTED, or
+   -- the guard would kill every solve after any collect. This is the board
+   -- DEBUG_DRAGONS (deal_dragon_test) leaves behind: red collected into a
+   -- blocked cell, blue and green dragons still stacked in the columns.
+   self.tableau_stacks = {
+      { cards = { { id = "go_db1", data = { value = "d", suit = "blue" } } } },
+      { cards = { { id = "go_dg1", data = { value = "d", suit = "green" } } } },
+   }
    local _, _, _, err2 = snapshot_and_go_map(self)
    if err2 then
       return false, "a finished collect was refused: " .. err2
