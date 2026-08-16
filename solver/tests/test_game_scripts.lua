@@ -444,6 +444,72 @@ H.test("C4 snapshot_and_go_map reports the real free cells", function()
    return true
 end)
 
+-- Seam between the two halves above: the message free_cell actually sends must be
+-- the message main actually stores. Tested separately they can drift (a renamed
+-- field would pass both and break the pair).
+H.test("C4 the mirror message main receives becomes the snapshot it produces", function()
+   load_script("main/Scripts/free_cell.script")
+   local cell = {
+      is_occupied = false, is_blocked = false, cursor = "cursor", slot_id = "free_slot3",
+      dragon_button_trace = { red = "b1", blue = "b2", green = "b3" },
+   }
+   local card = { id = "go_7g", data = { value = 7, suit = "green" } }
+   msg.clear()
+   on_message(cell, hash("occupy_slot"), { card = card, position = vmath.vector3(0, 0, 0) }, "card")
+   local parked_msg = last_msg("free_cell_changed")
+
+   load_script("main/Scripts/main.script")
+   local main = {
+      tableau_stacks = {},
+      foundation_top = { red = 1, blue = 1, green = 1 },
+      free_cell_state = { {}, {}, {} },
+   }
+   on_message(main, hash("free_cell_changed"), parked_msg.data, "free_slot3")
+   local snap = snapshot_and_go_map(main)
+   if not (snap.free_cells[3] and snap.free_cells[3].card and snap.free_cells[3].card.value == 7) then
+      return false, "free_cell's own message did not survive the trip into the snapshot — the two sides disagree on field names"
+   end
+
+   -- ...and picking the card back up must empty it again (occupied -> empty is
+   -- written as {card=nil}, not back to {}; the snapshot must read that as empty)
+   load_script("main/Scripts/free_cell.script")
+   msg.clear()
+   on_message(cell, hash("remove_card"), { id = "go_7g" }, "card")
+   local empty_msg = last_msg("free_cell_changed")
+   load_script("main/Scripts/main.script")
+   on_message(main, hash("free_cell_changed"), empty_msg.data, "free_slot3")
+   snap = snapshot_and_go_map(main)
+   if snap.free_cells[3] and snap.free_cells[3].card then
+      return false, "the released cell still reports a card — a ghost stays in every later snapshot"
+   end
+   return true
+end)
+
+-- C11: the host cell of a collected pile never tells cursor it became blocked
+-- (the update_free_slot branch is skipped when the cell was already occupied), so
+-- cursor keeps serving {dragon=..., is_blocked=false} for it. This test measures
+-- what that costs downstream instead of leaving it derived: can_auto_finish
+-- refuses forever on a board it would otherwise finish.
+H.test("C11 a stale 'parked dragon' entry disables auto-finish for the rest of the game", function()
+   load_script("main/Scripts/main.script")
+   local function board()
+      return {
+         tutorial_mode = false, auto_finishing = false, debug_replaying = false,
+         states = { PLAYING = "playing", WIN = "win" }, currentState = "playing",
+         foundation_top = { red = 5, blue = 5, green = 5 },
+         tableau_stacks = { { cards = { { id = "c6r", data = { value = 6, suit = "red" } } } } },
+      }
+   end
+   if not can_auto_finish(board(), { free_cells = {} }) then
+      return false, "premise broken: this board must be auto-finishable with empty cells"
+   end
+   local stale = { { slot_id = "free_slot1", dragon = "red", is_blocked = false } }
+   if can_auto_finish(board(), { free_cells = stale }) then
+      return false, "C11 is fixed or the guard moved — update plans/review-fixes.md, the entry claims this returns false"
+   end
+   return true
+end)
+
 -- The plan's "refuse rather than solve garbage" guard. A flower in a cell is
 -- genuinely unmodelled: cells accept any card, but rules only ever auto-flies the
 -- flower off a tableau top.
