@@ -129,13 +129,30 @@ local function step(pre, post, move, gm)
       local ord = find_blocked_cell(pre, post)
       assert(ord, "replay: dragon_collect found no newly-blocked cell")
       -- Mirror apply_move: scan cols 1..8, take the top GO of every column whose
-      -- pre-state top is a dragon of this suit (the gate guarantees exactly 4).
+      -- pre-state top is a dragon of this suit (the gate guarantees 4 in total).
       local gos = {}
       for col_i = 1, 8 do
          local col = pre.tableau[col_i]
          local c = col[#col]
          if c and c.is_dragon and c.suit == move.suit then
             gos[#gos + 1] = pop_top(gm, col_i)
+         end
+      end
+      -- C2: parked dragons count toward the 4 (compute_dragon_counter), so the
+      -- pile can include cards sitting in free cells. Their GOs fly too, and
+      -- their go_map slots must be cleared — dropping only the tableau ones
+      -- would leave the same GO both in gm.free_cells and in the pile.
+      -- The GLUE needs no extra release message: card.script posts remove_card
+      -- to its previous owner on every drop_success, so the source cell frees
+      -- itself when the dragon lands. Sending one from here as well hits the
+      -- cell a second time with card_data already nil and crashes
+      -- free_cell.check_dragon (verified against the real script under stubs).
+      for i, fc in ipairs(pre.free_cells) do
+         if fc.card and fc.card.is_dragon and fc.card.suit == move.suit and not fc.is_blocked then
+            local go = gm.free_cells[i]
+            assert(go and go ~= BLOCKED, "replay: no parked GO in free cell " .. tostring(i))
+            gos[#gos + 1] = go
+            gm.free_cells[i] = nil
          end
       end
       gm.free_cells[ord] = BLOCKED

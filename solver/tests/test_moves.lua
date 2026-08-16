@@ -617,9 +617,77 @@ H.test("moves B8: dragon_collect apply removes 4 dragons, blocks one cell, sets 
 
    return true
 end)
--- NOTE: the "parked dragon does NOT enable collect" invariant (tableau-tops-only
--- counting, the reason apply_move's prefer-parked-cell branch never fires in the
--- solve path) is already pinned by test_fixes.lua "fix#2 dragon counter: 3 tops +
--- 1 in free cell => NO dragon_collect". Not duplicated here.
+-- ============================================================
+-- C2: dragon_collect with dragons PARKED in free cells (reachable since C1 —
+-- compute_dragon_counter counts them). apply_move must lift every parked dragon
+-- of the suit out of its cell, not just the one it picked as host: leaving the
+-- others behind marks their cells occupied by cards that are no longer in play,
+-- which costs the search a free cell forever.
+-- Legality of this position is pinned in test_fixes.lua ("C1 collect is legal
+-- with 2 parked reds ...").
+-- ============================================================
+H.test("moves C2: collect with 2 parked dragons frees the non-host cell", function(rules)
+   local state = empty_state()
+   state.tableau[1] = { drag("red") }
+   state.tableau[2] = { drag("red") }
+   state.free_cells[1] = { card=drag("red"),    is_blocked=false }
+   state.free_cells[2] = { card=drag("red"),    is_blocked=false }
+   state.free_cells[3] = { card=num("blue", 7), is_blocked=false }
+
+   local s2 = rules.apply_move(state, { type="dragon_collect", suit="red" })
+
+   local blocked, loose_dragons, stranger = 0, 0, 0
+   for _, fc in ipairs(s2.free_cells) do
+      if fc.is_blocked then
+         blocked = blocked + 1
+      elseif fc.card and fc.card.is_dragon and fc.card.suit == "red" then
+         loose_dragons = loose_dragons + 1
+      elseif fc.card and fc.card.value == 7 then
+         stranger = stranger + 1
+      end
+   end
+   if blocked ~= 1 then
+      return false, "expected exactly 1 blocked cell (the pile), got " .. blocked
+   end
+   if loose_dragons ~= 0 then
+      return false, "a parked red dragon was left in its cell: it flew into the pile, the cell must be empty again"
+   end
+   if stranger ~= 1 then
+      return false, "the unrelated 7_blue must stay in its cell"
+   end
+   -- the freed cell is genuinely usable again
+   local free_now = 0
+   for _, fc in ipairs(s2.free_cells) do
+      if not fc.is_blocked and fc.card == nil then free_now = free_now + 1 end
+   end
+   if free_now ~= 1 then
+      return false, "the non-host cell must be empty and reusable after the collect, free cells = " .. free_now
+   end
+   -- purity
+   if not (state.free_cells[2].card and state.free_cells[2].card.is_dragon) then
+      return false, "apply_move must not mutate the input state's free cells"
+   end
+   return true
+end)
+
+H.test("moves C2: collect onto a parked dragon's own cell keeps the other cells free", function(rules)
+   local state = empty_state()
+   state.tableau[1] = { drag("red") }
+   state.tableau[2] = { drag("red") }
+   state.tableau[3] = { drag("red") }
+   state.free_cells[2] = { card=drag("red"), is_blocked=false }
+
+   local s2 = rules.apply_move(state, { type="dragon_collect", suit="red" })
+
+   if not s2.free_cells[2].is_blocked then
+      return false, "the pile must host on the parked dragon's own cell (cell 2), not consume a fresh one"
+   end
+   for _, i in ipairs({ 1, 3 }) do
+      if s2.free_cells[i].card ~= nil or s2.free_cells[i].is_blocked then
+         return false, "cell " .. i .. " was empty and must stay empty — the collect consumed no extra slot"
+      end
+   end
+   return true
+end)
 
 return H

@@ -65,7 +65,7 @@
 
 ### Тесты (`solver/tests/`)
 Запуск: `lua solver/tests/run_all.lua` (из корня; exit 0/1). Харнесс — `harness.lua` (`new_harness`, `H.test/report/assert_eq`).
-`test_deal` (d1-d8 раздача/детерминизм) · `test_win` (w1-w6; w2/w3 — защита от бага `base_cards_count>=27`) · `test_moves` (B1-B8 паритет ходов) · `test_solvable` (мини-борд из `main.script` `deal_auto_finish_test`) · `test_fixes` (fix#1 oracle, fix#2a/2b счётчик драконов = только tableau-tops) · `test_watch` (рендер) · `test_bridge` (game→solver, round-trip) · `test_replay` (директивы `replay.plan`: desync, go-reuse, double-book, terminal-win) · `test_review_bugs` (F3–F7, F10, C3) · `test_game_scripts` (F1, F2, F3 леттербокс, F4, F9, A3, A6 + дедуп драконов в обе стороны — .script под Defold-stub).
+`test_deal` (d1-d8 раздача/детерминизм) · `test_win` (w1-w6; w2/w3 — защита от бага `base_cards_count>=27`) · `test_moves` (B1-B8 паритет ходов) · `test_solvable` (мини-борд из `main.script` `deal_auto_finish_test`) · `test_fixes` (fix#1 oracle, C1 счётчик драконов = верхушки **+ незаблокированные free cells**; закопанный дракон не считается) · `test_watch` (рендер) · `test_bridge` (game→solver, round-trip) · `test_replay` (директивы `replay.plan`: desync, go-reuse, double-book, terminal-win) · `test_review_bugs` (F3–F7, F10, C3) · `test_game_scripts` (F1, F2, F3 леттербокс, F4, F9, A3, A6 + дедуп драконов в обе стороны — .script под Defold-stub).
 Симуляции под ручную проверку message-flow (не в run_all): `reviews/repro/{f2,a6,f10}_sim.lua` — грузят настоящие `.script` в изолированные окружения с движком сообщений и `update`.
 
 ### Браузерный play-test (`tools/browser-test.py`)
@@ -74,7 +74,7 @@
 ## Где править частые задачи
 - **Правила хода/стекинга** → `tableau_script.can_stack_cards`, `card.is_correct_card`, `base_slot.check_correct_cards` (и зеркало в `rules.legal_moves`).
 - **Авто-финиш** → `main.script` (`can_auto_finish`/`find_next_auto_card`/`auto_finish_step`) + `rules.can_auto_finish`.
-- **Сбор драконов** → `dragon_button.script` + `free_cell.send_to_dragon_buttons` + `cursor` `get_dragon_cards`.
+- **Сбор драконов** → `dragon_button.script` + `free_cell.send_to_dragon_buttons` + `cursor` `get_dragon_cards`. Счётчик кнопки = ВЫСТАВЛЕННЫЕ драконы (верхушки + free cells), декремента нет; зеркало — `rules.compute_dragon_counter`. Припаркованные драконы тоже улетают в стопку: их ячейки освобождаются явно (`cursor.get_dragon_cards`, директива `release_cells` в `replay`/`main.debug_replay`).
 - **Победа** → `main.script` (`card_to_base` → `base_cards_count`) + `tutorial_state.show_victory` (UI poll).
 - **Звук** → `sfx.lua` (+ poll `sfx.pending` в `main.script` update).
 - **Туториал** → `tutorial_state.lua` (`EXPECTED_MOVES`/`HIGHLIGHTS`) + `cursor` хайлайты + `ui.gui_script` хинты.

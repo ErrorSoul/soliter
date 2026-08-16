@@ -263,4 +263,69 @@ H.test("replay.plan: dragon_collect emits 4 GOs and blocks one cell", function(r
    return true
 end)
 
+-- ============================================================
+-- C2: since C1 counts parked dragons, a collect can include cards sitting in
+-- free cells. Their GOs must join card_gos exactly once and their go_map slots
+-- must be cleared, or the same GO lives both in a cell and in the pile.
+-- No release directive is emitted on purpose: card.script posts remove_card to
+-- the previous owner on drop_success, so the source cell frees itself; a second
+-- remove_card would crash free_cell.check_dragon on nil card_data.
+-- ============================================================
+H.test("replay.plan: dragon_collect takes parked GOs and clears their cells", function(rules)
+   local function drag() return { value = "d", suit = "red", is_dragon = true } end
+
+   local state = {
+      tableau = { { drag() }, { drag() }, {}, {}, {}, {}, {}, {} },
+      free_cells = {
+         { card = drag(),                            is_blocked = false },
+         { card = { value = 7, suit = "blue" },      is_blocked = false },
+         { card = drag(),                            is_blocked = false },
+      },
+      foundation_top    = { red = 1, blue = 1, green = 1 },
+      flower_slot       = { occupied = false },
+      dragons_collected = { red = false, blue = false, green = false },
+      free_slots_counter = { red = 1, blue = 0, green = 0 },
+      dragon_counter     = { red = 4, blue = 0, green = 0 },
+   }
+   local go_map = {
+      tableau = { { "d1" }, { "d2" }, {}, {}, {}, {}, {}, {} },
+      free_cells = { "d3", "b7", "d4" },
+   }
+
+   local directives = replay.plan(state, { { type = "dragon_collect", suit = "red" } }, go_map)
+   local d = directives[1]
+   if not d or d.kind ~= "dragon_collect" then
+      return false, "expected a dragon_collect directive, got " .. tostring(d and d.kind)
+   end
+
+   local seen = {}
+   for _, go in ipairs(d.card_gos) do
+      if seen[go] then return false, "GO " .. go .. " appears twice in the pile" end
+      seen[go] = true
+   end
+   for _, id in ipairs({ "d1", "d2", "d3", "d4" }) do
+      if not seen[id] then return false, "dragon GO " .. id .. " is missing from the pile" end
+   end
+   if seen["b7"] then return false, "the unrelated 7_blue was swept into the pile" end
+   if #d.card_gos ~= 4 then return false, "expected exactly 4 GOs, got " .. #d.card_gos end
+
+   -- go_map: host BLOCKED, the other dragon cell empty, the stranger untouched
+   if go_map.free_cells[d.cell_ord] ~= replay.BLOCKED then
+      return false, "host cell " .. tostring(d.cell_ord) .. " not marked BLOCKED"
+   end
+   if go_map.free_cells[2] ~= "b7" then
+      return false, "the 7_blue cell must be untouched"
+   end
+   local other = d.cell_ord == 1 and 3 or 1
+   if go_map.free_cells[other] ~= nil then
+      return false, "cell " .. other .. " still holds a GO that flew into the pile — duplicate/strand"
+   end
+
+   -- and no release directive: the glue must not double-free the cell
+   if d.release_cells then
+      return false, "directive must not carry release_cells — card.script already frees the previous owner; a second remove_card crashes free_cell"
+   end
+   return true
+end)
+
 return H
