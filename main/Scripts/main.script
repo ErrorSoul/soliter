@@ -740,16 +740,8 @@ function debug_replay(self)
             msg.post(go, "drop_success", {
                slot_id = sid, position = pos, card = card_by_go[go], complete = true })
          end
-         -- C6: кнопка масти в этом пути не участвует и о сборе не узнаёт —
-         -- остаётся `is_enable = true` с `counter == 4`, и `check_state` зажигает
-         -- её снова на ближайшем `change_free_slots_button_counter`. Клик по ней
-         -- после реплея отправляет уже собранных драконов в ту же заблокированную
-         -- ячейку. Сообщаем ей о сборе явно (то же состояние, что даёт клик).
          local first = card_by_go[d.card_gos[1]]
-         local suit = first and first.data and first.data.suit
-         for btn_id, btn in pairs(self.dragon_buttons) do
-            if btn.sprite == suit then msg.post(btn_id, "collect_done") end
-         end
+         notify_dragon_button_collected(self, first and first.data and first.data.suit)
       end
    end
 
@@ -779,6 +771,21 @@ function debug_replay(self)
       timer.delay(REPLAY_STEP_DELAY, false, step)
    end
    timer.delay(0.5, false, step)
+end
+
+-- C6: реплей собирает драконов прямыми `drop_success` — кнопка масти в этом пути
+-- не участвует и о сборе не узнаёт: у неё остаётся `is_enable = true` с
+-- `counter == 4`, и `check_state` снова зажигает её на ближайшем
+-- `change_free_slots_button_counter`. Клик по такой кнопке отправляет четырёх уже
+-- собранных драконов лететь в ту же заблокированную ячейку. Отдельная функция, а
+-- не пара строк в dispatch, чтобы адресацию «масть → кнопка» можно было проверить
+-- тестом: она держится на поле `sprite` из `get_dragon_buttons`, и мутация внутри
+-- dispatch тест-копию логики не роняла (замерено).
+function notify_dragon_button_collected(self, suit)
+   if not suit or not self.dragon_buttons then return end
+   for btn_id, btn in pairs(self.dragon_buttons) do
+      if btn.sprite == suit then msg.post(btn_id, "collect_done") end
+   end
 end
 
 function send_messages_to_cursor(self)

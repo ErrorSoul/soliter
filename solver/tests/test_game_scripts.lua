@@ -876,11 +876,12 @@ H.test("C6 collect_done puts the button in the same state a real click leaves", 
    return true
 end)
 
+-- Адресация «масть → кнопка» держится на поле `sprite` из `get_dragon_buttons` и
+-- легко разъезжается при переименовании. Зовём настоящую функцию main.script:
+-- копия логики в тесте ничего не доказывает (замерено — мутация в dispatch
+-- такой тест не роняла).
 H.test("C6 replay's dragon_collect tells the matching button", function()
    load_script("main/Scripts/main.script")
-   -- вырезаем ровно ту ветку dispatch, что шлёт collect_done: полный debug_replay
-   -- под стабами не гоняется (timer/solve), а адресация кнопки по масти — это то,
-   -- что легко разъезжается при переименовании поля sprite.
    local self = {
       dragon_buttons = {
          dragon_button1 = { sprite = "red" },
@@ -888,13 +889,8 @@ H.test("C6 replay's dragon_collect tells the matching button", function()
          dragon_button3 = { sprite = "green" },
       },
    }
-   local card_by_go = { go_dg1 = { id = "go_dg1", data = { value = "d", suit = "green" } } }
    msg.clear()
-   local first = card_by_go["go_dg1"]
-   local suit = first and first.data and first.data.suit
-   for btn_id, btn in pairs(self.dragon_buttons) do
-      if btn.sprite == suit then msg.post(btn_id, "collect_done") end
-   end
+   notify_dragon_button_collected(self, "green")
    if stub.msg_count("collect_done") ~= 1 then
       return false, "exactly one button must be told, got " .. stub.msg_count("collect_done")
    end
