@@ -45,6 +45,16 @@ function on_message(self, message_id, message, sender)
       timer.delay(1.5, false, function()
          msg.post("/card_table#main", "dragons_collected")
       end)
+   elseif message_id == hash("collect_done") then
+      -- C6: масть собрали МИМО кнопки — так делает реплей солвера (`debug_replay`
+      -- шлёт четырём драконам `drop_success{complete=true}` напрямую, повторяя
+      -- `cursor.get_dragon_cards`, но саму кнопку не трогает). Без этого сообщения
+      -- у кнопки остаётся `is_enable = true` и `counter == 4`, и первый же
+      -- `change_free_slots_button_counter` снова зажигает её: клик отправляет
+      -- четыре уже собранных дракона лететь в ту же заблокированную ячейку.
+      -- Ставим ровно то состояние, в которое кнопку приводит человеческий путь.
+      self.is_enable = false
+      check_state(self)
    elseif message_id == hash("highlight") then
       ui_fx.highlight(1.15)
    elseif message_id == hash("unhighlight") then

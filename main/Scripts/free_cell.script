@@ -13,7 +13,7 @@ local function check_dragon(card)
 end
 
 local function wo_array(arr, cond)
-   tbl = {}
+   local tbl = {}
    for key, value in pairs(arr) do
       if cond ~= key then
          table.insert(tbl, value)
@@ -94,8 +94,18 @@ function on_message(self, message_id, message, sender)
       if message.complete then
          if not self.is_blocked then
             self.is_blocked = true
+            -- C11: уведомление курсора и изменение счётчиков разъехались, и это
+            -- главное здесь. Уведомлять надо ВСЕГДА: когда стопка садится на
+            -- ячейку с уже припаркованным драконом (`is_occupied` уже true),
+            -- прежний гард глушил сообщение целиком, и у cursor в `free_slots`
+            -- навсегда оставалась запись `{dragon=<масть>, is_blocked=false}` от
+            -- момента парковки. `send_auto_finish_check` шлёт её в main, а
+            -- `can_auto_finish` читает «в ячейке лежит несобранный дракон» и
+            -- отказывает до конца партии — на доске, которую доигрывает.
+            -- Счётчик кнопок при этом трогаем только для свободной ячейки: занятая
+            -- свой −1 уже вычла при парковке (ради этого гард и ставился, F2).
+            msg.post(self.cursor, "update_free_slot", {slot_id = self.slot_id, dragon = dragon, is_empty = false, is_blocked = true})
             if not self.is_occupied then
-               msg.post(self.cursor, "update_free_slot", {slot_id = self.slot_id, dragon = dragon, is_empty = false, is_blocked = true})
                send_to_dragon_buttons(self, message.card, -1)
             end
          end
@@ -116,10 +126,20 @@ function on_message(self, message_id, message, sender)
          self.current_card = nil
          self.card_data = nil
          mirror_to_main(self)
-      else
-         -- Blocked slot: restore free_slots_counter for other-suit buttons only
-         change_button_counter(self, 1)
       end
+      -- C10: заблокированная ячейка НИЧЕГО не возвращает. Раньше здесь стояло
+      -- `change_button_counter(self, 1)` с комментарием «for other-suit buttons
+      -- only» — комментарий врал (`wo` не передан ⇒ шло всем трём), а сам +1 был
+      -- ничем не обеспечен: ячейка со стопкой драконов ушла навсегда.
+      -- Единственный путь, на котором сюда вообще приходит `remove_card`, — карта,
+      -- чей `self.owner` уже эта ячейка (`card.script:109`), получила новый
+      -- `drop_success` в неё же: сбор драконов на ячейку с ранее припаркованным
+      -- драконом той же масти (её `cursor.get_dragon_cards` как раз предпочитает).
+      -- Взять карту из заблокированной ячейки нельзя (`can_pick_card` отказывает),
+      -- `clear_slot` не шлёт никто, `is_blocked` не сбрасывается нигде — так что
+      -- потерянного «законного» +1 не существует. Замерено на настоящем скрипте:
+      -- было red=4 blue=3 green=3 при двух реально свободных ячейках, стало
+      -- red=3 blue=2 green=2 — как на порядке «сбор в пустую ячейку».
 
    elseif message_id == hash("can_pick_card") then
       if self.is_occupied and not self.is_blocked then

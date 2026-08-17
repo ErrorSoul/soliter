@@ -31,8 +31,11 @@ H.test("F1 foundation rejects is_dragon even when value == last+1", function()
    return true
 end)
 
--- F2: complete-landing on an already occupied cell must NOT notify / decrement
-H.test("F2 collect occupy on parked card does not double-notify", function()
+-- F2: complete-landing on an already occupied cell must NOT decrement the button
+-- counters a second time (the parking already spent this cell's -1).
+-- C11 split the two halves of the old guard: the cursor notification now DOES go
+-- out on this path (see the C11 tests below); only the counter stays untouched.
+H.test("F2 collect occupy on parked card does not re-decrement the counters", function()
    load_script("main/Scripts/free_cell.script")
    local self = {
       is_occupied = true,  -- dragon already parked here
@@ -48,9 +51,6 @@ H.test("F2 collect occupy on parked card does not double-notify", function()
       card = { data = { value = "d", suit = "red" }, id = "d1" },
       position = { x = 0, y = 0, z = 0 },
    }, "card")
-   if stub.msg_count("update_free_slot") > 0 then
-      return false, "occupied slot re-sent update_free_slot — counters would decrement twice"
-   end
    if stub.msg_count("change_free_slots_button_counter") > 0 then
       return false, "occupied slot re-decremented dragon button counters"
    end
@@ -388,8 +388,16 @@ H.test("C4 mirror fires on a collect landing onto an already occupied cell", fun
    on_message(self, hash("occupy_slot"),
       { card = pile, complete = true, position = vmath.vector3(0, 0, 0) }, "card")
 
-   if stub.msg_count("update_free_slot") ~= 0 then
-      return false, "premise changed: this branch now notifies cursor — re-check what the mirror hooks onto"
+   -- C11 изменил этот пин осознанно: раньше здесь было 0 сообщений (гард
+   -- `is_occupied` глушил уведомление целиком) — ровно это и было багом C11.
+   -- Зеркало в main при этом по-прежнему НЕ навешено на `update_free_slot`:
+   -- оно шлётся безусловно в конце `occupy_slot`, по финальному состоянию.
+   if stub.msg_count("update_free_slot") ~= 1 then
+      return false, "cursor must learn the cell became blocked (C11), exactly once"
+   end
+   local u = last_msg("update_free_slot")
+   if not (u and u.data.is_blocked) then
+      return false, "the notification must say is_blocked=true, else cursor keeps serving a loose dragon"
    end
    local m = last_msg("free_cell_changed")
    if not m or not m.data.is_blocked or m.data.card ~= pile then
@@ -731,6 +739,168 @@ H.test("C5 a landed flower stays in the snapshot", function()
    end
    if err then
       return false, "a board whose flower has landed was refused: " .. tostring(err)
+   end
+   return true
+end)
+
+-- ============================================================
+-- C10 / C11 / C6 — живая бухгалтерия сбора драконов
+-- ============================================================
+
+-- C10. Единственный путь, на котором `remove_card` приходит в заблокированную
+-- ячейку: карта, чей owner уже эта ячейка, получила новый drop_success в неё же
+-- (сбор на ячейку с ранее припаркованным драконом той же масти). Ячейка при этом
+-- НЕ освобождается, а старый код возвращал +1 всем трём кнопкам.
+H.test("C10 a blocked cell credits nothing back to the dragon buttons", function()
+   load_script("main/Scripts/free_cell.script")
+   local self = {
+      is_occupied = true, is_blocked = true,
+      cursor = "cursor", slot_id = "free_slot1",
+      card_data = { id = "go_dr1", data = { value = "d", suit = "red" } },
+      dragon_button_trace = { red = "b1", blue = "b2", green = "b3" },
+   }
+   msg.clear()
+   on_message(self, hash("remove_card"), {}, "card")
+   if stub.msg_count("change_free_slots_button_counter") > 0 then
+      return false, "the blocked cell handed back a free slot it never freed — a button can light up with no cell to fly into"
+   end
+   if not self.is_blocked then
+      return false, "remove_card must not unblock a collected pile"
+   end
+   return true
+end)
+
+-- C10, вторая половина: обычная ячейка обязана возвращать +1, иначе счётчик
+-- уедет в другую сторону и кнопка не загорится там, где место есть.
+H.test("C10 an ordinary cell still credits the buttons back", function()
+   load_script("main/Scripts/free_cell.script")
+   local self = {
+      is_occupied = true, is_blocked = false,
+      cursor = "cursor", slot_id = "free_slot1",
+      card_data = { id = "go_5b", data = { value = 5, suit = "blue" } },
+      dragon_button_trace = { red = "b1", blue = "b2", green = "b3" },
+   }
+   msg.clear()
+   on_message(self, hash("remove_card"), {}, "card")
+   -- не дракон ⇒ во все три кнопки
+   if stub.msg_count("change_free_slots_button_counter") ~= 3 then
+      return false, "freeing a normal cell must credit all three buttons once"
+   end
+   for _, e in ipairs(msg.log) do
+      if e.id == "change_free_slots_button_counter" and e.data.num ~= 1 then
+         return false, "credit must be +1, got " .. tostring(e.data.num)
+      end
+   end
+   return true
+end)
+
+-- C11. Тот же путь, что в C10, но со стороны cursor: пока уведомление глушилось,
+-- у него навсегда оставалась запись «в ячейке лежит незаблокированный дракон».
+H.test("C11 cursor learns the cell became blocked even when it was occupied", function()
+   load_script("main/Scripts/free_cell.script")
+   local self = {
+      is_occupied = true,   -- дракон той же масти уже припаркован здесь
+      is_blocked = false, cursor = "cursor", slot_id = "free_slot1",
+      card_data = { id = "go_dr1", data = { value = "d", suit = "red" } },
+      dragon_button_trace = { red = "b1", blue = "b2", green = "b3" },
+   }
+   msg.clear()
+   on_message(self, hash("occupy_slot"), {
+      card = { id = "go_dr2", data = { value = "d", suit = "red" } },
+      complete = true, position = vmath.vector3(0, 0, 0),
+   }, "card")
+
+   local u = last_msg("update_free_slot")
+   if not u then
+      return false, "cursor was never told — its free_slots entry stays {dragon=red, is_blocked=false} for the rest of the game"
+   end
+   if not u.data.is_blocked or u.data.is_empty then
+      return false, "the notification must describe a blocked, non-empty cell"
+   end
+   -- и при этом счётчик кнопок не трогаем второй раз (F2)
+   if stub.msg_count("change_free_slots_button_counter") > 0 then
+      return false, "the counters were decremented twice for one cell"
+   end
+   return true
+end)
+
+-- C11, последствие. Зеркальная пара к тесту «stale entry disables auto-finish»:
+-- та же доска с ПРАВИЛЬНОЙ записью должна доигрываться.
+H.test("C11 with the corrected entry that same board auto-finishes", function()
+   load_script("main/Scripts/main.script")
+   local self = {
+      tableau_stacks = {
+         { cards = { { id = "go_2r", data = { value = 2, suit = "red" } } } },
+         { cards = { { id = "go_2b", data = { value = 2, suit = "blue" } } } },
+         { cards = { { id = "go_2g", data = { value = 2, suit = "green" } } } },
+      },
+      foundation_top = { red = 1, blue = 1, green = 1 },
+      states = { WIN = "win" }, currentState = "playing",
+   }
+   -- форма ровно та, что шлёт cursor: МАССИВ записей {slot_id, dragon, is_blocked}
+   local blocked_cells = { { slot_id = "free_slot1", dragon = "red", is_blocked = true } }
+   if not can_auto_finish(self, { free_cells = blocked_cells }) then
+      return false, "a board whose cells hold only COLLECTED piles must still auto-finish"
+   end
+   local stale_cells = { { slot_id = "free_slot1", dragon = "red", is_blocked = false } }
+   if can_auto_finish(self, { free_cells = stale_cells }) then
+      return false, "premise changed: an unblocked dragon in a cell no longer blocks auto-finish — re-check what C11 was protecting"
+   end
+   return true
+end)
+
+-- C6. Реплей собирает драконов сам, прямыми drop_success. Кнопка масти об этом
+-- узнаёт только через `collect_done`; без него она остаётся боевой с counter==4.
+H.test("C6 collect_done puts the button in the same state a real click leaves", function()
+   load_script("main/Scripts/dragon_button.script")
+   local self = {
+      sprite = "red", default_sprite = "red_grey", cursor = "cursor",
+      slot_id = "dragon_button1", counter = 4, cards = {},
+      free_slots_counter = 3, is_enable = true,
+   }
+   msg.clear()
+   on_message(self, hash("collect_done"), {}, "main")
+   if self.is_enable then
+      return false, "the button stayed armed — a click would re-fly four collected dragons into the blocked cell"
+   end
+   local st = last_msg("set_button_state")
+   if not st or st.data.is_active ~= false then
+      return false, "cursor's mirror still says the button is active, so the click is not even filtered by the hit test"
+   end
+   -- и повторный get_dragon_cards после этого — no-op (F9)
+   msg.clear()
+   on_message(self, hash("get_dragon_cards"), {}, "cursor")
+   if stub.msg_count("get_dragon_cards") > 0 then
+      return false, "a disabled button still answered get_dragon_cards"
+   end
+   return true
+end)
+
+H.test("C6 replay's dragon_collect tells the matching button", function()
+   load_script("main/Scripts/main.script")
+   -- вырезаем ровно ту ветку dispatch, что шлёт collect_done: полный debug_replay
+   -- под стабами не гоняется (timer/solve), а адресация кнопки по масти — это то,
+   -- что легко разъезжается при переименовании поля sprite.
+   local self = {
+      dragon_buttons = {
+         dragon_button1 = { sprite = "red" },
+         dragon_button2 = { sprite = "blue" },
+         dragon_button3 = { sprite = "green" },
+      },
+   }
+   local card_by_go = { go_dg1 = { id = "go_dg1", data = { value = "d", suit = "green" } } }
+   msg.clear()
+   local first = card_by_go["go_dg1"]
+   local suit = first and first.data and first.data.suit
+   for btn_id, btn in pairs(self.dragon_buttons) do
+      if btn.sprite == suit then msg.post(btn_id, "collect_done") end
+   end
+   if stub.msg_count("collect_done") ~= 1 then
+      return false, "exactly one button must be told, got " .. stub.msg_count("collect_done")
+   end
+   local m = last_msg("collect_done")
+   if m.to ~= "dragon_button3" then
+      return false, "the green collect must reach the green button, went to " .. tostring(m.to)
    end
    return true
 end)
