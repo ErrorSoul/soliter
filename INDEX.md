@@ -21,7 +21,7 @@
 | `base_slot.script` | Foundation (2→10, одна масть) | `check_correct_cards` |
 | `free_cell.script` | Free cell (1 карта / blocked-пайл драконов) | `check_dragon` `send_to_dragon_buttons` `change_button_counter` `mirror_to_main` (→ `free_cell_changed`, C4) |
 | `tableau_script.script` | Колонка tableau: видимый стек, авто-отправка верхней карты | `can_stack_cards` `update_visible_cards` `last_card_to_slot` `contains` |
-| `flower_slot.script` | Слот цветка (только `'f'`, авто-победа) | — (`check_slot`/`occupy_slot`) |
+| `flower_slot.script` | Слот цветка (только `'f'`, авто-победа) | — (`check_slot`/`occupy_slot` → `flower_collected` в main, C5) |
 | `dragon_button.script` | Сбор драконов (актив при 4 + free slot) | `check_state` `free_slot_any` |
 | `game_manager.script` | Загрузка/перезагрузка уровня через collectionproxy | (msg: `start_game` `restart_level` `unload_level`) |
 | `Game.script` (`main/`) | Чистый Lua-класс правил (НЕ привязан к Defold; похоже legacy) | `Game.new` `Game:canMoveCard` `Game:checkWin` `Game:init` `Card.new` |
@@ -61,7 +61,7 @@
 
 **Типы ходов** (`rules.legal_moves`): `to_foundation` `to_free_cell` `from_free_cell` `tableau_to_tableau` `multi_to_tableau` `dragon_collect` `flower_auto` (+ `to_empty_tableau` в apply).
 **state** = `{tableau, foundation_top, free_cells, flower_slot, dragons_collected, dragon_counter, free_slots_counter}`.
-**Snapshot-контракт (вход bridge):** `snap.tableau[1..8]` (низ→верх), `snap.foundation{red,blue,green}`, `snap.free_cells[1..3]` (nil / `{card}` / `{card,blocked=true}`), `snap.flower` (bool). Живой снапшот собирает `main.snapshot_and_go_map` из зеркал `tableau_card_added/removed` и `free_cell_changed`; 4-й возврат — строка отказа (нечестный снапшот ⇒ не решаем).
+**Snapshot-контракт (вход bridge):** `snap.tableau[1..8]` (низ→верх), `snap.foundation{red,blue,green}`, `snap.free_cells[1..3]` (nil / `{card}` / `{card,blocked=true}`), `snap.flower` (bool). Живой снапшот собирает `main.snapshot_and_go_map` из зеркал `tableau_card_added/removed`, `free_cell_changed` и `flower_collected`; 4-й возврат — строка отказа (нечестный снапшот ⇒ не решаем). Гарды отказа: цветок в ячейке · заблокированная ячейка без дракона · один GO в двух местах · недоигранный сбор драконов · **перепись карт** (C5: настоящая раздача = 40 карт, мультимножество по номиналу+масти; только при `self.is_full_deal`).
 
 ### Тесты (`solver/tests/`)
 Запуск: `lua solver/tests/run_all.lua` (из корня; exit 0/1). Харнесс — `harness.lua` (`new_harness`, `H.test/report/assert_eq`).
@@ -69,7 +69,7 @@
 Симуляции под ручную проверку message-flow (не в run_all): `reviews/repro/{f2,a6,f10}_sim.lua` — грузят настоящие `.script` в изолированные окружения с движком сообщений и `update`.
 
 ### Браузерный play-test (`tools/browser-test.py`)
-Гоняет настоящий js-web бандл в headless Chromium (SwiftShader WebGL) и правит его реальными мышью/клавишами; `print` игры виден в консоли браузера. Сценарии: `boot` · `hittest` (драг карты во free cell, вердикт по яркости пикселей — **единственная проверка не-16:9 канваса**) · `win` (солвер ведёт настоящие карты, `debug_replay` сам печатает `[REPLAY] WIN ✓`) · `stuck` (драг-машина; честная область — в докстринге) · `freecell` (C4: припарковать карту в ячейку, потом `R` — единственный сценарий, который различает честный снапшот free cells; `win` его НЕ различает, там ячейки пусты). Как собрать бандл и две ловушки (ввод сэмплится раз в кадр; `--no-coi` грузит ДРУГОЙ wasm) — в скилле `build`.
+Гоняет настоящий js-web бандл в headless Chromium (SwiftShader WebGL) и правит его реальными мышью/клавишами; `print` игры виден в консоли браузера. Сценарии: `boot` · `hittest` (драг карты во free cell, вердикт по яркости пикселей — **единственная проверка не-16:9 канваса**) · `win` (солвер ведёт настоящие карты, `debug_replay` сам печатает `[REPLAY] WIN ✓`) · `stuck` (драг-машина; честная область — в докстринге) · `freecell` (C4: припарковать карту в ячейку, потом `R` — единственный сценарий, который различает честный снапшот free cells; `win` его НЕ различает, там ячейки пусты) · `census` (C5: `R` на доске, где цветок УЖЕ приземлился — единственный сценарий, где видно зеркало `flower_collected` и перепись карт; `win`/`freecell` не различают, там цветок обычно ещё закопан). Как собрать бандл и две ловушки (ввод сэмплится раз в кадр; `--no-coi` грузит ДРУГОЙ wasm) — в скилле `build`. `tools/browser-test-selfcheck.py` — оффлайн-проверка самого харнесса (`wait_for_log` не должен переиспользовать съеденную строку лога).
 
 ## Где править частые задачи
 - **Правила хода/стекинга** → `tableau_script.can_stack_cards`, `card.is_correct_card`, `base_slot.check_correct_cards` (и зеркало в `rules.legal_moves`).
