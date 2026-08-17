@@ -52,7 +52,10 @@ function on_message(self, message_id, message, sender)
       -- у кнопки остаётся `is_enable = true` и `counter == 4`, и первый же
       -- `change_free_slots_button_counter` снова зажигает её: клик отправляет
       -- четыре уже собранных дракона лететь в ту же заблокированную ячейку.
-      -- Ставим ровно то состояние, в которое кнопку приводит человеческий путь.
+      -- Ставим то же состояние КНОПКИ, что и человеческий путь, но НЕ повторяем
+      -- его `timer.delay(1.5) -> dragons_collected`: там это сообщение шлёт сама
+      -- кнопка, а здесь отправитель — main, который и так знает про сбор, и на
+      -- время реплея `can_auto_finish` всё равно отказывает (`debug_replaying`).
       self.is_enable = false
       check_state(self)
    elseif message_id == hash("highlight") then
