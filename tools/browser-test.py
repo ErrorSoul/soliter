@@ -130,18 +130,35 @@ class Session:
         return [e for e in self.log if rx.search(e["text"])]
 
     def wait_for_log(self, pattern, timeout, label=""):
-        """Block until a console line matches, polling the live event log."""
+        """Block until a NEW console line matches, polling the live event log.
+
+        The cursor matters. Scanning from index 0 (as this did until 2026-08-17)
+        re-matches a line an earlier call already consumed, so a scenario that
+        retries in a loop keeps reading the first attempt's verdict forever: a
+        `freecell` run showed twelve deals each printing `SOLVED`, every one of
+        them answered by attempt 1's stale `timeout`. The same flaw inverts just
+        as easily — a stale `WIN ✓` handed back as a later attempt's verdict is
+        a green run that proves nothing. Lines that arrive between calls are
+        still seen; the cursor only skips what was already returned.
+
+        The cursor is taken AFTER the note, not at the matched index: the note
+        quotes the line it matched, so leaving it behind the cursor would make
+        the harness match its own bookkeeping on the next call (measured).
+        """
         rx = re.compile(pattern)
         deadline = time.time() + timeout
-        seen = 0
+        seen = getattr(self, "_log_cursor", 0)
         while time.time() < deadline:
             while seen < len(self.log):
                 if rx.search(self.log[seen]["text"]):
-                    self.note("match", f"{pattern} <- {self.log[seen]['text'][:120]}")
-                    return self.log[seen]["text"]
+                    hit = self.log[seen]["text"]
+                    self.note("match", f"{pattern} <- {hit[:120]}")
+                    self._log_cursor = len(self.log)
+                    return hit
                 seen += 1
             self.page.wait_for_timeout(200)
         self.note("timeout", f"no line matched {pattern} in {timeout}s {label}")
+        self._log_cursor = len(self.log)
         return None
 
     def shot(self, name):
