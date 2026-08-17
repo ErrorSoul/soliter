@@ -505,9 +505,58 @@ def scenario_freecell(s):
     s.fail("no deal solvable within budget after 12 attempts")
 
 
+def scenario_census(s):
+    """C5: press R on a board whose FLOWER HAS ALREADY LANDED.
+
+    Neither `win` nor `freecell` discriminates the C5 census: they press R on a
+    just-dealt board, and on most deals the flower is still buried in a column,
+    where the snapshot has always counted it. The interesting board is the one
+    where the flower auto-flew during the deal -- then it is in no column, and
+    only the flower_slot->main mirror keeps it in the snapshot. Measured, not
+    assumed: a build with that mirror removed and this scenario refuses with
+    'перепись не сошлась: карт f_flower 0 вместо 1', while the same build passes
+    `freecell` whenever the deal happens to bury the flower.
+
+    The felt baseline comes from free cell 3, which is empty on every deal."""
+    s.boot()
+    s.press_play()
+    s.shot("dealt")
+
+    felt = s.brightness(*FREE_CELL[3])
+    for attempt in range(1, 13):
+        s.note("attempt", f"deal {attempt}")
+        b = s.brightness(*FLOWER_SLOT)
+        s.note("pixel", f"flower slot luminance={b:.0f} vs felt {felt:.0f}")
+        if b - felt <= s.GAP:
+            s.key("Space", "flower still buried in a column -- re-deal")
+            s.wait(3)
+            continue
+        s.shot("flower-landed")
+
+        s.key("r", "debug_replay")
+        verdict = s.wait_for_log(
+            r"\[REPLAY\] (SOLVED|timeout|budget_exhausted|unsolvable|no_solution|planner desync|снапшот)", 90)
+        if verdict and "снапшот" in verdict:
+            s.fail(f"an honest board was refused after the flower landed: {verdict}")
+            return
+        if verdict and "SOLVED" in verdict:
+            n = re.search(r"\((\d+) directives\)", verdict)
+            count = int(n.group(1)) if n else 400
+            s.note("plan", f"{count} directives from a board with the flower already down")
+            result = s.wait_for_log(r"\[REPLAY\] (WIN|DONE but NOT a win)", count * 0.6 + 120)
+            s.shot("replay-end")
+            s.expect(result, "replay never reported a verdict (stalled mid-line)")
+            s.expect(result and "WIN" in result,
+                     f"replay from a flower-already-down board did not win: {result}")
+            return
+        s.key("Space", "new deal")
+        s.wait(3, "re-deal")
+    s.fail("no deal both dropped its flower and solved within budget after 12 attempts")
+
+
 SCENARIOS = {"boot": scenario_boot, "hittest": scenario_hittest,
              "stuck": scenario_stuck, "win": scenario_win,
-             "freecell": scenario_freecell}
+             "freecell": scenario_freecell, "census": scenario_census}
 
 
 def main():
