@@ -202,3 +202,6 @@ UI (ui.gui_script.update)
 | `tableau_card_removed` | tableau → main | `{index, id}` | Дельта-зеркало: карта покинула колонку |
 | `check_auto_finish` | cursor → main | `{free_cells: [{slot_id, dragon, is_blocked}]}` | Запрос проверки auto-finish; main оценивает ОТЛОЖЕННО (2 кадра в update) |
 | `send_auto_finish_check` | main/cursor → cursor | — | Просьба курсору собрать free_cells и переслать check_auto_finish |
+| `free_cell_changed` | free_cell → main | `{slot_id, card?, is_blocked}` | Зеркало содержимого ячейки (C4): ФИНАЛЬНОЕ состояние, не дельта. Без `card` = ячейка пуста |
+| `flower_collected` | flower_slot → main | — | Цветок сел в свой слот (C5). Иначе снапшот забывает его: из tableau он ушёл, а `snap.flower` жил только на время полёта |
+| `collect_done` | main → dragon_button | — | Масть собрана МИМО кнопки (реплей солвера, C6): ставит `is_enable=false` + `check_state`, т.е. состояние после человеческого клика |
