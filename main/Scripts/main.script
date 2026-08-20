@@ -608,6 +608,11 @@ function snapshot_and_go_map(self)
    snap.foundation = {
       red = self.foundation_top.red, blue = self.foundation_top.blue, green = self.foundation_top.green,
    }
+   -- Порядок гардов значим: специфичные (цветок в ячейке, blocked-не-дракон,
+   -- дубль GO, недоигранный сбор) стоят ВЫШЕ переписи, а `err = err or ...`
+   -- оставляет первый. При множественном рассинхроне человек в консоли увидит
+   -- самую диагностичную причину, а не общее «карт не сошлось». Перестановка
+   -- гардов молча ухудшит диагностику.
    if self.is_full_deal then
       err = err or census_error(snap)
    end
