@@ -130,18 +130,35 @@ class Session:
         return [e for e in self.log if rx.search(e["text"])]
 
     def wait_for_log(self, pattern, timeout, label=""):
-        """Block until a console line matches, polling the live event log."""
+        """Block until a NEW console line matches, polling the live event log.
+
+        The cursor matters. Scanning from index 0 (as this did until 2026-08-17)
+        re-matches a line an earlier call already consumed, so a scenario that
+        retries in a loop keeps reading the first attempt's verdict forever: a
+        `freecell` run showed twelve deals each printing `SOLVED`, every one of
+        them answered by attempt 1's stale `timeout`. The same flaw inverts just
+        as easily — a stale `WIN ✓` handed back as a later attempt's verdict is
+        a green run that proves nothing. Lines that arrive between calls are
+        still seen; the cursor only skips what was already returned.
+
+        The cursor is taken AFTER the note, not at the matched index: the note
+        quotes the line it matched, so leaving it behind the cursor would make
+        the harness match its own bookkeeping on the next call (measured).
+        """
         rx = re.compile(pattern)
         deadline = time.time() + timeout
-        seen = 0
+        seen = getattr(self, "_log_cursor", 0)
         while time.time() < deadline:
             while seen < len(self.log):
                 if rx.search(self.log[seen]["text"]):
-                    self.note("match", f"{pattern} <- {self.log[seen]['text'][:120]}")
-                    return self.log[seen]["text"]
+                    hit = self.log[seen]["text"]
+                    self.note("match", f"{pattern} <- {hit[:120]}")
+                    self._log_cursor = len(self.log)
+                    return hit
                 seen += 1
             self.page.wait_for_timeout(200)
         self.note("timeout", f"no line matched {pattern} in {timeout}s {label}")
+        self._log_cursor = len(self.log)
         return None
 
     def shot(self, name):
@@ -442,8 +459,104 @@ def scenario_stuck(s):
     s.expect_empty_at(cell[0], cell[1], felt, "A2 free cell stayed empty")
 
 
+def scenario_freecell(s):
+    """C4: park a card in a free cell, THEN let the solver drive.
+
+    `scenario_win` cannot see this fix: it presses R on a fresh deal where every
+    cell is empty, so the honest snapshot and the old hardcoded `{{},{},{}}` are
+    the same board. Here one card is physically sitting in a cell before R.
+    Without C4 that card is in no mirror at all -- it left tableau_stacks and the
+    snapshot claims the cells are empty -- so the solver plans a 26-card board and
+    the run ends 'DONE but NOT a win'. Verified A/B against exactly that build,
+    not assumed."""
+    s.boot()
+    s.press_play()
+    s.shot("dealt")
+
+    cell = FREE_CELL[1]
+    for attempt in range(1, 13):
+        s.note("attempt", f"deal {attempt}")
+        felt = s.brightness(*cell)
+        d1 = s.exposed_depth(1, felt)
+        if d1 is None:
+            s.key("Space", "column 1 empty — re-deal"); s.wait(3); continue
+        s.drag_game(TABLEAU_X[1], TABLEAU_TOP_Y - d1 * CARD_PITCH, cell[0], cell[1],
+                    "column 1 top -> free cell 1")
+        s.wait(1.5, "card lands in the cell")
+        if not s.expect_card_at(cell[0], cell[1], felt, "parked card in free cell 1"):
+            return
+        s.shot("parked")
+
+        s.key("r", "debug_replay")
+        verdict = s.wait_for_log(
+            r"\[REPLAY\] (SOLVED|timeout|budget_exhausted|unsolvable|no_solution|planner desync|снапшот)", 90)
+        if verdict and "SOLVED" in verdict:
+            n = re.search(r"\((\d+) directives\)", verdict)
+            count = int(n.group(1)) if n else 400
+            s.note("plan", f"{count} directives with a card parked in cell 1")
+            result = s.wait_for_log(r"\[REPLAY\] (WIN|DONE but NOT a win)", count * 0.6 + 120)
+            s.shot("replay-end")
+            s.expect(result, "replay never reported a verdict (stalled mid-line)")
+            s.expect(result and "WIN" in result,
+                     f"replay from a board with a parked card did not win: {result}")
+            return
+        s.key("Space", "new deal")
+        s.wait(3, "re-deal")
+    s.fail("no deal solvable within budget after 12 attempts")
+
+
+def scenario_census(s):
+    """C5: press R on a board whose FLOWER HAS ALREADY LANDED.
+
+    Neither `win` nor `freecell` discriminates the C5 census: they press R on a
+    just-dealt board, and on most deals the flower is still buried in a column,
+    where the snapshot has always counted it. The interesting board is the one
+    where the flower auto-flew during the deal -- then it is in no column, and
+    only the flower_slot->main mirror keeps it in the snapshot. Measured, not
+    assumed: a build with that mirror removed and this scenario refuses with
+    'перепись не сошлась: карт f_flower 0 вместо 1', while the same build passes
+    `freecell` whenever the deal happens to bury the flower.
+
+    The felt baseline comes from free cell 3, which is empty on every deal."""
+    s.boot()
+    s.press_play()
+    s.shot("dealt")
+
+    felt = s.brightness(*FREE_CELL[3])
+    for attempt in range(1, 13):
+        s.note("attempt", f"deal {attempt}")
+        b = s.brightness(*FLOWER_SLOT)
+        s.note("pixel", f"flower slot luminance={b:.0f} vs felt {felt:.0f}")
+        if b - felt <= s.GAP:
+            s.key("Space", "flower still buried in a column -- re-deal")
+            s.wait(3)
+            continue
+        s.shot("flower-landed")
+
+        s.key("r", "debug_replay")
+        verdict = s.wait_for_log(
+            r"\[REPLAY\] (SOLVED|timeout|budget_exhausted|unsolvable|no_solution|planner desync|снапшот)", 90)
+        if verdict and "снапшот" in verdict:
+            s.fail(f"an honest board was refused after the flower landed: {verdict}")
+            return
+        if verdict and "SOLVED" in verdict:
+            n = re.search(r"\((\d+) directives\)", verdict)
+            count = int(n.group(1)) if n else 400
+            s.note("plan", f"{count} directives from a board with the flower already down")
+            result = s.wait_for_log(r"\[REPLAY\] (WIN|DONE but NOT a win)", count * 0.6 + 120)
+            s.shot("replay-end")
+            s.expect(result, "replay never reported a verdict (stalled mid-line)")
+            s.expect(result and "WIN" in result,
+                     f"replay from a flower-already-down board did not win: {result}")
+            return
+        s.key("Space", "new deal")
+        s.wait(3, "re-deal")
+    s.fail("no deal both dropped its flower and solved within budget after 12 attempts")
+
+
 SCENARIOS = {"boot": scenario_boot, "hittest": scenario_hittest,
-             "stuck": scenario_stuck, "win": scenario_win}
+             "stuck": scenario_stuck, "win": scenario_win,
+             "freecell": scenario_freecell, "census": scenario_census}
 
 
 def main():

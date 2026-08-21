@@ -55,6 +55,16 @@ function init(self)
    self.suit_to_base = {}
 
    self.dragonPiles = {}
+   -- C4: зеркало free cells (free_cell.script шлёт free_cell_changed). Новая
+   -- партия = перезагрузка коллекции через game_manager (unload/async_load), так
+   -- что init здесь — единственная точка сброса.
+   self.free_cell_state = { {}, {}, {} }
+   -- C5: цветок приземлился в свой слот (зеркало flower_slot->main). Сбрасывается
+   -- здесь же, где и остальные зеркала: новая партия = перезагрузка коллекции.
+   self.flower_collected = false
+   -- C5: перепись карт в снапшоте имеет смысл только для настоящей раздачи —
+   -- отладочные раскладки и туториал заведомо не 40 карт.
+   self.is_full_deal = not (self.tutorial_mode or DEBUG_DRAGONS or DEBUG_AUTO_FINISH)
    self.base_slots = get_base_slots()
    self.tableau_slots = get_tableau_slots(self.tutorial_mode)
    self.free_slots = get_free_slots()
@@ -420,6 +430,78 @@ function get_data(self)
    }
 end
 
+-- C4: ячейки адресуются строковым slot_id ("free_slot1"..3, cursor.get_free_slots),
+-- а солвер/replay — порядковым номером 1..3. Отображение живёт здесь, чтобы
+-- free_cell.script не парсил цифру из своего id.
+local FREE_CELL_ORD = { free_slot1 = 1, free_slot2 = 2, free_slot3 = 3 }
+
+-- C5: перепись карт снапшота — единственный инвариант, который ловит ПОТЕРЮ карты.
+-- Всё, что выводится из самого снапшота, потерю не видит: доска без 10_green
+-- внутренне непротиворечива, солвер честно доводит её до конца и рапортует
+-- "SOLVED", а партия встаёт на R10 B10 G9 — ровно это показал браузерный A/B до
+-- C4 (замерено ещё раз на чистом солвере: три сида, у каждого is_goal=true при
+-- G9). Поймать это может только АБСОЛЮТНОЕ ожидание: настоящая раздача — 40 карт,
+-- по одной каждого номинала 2..10 в трёх мастях, по 4 дракона на масть и цветок.
+-- Отладочные раскладки и туториал 40 картами не являются ⇒ перепись включается
+-- только при self.is_full_deal.
+local CENSUS_SUITS = { "red", "blue", "green" }
+
+local function census_expected()
+   local exp, order = {}, {}
+   local function want(key, n)
+      exp[key] = n
+      order[#order + 1] = key
+   end
+   for _, suit in ipairs(CENSUS_SUITS) do
+      for v = 2, 10 do want(v .. "_" .. suit, 1) end
+      want("d_" .. suit, 4)
+   end
+   want("f_flower", 1)
+   return exp, order
+end
+
+-- Считает каждую карту доски ровно один раз: столбцы, ячейки (заблокированная —
+-- это стопка из ЧЕТЫРЁХ драконов масти), foundation (номиналы 2..foundation_top)
+-- и цветок. Проверяем мультимножество, а не сумму: две пятёрки и ни одной семёрки
+-- дают ту же сумму, но это другая доска.
+local function census_error(snap)
+   local seen = {}
+   local function add(value, suit, n)
+      local key = tostring(value) .. "_" .. tostring(suit)
+      seen[key] = (seen[key] or 0) + (n or 1)
+   end
+   for col = 1, 8 do
+      for _, c in ipairs(snap.tableau[col] or {}) do add(c.value, c.suit) end
+   end
+   for ord = 1, 3 do
+      local fc = snap.free_cells[ord]
+      if fc and fc.card then
+         if fc.blocked then add("d", fc.card.suit, 4) else add(fc.card.value, fc.card.suit) end
+      end
+   end
+   for _, suit in ipairs(CENSUS_SUITS) do
+      for v = 2, ((snap.foundation and snap.foundation[suit]) or 1) do add(v, suit) end
+   end
+   if snap.flower then add("f", "flower") end
+
+   local exp, order = census_expected()
+   for _, key in ipairs(order) do
+      local got = seen[key] or 0
+      if got ~= exp[key] then
+         return string.format(
+            "перепись не сошлась: карт %s на доске %d вместо %d — зеркала потеряли или задвоили карту",
+            key, got, exp[key])
+      end
+      seen[key] = nil
+   end
+   for key, n in pairs(seen) do
+      if n > 0 then
+         return "перепись не сошлась: на доске лишняя карта " .. key .. " (" .. n .. " шт.)"
+      end
+   end
+   return nil
+end
+
 -- Walk the live tableau into BOTH a solver snapshot and a parallel go_map of the
 -- real card GO ids, with IDENTICAL filtering so that solver card[i] <-> GO[i]
 -- stays an exact bijection (the director relies on this).
@@ -432,11 +514,20 @@ end
 --   * an on-top flower may be MID-FLIGHT (drop_success fires on arc landing,
 --     ~0.7s): until then it is still in the mirror. Exclude it from both the
 --     snapshot and the go_map, and mark flower=true (as good as collected).
--- Intended for a FRESH deal (free cells empty, no manual collects).
+--
+-- C4: free cells are read from self.free_cell_state (free_cell->main mirror), not
+-- hardcoded empty any more — with C1 a parked dragon changes what collects are
+-- legal, so a lie here makes the solver plan a different position than the one on
+-- screen. Fourth return value is an error string: a board we cannot snapshot
+-- honestly must refuse, not produce a plausible-looking wrong solve.
 function snapshot_and_go_map(self)
-   local snap = { tableau = {}, free_cells = { {}, {}, {} }, flower = false }
+   -- C5: цветок «помнится» отдельным флагом. Пока он лежит на верхушке столбца,
+   -- его добавляет цикл ниже (окно полёта); после приземления карта уходит из
+   -- зеркала tableau навсегда, и без flower_collected снапшот забывал бы её.
+   local snap = { tableau = {}, free_cells = { {}, {}, {} }, flower = self.flower_collected or false }
    local go_map = { tableau = {}, free_cells = {} }
    local card_by_go = {}
+   local err = nil
    for col = 1, 8 do
       snap.tableau[col] = {}
       go_map.tableau[col] = {}
@@ -455,16 +546,83 @@ function snapshot_and_go_map(self)
          end
       end
    end
+   -- Free cells. Empty stays {}; a parked card carries its GO so the director can
+   -- fly it; a blocked cell is a collected dragon pile — replay must never target
+   -- it, hence the BLOCKED sentinel instead of a GO (solver/replay.lua asserts on
+   -- it). Snapshot field is `blocked` (bridge.lua contract), value/suit only —
+   -- bridge.card derives the flags.
+   for ord = 1, 3 do
+      local fc = self.free_cell_state and self.free_cell_state[ord]
+      local rec = fc and fc.card
+      if rec and rec.data then
+         local v, s = rec.data.value, rec.data.suit
+         if v == 'f' or rec.data.is_flower then
+            err = err or ("цветок припаркован в ячейке " .. ord .. " — солвер такую позицию не моделирует")
+         end
+         if fc.is_blocked then
+            if v ~= 'd' then
+               err = err or ("заблокированная ячейка " .. ord .. " держит не дракона (" .. tostring(v) .. ")")
+            end
+            snap.free_cells[ord] = { card = { value = v, suit = s }, blocked = true }
+            go_map.free_cells[ord] = solver_replay.BLOCKED
+         else
+            if card_by_go[rec.id] then
+               -- Один и тот же GO уже встречался — в tableau или в другой ячейке
+               -- (второй случай возможен, пока зеркало догоняет очередь сообщений).
+               err = err or ("карта из ячейки " .. ord .. " уже числится в другом месте доски — зеркала разъехались")
+            end
+            snap.free_cells[ord] = { card = { value = v, suit = s } }
+            go_map.free_cells[ord] = rec.id
+            card_by_go[rec.id] = rec
+         end
+      end
+   end
+   -- Сбор драконов сажает четыре карты на ячейку с задержкой (cursor: i*0.1 c).
+   -- Первая уже приземлилась => ячейка blocked => bridge поставит
+   -- dragons_collected[масть]=true, а остальные три этой масти ещё на столе.
+   -- Гибрид «масть собрана + драконы той же масти лежат» — не позиция с экрана,
+   -- и по нему нельзя ни решать, ни вести карты. Находка ревью grok-4.6;
+   -- до C4 окна не было, потому что ячейки в снапшоте всегда были пусты.
+   for ord = 1, 3 do
+      local fc = snap.free_cells[ord]
+      if fc and fc.blocked and fc.card then
+         local suit = fc.card.suit
+         for col = 1, 8 do
+            for _, c in ipairs(snap.tableau[col]) do
+               if c.value == 'd' and c.suit == suit then
+                  err = err or ("масть " .. tostring(suit) .. " уже собрана в ячейке " .. ord ..
+                     ", но её дракон ещё лежит в столбце " .. col .. " — сбор не доиграл до конца")
+               end
+            end
+         end
+         for other = 1, 3 do
+            local o = snap.free_cells[other]
+            if other ~= ord and o and o.card and not o.blocked
+               and o.card.value == 'd' and o.card.suit == suit then
+               err = err or ("масть " .. tostring(suit) .. " уже собрана в ячейке " .. ord ..
+                  ", но её дракон ещё лежит в ячейке " .. other .. " — сбор не доиграл до конца")
+            end
+         end
+      end
+   end
    snap.foundation = {
       red = self.foundation_top.red, blue = self.foundation_top.blue, green = self.foundation_top.green,
    }
-   return snap, go_map, card_by_go
+   -- Порядок гардов значим: специфичные (цветок в ячейке, blocked-не-дракон,
+   -- дубль GO, недоигранный сбор) стоят ВЫШЕ переписи, а `err = err or ...`
+   -- оставляет первый. При множественном рассинхроне человек в консоли увидит
+   -- самую диагностичную причину, а не общее «карт не сошлось». Перестановка
+   -- гардов молча ухудшит диагностику.
+   if self.is_full_deal then
+      err = err or census_error(snap)
+   end
+   return snap, go_map, card_by_go, err
 end
 
 -- 2c (console replay) needs only the snapshot.
 function build_solver_snapshot(self)
-   local snap = snapshot_and_go_map(self)
-   return snap
+   local snap, _, _, err = snapshot_and_go_map(self)
+   return snap, err
 end
 
 -- Dev tool (press 'S'): solve the current deal and animate the solver's line of
@@ -472,7 +630,12 @@ end
 -- rules.apply_move (both tested), so it is independent of the live game state —
 -- zero desync risk. Stage 2b drives the real cards.
 function debug_solve(self)
-   local state = solver_bridge.from_game(build_solver_snapshot(self))
+   local snap, snap_err = build_solver_snapshot(self)
+   if snap_err then
+      print("[SOLVER] снапшот доски недостоверен: " .. snap_err .. " — решать не буду.")
+      return
+   end
+   local state = solver_bridge.from_game(snap)
    print("[SOLVER] solving current deal (budget " .. SOLVE_BUDGET .. ") ...")
    local moves, status = solver_rules.solve(state, { node_budget = SOLVE_BUDGET })
    if status ~= "solved" then
@@ -510,7 +673,11 @@ end
 -- value-2 on a tableau top) are flagged `auto` and skipped here.
 function debug_replay(self)
    -- snapshot + parallel go_map from one shared walk (bijection guaranteed).
-   local snap, go_map, card_by_go = snapshot_and_go_map(self)
+   local snap, go_map, card_by_go, snap_err = snapshot_and_go_map(self)
+   if snap_err then
+      print("[REPLAY] снапшот доски недостоверен: " .. snap_err .. " — вести карты не буду.")
+      return
+   end
    local state = solver_bridge.from_game(snap)
    local moves, status = solver_rules.solve(state, { node_budget = REPLAY_BUDGET })
    if status ~= "solved" then
@@ -578,6 +745,8 @@ function debug_replay(self)
             msg.post(go, "drop_success", {
                slot_id = sid, position = pos, card = card_by_go[go], complete = true })
          end
+         local first = card_by_go[d.card_gos[1]]
+         notify_dragon_button_collected(self, first and first.data and first.data.suit)
       end
    end
 
@@ -607,6 +776,21 @@ function debug_replay(self)
       timer.delay(REPLAY_STEP_DELAY, false, step)
    end
    timer.delay(0.5, false, step)
+end
+
+-- C6: реплей собирает драконов прямыми `drop_success` — кнопка масти в этом пути
+-- не участвует и о сборе не узнаёт: у неё остаётся `is_enable = true` с
+-- `counter == 4`, и `check_state` снова зажигает её на ближайшем
+-- `change_free_slots_button_counter`. Клик по такой кнопке отправляет четырёх уже
+-- собранных драконов лететь в ту же заблокированную ячейку. Отдельная функция, а
+-- не пара строк в dispatch, чтобы адресацию «масть → кнопка» можно было проверить
+-- тестом: она держится на поле `sprite` из `get_dragon_buttons`, и мутация внутри
+-- dispatch тест-копию логики не роняла (замерено).
+function notify_dragon_button_collected(self, suit)
+   if not suit or not self.dragon_buttons then return end
+   for btn_id, btn in pairs(self.dragon_buttons) do
+      if btn.sprite == suit then msg.post(btn_id, "collect_done") end
+   end
 end
 
 function send_messages_to_cursor(self)
@@ -835,6 +1019,19 @@ function on_message(self, message_id, message, sender)
             end
          end
       end
+   elseif message_id == hash("free_cell_changed") then
+      -- C4: содержимое ячейки изменилось. message.card отсутствует => ячейка пуста
+      -- (Defold не переносит nil-поля).
+      local ord = FREE_CELL_ORD[tostring(message.slot_id)]
+      if ord then
+         self.free_cell_state[ord] = { card = message.card, is_blocked = message.is_blocked or false }
+      else
+         print("[SNAPSHOT] free_cell_changed от неизвестной ячейки: " .. tostring(message.slot_id))
+      end
+   elseif message_id == hash("flower_collected") then
+      -- C5: см. flower_slot.script. Флаг только взводится: обратно цветок из слота
+      -- не достаётся, а новая партия перезагружает коллекцию (init сбрасывает).
+      self.flower_collected = true
    elseif message_id == hash("check_auto_finish") then
       -- B2: не оцениваем немедленно — каскад drop_success→remove_card→зеркало и
       -- card_to_base ещё в очереди сообщений. Откладываем на 2 кадра в update().
