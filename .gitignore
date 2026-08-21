@@ -21,3 +21,13 @@ project.shared_editor_settings
 # Claude Code: agent worktrees + machine-local settings (do not commit)
 .claude/worktrees/
 .claude/settings.local.json
+
+# Артефакты ревью — объёмные машинные выхлопы, в репозитории им не место.
+# Итоги ревью и так записаны в plans/review-fixes.md; файлы блоков A/B остались
+# в истории с прежних мержей, здесь речь только о новых.
+/reviews/*.diff
+/reviews/*.json
+/reviews/*.err
+/reviews/*.out
+/reviews/*-thought.txt
+/reviews/*-prompt.txt
