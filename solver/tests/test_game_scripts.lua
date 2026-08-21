@@ -921,6 +921,66 @@ H.test("C5 flower_slot tells main the flower landed", function()
    return true
 end)
 
+-- ─── Ложная победа: стол пуст, но карта осталась в free cell ────────────────
+-- Находка независимого ревью (grok-4.6, 2026-08-21), проверена здесь на самом
+-- коде игры. auto_finish_step объявляет победу по «все tableau пусты», а карты
+-- в свободных ячейках не считает вообще: find_next_auto_card смотрит только
+-- верхушки колонок, а can_auto_finish проверяет ячейки лишь на живого дракона.
+-- Парковка десятки в ячейку — обычный ход, так что это достижимо в живой партии.
+
+H.test("BUG auto-finish объявляет победу, пока числовая карта лежит в free cell", function()
+   load_script("main/Scripts/main.script")
+   msg.clear()
+   local self = {
+      tableau_stacks = { { cards = {} }, { cards = {} }, { cards = {} }, { cards = {} },
+                         { cards = {} }, { cards = {} }, { cards = {} }, { cards = {} } },
+      -- 26 из 27 номиналов уже в foundation: не хватает ровно 10_red,
+      -- которая припаркована игроком в свободной ячейке.
+      foundation_top = { red = 9, blue = 10, green = 10 },
+      base_cards_count = 26,
+      free_cell_state = { { card = { value = 10, suit = "red" } }, {}, {} },
+      states = { WIN = "win", PLAYING = "playing" },
+      currentState = "playing",
+      cursor = "cursor_go",
+      auto_finishing = true,
+      suit_to_base = {},
+      base_slots = {},
+   }
+   auto_finish_step(self)
+   if self.currentState ~= "win" then
+      return true -- поведение исправлено: победы нет, пока карта в ячейке
+   end
+   return false, "победа объявлена при 26 картах в foundation и живой 10_red в свободной ячейке"
+end)
+
+-- Парный тест к предыдущему: гард обязан пропускать ЧЕСТНУЮ победу. Без него
+-- «починка» вида «никогда не побеждать» тоже красила бы тест выше в зелёный.
+H.test("BUG честная победа проходит: в ячейках только собранные драконы", function()
+   load_script("main/Scripts/main.script")
+   msg.clear()
+   local self = {
+      tableau_stacks = { { cards = {} }, { cards = {} }, { cards = {} }, { cards = {} },
+                         { cards = {} }, { cards = {} }, { cards = {} }, { cards = {} } },
+      foundation_top = { red = 10, blue = 10, green = 10 },
+      base_cards_count = 27,
+      -- blocked = ячейка запечатана собранными драконами, победе не мешает
+      free_cell_state = { { card = { value = "d", suit = "red" }, is_blocked = true },
+                          { card = { value = "d", suit = "blue" }, is_blocked = true },
+                          {} },
+      states = { WIN = "win", PLAYING = "playing" },
+      currentState = "playing",
+      cursor = "cursor_go",
+      auto_finishing = true,
+      suit_to_base = {},
+      base_slots = {},
+   }
+   auto_finish_step(self)
+   if self.currentState ~= "win" then
+      return false, "победа не объявлена, хотя стол пуст и в ячейках только собранные драконы"
+   end
+   return true
+end)
+
 -- ─── FX: математика «болтания» карты при драге ───────────────────────────────
 -- Прежний наклон считался от `dx` между двумя СОБЫТИЯМИ ВВОДА, то есть зависел
 -- от частоты кадров устройства. Эти тесты и запинывают нормировку по времени:

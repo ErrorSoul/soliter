@@ -929,8 +929,22 @@ function auto_finish_step(self)
             break
          end
       end
+      -- Пустой стол — ещё НЕ победа: карта могла быть припаркована в свободной
+      -- ячейке, а авто-финиш ячейки не разгребает (find_next_auto_card смотрит
+      -- только верхушки колонок). Без этой проверки партия с 10_red в ячейке и
+      -- 26 картами в foundation объявлялась выигранной, оверлей глушил ввод и
+      -- доложить последнюю карту было уже нельзя. Найдено независимым ревью
+      -- (grok-4.6), воспроизведено тестом на этом самом коде.
+      -- Читаем зеркало C4: blocked-ячейка = собранные драконы, она победе не мешает.
+      local cell_occupied = false
+      for _, fc in ipairs(self.free_cell_state or {}) do
+         if fc.card and not fc.is_blocked then
+            cell_occupied = true
+            break
+         end
+      end
       -- 27-я карта уже ставит WIN через card_to_base — не дублируем victory
-      if all_empty and self.base_cards_count > 0
+      if all_empty and not cell_occupied and self.base_cards_count > 0
          and self.currentState ~= self.states.WIN then
          print("[MAIN] auto-finish complete — victory!")
          self.currentState = self.states.WIN
