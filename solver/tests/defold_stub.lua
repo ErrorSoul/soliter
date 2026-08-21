@@ -4,6 +4,7 @@
 local M = {}
 
 function M.install()
+   M.go_props = {}
    _G.hash = function(s) return tostring(s) end
 
    -- vector3 needs `+` because scripts add offsets to message.position.
@@ -34,7 +35,16 @@ function M.install()
       set_position = function() end,
       animate = function() end,
       cancel_animations = function() end,
-      set = function() end,
+      -- go.set/go.get держат общий стор свойств: скрипты читают то, что писали
+      -- (card.script читает euler.z, чтобы доводить поворот маятником).
+      set = function(_url, prop, value)
+         M.go_props[tostring(prop)] = value
+      end,
+      get = function(_url, prop)
+         local v = M.go_props[tostring(prop)]
+         if v ~= nil then return v end
+         return 0
+      end,
    }
 
    _G.sprite = { set_constant = function() end }
@@ -65,6 +75,7 @@ end
 
 -- Canvas the game believes it is running on; coords tests resize it.
 M.window_size = { 960, 540 }
+M.go_props = {}
 
 function M.set_window(w, h)
    M.window_size = { w, h }

@@ -5,6 +5,7 @@ local tutorial_state = require("main.Scripts.tutorial_state")
 local config = require("main.Scripts.config")
 local coords = require("main.Scripts.coords")
 local hit = require("main.Scripts.hit_test")
+local ui_fx = require("main.Scripts.ui_fx")
 
 local function get_slot_target_type(slot_id)
    if string.sub(slot_id, 1, 9) == "base_slot" then return "base"
@@ -13,6 +14,15 @@ local function get_slot_target_type(slot_id)
    elseif slot_id == "flower_slot" then return "flower"
    end
    return "unknown"
+end
+
+-- Драг начинается «с нуля скорости». Без этого первый же кадр считал сдвиг от
+-- prev_cursor_x, оставшегося от прошлого драга (или от нуля после init), и
+-- карта стартовала с мгновенным предельным наклоном — замерено зондом в
+-- браузере: n=1 target=-9.00 при едва начавшемся движении.
+local function reset_drag_fx(self)
+   self.prev_cursor_x = self.cursor_pos and self.cursor_pos.x or nil
+   self.drag_speed_x = nil
 end
 
 function init(self)
@@ -103,6 +113,7 @@ function on_input(self, action_id, action)
             self.selected_card = card.id
             self.selected_card_data = card.source
             self.is_dragging = true
+            reset_drag_fx(self)
             self.dragging_stack = card.is_stack
             self.is_single_card = card.is_single
 
@@ -218,25 +229,9 @@ function on_input(self, action_id, action)
          end
       end
 
-      -- Обновление позиций при перетаскивании
-      if self.is_dragging then
-         local offset = self.drag_offset or vmath.vector3(0, 0, 0)
-         local dx = self.cursor_pos.x - self.prev_cursor_x
-         -- Tilt: scale.x уменьшается при горизонтальном движении (эффект 3D поворота)
-         local tilt = 1.0 - math.min(math.abs(dx) * 0.04, 0.45)
-         if self.dragging_stack then
-            for _, card in ipairs(self.stack_cards) do
-               msg.post(card.id, "drag_update", {
-                   position = self.cursor_pos + offset + card.relative_pos,
-                   tilt = tilt
-               })
-            end
-         else
-            msg.post(self.selected_card, "drag_update", {position = self.cursor_pos + offset, tilt = tilt})
-         end
-      end
-      self.prev_cursor_x = self.cursor_pos.x
-
+      -- Позиции перетаскиваемых карт обновляет update(dt): здесь, в on_input,
+      -- нет времени кадра, а без него наклон считался от сдвига МЕЖДУ СОБЫТИЯМИ
+      -- и зависел от частоты кадров устройства (см. ui_fx.drag_speed).
 
    end
 end
@@ -467,6 +462,7 @@ function on_message(self, message_id, message, sender)
       self.selected_card = message.id
       self.selected_card_data = message
       self.is_dragging = true
+      reset_drag_fx(self)
       self.original_position = self.pending_drop.slot_pos
       self.drag_offset = vmath.vector3(0, 0, 0)
       msg.post(self.selected_card, "start_drag")
@@ -596,5 +592,36 @@ function update(self, dt)
       apply_tutorial_highlights(self)
    end
 
+   -- Драг: раз в кадр, а не раз на событие ввода. Событий за кадр может быть
+   -- несколько (тогда карта получала пачку конкурирующих go.animate), а может
+   -- не быть ни одного при остановленной мыши — и тогда наклон замирал на
+   -- последнем значении вместо того, чтобы выпрямиться.
+   if self.is_dragging and self.cursor_pos then
+      local offset = self.drag_offset or vmath.vector3(0, 0, 0)
+      local raw = ui_fx.drag_speed(self.cursor_pos.x - (self.prev_cursor_x or self.cursor_pos.x), dt)
+      self.drag_speed_x = ui_fx.smooth_speed(self.drag_speed_x, raw, dt)
+      local speed_x = self.drag_speed_x
+      local tilt_deg = ui_fx.drag_tilt_deg(speed_x)
+      local squash = ui_fx.drag_squash(speed_x)
+
+      if self.dragging_stack and self.stack_cards then
+         for i, card in ipairs(self.stack_cards) do
+            msg.post(card.id, "drag_update", {
+                position = self.cursor_pos + offset + card.relative_pos,
+                tilt = squash,
+                tilt_deg = tilt_deg,
+                lag = ui_fx.drag_lag(i)
+            })
+         end
+      elseif self.selected_card then
+         msg.post(self.selected_card, "drag_update", {
+             position = self.cursor_pos + offset,
+             tilt = squash,
+             tilt_deg = tilt_deg,
+             lag = ui_fx.drag_lag(1)
+         })
+      end
+      self.prev_cursor_x = self.cursor_pos.x
+   end
 end
 --8BYNTX0E

@@ -921,4 +921,112 @@ H.test("C5 flower_slot tells main the flower landed", function()
    return true
 end)
 
+-- ─── FX: математика «болтания» карты при драге ───────────────────────────────
+-- Прежний наклон считался от `dx` между двумя СОБЫТИЯМИ ВВОДА, то есть зависел
+-- от частоты кадров устройства. Эти тесты и запинывают нормировку по времени:
+-- «на глаз» такое не проверяется вообще никак.
+
+H.test("FX drag_speed нормирует сдвиг по времени кадра", function()
+   local fx = require("main.Scripts.ui_fx")
+   -- один и тот же жест, снятый на 60 и на 144 Гц, даёт ОДНУ скорость
+   local slow = fx.drag_speed(10, 1 / 60)
+   local fast = fx.drag_speed(10 * (60 / 144), 1 / 144)
+   if math.abs(slow - fast) > 1.0 then
+      return false, ("частота кадров меняет скорость: %.1f vs %.1f"):format(slow, fast)
+   end
+   if math.abs(slow - 600) > 1.0 then
+      return false, ("10px за 1/60с это 600 px/сек, получено %.1f"):format(slow)
+   end
+   return true
+end)
+
+H.test("FX drag_speed не делит на ноль на первом кадре", function()
+   local fx = require("main.Scripts.ui_fx")
+   if fx.drag_speed(37, 0) ~= 0 then return false, "dt=0 должен давать 0" end
+   if fx.drag_speed(37, nil) ~= 0 then return false, "dt=nil должен давать 0" end
+   if fx.drag_speed(37, -0.1) ~= 0 then return false, "отрицательный dt должен давать 0" end
+   return true
+end)
+
+H.test("FX drag_tilt_deg: знак противоположен движению и упёрт в предел", function()
+   local fx = require("main.Scripts.ui_fx")
+   if fx.drag_tilt_deg(0) ~= 0 then return false, "покой = нулевой наклон" end
+   local right = fx.drag_tilt_deg(300)
+   if not (right < 0) then
+      return false, "движение вправо должно давать отрицательный угол (карта отстаёт)"
+   end
+   if fx.drag_tilt_deg(-300) ~= -right then
+      return false, "наклон должен быть симметричен по направлению"
+   end
+   -- вдесятеро быстрее референса не даёт вдесятеро больший угол
+   local capped = fx.drag_tilt_deg(fx.DRAG_REF_SPEED * 10)
+   if math.abs(capped) > fx.DRAG_MAX_TILT_DEG + 0.001 then
+      return false, ("наклон пробил предел: %.2f > %d"):format(math.abs(capped), fx.DRAG_MAX_TILT_DEG)
+   end
+   if math.abs(capped) < fx.DRAG_MAX_TILT_DEG - 0.001 then
+      return false, "на скорости выше референса наклон обязан быть предельным"
+   end
+   return true
+end)
+
+H.test("FX drag_squash остаётся в читаемых пределах", function()
+   local fx = require("main.Scripts.ui_fx")
+   if fx.drag_squash(0) ~= 1.0 then return false, "покой = полная ширина" end
+   local fastest = fx.drag_squash(fx.DRAG_REF_SPEED * 5)
+   if fastest < 1.0 - fx.DRAG_MAX_SQUASH - 0.001 then
+      return false, ("сжатие пробило предел: %.3f"):format(fastest)
+   end
+   -- страховка от возврата к старому 0.45: карта не должна становиться уже 85%
+   if fastest < 0.85 then
+      return false, ("карта сжимается до %.2f ширины — это лапша, а не наклон"):format(fastest)
+   end
+   if fx.drag_squash(-fx.DRAG_REF_SPEED) ~= fx.drag_squash(fx.DRAG_REF_SPEED) then
+      return false, "сжатие не должно зависеть от направления"
+   end
+   return true
+end)
+
+H.test("FX smooth_speed держит наклон в кадре без события мыши", function()
+   local fx = require("main.Scripts.ui_fx")
+   -- первый кадр драга: сглаживать нечего, берём сырое значение как есть
+   if fx.smooth_speed(nil, 800, 1 / 60) ~= 800 then
+      return false, "на старте драга сглаживание должно вернуть сырую скорость"
+   end
+   -- курсор стоял (raw=0), но рука только что двигалась: наклон обязан
+   -- уцелеть, а не схлопнуться в ноль за один кадр
+   local kept = fx.smooth_speed(800, 0, 1 / 60)
+   if kept <= 0 then return false, "скорость схлопнулась в ноль за один кадр" end
+   if kept >= 800 then return false, "скорость обязана убывать, если движения нет" end
+   -- и всё-таки затухает: десяток кадров покоя выпрямляет карту
+   local v = 800
+   for _ = 1, 20 do v = fx.smooth_speed(v, 0, 1 / 60) end
+   if math.abs(v) > 40 then
+      return false, ("после 20 кадров покоя скорость должна быть ~0, получено %.1f"):format(v)
+   end
+   if fx.smooth_speed(500, 900, 0) ~= 500 then
+      return false, "dt=0 не должен менять сглаженное значение"
+   end
+   return true
+end)
+
+H.test("FX drag_lag растёт вглубь стопки и упирается в потолок", function()
+   local fx = require("main.Scripts.ui_fx")
+   local top = fx.drag_lag(1)
+   local second = fx.drag_lag(2)
+   if not (second > top) then
+      return false, "вторая карта обязана отставать сильнее первой, иначе стопка — жёсткое тело"
+   end
+   if math.abs(top - fx.DRAG_LAG_BASE) > 1e-9 then
+      return false, "верхняя карта должна ехать за базовую длительность"
+   end
+   local deep = fx.drag_lag(50)
+   if deep > fx.DRAG_LAG_MAX + 1e-9 then
+      return false, ("отставание пробило потолок: %.3f"):format(deep)
+   end
+   if fx.drag_lag(0) ~= top or fx.drag_lag(nil) ~= top then
+      return false, "индекс 0/nil не должен уезжать в отрицательное отставание"
+   end
+   return true
+end)
+
 return H

@@ -51,11 +51,32 @@ function is_correct_card(self, selected_card)
    end
 end
 
+-- Возврат карты в «спокойный» вид. Идемпотентна и не зависит от того, какой
+-- именно эффект был на карте: любой путь окончания драга обязан её звать,
+-- иначе карта остаётся повёрнутой/сжатой навсегда (сообщение drop_* может и не
+-- прийти — см. F10: драг, начатый в окне 1.5с до dragons_collected).
+function reset_card_fx(settle)
+   go.cancel_animations(".", "scale.x")
+   go.cancel_animations(".", "euler.z")
+   if settle then
+      -- маятник: карта доворачивается через лёгкий перелёт, а не щелчком
+      local z = go.get(".", "euler.z")
+      go.animate(".", "euler.z", go.PLAYBACK_ONCE_FORWARD, -z * 0.28,
+          go.EASING_OUTQUAD, 0.09, 0, function()
+              go.animate(".", "euler.z", go.PLAYBACK_ONCE_FORWARD, 0,
+                  go.EASING_OUTSINE, 0.13)
+          end)
+   else
+      go.set(".", "euler.z", 0)
+   end
+end
+
 function on_message(self, message_id, message, sender)
 
 
    if message_id == hash("start_drag") then
       self.is_dragging = true
+      reset_card_fx(false) -- новый драг начинается с ровной карты, а не с остатков прошлого
       sfx.card_pick()
       go.animate(".", "scale", go.PLAYBACK_ONCE_FORWARD,
           vmath.vector3(1.1, 1.1, 1), go.EASING_OUTQUAD, 0.1)
@@ -64,13 +85,21 @@ function on_message(self, message_id, message, sender)
    elseif message_id == hash("drag_update") and self.is_dragging then
       go.cancel_animations(".", "position")
       local target = message.position + vmath.vector3(0, 0, 0.3)
+      -- lag: чем глубже карта в стопке, тем дольше доводка — стопка изгибается
+      -- веером вместо того, чтобы ехать жёстким телом (ui_fx.drag_lag).
       go.animate(".", "position", go.PLAYBACK_ONCE_FORWARD,
-          target, go.EASING_OUTQUAD, 0.05)
-      -- 3D perspective tilt
+          target, go.EASING_OUTQUAD, message.lag or 0.05)
+      -- Псевдо-3D: лёгкое сжатие по X…
       if message.tilt then
          go.cancel_animations(".", "scale.x")
          go.animate(".", "scale.x", go.PLAYBACK_ONCE_FORWARD,
              message.tilt * 1.1, go.EASING_OUTQUAD, 0.04)
+      end
+      -- …и собственно «болтание» — поворот, отстающий от движения руки.
+      if message.tilt_deg then
+         go.cancel_animations(".", "euler.z")
+         go.animate(".", "euler.z", go.PLAYBACK_ONCE_FORWARD,
+             message.tilt_deg, go.EASING_OUTQUAD, (message.lag or 0.05) * 1.6)
       end
 
    elseif message_id == hash("drop_success") then
@@ -81,7 +110,7 @@ function on_message(self, message_id, message, sender)
          sfx.card_drop()
       end
       go.cancel_animations(".", "position")
-      go.cancel_animations(".", "scale.x")
+      reset_card_fx(true)
       go.animate(".", "scale", go.PLAYBACK_ONCE_FORWARD,
           vmath.vector3(1, 1, 1), go.EASING_OUTQUAD, 0.15)
       if message.animation then
@@ -117,7 +146,7 @@ function on_message(self, message_id, message, sender)
       self.is_dragging = false
       sfx.card_error()
       sprite.set_constant("#sprite", "tint", vmath.vector4(1, 1, 1, 1))
-      go.cancel_animations(".", "scale.x")
+      reset_card_fx(true)
       go.animate(".", "scale", go.PLAYBACK_ONCE_FORWARD,
           vmath.vector3(1, 1, 1), go.EASING_OUTQUAD, 0.15)
       go.animate(".", "position", go.PLAYBACK_ONCE_FORWARD,
