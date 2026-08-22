@@ -24,13 +24,10 @@
 | `flower_slot.script` | Слот цветка (только `'f'`, авто-победа) | — (`check_slot`/`occupy_slot` → `flower_collected` в main, C5) |
 | `dragon_button.script` | Сбор драконов (актив при 4 + free slot) | `check_state` `free_slot_any` |
 | `game_manager.script` | Загрузка/перезагрузка уровня через collectionproxy | (msg: `start_game` `restart_level` `unload_level`) |
-| `Game.script` (`main/`) | Чистый Lua-класс правил (НЕ привязан к Defold; похоже legacy) | `Game.new` `Game:canMoveCard` `Game:checkWin` `Game:init` `Card.new` |
 | `sfx.lua` | Звук: прямой `sound.play` или очередь | `M.pending` `M.play` `M.queue` `M.clear` + `card_pick/card_drop/card_error/card_deal/dragon_collect/button_click/victory/flower_auto/auto_finish` |
 | `i18n.lua` | Локализация en/ru/tr | `M.lang` `M.strings` `M.t` `M.set_lang` `M.detect` (?lang= → язык системы → en) |
 | `tutorial_state.lua` | Состояние туториала (polling-флаги) | `M.is_tutorial` `M.step` `M.ui_dirty` `M.show_victory` `M.highlight_dirty` `M.block_play_input` `M.EXPECTED_MOVES` `M.HIGHLIGHTS` `M.check_move` `M.advance` `M.reset` `M.request_victory` `M.is_play_input_blocked` |
 | `gui/ui.gui_script` | Главный UI: старт-экран, victory overlay, tutorial-хинты, язык | `restart_level` `update_tutorial_hint` `apply_language` `STATIC_LABELS` |
-| `gui/game.gui_script` | Респонсив-раскладка нод (частично legacy) | `adjust_layout` `update_dragon_buttons` |
-| `gui/test.gui_script` | Утилита позиций tableau (вне основного флоу) | — |
 
 ### Game Objects → скрипт
 `card.go`→card · `cursor.go`→cursor · `base_slot.go`→base_slot · `free_slot.go`→free_cell · `tableau_slot.go`→tableau_script · `flower_slot.go`→flower_slot · `dragon_button.go`→dragon_button · `background.go`/`sound_manager.go`→спрайт/звук без скрипта.
