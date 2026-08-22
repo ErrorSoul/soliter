@@ -526,7 +526,14 @@ def scenario_census(s):
     s.shot("dealt")
 
     felt = s.brightness(*FREE_CELL[3])
-    for attempt in range(1, 13):
+    # Лотерея: цветок улетает во время раздачи, только если оказался верхним в
+    # своей колонке — примерно 8 шансов из 40, то есть ~20% на раздачу. При 12
+    # попытках сценарий врёт «провал» в 0.8^12 ≈ 7% прогонов, и это измерено:
+    # один прогон дал 12 раздач подряд с закопанным цветком, а два следующих на
+    # ТОЙ ЖЕ сборке прошли. 25 попыток опускают ложный провал до ~0.4%.
+    ATTEMPTS = 25
+    landed = 0
+    for attempt in range(1, ATTEMPTS + 1):
         s.note("attempt", f"deal {attempt}")
         b = s.brightness(*FLOWER_SLOT)
         s.note("pixel", f"flower slot luminance={b:.0f} vs felt {felt:.0f}")
@@ -534,6 +541,7 @@ def scenario_census(s):
             s.key("Space", "flower still buried in a column -- re-deal")
             s.wait(3)
             continue
+        landed += 1
         s.shot("flower-landed")
 
         s.key("r", "debug_replay")
@@ -554,7 +562,9 @@ def scenario_census(s):
             return
         s.key("Space", "new deal")
         s.wait(3, "re-deal")
-    s.fail("no deal both dropped its flower and solved within budget after 12 attempts")
+    s.fail(f"за {ATTEMPTS} раздач цветок приземлился {landed} раз, и ни одна такая "
+           f"партия не решилась в бюджете — если landed==0, это лотерея раздачи, "
+           f"а не регрессия")
 
 
 SCENARIOS = {"boot": scenario_boot, "hittest": scenario_hittest,
