@@ -1,4 +1,5 @@
 local sfx = require("main.Scripts.sfx")
+local debug_flags = require("main.Scripts.debug_flags")
 
 local function show(self, proxy)
    if self.current_proxy then
@@ -13,6 +14,9 @@ local function show(self, proxy)
 end
 
 function init(self)
+   -- Блок D: вариант сборки видно в логе — по нему стенд отличает бандл, где
+   -- dev-клавиши обязаны работать, от релизного, где они обязаны молчать.
+   print("[DEBUG] dev-клавиши: " .. (debug_flags.enabled and "on" or "off"))
    msg.post(".", "acquire_input_focus")
    self.current_proxy = nil
    self.current_level = "soliter"
@@ -41,7 +45,10 @@ function on_message(self, message_id, message, sender)
 end
 
 function on_input(self, action_id, action)
-   if action_id == hash("space") and action.pressed then
+   -- Блок D: Space раздаёт заново. Это инструмент стенда (сценарии census и
+   -- freecell перебирают раздачи именно им), а для игрока — способ случайно
+   -- потерять партию нажатием пробела. Живёт только в debug-сборке.
+   if debug_flags.enabled and action_id == hash("space") and action.pressed then
       msg.post("#", "restart_level")
    end
 end

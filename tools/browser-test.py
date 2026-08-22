@@ -588,6 +588,83 @@ def scenario_focus(s):
 
 
 
+def scenario_debugkeys(s):
+    """Блок D: dev-клавиши S / R / Space живут ровно в debug-сборке.
+
+    Сценарий двусторонний и сам определяет, чего ждать, по строке варианта из
+    game_manager.init. Гонять его надо на ОБОИХ бандлах: на release он ловит
+    клавиши, уехавшие в магазин, на debug — что мы не сломали собственный стенд
+    (census и freecell перебирают раздачи клавишей Space, win решает партию R).
+    Односторонняя проверка тут ничего не стоит: «клавиша молчит» одинаково верно
+    и для правильно закрытого флага, и для сломанного ввода.
+    """
+    # Релизный движок Defold не печатает в консоль ВООБЩЕ (замерено: в
+    # release-бандле нет ни «Defold Engine», ни наших print). Поэтому у
+    # сценария две руки: в debug читаем логи, в release — пиксели. Ждать логов
+    # от релиза бессмысленно, а «логов нет, значит клавиши мертвы» — ложная
+    # зелень: логов нет и у живых клавиш.
+    s.wait(6, "движок грузится")
+    s.measure()
+    variant = s.wait_for_log(r"\[DEBUG\] dev-клавиши: (on|off)", 5, "вариант сборки")
+    dev = bool(variant and variant.strip().endswith("on"))
+    s.note("variant", f"логи: {'есть' if variant else 'молчат (release)'} → режим {'debug' if dev else 'release'}")
+
+    if dev:
+        s.expect(s.logs_matching(r"Defold Engine"), "engine never announced itself")
+        s.press_play()
+        deals_before = len(s.logs_matching(r"I am MAIN SCRIPT"))
+
+        s.key("s", "solver")
+        s.wait(2, "солвер успел бы отчитаться")
+        solver_spoke = bool(s.logs_matching(r"\[SOLVER\]"))
+        s.key("r", "replay")
+        s.wait(2, "реплей успел бы отчитаться")
+        replay_spoke = bool(s.logs_matching(r"\[REPLAY\]"))
+        s.key("Space", "restart")
+        s.wait(3, "уровень успел бы перезагрузиться")
+        dealt_again = len(s.logs_matching(r"I am MAIN SCRIPT")) > deals_before
+
+        s.note("keys", f"S→{solver_spoke} R→{replay_spoke} Space→{dealt_again}")
+        s.expect(solver_spoke, "debug-сборка: S не запустил солвер — стенд остался без инструмента")
+        s.expect(dealt_again, "debug-сборка: Space не пересдал — census/freecell работать не будут")
+        return
+
+    # ---- release: судим по столу, а не по логам ----
+    board = (480, 300, 380, 200)   # весь игровой стол целиком
+    before_play = s.patch(*board)
+    s.click_game(*PLAY_BUTTON, label="PLAY")
+    s.wait(4, "раздача осела")
+    dealt = s.patch(*board)
+    # Контроль: если PLAY не сработал, дальше «ничего не изменилось» доказывало
+    # бы только то, что мы смотрим на пустой экран.
+    s.expect(dealt != before_play, "release: PLAY не разложил стол — сравнивать нечего")
+
+    s.wait(3, "стол стоит без ввода")
+    idle = s.patch(*board)
+    s.expect(idle == dealt, "release: стол меняется сам по себе — пиксельная проверка тут не судья")
+
+    # ⚠ Граница метода: S сам по себе карты НЕ двигает, он только считает и
+    # печатает. В релизе печать пустая, значит по пикселям живую S не отличить
+    # от мёртвой — замерено мутацией (M.enabled=true в release: R и Space
+    # ловятся, S нет). Живой её выдаёт R: реплей ходит теми же картами и
+    # опирается на тот же DEBUG_SOLVER.
+    s.key("s", "solver")
+    s.wait(3, "солвер успел бы отыграть")
+    after_s = s.patch(*board)
+    s.expect(after_s == idle, "release: клавиша S всё ещё что-то делает со столом")
+
+    s.key("r", "replay")
+    s.wait(4, "реплей успел бы повести карты")
+    after_r = s.patch(*board)
+    s.expect(after_r == idle, "release: клавиша R всё ещё отдаёт партию автоигроку")
+
+    s.key("Space", "restart")
+    s.wait(4, "пересдача успела бы случиться")
+    after_space = s.patch(*board)
+    s.expect(after_space == idle, "release: пробел всё ещё перезапускает партию")
+    s.note("keys", "release: S/R/Space стол не тронули")
+
+
 def scenario_audiobg(s):
     """D2: игра, загруженная В ФОНЕ, не должна звучать.
 
@@ -712,7 +789,7 @@ SCENARIOS = {"boot": scenario_boot, "hittest": scenario_hittest,
              "stuck": scenario_stuck, "win": scenario_win,
              "freecell": scenario_freecell, "census": scenario_census,
              "focus": scenario_focus, "audiobg": scenario_audiobg,
-             "i18n": scenario_i18n}
+             "debugkeys": scenario_debugkeys, "i18n": scenario_i18n}
 
 
 def main():

@@ -7,8 +7,16 @@ local sfx = require("main.Scripts.sfx")
 local config = require("main.Scripts.config")
 
 -- Dev tool: let the pure-Lua solver play the current deal (press 'S').
--- Pure modules, zero Defold deps. Strip DEBUG_SOLVER for release.
-local DEBUG_SOLVER = true
+-- Pure modules, zero Defold deps.
+--
+-- Блок D: флаг больше не выставляется руками — он равен варианту сборки
+-- (см. debug_flags.lua). Сам require солвера оставлен безусловным: bob всё
+-- равно кладёт модуль в бандл (require со статической строкой попадает в граф
+-- зависимостей), так что условный require экономил бы не размер, а только
+-- загрузку модуля — а риск сломать debug_solve/debug_replay при этом реальный.
+-- Цена решения: солвер едет в релизном бандле мёртвым грузом.
+local debug_flags = require("main.Scripts.debug_flags")
+local DEBUG_SOLVER = debug_flags.enabled
 local solver_bridge = require("solver.bridge")
 local solver_rules = require("solver.rules")
 local solver_view = require("solver.board_view")

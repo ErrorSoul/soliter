@@ -1,6 +1,8 @@
 -- cursor.script
 -- go.property("selected_card", nil)
-local DEBUG_SOLVER = true -- press 'S' to let the solver play the current deal (dev tool)
+local debug_flags = require("main.Scripts.debug_flags")
+-- Блок D: клавиша 'S' отдаёт партию солверу. Живёт только в debug-сборке.
+local DEBUG_SOLVER = debug_flags.enabled
 local tutorial_state = require("main.Scripts.tutorial_state")
 local config = require("main.Scripts.config")
 local coords = require("main.Scripts.coords")
@@ -60,7 +62,9 @@ function on_input(self, action_id, action)
       go.set_position(self.cursor_pos, ".")
    end
 
-   if action_id == hash("space") then
+   -- Блок D: physics debug — инструмент разработчика. В релизе Space не должен
+   -- ни рисовать коллизии, ни слать в main «init».
+   if debug_flags.enabled and action_id == hash("space") then
 
       if action.pressed then
          msg.post("@system:", "toggle_physics_debug") -- <3>
