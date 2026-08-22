@@ -501,7 +501,8 @@ function on_message(self, message_id, message, sender)
       end
       if btn_id then
          -- Ввод глушим на время сбора: pending_drop общий с пальцем.
-         -- Возвращает его main — на auto_collect_none или на победе.
+         -- Возвращает его main — end_auto_collect, который зовут и отказ
+         -- (auto_collect_give_up), и declare_victory.
          self.input_disabled = true
          self.pending_drop = { slot_id = btn_id, color = color }
          msg.post(btn_id, "get_dragon_cards")

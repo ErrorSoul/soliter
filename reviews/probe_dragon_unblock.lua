@@ -100,6 +100,31 @@ local STEP_CAP = 60
 
 -- Жадная политика: сначала всё, что собирается; иначе — сдвинуть верхнего
 -- дракона с САМОЙ ВЫСОКОЙ колонки (это монотонно уменьшает глубину закопанных).
+--
+-- Правило выбора здесь ДОСЛОВНО повторяет main.dragon_relocation: колонки
+-- перебираются слева направо, берётся первая строго более глубокая (то есть при
+-- равной глубине выигрывает младший номер), цель — первая пустая колонка по
+-- порядку. Иначе замер подтверждал бы «какую-нибудь жадную политику», а не ту,
+-- что уехала в игру. Порядок сбора мастей в игре как раз произвольный (курсор
+-- обходит кнопки через pairs), но это покрыто строкой «потолок»: полный перебор
+-- пробует все порядки и даёт тот же результат.
+local function pick_like_game(s)
+   local to_col = nil
+   for i = 1, 8 do
+      if col_empty(s, i) then to_col = i break end
+   end
+   if not to_col then return nil end
+   local from_col, best_depth = nil, 1
+   for i = 1, 8 do
+      local col = s.tableau[i]
+      if #col >= 2 and #col > best_depth and col[#col].value == "d" then
+         from_col, best_depth = i, #col
+      end
+   end
+   if not from_col then return nil end
+   return { type = "tableau_to_tableau", from_col = from_col, to_col = to_col }
+end
+
 local function greedy(s0, allow_cell)
    local s = s0
    for _ = 1, STEP_CAP do
@@ -107,10 +132,9 @@ local function greedy(s0, allow_cell)
       if #c > 0 then
          s = rules.apply_move(s, c[1])
       else
-         local m = moves_to_empty(s)
-         if #m > 0 then
-            table.sort(m, function(a, b) return a.depth > b.depth end)
-            s = rules.apply_move(s, m[1].mv)
+         local mv = pick_like_game(s)
+         if mv then
+            s = rules.apply_move(s, mv)
          elseif allow_cell then
             local mc = moves_to_cell(s)
             if #mc == 0 then break end

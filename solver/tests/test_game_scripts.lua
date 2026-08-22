@@ -1702,4 +1702,32 @@ H.test("G7 курсор не летит в исчезнувший слот", fun
 end)
 
 
+H.test("G7 победа снимает замок авто-сбора на любом пути", function()
+   -- Сегодня карты после победы мертвы липким block_play_input, а обратно в
+   -- партию можно попасть только через перезагрузку коллекции. Тест держит
+   -- инвариант на будущее: победа не оставляет за собой auto_collecting=true.
+   load_script("main/Scripts/main.script")
+   for _, case in ipairs({ "board_cleared", "give_up" }) do
+      msg.clear()
+      local self = (case == "board_cleared") and win27_self(0) or win27_no_move_self()
+      self.auto_collecting = true
+      if case == "board_cleared" then
+         on_message(self, hash("dragons_collected"), {}, "dragon_button")
+      else
+         on_message(self, hash("auto_collect_none"), {}, "cursor")
+      end
+      if self.currentState ~= "win" then
+         return false, case .. ": победы не случилось, тест проверяет не то"
+      end
+      if self.auto_collecting then
+         return false, case .. ": замок авто-сбора остался взведён"
+      end
+      if stub.msg_count("enable_input") ~= 1 then
+         return false, case .. ": курсору не вернули ввод"
+      end
+   end
+   return true
+end)
+
+
 return H

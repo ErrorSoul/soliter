@@ -1115,6 +1115,15 @@ end
 
 function declare_victory(self)
    if self.currentState == self.states.WIN then return end
+   -- Замок авто-сбора снимаем на ЛЮБОЙ победе, а не только в ветке отказа.
+   -- Сегодня это гигиена состояния, а не баг: карты после победы всё равно
+   -- мертвы (tutorial_state.request_victory ставит липкий block_play_input,
+   -- cursor.on_input выходит по нему первой строкой), а любой путь обратно в
+   -- партию — restart_level / Space / MENU+PLAY — идёт через game_manager.show,
+   -- то есть выгружает и заново грузит коллекцию вместе с курсором. Но
+   -- оставлять auto_collecting=true у выжившего состояния значит держать мину
+   -- под тем, кто однажды сделает победу без перезагрузки уровня.
+   end_auto_collect(self)
    self.currentState = self.states.WIN
    sfx.victory()
    tutorial_state.request_victory()
