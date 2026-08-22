@@ -1743,28 +1743,61 @@ end)
 -- Пара тестов, а не один: «не сдаваться, пока цветок на столе» в одиночку
 -- зеленело бы и от «не сдаваться никогда», то есть от партии, которая после
 -- отказа авто-сбора зависает без победы навсегда.
-H.test("уступка ждёт, пока цветок улетит сам", function()
+-- Кадры крутим ТАК ЖЕ, как их крутит игра: update, а на каждый новый запрос
+-- к курсору отвечаем auto_collect_none — курсор в изоляции не отвечает сам.
+-- Возвращает, сколько раз main переспросил курсор.
+local function run_collect_frames(self, seconds, dt)
+   dt = dt or 0.016
+   local asked = stub.msg_count("auto_collect_dragons")
+   local frames = math.floor(seconds / dt)
+   for _ = 1, frames do
+      update(self, dt)
+      local now = stub.msg_count("auto_collect_dragons")
+      if now > asked then
+         asked = now
+         on_message(self, hash("auto_collect_none"), {}, "cursor")
+      end
+      if self.currentState == "win" then break end
+   end
+   return asked
+end
+
+H.test("уступка ждёт дольше, чем длится полёт цветка", function()
    msg.clear()
    load_script("main/Scripts/main.script")
    local self = win27_no_move_self()
-   self.flower_collected = false   -- цветок ещё на столе, улетит следующим кадром
+   self.flower_collected = false   -- цветок в дуге: сядет через 0.7 с (fly_card_arc)
    self.auto_collecting = true
    on_message(self, hash("auto_collect_none"), {}, "cursor")
    if self.currentState == "win" then
-      return false, "победа объявлена, пока цветок на столе — за кадр до того, как всё решилось бы само"
+      return false, "победа объявлена сразу — цветок ещё даже не тронулся"
    end
-   if not self.pending_collect_retry then
-      return false, "не сдались, но и переспросить не собираемся — партия повиснет"
+   -- 0.7 с — ровно длительность дуги (0.35 + 0.35). Пока она идёт, сдаваться
+   -- нельзя: flower_collected приходит только из occupy_slot, то есть ПОСЛЕ
+   -- посадки. Тест кадровый бюджет ловит: 32 кадра = 0.53 с < 0.7 с.
+   local asked = run_collect_frames(self, 0.7)
+   if self.currentState == "win" then
+      return false, "победа объявлена посреди полёта цветка — драконы ещё на столе"
    end
-   if not self.auto_collecting then
-      return false, "замок авто-сбора снят, значит переспрашивать будет некому"
+   if asked < 1 then
+      return false, "за всё ожидание курсора ни разу не переспросили — ввод останется глухим"
    end
-   -- Мало проверить, что флаг взведён: переспрашивает не он, а update(). Без
-   -- этих кадров тест зеленел бы и на «флаг ставим, а спросить забыли» —
-   -- партия висела бы с глухим вводом навсегда.
-   for _ = 1, 4 do update(self, 0.016) end
-   if stub.msg_count("auto_collect_dragons") ~= 1 then
-      return false, "кадры прошли, а курсора никто не переспросил — ввод останется глухим"
+   return true
+end)
+
+H.test("ожидание цветка не зависит от частоты кадров", function()
+   -- Тот же полёт на 120 Гц. Бюджет, отмеренный в КАДРАХ, здесь съедается вдвое
+   -- быстрее и победа приезжает посреди дуги — ровно та поломка, которую нашло
+   -- ревью блока J. Бюджет в секундах эту разницу не замечает.
+   msg.clear()
+   load_script("main/Scripts/main.script")
+   local self = win27_no_move_self()
+   self.flower_collected = false
+   self.auto_collecting = true
+   on_message(self, hash("auto_collect_none"), {}, "cursor")
+   run_collect_frames(self, 0.7, 0.008)
+   if self.currentState == "win" then
+      return false, "на 120 Гц сдались посреди полёта — бюджет считается в кадрах, а не во времени"
    end
    return true
 end)
@@ -1773,19 +1806,28 @@ H.test("уступка не ждёт вечно: закопанный цвето
    msg.clear()
    load_script("main/Scripts/main.script")
    local self = win27_no_move_self()
-   self.flower_collected = false
+   self.flower_collected = false   -- закопан намертво, сигнала не будет никогда
    self.auto_collecting = true
-   -- Цветок закопан намертво: сколько ни переспрашивай, он не всплывёт.
-   for _ = 1, 20 do
-      if self.currentState == "win" then break end
-      self.pending_collect_retry = nil
-      on_message(self, hash("auto_collect_none"), {}, "cursor")
-   end
+   on_message(self, hash("auto_collect_none"), {}, "cursor")
+   run_collect_frames(self, 5.0)
    if self.currentState ~= "win" then
-      return false, "переспрашиваем бесконечно — игрок остался без победы на доске, где ходов нет"
+      return false, "ждём бесконечно — игрок остался без победы на доске, где ходов нет"
    end
    if self.auto_collecting then
       return false, "победа объявлена, а замок авто-сбора остался взведён"
+   end
+   return true
+end)
+
+H.test("цветок сел — уступка больше не тянет время", function()
+   msg.clear()
+   load_script("main/Scripts/main.script")
+   local self = win27_no_move_self()
+   self.flower_collected = true    -- цветок уже в своём слоте
+   self.auto_collecting = true
+   on_message(self, hash("auto_collect_none"), {}, "cursor")
+   if self.currentState ~= "win" then
+      return false, "цветка на столе нет, ходов нет — уступка обязана сработать сразу"
    end
    return true
 end)

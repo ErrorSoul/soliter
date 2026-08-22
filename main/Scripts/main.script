@@ -1107,7 +1107,7 @@ end
 -- замок (start_auto_finish), и снимать его отсюда нельзя.
 function begin_auto_collect(self)
    self.auto_collecting = true
-   self.auto_collect_waits = 0
+   self.auto_collect_wait = 0
    msg.post(self.cursor, "auto_collect_dragons")
 end
 
@@ -1155,20 +1155,22 @@ end
 -- ещё сверху: dragon_relocation его не двигает (верхушка не дракон), кнопка не
 -- горит (четвёртый дракон под цветком) — и уступка объявляла победу поверх
 -- живых драконов ровно за кадр до того, как всё разрешилось бы само.
--- Ждём кадры и переспрашиваем; счётчик ограничен, чтобы закопанный намертво
--- цветок (или припаркованный игроком в ячейку — flower_collected тогда не
--- придёт никогда) не держал партию вечно.
+-- Ждём и переспрашиваем; бюджет ограничен, чтобы закопанный намертво цветок
+-- (или припаркованный игроком в ячейку — flower_collected тогда не придёт
+-- никогда) не держал партию вечно.
 --
--- Цена худшего случая: 8 попыток по 4 кадра = 32 кадра, около полусекунды
--- глухого ввода перед уступкой. Это тот же порядок, что пауза авто-финиша.
--- Сигнал честный: flower_collected шлёт flower_slot из occupy_slot, то есть
--- он приходит, когда цветок УЖЕ сел в свой слот — пока цветок лежит на столе,
--- флаг гарантированно false.
-local FLOWER_WAITS = 8
+-- ⚠ Бюджет считается в СЕКУНДАХ, а не в кадрах. Первая версия ждала 8 попыток
+-- по 4 кадра и была бита ревью блока J (grok-4.5) арифметикой: 32 кадра при
+-- 60 fps — это 0.53 с, а цветок летит 0.35 + 0.35 = 0.7 с (fly_card_arc), и
+-- flower_collected приходит только из flower_slot.occupy_slot, то есть ПОСЛЕ
+-- посадки. Победа успевала объявиться прямо посреди дуги. На 120 Гц кадровый
+-- бюджет был бы вдвое короче — ещё хуже.
+-- 2 секунды: полёт 0.7 с плюс запас на задержку старта и на то, что открывшийся
+-- под цветком дракон должен ещё зажечь кнопку.
+local FLOWER_WAIT_SECONDS = 2.0
 
 function auto_collect_give_up(self)
-   if not self.flower_collected and (self.auto_collect_waits or 0) < FLOWER_WAITS then
-      self.auto_collect_waits = (self.auto_collect_waits or 0) + 1
+   if not self.flower_collected and (self.auto_collect_wait or 0) < FLOWER_WAIT_SECONDS then
       self.pending_collect_retry = 4
       return
    end
@@ -1414,6 +1416,11 @@ function update(self, dt)
    -- G7: следующий шаг авто-сбора после сдвига дракона. Отложено на кадры по
    -- той же причине, что и pending_af_check: счётчик кнопки поднимается из
    -- update() слота, а не в момент drop_success.
+   -- Бюджет ожидания цветка тикает по времени, а не по кадрам: на 120 Гц
+   -- кадровый счётчик отмерил бы вдвое меньше реального (ревью блока J).
+   if self.auto_collecting and not self.flower_collected then
+      self.auto_collect_wait = (self.auto_collect_wait or 0) + (dt or 0)
+   end
    if self.pending_collect_retry then
       self.pending_collect_retry = self.pending_collect_retry - 1
       if self.pending_collect_retry <= 0 then
