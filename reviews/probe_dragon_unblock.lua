@@ -125,6 +125,33 @@ local function pick_like_game(s)
    return { type = "tableau_to_tableau", from_col = from_col, to_col = to_col }
 end
 
+-- Ревью блока H (grok-4.5), находка 1: auto_collect_give_up объявляет победу,
+-- не глядя на свободные ячейки, хотя комментарий рядом обещает «ни пустой
+-- колонки, ни ячейки». Вопрос замера: бывает ли вообще состояние, где политика
+-- игры (B) встала, драконы живы, а ячейка свободна — то есть где уступка
+-- срабатывает РАНЬШЕ, чем игрок исчерпал ходы.
+-- Возвращает: драконов осталось, свободных ячеек, пустых колонок.
+local function give_up_snapshot(s0)
+   local s = s0
+   for _ = 1, STEP_CAP do
+      local c = collects(s)
+      if #c > 0 then
+         s = rules.apply_move(s, c[1])
+      else
+         local mv = pick_like_game(s)
+         if not mv then break end
+         s = rules.apply_move(s, mv)
+      end
+   end
+   local cells = 0
+   for _, fc in ipairs(s.free_cells) do
+      if not fc.card and not fc.is_blocked then cells = cells + 1 end
+   end
+   local empty_cols = 0
+   for i = 1, 8 do if col_empty(s, i) then empty_cols = empty_cols + 1 end end
+   return dragons_alive(s), cells, empty_cols
+end
+
 local function greedy(s0, allow_cell)
    local s = s0
    for _ = 1, STEP_CAP do
@@ -193,6 +220,8 @@ end
 
 local cases = 0
 local statA, statB, statC, statBest = 0, 0, 0, 0
+local give_ups, give_ups_with_cell, give_ups_hopeless = 0, 0, 0
+local give_up_rows = {}
 local rows = {}
 
 for seed = 1, SEEDS do
@@ -219,6 +248,16 @@ for seed = 1, SEEDS do
          local nB = a
          local nC = greedy(hit, true)
          local nBest = best_reachable(hit)
+         local gd, gcells, gcols = give_up_snapshot(hit)
+         if gd > 0 then
+            give_ups = give_ups + 1
+            if gcells > 0 then give_ups_with_cell = give_ups_with_cell + 1 end
+            if nBest > 0 then give_ups_hopeless = give_ups_hopeless + 1 end
+            give_up_rows[#give_up_rows + 1] = string.format(
+               "  seed %3d: уступка при %d драконах, свободных ячеек %d, пустых колонок %d, потолок %d (%s)",
+               seed, gd, gcells, gcols, nBest,
+               nBest > 0 and "безнадёжно — уступка честная" or "ПОЛНЫЙ ПЕРЕБОР ДОИГРЫВАЕТ — уступка ранняя")
+         end
          if nA == 0 then statA = statA + 1 end
          if nB == 0 then statB = statB + 1 end
          if nC == 0 then statC = statC + 1 end
@@ -243,4 +282,12 @@ if statB < statBest then
 end
 if statC > statB then
    print("  ⚠ без сдвига в ячейку часть партий не доигрывается")
+end
+print("")
+print(string.format("уступка (политика игры встала при живых драконах): %d из %d", give_ups, cases))
+print(string.format("  из них со СВОБОДНОЙ ЯЧЕЙКОЙ на руках: %d", give_ups_with_cell))
+print(string.format("  из них безнадёжных и по полному перебору: %d", give_ups_hopeless))
+for _, r in ipairs(give_up_rows) do print(r) end
+if give_ups_with_cell == 0 then
+   print("  → ветка «сдвинуть дракона в ячейку» на этой выборке не спасла бы ни одной партии")
 end
