@@ -1831,6 +1831,30 @@ H.test("уступка не ждёт вечно: закопанный цвето
    return true
 end)
 
+H.test("сдвиг дракона тоже обнуляет таймер простоя", function()
+   -- Дуга сдвига — те же 0.7 с (fly_card_arc). Если бы таймер тикал сквозь неё,
+   -- запас после посадки был бы уже сожжён, и первый же отказ ушёл бы в уступку.
+   msg.clear()
+   load_script("main/Scripts/main.script")
+   local self = win27_no_move_self()
+   self.flower_collected = true
+   self.auto_collecting = true
+   on_message(self, hash("auto_collect_none"), {}, "cursor")
+   run_collect_frames(self, 0.2)            -- запас почти вышел
+   if self.currentState == "win" then
+      return false, "сдались раньше запаса — тест дальше ничего не проверит" end
+   on_message(self, hash("auto_collect_moved"), {}, "cursor")   -- дракон приземлился
+   run_collect_frames(self, 0.2)            -- запас должен начаться заново
+   if self.currentState == "win" then
+      return false, "после приземления дракона сдались, не дав кнопке зажечься"
+   end
+   run_collect_frames(self, 1.0)
+   if self.currentState ~= "win" then
+      return false, "событий больше нет, а победы так и нет"
+   end
+   return true
+end)
+
 H.test("после посадки цветка кнопке дают зажечься", function()
    -- Ревью блока J (grok-4.6): flower_collected взводится в тот же кадр, что и
    -- посадка, а кнопка загорается позже и другим путём (верхушка → счётчик →
