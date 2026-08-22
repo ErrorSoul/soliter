@@ -17,12 +17,32 @@ textures {
 }
 nodes {
   position {
-    x: 855.0
-    y: 30.0
+    x: 907.0
+    y: 90.0
   }
   size {
-    x: 150.0
-    y: 40.0
+    x: 78.0
+    y: 152.0
+  }
+  color {
+    x: 0.08
+    y: 0.12
+    z: 0.09
+    w: 0.5
+  }
+  type: TYPE_BOX
+  id: "hud_rail"
+  layer: "background"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 907.0
+    y: 56.0
+  }
+  size {
+    x: 70.0
+    y: 56.0
   }
   color {
     x: 0.15
@@ -36,12 +56,12 @@ nodes {
 }
 nodes {
   scale {
-    x: 0.7
-    y: 0.7
+    x: 0.32
+    y: 0.32
   }
   size {
-    x: 150.0
-    y: 40.0
+    x: 70.0
+    y: 56.0
   }
   type: TYPE_TEXT
   text: "RESTART"
@@ -163,12 +183,12 @@ nodes {
 }
 nodes {
   position {
-    x: 685.0
-    y: 30.0
+    x: 907.0
+    y: 124.0
   }
   size {
-    x: 150.0
-    y: 40.0
+    x: 70.0
+    y: 56.0
   }
   color {
     x: 0.15
@@ -182,12 +202,12 @@ nodes {
 }
 nodes {
   scale {
-    x: 0.7
-    y: 0.7
+    x: 0.32
+    y: 0.32
   }
   size {
-    x: 150.0
-    y: 40.0
+    x: 70.0
+    y: 56.0
   }
   type: TYPE_TEXT
   text: "TUTORIAL"

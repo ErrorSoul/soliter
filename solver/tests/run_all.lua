@@ -44,6 +44,7 @@ local test_modules = {
    "solver.tests.test_replay",
    "solver.tests.test_review_bugs",
    "solver.tests.test_game_scripts",
+   "solver.tests.test_layout",
 }
 
 local total_passed = 0

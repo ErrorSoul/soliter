@@ -51,11 +51,14 @@ FRAME_MS = 17               # one frame at 60fps
 HOLD_MS = 250               # press duration; must span several engine frames
 
 # Slot centres in game coords, read from main/Levels/soliter.collection.
-FREE_CELL = {1: (80, 457), 2: (193, 457), 3: (309, 457)}
-TABLEAU_X = {1: 77, 2: 193, 3: 309, 4: 425, 5: 541, 6: 657, 7: 773, 8: 889}
+# G6: the grid was squeezed left (pitch 116 -> 104, first centre 65) to clear the
+# right rail at x 868..946. Keep these in step with the collection -- a stale
+# TABLEAU_X does not fail loudly, it just drags from the wrong pixel.
+FREE_CELL = {1: (65, 457), 2: (169, 457), 3: (273, 457)}
+TABLEAU_X = {1: 65, 2: 169, 3: 273, 4: 377, 5: 481, 6: 585, 7: 689, 8: 793}
 TABLEAU_TOP_Y = 299         # depth 0; each further card is 35px lower
-CARD_PITCH = 35
-FLOWER_SLOT = (541, 457)
+CARD_PITCH = 35             # only true while the column fits (config.stack_offset_y)
+FLOWER_SLOT = (377, 457)    # G6: flower moved to column 4, dragon buttons to column 5
 PLAY_BUTTON = (480, 232)
 
 BENIGN = (re.compile(r"^INFO:"), re.compile(r"Defold Engine \d"), re.compile(r"^Downloading"))
