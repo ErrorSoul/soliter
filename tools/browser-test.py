@@ -604,13 +604,34 @@ def scenario_restartrace(s):
     felt = s.brightness(*FREE_CELL[1])   # пустая ячейка = эталон сукна
     s.note("felt", f"эталон сукна {felt:.0f}")
 
-    # Клик здесь — не playwright-click: движок читает ввод раз в кадр, поэтому
-    # нажатие держим HOLD_MS. Значит «подряд» — это ~250 мс на клик, и чтобы
-    # попасть в окно загрузки, бьём очередью.
-    for label, times in (("двойной", 2), ("очередь", 8)):
+    # ЗАМЕР, без которого сценарий проверял бы не то: от клика RESTART до
+    # «I am MAIN SCRIPT» проходит 60-80 мс, а обычный click_game держит кнопку
+    # HOLD_MS=250 мс, то есть нажатия идут раз в ~270 мс. Очередь таких кликов
+    # в окно загрузки НЕ ПОПАДАЕТ ни разу — она проверяет восемь честных
+    # последовательных рестартов, а не гонку. Поэтому здесь нажатие короткое:
+    # 40 мс — это ~2.4 кадра при 60fps, движок его видит, а интервал (~50 мс)
+    # меньше окна загрузки, и клики ложатся внутрь него.
+    def fast_click(label):
+        cx, cy = s._map(*RESTART_BUTTON)
+        s.page.mouse.move(cx, cy)
+        s.page.mouse.down()
+        s.page.wait_for_timeout(40)
+        s.page.mouse.up()
+        s.note("click", f"fast RESTART {label}")
+
+    for label, times in (("медленный", 2), ("в окно загрузки", 8)):
+        loads_before = len(s.logs_matching(r"I am MAIN SCRIPT"))
         for n in range(times):
-            s.click_game(*RESTART_BUTTON, label=f"RESTART {n + 1} ({label})")
+            if label == "медленный":
+                s.click_game(*RESTART_BUTTON, label=f"RESTART {n + 1} ({label})")
+            else:
+                fast_click(f"{n + 1}")
         s.wait(5, f"{label} рестарт осел")
+        loads = len(s.logs_matching(r"I am MAIN SCRIPT")) - loads_before
+        s.note("loads", f"{label}: нажатий {times}, загрузок уровня {loads}")
+        # Ноль загрузок означало бы, что короткое нажатие движок не увидел —
+        # тогда «гонки нет» доказывало бы только то, что мы не нажимали.
+        s.expect(loads > 0, f"{label}: ни одной загрузки уровня — нажатия не дошли до движка")
 
         dealt = sum(1 for i, x in enumerate(TABLEAU_X)
                     if s.brightness(x, TABLEAU_TOP_Y) - felt > s.GAP)
