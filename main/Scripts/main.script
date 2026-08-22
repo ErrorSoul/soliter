@@ -937,7 +937,15 @@ function dragons_left(self)
       end
    end
    for _, fc in ipairs(self.free_cell_state or {}) do
-      if fc.card and not fc.is_blocked and fc.card.value == "d" then n = n + 1 end
+      -- G4: зеркало ячейки (free_cell.mirror_to_main) кладёт КАРТУ ЦЕЛИКОМ:
+      -- { id = <go>, data = { value, suit } }. Здесь читалось fc.card.value —
+      -- на боевой форме это всегда nil, то есть припаркованный дракон не
+      -- считался никогда. Ветку прикрывал live_cells (ему достаточно факта
+      -- fc.card), поэтому ложной победы не было, но retry-ветка в
+      -- dragons_collected опиралась на заниженный счётчик.
+      -- snapshot_and_go_map читает ту же форму через rec.data.value.
+      local data = fc.card and fc.card.data
+      if data and not fc.is_blocked and data.value == "d" then n = n + 1 end
    end
    return n
 end
@@ -949,6 +957,21 @@ function board_cleared(self)
    return (self.base_cards_count or 0) >= 27
       and live_cells(self) == 0
       and dragons_left(self) == 0
+end
+
+-- G4: на время авто-сбора ввод глушится (курсор делит pending_drop с пальцем).
+-- Флаг нужен, чтобы вернуть ввод ровно тому, кто его забрал: у auto-finish свой
+-- замок (start_auto_finish), и снимать его отсюда нельзя.
+function begin_auto_collect(self)
+   self.auto_collecting = true
+   msg.post(self.cursor, "auto_collect_dragons")
+end
+
+function end_auto_collect(self)
+   if self.auto_collecting then
+      self.auto_collecting = false
+      msg.post(self.cursor, "enable_input")
+   end
 end
 
 function declare_victory(self)
@@ -1063,7 +1086,7 @@ function on_message(self, message_id, message, sender)
             -- собирает драконов своими директивами. Влезть сюда с авто-сбором
             -- значит собрать масть раньше директивы и рассинхронить план —
             -- та же причина, по которой отказывает can_auto_finish (стр. 858).
-            msg.post(self.cursor, "auto_collect_dragons")
+            begin_auto_collect(self)
          end
       end
       -- B2: авто-улёт двойки поднимает foundation без хода игрока — перепроверяем
@@ -1106,6 +1129,12 @@ function on_message(self, message_id, message, sender)
       -- card_to_base ещё в очереди сообщений. Откладываем на 2 кадра в update().
       self.pending_af_check = { free_cells = message.free_cells, frames = 2 }
    elseif message_id == hash("auto_collect_none") then
+      -- G4: авто-сбор глушит ввод на время сбора (pending_drop общий с пальцем).
+      -- Сбор не состоялся — управление игроку возвращаем ЗДЕСЬ, до решения о
+      -- победе: иначе при отказе от победы (туториал, < 27) стол останется
+      -- глухим навсегда. Через end_auto_collect, а не напрямую: у auto-finish
+      -- свой замок, и снимать чужой мы не имеем права.
+      end_auto_collect(self)
       -- Курсор доложил: собирать нечем (дракон под драконом — кнопка не горит).
       -- Все номиналы уже разложены, партия выиграна по существу, и держать
       -- игрока без победы нельзя. Объявляем победу, как это делалось до правки
@@ -1132,7 +1161,9 @@ function on_message(self, message_id, message, sender)
          -- дожимаем оставшиеся кнопки, если номиналы уже все в foundation.
          if (self.base_cards_count or 0) >= 27 and dragons_left(self) > 0
             and not self.debug_replaying then
-            msg.post(self.cursor, "auto_collect_dragons")
+            begin_auto_collect(self)   -- ввод остаётся глухим до конца цепочки
+         else
+            end_auto_collect(self)     -- G4: цепочка кончилась, вернуть управление
          end
       end
    elseif message_id == hash("debug_solve") then

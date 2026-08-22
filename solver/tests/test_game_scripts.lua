@@ -1007,21 +1007,131 @@ H.test("WIN27 во время реплея солвера авто-сбор не
    return true
 end)
 
-H.test("WIN27 курсор жмёт горящие кнопки и молчит про пустой доклад", function()
+H.test("WIN27 курсор жмёт горящую кнопку и молчит про пустой доклад", function()
    load_script("main/Scripts/cursor.script")
    msg.clear()
    local self = { dragon_buttons = {
       dragon_button1 = { is_active = true,  sprite = "red" },
       dragon_button2 = { is_active = false, sprite = "blue" },
       dragon_button3 = { is_active = false, sprite = "green" },
-   } }
+   }, free_slots = { free_slot1 = { is_empty = true } } }
    on_message(self, hash("auto_collect_dragons"), {}, "main")
    if stub.msg_count("auto_collect_none") ~= 0 then
-      return false, "кнопка горит — докладывать «собирать нечем» нельзя"
+      return false, "кнопка горит и ячейка есть — докладывать «собирать нечем» нельзя"
    end
-   timer.flush() -- отложенные нажатия
    if stub.msg_count("get_dragon_cards") ~= 1 then
       return false, "должна быть нажата ровно одна горящая кнопка"
+   end
+   if not self.input_disabled then
+      return false, "на время сбора ввод обязан быть заглушен: pending_drop общий с пальцем"
+   end
+   return true
+end)
+
+-- G4 (grok-4.6 #1, блокер). Кнопки драконов горят по ОБЩЕМУ счётчику свободных
+-- ячеек (dragon_button.free_slot_any → free_slots_counter > 0), а садится масть
+-- в КОНКРЕТНУЮ ячейку. Значит две кнопки могут гореть при одной пустой ячейке.
+-- Старый код снимал снимок всех горящих и планировал нажатия через
+-- timer.delay(0 / 1.7): первая масть занимала единственную ячейку, вторая
+-- гасла, а таймер всё равно стрелял — и падал уже внутри get_dragon_cards.
+H.test("G4 две горящие кнопки при одной ячейке: нажата ровно одна", function()
+   load_script("main/Scripts/cursor.script")
+   msg.clear()
+   local self = { dragon_buttons = {
+      dragon_button1 = { is_active = true, sprite = "red" },
+      dragon_button2 = { is_active = true, sprite = "blue" },
+      dragon_button3 = { is_active = false, sprite = "green" },
+   }, free_slots = { free_slot1 = { is_empty = true } } }
+   on_message(self, hash("auto_collect_dragons"), {}, "main")
+   timer.flush() -- если код всё ещё планирует нажатия таймерами — они стрельнут тут
+   if stub.msg_count("get_dragon_cards") ~= 1 then
+      return false, "нажатий должно быть ровно 1, а не " .. stub.msg_count("get_dragon_cards")
+         .. ": вторая масть садиться уже некуда"
+   end
+   return true
+end)
+
+H.test("G4 кнопка горит, но ячейки нет: не жмём и докладываем main", function()
+   load_script("main/Scripts/cursor.script")
+   msg.clear()
+   local self = { dragon_buttons = {
+      dragon_button1 = { is_active = true, sprite = "red" },
+   }, free_slots = { free_slot1 = { is_empty = false, dragon = "blue" } } }
+   on_message(self, hash("auto_collect_dragons"), {}, "main")
+   if stub.msg_count("get_dragon_cards") ~= 0 then
+      return false, "жать кнопку без свободной ячейки нельзя — драконам некуда лететь"
+   end
+   if stub.msg_count("auto_collect_none") ~= 1 then
+      return false, "нажать нечего — main обязан узнать"
+   end
+   return true
+end)
+
+H.test("G4 ячейка с драконом СВОЕЙ масти считается пригодной", function()
+   load_script("main/Scripts/cursor.script")
+   msg.clear()
+   local self = { dragon_buttons = {
+      dragon_button1 = { is_active = true, sprite = "red" },
+   }, free_slots = { free_slot1 = { is_empty = false, dragon = "red" } } }
+   on_message(self, hash("auto_collect_dragons"), {}, "main")
+   if stub.msg_count("get_dragon_cards") ~= 1 then
+      return false, "припаркованный красный дракон — законная цель для сбора красных"
+   end
+   return true
+end)
+
+-- G4 (grok-4.6 #1, вторая половина): защита в самом обработчике. Человек тоже
+-- может успеть кликнуть по кнопке, которая ещё горит, пока дуга предыдущей
+-- масти в полёте. Раньше fly_card_arc получал target_pos = nil и падал на
+-- target_pos.x, УЖЕ увеличив flying_count — ввод умирал до рестарта.
+H.test("G4 get_dragon_cards без свободной ячейки не летит в nil", function()
+   load_script("main/Scripts/cursor.script")
+   msg.clear()
+   local self = {
+      free_slots = { free_slot1 = { is_empty = false, dragon = "blue" } },
+      pending_drop = { slot_id = "dragon_button1", color = "red" },
+      flying_count = 0,
+   }
+   local cards = { { id = "go_d1" }, { id = "go_d2" }, { id = "go_d3" }, { id = "go_d4" } }
+   local ok, err = pcall(on_message, self, hash("get_dragon_cards"), cards, "dragon_button1")
+   if not ok then
+      return false, "обработчик упал вместо аккуратного отказа: " .. tostring(err)
+   end
+   if self.flying_count ~= 0 then
+      return false, "flying_count увеличен без полёта — ввод останется заглушенным навсегда"
+   end
+   if stub.msg_count("collect_failed") ~= 1 then
+      return false, "кнопка уже потушила себя — без collect_failed она останется мёртвой"
+   end
+   return true
+end)
+
+H.test("G4 dragons_left видит дракона в ячейке в БОЕВОЙ форме зеркала", function()
+   load_script("main/Scripts/main.script")
+   msg.clear()
+   local self = win27_self(0)
+   -- Ровно то, что шлёт free_cell.mirror_to_main: карта целиком, значение в .data
+   self.free_cell_state = { { card = { id = "go_dr1", data = { value = "d", suit = "red" } },
+                              is_blocked = false }, {}, {} }
+   if dragons_left(self) ~= 1 then
+      return false, "припаркованный дракон не посчитан: dragons_left = " .. dragons_left(self)
+   end
+   self.free_cell_state[1].is_blocked = true -- масть собрана и запечатана
+   if dragons_left(self) ~= 0 then
+      return false, "запечатанная ячейка — это уже собранная масть, считать её нельзя"
+   end
+   return true
+end)
+
+H.test("G4 отказ авто-сбора возвращает игроку ввод", function()
+   load_script("main/Scripts/main.script")
+   msg.clear()
+   local self = win27_self(4)
+   self.base_cards_count = 20 -- победы не будет, но управление вернуть обязаны
+   self.auto_collecting = true
+   on_message(self, hash("auto_collect_none"), {}, "cursor")
+   if stub.msg_count("enable_input") ~= 1 then
+      return false, "ввод заглушен на время сбора и не возвращён — стол останется глухим"
    end
    return true
 end)
@@ -1092,7 +1202,7 @@ H.test("WIN27 победа приходит после того, как авто
    msg.clear()
    local self = win27_self(0)
    -- сбор состоялся: ячейки запечатаны собранными драконами
-   self.free_cell_state = { { card = { value = "d", suit = "red" }, is_blocked = true }, {}, {} }
+   self.free_cell_state = { { card = { id = "go_dr1", data = { value = "d", suit = "red" } }, is_blocked = true }, {}, {} }
    on_message(self, hash("dragons_collected"), {}, "dragon_button")
    if self.currentState ~= "win" then
       return false, "после сбора последней масти стол пуст — победа обязана быть объявлена"
@@ -1105,7 +1215,7 @@ H.test("WIN27 дракон в ячейке НЕ запечатан — это н
    msg.clear()
    local self = win27_self(0)
    -- дракон просто припаркован игроком, масть не собрана
-   self.free_cell_state = { { card = { value = "d", suit = "red" }, is_blocked = false }, {}, {} }
+   self.free_cell_state = { { card = { id = "go_dr1", data = { value = "d", suit = "red" } }, is_blocked = false }, {}, {} }
    on_message(self, hash("dragons_collected"), {}, "dragon_button")
    if self.currentState == "win" then
       return false, "припаркованный дракон — не собранный; стол не пуст"
@@ -1124,8 +1234,8 @@ H.test("BUG честная победа проходит: в ячейках то
       foundation_top = { red = 10, blue = 10, green = 10 },
       base_cards_count = 27,
       -- blocked = ячейка запечатана собранными драконами, победе не мешает
-      free_cell_state = { { card = { value = "d", suit = "red" }, is_blocked = true },
-                          { card = { value = "d", suit = "blue" }, is_blocked = true },
+      free_cell_state = { { card = { id = "go_dr1", data = { value = "d", suit = "red" } }, is_blocked = true },
+                          { card = { id = "go_db1", data = { value = "d", suit = "blue" } }, is_blocked = true },
                           {} },
       states = { WIN = "win", PLAYING = "playing" },
       currentState = "playing",

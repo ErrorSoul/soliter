@@ -324,6 +324,19 @@ local function apply_tutorial_highlights(self)
     end
 end
 
+-- G4: куда сядут четыре дракона масти `color` — ячейка с уже припаркованным
+-- драконом той же масти либо любая пустая. Тот же порядок, что в обработчике
+-- get_dragon_cards; если здесь nil, то и там слота не найдётся.
+local function collect_slot_for(self, color)
+   for _, value in pairs(self.free_slots or {}) do
+      if value.dragon == color then return true end
+   end
+   for _, value in pairs(self.free_slots or {}) do
+      if value.is_empty then return true end
+   end
+   return false
+end
+
 local function fly_card_arc(card_id, target_pos, delay, callback)
     local start_pos = go.get_position(card_id)
     local fly_z = 0.5
@@ -464,23 +477,35 @@ function on_message(self, message_id, message, sender)
       -- hit.check_dragon_buttons в on_input): pending_drop + get_dragon_cards.
       -- Своего пути сбора здесь нет намеренно — второй путь разъехался бы с
       -- первым, как уже было с зеркалами ячеек.
-      local delay = 0
-      local pressed = 0
-      for btn_id, btn in pairs(self.dragon_buttons or {}) do
-         if btn.is_active then
-            pressed = pressed + 1
-            local captured_id, captured_color = btn_id, btn.sprite
-            -- Кнопка сама ждёт 1.5с до dragons_collected (дуга драконов +
-            -- полёт цветка), поэтому масти разносим по времени: иначе вторая
-            -- масть полетит в ячейку, которую первая ещё не заняла.
-            timer.delay(delay, false, function()
-               self.pending_drop = { slot_id = captured_id, color = captured_color }
-               msg.post(captured_id, "get_dragon_cards")
-            end)
-            delay = delay + 1.7
+      --
+      -- G4: жмём РОВНО ОДНУ кнопку за вызов, без таймеров. Раньше здесь одним
+      -- махом планировались все горящие масти через timer.delay(0 / 1.7 / ...),
+      -- и отложенное нажатие приходило в мир, которого уже нет:
+      --   * все кнопки делят ОДИН счётчик свободных ячеек
+      --     (dragon_button.free_slot_any → free_slots_counter > 0), поэтому две
+      --     масти могут гореть при единственной пустой ячейке. Первая масть её
+      --     занимает, вторая гаснет — а таймер всё равно стреляет. В
+      --     get_dragon_cards слот не находится, fly_card_arc падает на
+      --     nil target_pos, и flying_count уже увеличен → ввод мёртв до рестарта.
+      --   * pending_drop у авто-сбора и у пальца общий, а ввод не глушился:
+      --     дроп игрока и отложенное нажатие затирали друг друга.
+      -- Следующую масть закажет main, когда придёт dragons_collected.
+      local btn_id, color
+      for id, btn in pairs(self.dragon_buttons or {}) do
+         -- Мало того, что кнопка горит — нужен слот, куда сядут четыре дракона:
+         -- горит она по общему счётчику, а сядут в конкретную ячейку.
+         if btn.is_active and collect_slot_for(self, btn.sprite) then
+            btn_id, color = id, btn.sprite
+            break
          end
       end
-      if pressed == 0 then
+      if btn_id then
+         -- Ввод глушим на время сбора: pending_drop общий с пальцем.
+         -- Возвращает его main — на auto_collect_none или на победе.
+         self.input_disabled = true
+         self.pending_drop = { slot_id = btn_id, color = color }
+         msg.post(btn_id, "get_dragon_cards")
+      else
          -- Ни одной горящей кнопки. Так бывает, когда дракон лежит НА драконе:
          -- нижний ни разу не был верхушкой, счётчик масти не дошёл до 4.
          -- Замер (reviews/probe_win27.lua): 4 из 15 партий с драконами на
@@ -580,6 +605,19 @@ function on_message(self, message_id, message, sender)
                break
             end
          end
+      end
+
+      -- G4: слота может не быть — кнопки горят по ОБЩЕМУ счётчику ячеек, а
+      -- садятся драконы в конкретную. Раньше здесь летели в nil: fly_card_arc
+      -- падал на target_pos.x, уже увеличив flying_count, и ввод умирал совсем.
+      -- Кнопка к этому моменту уже погасила себя (is_enable = false), поэтому
+      -- просто выйти нельзя — вернём её в строй, иначе четыре дракона зависнут
+      -- при мёртвой кнопке.
+      if not sl_id then
+         print("[DRAGON] сбор отменён: нет ячейки под масть " .. tostring(color))
+         msg.post(sender, "collect_failed")
+         msg.post("/card_table#main", "auto_collect_none")
+         return
       end
 
       local i = 0
