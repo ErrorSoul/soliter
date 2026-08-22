@@ -587,6 +587,28 @@ def scenario_focus(s):
     s.expect(st and all(x == "running" for x in st),
              f"вкладка вернулась, а звук так и остался выключен: {line}")
 
+    # Быстрый разворот: уйти и вернуться, не дав suspend() доехать. suspend и
+    # resume асинхронны, и сторож, который смотрит только на c.state, здесь
+    # разъезжается — resume не зовётся (state ещё "running"), а suspend доезжает
+    # уже после. Найдено ревью блока I. Вкладка видима — звук обязан играть.
+    # Оба события — в ОДНОМ evaluate, синхронно: между двумя отдельными
+    # page.evaluate проходит несколько миллисекунд, и suspend() успевает
+    # доехать, то есть окно закрывается само (замерено: A/B на стороже без
+    # перепроверки такой разворот не ловил).
+    s.page.evaluate(
+        "() => { const set = (h) => {"
+        "   Object.defineProperty(document, 'hidden', {value: h, configurable: true});"
+        "   Object.defineProperty(document, 'visibilityState', {value: h ? 'hidden' : 'visible', configurable: true});"
+        "   document.dispatchEvent(new Event('visibilitychange')); };"
+        " set(true); set(false); }")
+    s.wait(3, "промисы аудио осели")
+    tail = [e["text"] for e in s.logs_matching(r"\[AUDIO\] .* ctx=[1-9][0-9]* states=")]
+    last = tail[-1] if tail else ""
+    st = audio_states(last)
+    s.note("audio", f"после быстрого разворота: {last}")
+    s.expect(st and all(x == "running" for x in st),
+             f"после быстрого ухода-возврата звук остался глухим: {last}")
+
 
 
 def scenario_restartrace(s):
@@ -633,7 +655,11 @@ def scenario_restartrace(s):
         # тогда «гонки нет» доказывало бы только то, что мы не нажимали.
         s.expect(loads > 0, f"{label}: ни одной загрузки уровня — нажатия не дошли до движка")
 
-        dealt = sum(1 for i, x in enumerate(TABLEAU_X)
+        # enumerate(dict) отдаёт КЛЮЧИ, а не значения: сюда уезжали x = 1..8
+        # вместо 65..793, то есть восемь замеров одной и той же точки у левого
+        # края. Поймано ревью блока I. Оракул был бессмысленным, а «8 из 8» в
+        # логе — самообманом.
+        dealt = sum(1 for x in TABLEAU_X.values()
                     if s.brightness(x, TABLEAU_TOP_Y) - felt > s.GAP)
         s.note("board", f"{label}: колонок с картой {dealt} из {len(TABLEAU_X)}")
         s.expect(dealt == len(TABLEAU_X),
@@ -682,6 +708,9 @@ def scenario_debugkeys(s):
 
         s.note("keys", f"S→{solver_spoke} R→{replay_spoke} Space→{dealt_again}")
         s.expect(solver_spoke, "debug-сборка: S не запустил солвер — стенд остался без инструмента")
+        # R считался, но вердикт по нему не ставился (ревью блока I): сломанный
+        # debug_replay оставлял сценарий зелёным, а от R зависят win/census/freecell.
+        s.expect(replay_spoke, "debug-сборка: R не отдал партию реплею — сценарий win работать не будет")
         s.expect(dealt_again, "debug-сборка: Space не пересдал — census/freecell работать не будут")
         return
 

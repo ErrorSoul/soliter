@@ -162,21 +162,39 @@
 			// suspend/resume целиком. Теперь стенд читает states=... и такая
 			// мутация его роняет. suspend()/resume() асинхронны — состояние
 			// снимаем после того, как обещания осели.
+			// Ревью блока I (grok-4.5): suspend()/resume() меняют state только
+			// после resolve промиса, поэтому два события подряд разъезжались:
+			// hidden → suspend() (state ещё "running") → быстрый focus →
+			// muted=false, но state всё ещё "running", значит resume() не
+			// зовётся → промис доезжает и контекст остаётся глухим до следующего
+			// blur/focus. Окно это не теоретическое: apply() теперь зовётся ещё
+			// и из конструктора, то есть ровно во время загрузки, когда фокус
+			// дёргается чаще всего.
+			// Лечим не блокировкой, а перепроверкой: пока операции в полёте,
+			// новые вызовы только помечают «переспросить», а после того как
+			// промисы осели, сверяем ЖЕЛАЕМОЕ состояние с тем, что было при
+			// запуске, и при расхождении заходим ещё раз.
+			var applying = false, again = false;
 			function apply() {
+				if (applying) { again = true; return; }
+				applying = true;
 				var muted = document.hidden || !document.hasFocus();
 				var ops = contexts.map(function (c) {
 					if (muted && c.state === "running") { return c.suspend(); }
 					if (!muted && c.state === "suspended") { return c.resume(); }
 					return null;
 				});
-				function report() {
+				function done() {
+					applying = false;
 					console.log("[AUDIO] " + (muted ? "suspended" : "resumed") +
 						" ctx=" + contexts.length +
 						" states=" + contexts.map(function (c) { return c.state; }).join(","));
+					var now = document.hidden || !document.hasFocus();
+					if (again || now !== muted) { again = false; apply(); }
 				}
 				Promise.all(ops.map(function (p) {
 					return (p && typeof p.then === "function") ? p : Promise.resolve();
-				})).then(report, report);
+				})).then(done, done);
 			}
 
 			document.addEventListener("visibilitychange", apply);
