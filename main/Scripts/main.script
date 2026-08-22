@@ -1105,6 +1105,16 @@ function on_message(self, message_id, message, sender)
       -- B2: не оцениваем немедленно — каскад drop_success→remove_card→зеркало и
       -- card_to_base ещё в очереди сообщений. Откладываем на 2 кадра в update().
       self.pending_af_check = { free_cells = message.free_cells, frames = 2 }
+   elseif message_id == hash("auto_collect_none") then
+      -- Курсор доложил: собирать нечем (дракон под драконом — кнопка не горит).
+      -- Все номиналы уже разложены, партия выиграна по существу, и держать
+      -- игрока без победы нельзя. Объявляем победу, как это делалось до правки
+      -- G2. Доиграть такие партии до буквально пустого стола можно только
+      -- научив авто-сбор СДВИГАТЬ дракона на пустую колонку — это отдельная
+      -- задача, см. блок G в plans/review-fixes.md.
+      if not self.tutorial_mode and (self.base_cards_count or 0) >= 27 then
+         declare_victory(self)
+      end
    elseif message_id == hash("dragons_collected") then
       if self.tutorial_mode then
          self.currentState = self.states.WIN

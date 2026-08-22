@@ -465,8 +465,10 @@ function on_message(self, message_id, message, sender)
       -- Своего пути сбора здесь нет намеренно — второй путь разъехался бы с
       -- первым, как уже было с зеркалами ячеек.
       local delay = 0
+      local pressed = 0
       for btn_id, btn in pairs(self.dragon_buttons or {}) do
          if btn.is_active then
+            pressed = pressed + 1
             local captured_id, captured_color = btn_id, btn.sprite
             -- Кнопка сама ждёт 1.5с до dragons_collected (дуга драконов +
             -- полёт цветка), поэтому масти разносим по времени: иначе вторая
@@ -477,6 +479,16 @@ function on_message(self, message_id, message, sender)
             end)
             delay = delay + 1.7
          end
+      end
+      if pressed == 0 then
+         -- Ни одной горящей кнопки. Так бывает, когда дракон лежит НА драконе:
+         -- нижний ни разу не был верхушкой, счётчик масти не дошёл до 4.
+         -- Замер (reviews/probe_win27.lua): 4 из 15 партий с драконами на
+         -- foundation=27 — именно такие. Сдвинуть дракона, чтобы открыть
+         -- следующего, авто-сбор не умеет, поэтому сообщаем main: доиграть
+         -- нечем. Иначе игрок остаётся без победы вовсе — регрессия хуже
+         -- исходного бага «Victory поверх драконов».
+         msg.post("/card_table#main", "auto_collect_none")
       end
    elseif message_id == hash("slot_with_card") and self.pending_drop then
       self.selected_card = message.id

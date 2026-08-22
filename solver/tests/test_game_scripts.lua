@@ -1007,6 +1007,71 @@ H.test("WIN27 во время реплея солвера авто-сбор не
    return true
 end)
 
+H.test("WIN27 курсор жмёт горящие кнопки и молчит про пустой доклад", function()
+   load_script("main/Scripts/cursor.script")
+   msg.clear()
+   local self = { dragon_buttons = {
+      dragon_button1 = { is_active = true,  sprite = "red" },
+      dragon_button2 = { is_active = false, sprite = "blue" },
+      dragon_button3 = { is_active = false, sprite = "green" },
+   } }
+   on_message(self, hash("auto_collect_dragons"), {}, "main")
+   if stub.msg_count("auto_collect_none") ~= 0 then
+      return false, "кнопка горит — докладывать «собирать нечем» нельзя"
+   end
+   timer.flush() -- отложенные нажатия
+   if stub.msg_count("get_dragon_cards") ~= 1 then
+      return false, "должна быть нажата ровно одна горящая кнопка"
+   end
+   return true
+end)
+
+H.test("WIN27 курсор докладывает main, когда ни одна кнопка не горит", function()
+   load_script("main/Scripts/cursor.script")
+   msg.clear()
+   local self = { dragon_buttons = {
+      dragon_button1 = { is_active = false, sprite = "red" },
+      dragon_button2 = { is_active = false, sprite = "blue" },
+      dragon_button3 = { is_active = false, sprite = "green" },
+   } }
+   on_message(self, hash("auto_collect_dragons"), {}, "main")
+   if stub.msg_count("auto_collect_none") ~= 1 then
+      return false, "без горящих кнопок курсор обязан доложить main ровно один раз"
+   end
+   for _, e in ipairs(msg.log) do
+      if e.id == "auto_collect_none" and e.to ~= "/card_table#main" then
+         return false, "доклад ушёл в " .. tostring(e.to) .. ", main его не увидит"
+      end
+   end
+   return true
+end)
+
+H.test("WIN27 собирать нечем (дракон под драконом) — победа всё равно объявляется", function()
+   -- Замер probe_win27: 4 из 15 таких партий не имеют НИ ОДНОЙ горящей кнопки.
+   -- Без этого выхода игрок остался бы без победы вообще — регрессия хуже
+   -- исходного бага.
+   load_script("main/Scripts/main.script")
+   msg.clear()
+   local self = win27_self(4)
+   on_message(self, hash("auto_collect_none"), {}, "cursor")
+   if self.currentState ~= "win" then
+      return false, "курсор доложил, что собрать нечем — партия обязана засчитаться"
+   end
+   return true
+end)
+
+H.test("WIN27 доклад «собирать нечем» до раскладки номиналов победы не даёт", function()
+   load_script("main/Scripts/main.script")
+   msg.clear()
+   local self = win27_self(4)
+   self.base_cards_count = 20 -- партия ещё идёт
+   on_message(self, hash("auto_collect_none"), {}, "cursor")
+   if self.currentState == "win" then
+      return false, "победа при 20 картах в foundation — запасной выход открыт слишком широко"
+   end
+   return true
+end)
+
 H.test("WIN27 стол реально пуст: победа объявляется сразу", function()
    load_script("main/Scripts/main.script")
    msg.clear()
