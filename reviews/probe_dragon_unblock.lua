@@ -33,8 +33,12 @@ local rules = require("rules")
 io.stdout:setvbuf("line")
 
 local SEEDS = 60
+local ONLY = nil
+local BUDGET = 20000
 for i = 1, #arg - 1 do
    if arg[i] == "--seeds" then SEEDS = tonumber(arg[i + 1]) or SEEDS end
+   if arg[i] == "--only" then ONLY = tonumber(arg[i + 1]) end
+   if arg[i] == "--budget" then BUDGET = tonumber(arg[i + 1]) or BUDGET end
 end
 
 local function foundation_full(s)
@@ -190,8 +194,12 @@ local function key(s)
    return table.concat(parts, "|")
 end
 
-local function best_reachable(s0)
-   local seen, best, budget = {}, dragons_alive(s0), 20000
+-- Возвращает (лучший результат, честно ли исчерпан перебор).
+-- Второе значение критично: без него «потолок 8» неотличимо от «упёрлись в
+-- бюджет на восьмой тысяче узлов», а на этом различии держится вывод
+-- «сдвиг в ячейку не спас бы» (см. комментарий у auto_collect_give_up).
+local function best_reachable(s0, budget_max)
+   local seen, best, budget = {}, dragons_alive(s0), budget_max or 20000
    local stack = { s0 }
    seen[key(s0)] = true
    while #stack > 0 and budget > 0 do
@@ -199,7 +207,7 @@ local function best_reachable(s0)
       budget = budget - 1
       local n = dragons_alive(s)
       if n < best then best = n end
-      if best == 0 then return 0 end
+      if best == 0 then return 0, true end
       local cand = {}
       for _, mv in ipairs(collects(s)) do cand[#cand + 1] = mv end
       for _, m in ipairs(moves_to_empty(s)) do cand[#cand + 1] = m.mv end
@@ -213,7 +221,7 @@ local function best_reachable(s0)
          end
       end
    end
-   return best
+   return best, (#stack == 0)
 end
 
 -- ---------------------------------------------------------------- прогон
@@ -224,7 +232,7 @@ local give_ups, give_ups_with_cell, give_ups_hopeless = 0, 0, 0
 local give_up_rows = {}
 local rows = {}
 
-for seed = 1, SEEDS do
+for seed = ONLY or 1, ONLY or SEEDS do
    local state = rules.deal(seed)
    local moves, verdict = rules.solve(state, { node_budget = 200000 })
    if verdict == "solved" then
@@ -247,7 +255,7 @@ for seed = 1, SEEDS do
          local nA = dragons_alive(only)
          local nB = a
          local nC = greedy(hit, true)
-         local nBest = best_reachable(hit)
+         local nBest, exhausted = best_reachable(hit, BUDGET)
          local gd, gcells, gcols = give_up_snapshot(hit)
          if gd > 0 then
             give_ups = give_ups + 1
@@ -256,7 +264,9 @@ for seed = 1, SEEDS do
             give_up_rows[#give_up_rows + 1] = string.format(
                "  seed %3d: уступка при %d драконах, свободных ячеек %d, пустых колонок %d, потолок %d (%s)",
                seed, gd, gcells, gcols, nBest,
-               nBest > 0 and "безнадёжно — уступка честная" or "ПОЛНЫЙ ПЕРЕБОР ДОИГРЫВАЕТ — уступка ранняя")
+               nBest > 0 and (exhausted and "безнадёжно, перебор исчерпан ЧЕСТНО"
+                                          or "⚠ перебор УПЁРСЯ В БЮДЖЕТ — вывод недоказан")
+                          or "ПОЛНЫЙ ПЕРЕБОР ДОИГРЫВАЕТ — уступка ранняя")
          end
          if nA == 0 then statA = statA + 1 end
          if nB == 0 then statB = statB + 1 end
