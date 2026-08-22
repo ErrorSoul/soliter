@@ -60,6 +60,7 @@ TABLEAU_TOP_Y = 299         # depth 0; each further card is 35px lower
 CARD_PITCH = 35             # only true while the column fits (config.stack_offset_y)
 FLOWER_SLOT = (377, 457)    # G6: flower moved to column 4, dragon buttons to column 5
 PLAY_BUTTON = (480, 232)
+RESTART_BUTTON = (907, 56)   # G6: правый рельс, см. gui/ui.gui
 
 BENIGN = (re.compile(r"^INFO:"), re.compile(r"Defold Engine \d"), re.compile(r"^Downloading"))
 FATAL = (
@@ -588,6 +589,40 @@ def scenario_focus(s):
 
 
 
+def scenario_restartrace(s):
+    """(г) из ревью блока H: show() шлёт unload и тут же async_load одному и
+    тому же collectionproxy, не дожидаясь proxy_unloaded.
+
+    Сценарий давит именно в окно: RESTART нажимается дважды подряд без пауз, а
+    третий раз — посреди загрузки уровня. Судим по столу и по ошибкам движка:
+    после того как пыль осела, стол обязан быть разложен, а в логе не должно
+    быть жалоб прокси. Пустой стол или ошибка загрузки — это и есть гонка.
+    """
+    s.boot()
+    s.press_play()
+
+    felt = s.brightness(*FREE_CELL[1])   # пустая ячейка = эталон сукна
+    s.note("felt", f"эталон сукна {felt:.0f}")
+
+    # Клик здесь — не playwright-click: движок читает ввод раз в кадр, поэтому
+    # нажатие держим HOLD_MS. Значит «подряд» — это ~250 мс на клик, и чтобы
+    # попасть в окно загрузки, бьём очередью.
+    for label, times in (("двойной", 2), ("очередь", 8)):
+        for n in range(times):
+            s.click_game(*RESTART_BUTTON, label=f"RESTART {n + 1} ({label})")
+        s.wait(5, f"{label} рестарт осел")
+
+        dealt = sum(1 for i, x in enumerate(TABLEAU_X)
+                    if s.brightness(x, TABLEAU_TOP_Y) - felt > s.GAP)
+        s.note("board", f"{label}: колонок с картой {dealt} из {len(TABLEAU_X)}")
+        s.expect(dealt == len(TABLEAU_X),
+                 f"{label} рестарт: стол разложен не полностью ({dealt} из {len(TABLEAU_X)})")
+
+    bad = [e["text"] for e in s.log
+           if re.search(r"(?i)proxy", e["text"]) and re.search(r"(?i)error|fail|assert", e["text"])]
+    s.expect(not bad, f"движок пожаловался на прокси: {bad[:3]}")
+
+
 def scenario_debugkeys(s):
     """Блок D: dev-клавиши S / R / Space живут ровно в debug-сборке.
 
@@ -789,7 +824,8 @@ SCENARIOS = {"boot": scenario_boot, "hittest": scenario_hittest,
              "stuck": scenario_stuck, "win": scenario_win,
              "freecell": scenario_freecell, "census": scenario_census,
              "focus": scenario_focus, "audiobg": scenario_audiobg,
-             "debugkeys": scenario_debugkeys, "i18n": scenario_i18n}
+             "debugkeys": scenario_debugkeys, "restartrace": scenario_restartrace,
+             "i18n": scenario_i18n}
 
 
 def main():
