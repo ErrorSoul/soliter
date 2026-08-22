@@ -3,7 +3,7 @@ instances {
   id: "free_slot1"
   prototype: "/main/Game Objects/free_slot.go"
   position {
-    x: 80.0
+    x: 65.0
     y: 457.0
   }
 }
@@ -11,7 +11,7 @@ instances {
   id: "free_slot2"
   prototype: "/main/Game Objects/free_slot.go"
   position {
-    x: 193.0
+    x: 169.0
     y: 457.0
   }
 }
@@ -19,7 +19,7 @@ instances {
   id: "free_slot3"
   prototype: "/main/Game Objects/free_slot.go"
   position {
-    x: 309.0
+    x: 273.0
     y: 457.0
   }
 }
@@ -27,7 +27,7 @@ instances {
   id: "tableau_slot1"
   prototype: "/main/Game Objects/tableau_slot.go"
   position {
-    x: 77.0
+    x: 65.0
     y: 299.0
   }
 }
@@ -35,7 +35,7 @@ instances {
   id: "tableau_slot2"
   prototype: "/main/Game Objects/tableau_slot.go"
   position {
-    x: 193.0
+    x: 169.0
     y: 299.0
   }
 }
@@ -43,7 +43,7 @@ instances {
   id: "tableau_slot3"
   prototype: "/main/Game Objects/tableau_slot.go"
   position {
-    x: 309.0
+    x: 273.0
     y: 299.0
   }
 }
@@ -51,7 +51,7 @@ instances {
   id: "tableau_slot4"
   prototype: "/main/Game Objects/tableau_slot.go"
   position {
-    x: 425.0
+    x: 377.0
     y: 299.0
   }
 }
@@ -59,39 +59,39 @@ instances {
   id: "tableau_slot5"
   prototype: "/main/Game Objects/tableau_slot.go"
   position {
-    x: 541.0
-    y: 300.0
+    x: 481.0
+    y: 299.0
   }
 }
 instances {
   id: "tableau_slot6"
   prototype: "/main/Game Objects/tableau_slot.go"
   position {
-    x: 657.0
-    y: 300.0
+    x: 585.0
+    y: 299.0
   }
 }
 instances {
   id: "tableau_slot7"
   prototype: "/main/Game Objects/tableau_slot.go"
   position {
-    x: 773.0
-    y: 300.0
+    x: 689.0
+    y: 299.0
   }
 }
 instances {
   id: "tableau_slot8"
   prototype: "/main/Game Objects/tableau_slot.go"
   position {
-    x: 889.0
-    y: 300.0
+    x: 793.0
+    y: 299.0
   }
 }
 instances {
   id: "base_slot1"
   prototype: "/main/Game Objects/base_slot.go"
   position {
-    x: 889.0
+    x: 585.0
     y: 457.0
   }
 }
@@ -99,7 +99,7 @@ instances {
   id: "base_slot3"
   prototype: "/main/Game Objects/base_slot.go"
   position {
-    x: 657.0
+    x: 689.0
     y: 457.0
   }
 }
@@ -107,7 +107,7 @@ instances {
   id: "base_slot2"
   prototype: "/main/Game Objects/base_slot.go"
   position {
-    x: 773.0
+    x: 793.0
     y: 457.0
   }
 }
@@ -115,7 +115,7 @@ instances {
   id: "flower_slot"
   prototype: "/main/Game Objects/flower_slot.go"
   position {
-    x: 541.0
+    x: 377.0
     y: 457.0
   }
 }
@@ -123,24 +123,24 @@ instances {
   id: "dragon_button1"
   prototype: "/main/Game Objects/dragon_button.go"
   position {
-    x: 420.0
-    y: 511.0
+    x: 481.0
+    y: 508.0
   }
 }
 instances {
   id: "dragon_button2"
   prototype: "/main/Game Objects/dragon_button.go"
   position {
-    x: 420.0
-    y: 416.0
+    x: 481.0
+    y: 406.0
   }
 }
 instances {
   id: "dragon_button3"
   prototype: "/main/Game Objects/dragon_button.go"
   position {
-    x: 420.0
-    y: 463.0
+    x: 481.0
+    y: 457.0
   }
 }
 instances {

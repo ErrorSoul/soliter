@@ -3,11 +3,25 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, minimal-ui, shrink-to-fit=no">
+	<!-- viewport-fit=cover есть в стоковом шаблоне, а в нашем форке потерялся: без него
+	     на телефонах с вырезом канвас упирается в safe-area и по краям остаются поля. -->
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, minimal-ui, shrink-to-fit=no, viewport-fit=cover">
 	<meta name="apple-mobile-web-app-capable" content="yes">
 
-	<title>ShenzenSolitare 1.0</title>
+	<!-- Подстановки движка. Шаблон — форк стокового builtins/manifests/web/engine_template.html,
+	     и в нём эти четыре места были ЗАПЕЧЕНЫ значениями (имя игры, версия, размер канваса).
+	     Это мина: переименуй игру в game.project — bob соберёт NewName.js, а загрузчик так и
+	     будет просить ShenzenSolitare.js, и HTML5-сборка молча перестанет запускаться.
+	     Возвращены плейсхолдеры; подстановка проверена на настоящей сборке. -->
+	<title>{{project.title}} {{project.version}}</title>
 	<style type='text/css'>
+	/* Требование Я.Игр (D2): страница не должна прокручиваться, пружинить и
+	   перезагружаться жестом. Это НЕ раскладка — ни размеры, ни позиции здесь
+	   не меняются, только реакция браузера на жест. */
+	html, body {
+		overscroll-behavior: none;
+	}
+
 	body {
 		position: fixed;
 		margin:0;
@@ -33,6 +47,9 @@
 		border: 0;
 		width: 100%;
 		vertical-align: bottom;
+		/* D2: все жесты над канвасом принадлежат игре — ни скролла, ни
+		   двойного тапа для зума, ни pull-to-refresh посреди драга карты. */
+		touch-action: none;
 	}
 
 	#canvas-container {
@@ -102,9 +119,95 @@
 			<p>WebGL is not supported by your browser.</p>
 		</div>
 		<div id="canvas-container" class="canvas-app-canvas-container">
-			<canvas id="canvas" class="canvas-app-canvas" tabindex="1" width="960" height="540"></canvas>
+			<canvas id="canvas" class="canvas-app-canvas" tabindex="1" width="{{display.width}}" height="{{display.height}}"></canvas>
 		</div>
 	</div>
+
+	<script id='audio-focus-guard' type='text/javascript'>
+		// D2: звук обязан гаснуть, когда вкладка ушла в фон или потеряла фокус
+		// (требование Я.Игр). Делаем это в шаблоне, а не в Lua: событие
+		// window.WINDOW_EVENT_FOCUS_LOST в js-web у нас воспроизводимо не
+		// приходило (замерено в headless Chromium — триггер не коррелировал с
+		// blur/visibilitychange), а непроверенный путь в релиз не едет.
+		//
+		// К AudioContext движка не лезем через внутренние символы: перехватываем
+		// сам конструктор и держим список созданных контекстов — это не зависит
+		// от того, как Defold назвал свои поля. Важно оказаться раньше СТАРТА
+		// движка, а не раньше тега dmloader.js: контекст создаётся уже внутри
+		// EngineLoader.load, асинхронно (проверено мутацией — перенос этого
+		// блока под загрузчик ничего не менял, ctx по-прежнему 1).
+		(function () {
+			var contexts = [];
+			["AudioContext", "webkitAudioContext"].forEach(function (name) {
+				var Orig = window[name];
+				if (!Orig) { return; }
+				function Patched() {
+					var ctx = new (Function.prototype.bind.apply(Orig, [null].concat([].slice.call(arguments))))();
+					contexts.push(ctx);
+					// Ревью блока H (обе модели): без этого вызова контекст, созданный,
+					// когда вкладка УЖЕ в фоне или без фокуса, остаётся running до
+					// следующего события — то есть игра в фоновой вкладке звучит.
+					// Движок создаёт контекст асинхронно внутри EngineLoader.load,
+					// так что момент создания — единственное место, где это видно.
+					apply();
+					return ctx;
+				}
+				Patched.prototype = Orig.prototype;
+				window[name] = Patched;
+			});
+
+			// В лог идёт ИЗМЕРЕННОЕ состояние контекстов, а не намерение сторожа.
+			// Ревью блока H (grok-4.6): строка «[AUDIO] suspended» печаталась от
+			// флага muted, поэтому стенд оставался зелёным, даже если убрать
+			// suspend/resume целиком. Теперь стенд читает states=... и такая
+			// мутация его роняет. suspend()/resume() асинхронны — состояние
+			// снимаем после того, как обещания осели.
+			// Ревью блока I (grok-4.5): suspend()/resume() меняют state только
+			// после resolve промиса, поэтому два события подряд разъезжались:
+			// hidden → suspend() (state ещё "running") → быстрый focus →
+			// muted=false, но state всё ещё "running", значит resume() не
+			// зовётся → промис доезжает и контекст остаётся глухим до следующего
+			// blur/focus. Окно это не теоретическое: apply() теперь зовётся ещё
+			// и из конструктора, то есть ровно во время загрузки, когда фокус
+			// дёргается чаще всего.
+			// Лечим не блокировкой, а перепроверкой: пока операции в полёте,
+			// новые вызовы только помечают «переспросить», а после того как
+			// промисы осели, сверяем ЖЕЛАЕМОЕ состояние с тем, что было при
+			// запуске, и при расхождении заходим ещё раз.
+			var applying = false, again = false;
+			function apply() {
+				if (applying) { again = true; return; }
+				applying = true;
+				var muted = document.hidden || !document.hasFocus();
+				var ops = contexts.map(function (c) {
+					if (muted && c.state === "running") { return c.suspend(); }
+					if (!muted && c.state === "suspended") { return c.resume(); }
+					return null;
+				});
+				function done() {
+					applying = false;
+					console.log("[AUDIO] " + (muted ? "suspended" : "resumed") +
+						" ctx=" + contexts.length +
+						" states=" + contexts.map(function (c) { return c.state; }).join(","));
+					var now = document.hidden || !document.hasFocus();
+					if (again || now !== muted) { again = false; apply(); }
+				}
+				Promise.all(ops.map(function (p) {
+					return (p && typeof p.then === "function") ? p : Promise.resolve();
+				})).then(done, done);
+			}
+
+			document.addEventListener("visibilitychange", apply);
+			window.addEventListener("blur", apply);
+			window.addEventListener("focus", apply);
+		})();
+	</script>
+
+	<script id='context-menu-guard' type='text/javascript'>
+		// D2: долгий тап по карте на мобиле открывал бы контекстное меню прямо
+		// посреди перетаскивания, а правая кнопка — на десктопе.
+		document.addEventListener("contextmenu", function (e) { e.preventDefault(); }, { passive: false });
+	</script>
 
 	<script id='engine-loader' type='text/javascript' src="dmloader.js"></script>
 	<script id='engine-setup' type='text/javascript'>
@@ -115,7 +218,7 @@
 			runningFromFileWarning.style.display = "block";
 		}
 		else {
-			EngineLoader.load("canvas", "ShenzenSolitare");
+			EngineLoader.load("canvas", "{{exe-name}}");
 			runningFromFileWarning.parentNode.removeChild(runningFromFileWarning);
 		}
 	</script>

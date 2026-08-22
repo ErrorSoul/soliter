@@ -1,13 +1,22 @@
 local DEBUG_DEAL = false -- false = нормальная тасовка, true = синие драконы сверху стеков
 local DEBUG_AUTO_FINISH = false -- true = тестовая раздача для auto-finish
 local DEBUG_DRAGONS = false -- true = тест сбора драконов подряд: red→blue→green
+local DEBUG_LONG_COLUMN = false -- true = G5: колонка из 12 карт, худший случай по высоте
 local tutorial_state = require("main.Scripts.tutorial_state")
 local sfx = require("main.Scripts.sfx")
 local config = require("main.Scripts.config")
 
 -- Dev tool: let the pure-Lua solver play the current deal (press 'S').
--- Pure modules, zero Defold deps. Strip DEBUG_SOLVER for release.
-local DEBUG_SOLVER = true
+-- Pure modules, zero Defold deps.
+--
+-- Блок D: флаг больше не выставляется руками — он равен варианту сборки
+-- (см. debug_flags.lua). Сам require солвера оставлен безусловным: bob всё
+-- равно кладёт модуль в бандл (require со статической строкой попадает в граф
+-- зависимостей), так что условный require экономил бы не размер, а только
+-- загрузку модуля — а риск сломать debug_solve/debug_replay при этом реальный.
+-- Цена решения: солвер едет в релизном бандле мёртвым грузом.
+local debug_flags = require("main.Scripts.debug_flags")
+local DEBUG_SOLVER = debug_flags.enabled
 local solver_bridge = require("solver.bridge")
 local solver_rules = require("solver.rules")
 local solver_view = require("solver.board_view")
@@ -43,6 +52,8 @@ function init(self)
       deal_dragon_test(self)
    elseif DEBUG_AUTO_FINISH then
       deal_auto_finish_test(self)
+   elseif DEBUG_LONG_COLUMN then
+      deal_long_column_test(self)
    else
       self.deck = create_deck(self)
       shuffle_deck(self)
@@ -62,9 +73,14 @@ function init(self)
    -- C5: цветок приземлился в свой слот (зеркало flower_slot->main). Сбрасывается
    -- здесь же, где и остальные зеркала: новая партия = перезагрузка коллекции.
    self.flower_collected = false
+   -- G7: сколько раз авто-сбор уже сдвигал дракона, чтобы открыть закопанного.
+   -- Бюджет на партию, а не на цепочку: сдвигов принципиально не может быть
+   -- больше, чем закопанных карт (каждый уменьшает их число на единицу), так
+   -- что упор в потолок означает поломку инварианта, а не длинную партию.
+   self.auto_collect_moves = 0
    -- C5: перепись карт в снапшоте имеет смысл только для настоящей раздачи —
    -- отладочные раскладки и туториал заведомо не 40 карт.
-   self.is_full_deal = not (self.tutorial_mode or DEBUG_DRAGONS or DEBUG_AUTO_FINISH)
+   self.is_full_deal = not (self.tutorial_mode or DEBUG_DRAGONS or DEBUG_AUTO_FINISH or DEBUG_LONG_COLUMN)
    self.base_slots = get_base_slots()
    self.tableau_slots = get_tableau_slots(self.tutorial_mode)
    self.free_slots = get_free_slots()
@@ -149,7 +165,7 @@ function deal_cards(self)
             card_data = table.remove(self.debug_blue_dragons)
          end
 
-         local card_offset = vmath.vector3(0, (card_index - 1) * config.STACK_CARD_OFFSET_Y, 0)
+         local card_offset = vmath.vector3(0, (card_index - 1) * config.stack_offset_y(cards_in_stack, stack_position.y), 0)
          local target_position = stack_position + card_offset
 
          local z = 0.2 + card_index * 0.001
@@ -220,7 +236,7 @@ function deal_dragon_test(self)
       local cards_in_stack = #cards
 
       for card_index, card_data in ipairs(cards) do
-         local card_offset = vmath.vector3(0, (card_index - 1) * config.STACK_CARD_OFFSET_Y, 0)
+         local card_offset = vmath.vector3(0, (card_index - 1) * config.stack_offset_y(cards_in_stack, stack_position.y), 0)
          local target_position = stack_position + card_offset
          local start_pos = vmath.vector3(480, 270, 0.2)
          local card = factory.create("#card_factory", start_pos, vmath.quat(0, 0, 0, 1))
@@ -250,6 +266,70 @@ end
 -- Тестовая раздача для auto-finish:
 -- 6 карт (3 масти × 2-3). 2-ки авто-улетят, потом двинь одну 3-ку →
 -- auto-finish подхватит остальные две 3-ки.
+-- G5: худший достижимый случай по длине колонки — 12 карт в первой колонке.
+-- 5 «раздатых» (сверху десятка) + достройка 9..3 разных мастей. Двойка сверху
+-- не лежит: она улетает в foundation сама, поэтому 12, а не 13. Раздача нужна
+-- глазами убедиться, что сжатый корешок читается и верхнюю карту видно —
+-- юнит-тест проверяет координаты, но не рендер.
+function deal_long_column_test(self)
+   local tableau_positions = get_tableau_positions(self)
+   self.tableau_stacks = {}
+
+   local long_col = {
+      {id="4_red",   value=4,  suit="red"},
+      {id="7_blue",  value=7,  suit="blue"},
+      {id="d_green", value="d", suit="green", is_dragon=true},
+      {id="6_red",   value=6,  suit="red"},
+      {id="10_blue", value=10, suit="blue"},
+      {id="9_red",   value=9,  suit="red"},
+      {id="8_green", value=8,  suit="green"},
+      {id="7_red",   value=7,  suit="red"},
+      {id="6_green", value=6,  suit="green"},
+      {id="5_red",   value=5,  suit="red"},
+      {id="4_green", value=4,  suit="green"},
+      {id="3_red",   value=3,  suit="red"},
+   }
+   local layout = {
+      {1, long_col},
+      {2, {{id="9_blue", value=9, suit="blue"}}},
+   }
+
+   for i = 1, 8 do
+      local slot_id = "tableau_slot" .. i
+      self.tableau_stacks[i] = { slot_id = slot_id, cards = {}, animations_completed = 0 }
+   end
+
+   for _, stack_def in ipairs(layout) do
+      local stack_index = stack_def[1]
+      local cards = stack_def[2]
+      local stack_position = tableau_positions[stack_index]
+      local slot_id = "tableau_slot" .. stack_index
+      local cards_in_stack = #cards
+
+      for card_index, card_data in ipairs(cards) do
+         local card_offset = vmath.vector3(0, (card_index - 1) * config.stack_offset_y(cards_in_stack, stack_position.y), 0)
+         local target_position = stack_position + card_offset
+         local start_pos = vmath.vector3(480, 270, 0.2)
+         local card = factory.create("#card_factory", start_pos, vmath.quat(0, 0, 0, 1))
+         msg.post(card, "set_card", { data = card_data, slot_id = slot_id })
+         table.insert(self.tableau_stacks[stack_index].cards, { id = card, data = card_data, slot_id = slot_id })
+         table.insert(self.cards, card)
+         local delay = 0.04 * (stack_index + card_index)
+         go.set(card, "scale", vmath.vector3(0.5, 0.5, 1))
+         go.animate(card, "scale", go.PLAYBACK_ONCE_FORWARD,
+             vmath.vector3(1, 1, 1), go.EASING_OUTQUAD, 0.25, delay)
+         go.animate(card, "position", go.PLAYBACK_ONCE_FORWARD, target_position, go.EASING_OUTQUAD, 0.25, delay, function()
+            self.tableau_stacks[stack_index].animations_completed = self.tableau_stacks[stack_index].animations_completed + 1
+            if self.tableau_stacks[stack_index].animations_completed == cards_in_stack then
+               msg.post(slot_id, "update_stack", { cursor = self.cursor, index = stack_index, stack = self.tableau_stacks[stack_index].cards })
+               print("[LONGCOL] колонка " .. stack_index .. ": " .. cards_in_stack .. " карт, шаг "
+                     .. string.format("%.2f", -config.stack_offset_y(cards_in_stack, stack_position.y)))
+            end
+         end)
+      end
+   end
+end
+
 function deal_auto_finish_test(self)
    local tableau_positions = get_tableau_positions(self)
    self.tableau_stacks = {}
@@ -282,7 +362,7 @@ function deal_auto_finish_test(self)
       local cards_in_stack = #cards
 
       for card_index, card_data in ipairs(cards) do
-         local card_offset = vmath.vector3(0, (card_index - 1) * config.STACK_CARD_OFFSET_Y, 0)
+         local card_offset = vmath.vector3(0, (card_index - 1) * config.stack_offset_y(cards_in_stack, stack_position.y), 0)
          local target_position = stack_position + card_offset
          local start_pos = vmath.vector3(480, 270, 0.2)
          local card = factory.create("#card_factory", start_pos, vmath.quat(0, 0, 0, 1))
@@ -360,7 +440,7 @@ function deal_tutorial_cards(self)
       local cards_in_stack = #cards
 
       for card_index, card_data in ipairs(cards) do
-         local card_offset = vmath.vector3(0, (card_index - 1) * config.STACK_CARD_OFFSET_Y, 0)
+         local card_offset = vmath.vector3(0, (card_index - 1) * config.stack_offset_y(cards_in_stack, stack_position.y), 0)
          local target_position = stack_position + card_offset
 
          local start_pos = vmath.vector3(480, 270, 0.2)
@@ -694,9 +774,15 @@ function debug_replay(self)
 
    -- Position helpers (director owns target slots; game obeys the slot_id it gets).
    local tableau_pos = get_tableau_positions(self)
+   -- depth — 0-based место карты в колонке, значит после посадки в колонке будет
+   -- depth+1 карт. G5: шаг больше не константа -35 (см. config.stack_offset_y),
+   -- и захардкоженное значение промахивалось бы мимо реальной позиции тем
+   -- сильнее, чем длиннее колонка. Дирижёр реплея обязан целиться туда же, куда
+   -- потом посадит карту tableau_script.update_visible_cards.
    local function tcol(col, depth)
       local b = tableau_pos[col]
-      return "tableau_slot" .. col, vmath.vector3(b.x, b.y + depth * -35, 0.2 + (depth + 1) * 0.001)
+      local pitch = config.stack_offset_y(depth + 1, b.y)
+      return "tableau_slot" .. col, vmath.vector3(b.x, b.y + depth * pitch, 0.2 + (depth + 1) * 0.001)
    end
    local function fcell(ord)
       local id = "free_slot" .. ord
@@ -897,6 +983,19 @@ function can_auto_finish(self, message)
       end
    end
 
+   -- G3 (подтверждено обеими моделями ревью блока H). «Все карты безопасны» не
+   -- значит «жадный съём верхушек их вынесет»: safe-проверка выше смотрит на
+   -- ВСЕ карты колонок, а ход делает только find_next_auto_card — по верхушкам.
+   -- Колонка [9_red, 10_red] при чужих фундаментах на 9 проходит safe целиком,
+   -- но сверху лежит 10, а фундамент ждёт 9. Раньше это давало запуск
+   -- авто-финиша, disable_input, паузу 0.5 с — и выход на первом же шаге.
+   -- Требуем, чтобы ход был прямо сейчас: авто-финишу, которому нечего взять,
+   -- начинать нечего. Частичное доигрывание при этом сохраняется — условие
+   -- перепроверяется после каждого дропа.
+   if not find_next_auto_card(self) then
+      return false
+   end
+
    return true
 end
 
@@ -916,6 +1015,209 @@ function find_next_auto_card(self)
    return nil
 end
 
+-- Живые (не запечатанные) карты в свободных ячейках. Читает зеркало C4.
+function live_cells(self)
+   local n = 0
+   for _, fc in ipairs(self.free_cell_state or {}) do
+      if fc.card and not fc.is_blocked then n = n + 1 end
+   end
+   return n
+end
+
+-- Несобранные драконы: на столе или припаркованные в незапечатанной ячейке.
+function dragons_left(self)
+   local n = 0
+   for i = 1, 8 do
+      local stack = self.tableau_stacks and self.tableau_stacks[i]
+      if stack then
+         for _, card in ipairs(stack.cards) do
+            if card.data and card.data.is_dragon then n = n + 1 end
+         end
+      end
+   end
+   for _, fc in ipairs(self.free_cell_state or {}) do
+      -- G4: зеркало ячейки (free_cell.mirror_to_main) кладёт КАРТУ ЦЕЛИКОМ:
+      -- { id = <go>, data = { value, suit } }. Здесь читалось fc.card.value —
+      -- на боевой форме это всегда nil, то есть припаркованный дракон не
+      -- считался никогда. Ветку прикрывал live_cells (ему достаточно факта
+      -- fc.card), поэтому ложной победы не было, но retry-ветка в
+      -- dragons_collected опиралась на заниженный счётчик.
+      -- snapshot_and_go_map читает ту же форму через rec.data.value.
+      local data = fc.card and fc.card.data
+      if data and not fc.is_blocked and data.value == "d" then n = n + 1 end
+   end
+   return n
+end
+
+-- Настоящее условие победы: все номиналы в foundation, ячейки свободны от живых
+-- карт, драконов на столе не осталось. Это то же самое, что считает целью
+-- солвер (rules.lua is_goal) — раньше игра и её эталон расходились.
+function board_cleared(self)
+   return (self.base_cards_count or 0) >= 27
+      and live_cells(self) == 0
+      and dragons_left(self) == 0
+end
+
+-- G7: какого дракона сдвинуть и на какую пустую колонку, чтобы открыть
+-- лежащего под ним. Кнопка масти горит только при ЧЕТЫРЁХ открытых драконах
+-- (верхушки колонок + незапечатанные ячейки), поэтому дракон под драконом не
+-- поднимает счётчик, и без сдвига партия не доигрывается: замер
+-- reviews/probe_dragon_unblock.lua, сиды 1..300 — из 99 партий, доходящих до
+-- foundation=27 при живых драконах, одним лишь сбором доигрываются 69, со
+-- сдвигом на пустую колонку — все 99, столько же даёт полный перебор.
+-- (Числа менялись дважды: сначала выборка была 60 сидов, потом в зонде не
+-- хватало автоулёта цветка — оба раза поймано ревью. Это те, что стоят на
+-- текущем зонде.)
+--
+-- Источник обязан иметь под собой ещё карту (#cards >= 2). Это не украшение:
+-- каждый такой сдвиг уменьшает число закопанных карт ровно на единицу, поэтому
+-- цепочка конечна и не может зациклиться, гоняя одинокого дракона между двумя
+-- пустыми колонками. Берём самую высокую колонку — так закопанные вскрываются
+-- быстрее всего.
+--
+-- Возвращает (карта, slot_id) или nil, если сдвигать нечего или некуда.
+function dragon_relocation(self)
+   local empty_slot = nil
+   for i = 1, 8 do
+      local st = self.tableau_stacks and self.tableau_stacks[i]
+      if st and #st.cards == 0 then
+         empty_slot = st.slot_id
+         break
+      end
+   end
+   if not empty_slot then return nil end
+
+   local best, best_depth = nil, 1
+   for i = 1, 8 do
+      local st = self.tableau_stacks and self.tableau_stacks[i]
+      local cards = st and st.cards
+      if cards and #cards >= 2 and #cards > best_depth then
+         local top = cards[#cards]
+         if top.data and top.data.is_dragon then
+            best, best_depth = top, #cards
+         end
+      end
+   end
+   if not best then return nil end
+   return best, empty_slot
+end
+
+-- G4: на время авто-сбора ввод глушится (курсор делит pending_drop с пальцем).
+-- Флаг нужен, чтобы вернуть ввод ровно тому, кто его забрал: у auto-finish свой
+-- замок (start_auto_finish), и снимать его отсюда нельзя.
+function begin_auto_collect(self)
+   self.auto_collecting = true
+   self.auto_collect_wait = 0
+   msg.post(self.cursor, "auto_collect_dragons")
+end
+
+function end_auto_collect(self)
+   if self.auto_collecting then
+      self.auto_collecting = false
+      msg.post(self.cursor, "enable_input")
+   end
+end
+
+-- G7/G2a: доигрывать нечем — ни собрать масть, ни сдвинуть дракона.
+--
+-- G4: авто-сбор глушит ввод на время сбора (pending_drop общий с пальцем).
+-- Управление игроку возвращаем ЗДЕСЬ, до решения о победе: иначе при отказе от
+-- победы (туториал, < 27) стол останется глухим навсегда. Через
+-- end_auto_collect, а не напрямую: у auto-finish свой замок, и снимать чужой мы
+-- не имеем права.
+--
+-- Победу засчитываем: все номиналы разложены, партия выиграна по существу, и
+-- руками игрок тоже ничего сделать не может.
+--
+-- ⚠ Ревью блока H (grok-4.5) справедливо поймало прежний комментарий на вранье:
+-- он обещал «ни пустой колонки, ни свободной ячейки», а dragon_relocation
+-- свободные ячейки не читает вообще — только пустые колонки. Формулировка
+-- исправлена, КОД оставлен как есть, и вот почему.
+--
+-- Замер, reviews/probe_dragon_unblock.lua, сиды 1..300: партий, дошедших до
+-- foundation=27 с живыми драконами — 99. Политика игры (сбор + сдвиг верхнего
+-- дракона на пустую колонку) доигрывает до пустого стола ВСЕ 99, ровно столько
+-- же даёт полный перебор, в который сдвиг в ЯЧЕЙКУ входит. Уступка не
+-- срабатывает НИ РАЗУ — это хвост, а не рабочая ветка.
+--
+-- ⚠ История этих цифр — предупреждение самому себе. Сначала здесь стояло
+-- «97 из 99, две доски безнадёжны», и на этом основании ветка «сдвиг в ячейку»
+-- была отвергнута. Ревью блока I (grok-4.6) сняло обе «безнадёжные» доски и
+-- показало: в наборе ходов зонда не было АВТОУЛЁТА ЦВЕТКА, а в игре цветок с
+-- верхушки улетает сам. Перебор честно упирался в доски, где сверху лежит
+-- цветок. С этим ходом обе доигрываются, и уступок не остаётся вовсе.
+-- Вывод «ячейка не спасает» устоял (B = C = потолок), но опирается он теперь
+-- на другой замер, а не на тот, что был написан здесь раньше.
+-- Ревью блока I (grok-4.6): сдаваться, пока цветок ещё на столе, — рано.
+-- Цветок улетает САМ, но на СЛЕДУЮЩЕМ кадре (tableau_script ставит
+-- pending_top_check и шлёт send_to_flower_slot из своего update). Если 27-я
+-- карта лежала на цветке, то в том же проходе, где мы просим авто-сбор, цветок
+-- ещё сверху: dragon_relocation его не двигает (верхушка не дракон), кнопка не
+-- горит (четвёртый дракон под цветком) — и уступка объявляла победу поверх
+-- живых драконов ровно за кадр до того, как всё разрешилось бы само.
+-- Ждём и переспрашиваем; бюджет ограничен, чтобы закопанный намертво цветок
+-- (или припаркованный игроком в ячейку — flower_collected тогда не придёт
+-- никогда) не держал партию вечно.
+--
+-- ⚠ Бюджет считается в СЕКУНДАХ, а не в кадрах. Первая версия ждала 8 попыток
+-- по 4 кадра и была бита ревью блока J (grok-4.5) арифметикой: 32 кадра при
+-- 60 fps — это 0.53 с, а цветок летит 0.35 + 0.35 = 0.7 с (fly_card_arc), и
+-- flower_collected приходит только из flower_slot.occupy_slot, то есть ПОСЛЕ
+-- посадки. Победа успевала объявиться прямо посреди дуги. На 120 Гц кадровый
+-- бюджет был бы вдвое короче — ещё хуже.
+-- 2 секунды: полёт 0.7 с плюс запас на задержку старта дуги.
+--
+-- И отдельный запас ПОСЛЕ посадки — ревью блока J (grok-4.6). Прошлая версия
+-- обещала этот запас в комментарии, но не делала: ожидание жило только пока
+-- `not flower_collected`, а флаг взводится в тот же кадр, что и посадка
+-- (flower_slot.occupy_slot). Кнопка же загорается ПОЗЖЕ и другим путём:
+-- remove_card ставит pending_top_check → следующий tableau.update шлёт
+-- send_counter_to_button → dragon_button.check_state → set_button_state курсору.
+-- Порядок обновления игровых объектов в Defold не фиксирован, так что курсор
+-- вполне может прочитать ещё погасшую кнопку и ответить auto_collect_none — и
+-- уступка объявляла победу за кадр до того, как кнопка зажжётся.
+-- Поэтому таймер обнуляется на посадке цветка (см. обработчик flower_collected)
+-- и после неё даётся короткий SETTLE_SECONDS на эту цепочку.
+--
+-- Читать таймер надо как «сколько времени на доске НИЧЕГО не происходит»:
+-- он обнуляется на каждом событии, после которого может появиться ход:
+-- старт сбора, посадка цветка, посадка сдвинутого дракона. Собранная масть в
+-- этот список не входит напрямую — она либо заканчивает партию, либо начинает
+-- новый заход begin_auto_collect, который обнуляет таймер сам (уточнение из
+-- ревью блока K: прежняя формулировка была шире кода).
+-- Пока события идут, уступка не срабатывает; общее время всё равно ограничено
+-- бюджетом сдвигов (auto_collect_moves <= 24).
+local FLOWER_WAIT_SECONDS = 2.0
+local SETTLE_SECONDS = 0.3
+
+function auto_collect_give_up(self)
+   local budget = self.flower_collected and SETTLE_SECONDS or FLOWER_WAIT_SECONDS
+   if (self.auto_collect_wait or 0) < budget then
+      self.pending_collect_retry = 4
+      return
+   end
+   end_auto_collect(self)
+   if not self.tutorial_mode and (self.base_cards_count or 0) >= 27 then
+      declare_victory(self)
+   end
+end
+
+function declare_victory(self)
+   if self.currentState == self.states.WIN then return end
+   -- Замок авто-сбора снимаем на ЛЮБОЙ победе, а не только в ветке отказа.
+   -- Сегодня это гигиена состояния, а не баг: карты после победы всё равно
+   -- мертвы (tutorial_state.request_victory ставит липкий block_play_input,
+   -- cursor.on_input выходит по нему первой строкой), а любой путь обратно в
+   -- партию — restart_level / Space / MENU+PLAY — идёт через game_manager.show,
+   -- то есть выгружает и заново грузит коллекцию вместе с курсором. Но
+   -- оставлять auto_collecting=true у выжившего состояния значит держать мину
+   -- под тем, кто однажды сделает победу без перезагрузки уровня.
+   end_auto_collect(self)
+   self.currentState = self.states.WIN
+   sfx.victory()
+   tutorial_state.request_victory()
+end
+
 function auto_finish_step(self)
    local card, stack_index = find_next_auto_card(self)
    if not card then
@@ -929,8 +1231,22 @@ function auto_finish_step(self)
             break
          end
       end
+      -- Пустой стол — ещё НЕ победа: карта могла быть припаркована в свободной
+      -- ячейке, а авто-финиш ячейки не разгребает (find_next_auto_card смотрит
+      -- только верхушки колонок). Без этой проверки партия с 10_red в ячейке и
+      -- 26 картами в foundation объявлялась выигранной, оверлей глушил ввод и
+      -- доложить последнюю карту было уже нельзя. Найдено независимым ревью
+      -- (grok-4.6), воспроизведено тестом на этом самом коде.
+      -- Читаем зеркало C4: blocked-ячейка = собранные драконы, она победе не мешает.
+      local cell_occupied = false
+      for _, fc in ipairs(self.free_cell_state or {}) do
+         if fc.card and not fc.is_blocked then
+            cell_occupied = true
+            break
+         end
+      end
       -- 27-я карта уже ставит WIN через card_to_base — не дублируем victory
-      if all_empty and self.base_cards_count > 0
+      if all_empty and not cell_occupied and self.base_cards_count > 0
          and self.currentState ~= self.states.WIN then
          print("[MAIN] auto-finish complete — victory!")
          self.currentState = self.states.WIN
@@ -993,9 +1309,23 @@ function on_message(self, message_id, message, sender)
          self.suit_to_base[message.suit] = message.slot_id
       end
       if not self.tutorial_mode and self.base_cards_count >= 27 then
-         self.currentState = self.states.WIN
-         sfx.victory()
-         tutorial_state.request_victory()
+         -- Все 27 номиналов разложены — но это ещё не пустой стол. Замер
+         -- (reviews/probe_dragon_unblock.lua, сиды 1..300): в 99 решённых
+         -- партиях в этот момент на столе остаются живые драконы, и раньше игра
+         -- показывала Victory прямо поверх них. Число обновлено вместе с
+         -- зондом — на выборке из 60 сидов тут стояло «15 из 57». Доигрываем драконов сами; победу объявит проверка на
+         -- `dragons_collected` (тот же путь, что и при ручном сборе, — если
+         -- авто-нажатие почему-то не сработает, игрок дожмёт кнопки руками и
+         -- всё равно выиграет).
+         if board_cleared(self) then
+            declare_victory(self)
+         elseif not self.debug_replaying then
+            -- Во время реплея солвера доской распоряжается директор: он сам
+            -- собирает драконов своими директивами. Влезть сюда с авто-сбором
+            -- значит собрать масть раньше директивы и рассинхронить план —
+            -- та же причина, по которой отказывает can_auto_finish (стр. 858).
+            begin_auto_collect(self)
+         end
       end
       -- B2: авто-улёт двойки поднимает foundation без хода игрока — перепроверяем
       -- auto-finish (round-trip через cursor даёт свежие free_cells).
@@ -1032,18 +1362,61 @@ function on_message(self, message_id, message, sender)
       -- C5: см. flower_slot.script. Флаг только взводится: обратно цветок из слота
       -- не достаётся, а новая партия перезагружает коллекцию (init сбрасывает).
       self.flower_collected = true
+      -- Посадка цветка открыла карту под ним. Даём цепочке «верхушка → счётчик →
+      -- кнопка → курсор» отработать, прежде чем уступка решит, что ходов нет:
+      -- таймер ожидания считается с этого момента (ревью блока J).
+      self.auto_collect_wait = 0
    elseif message_id == hash("check_auto_finish") then
       -- B2: не оцениваем немедленно — каскад drop_success→remove_card→зеркало и
       -- card_to_base ещё в очереди сообщений. Откладываем на 2 кадра в update().
       self.pending_af_check = { free_cells = message.free_cells, frames = 2 }
+   elseif message_id == hash("auto_collect_none") then
+      -- Курсор доложил: ни одной горящей кнопки с посадочной ячейкой.
+      -- G7: раньше здесь сразу объявлялась победа поверх живых драконов. Теперь
+      -- сначала пробуем ОТКРЫТЬ закопанного дракона, сдвинув лежащего на нём на
+      -- пустую колонку — и только если сдвигать нечего или некуда, уступаем.
+      local card, slot_id = dragon_relocation(self)
+      local budget = (self.auto_collect_moves or 0) < 24   -- страховка от петли
+      if card and slot_id and budget and not self.tutorial_mode and not self.debug_replaying then
+         self.auto_collect_moves = (self.auto_collect_moves or 0) + 1
+         msg.post(self.cursor, "auto_move_dragon", { card = card, slot_id = slot_id })
+      else
+         auto_collect_give_up(self)
+      end
+   elseif message_id == hash("auto_collect_moved") then
+      -- Дракон сел на пустую колонку. Считать заново нельзя немедленно: в
+      -- очереди ещё occupy_slot/remove_card, а счётчик кнопки поднимет
+      -- last_card_to_slot из update() слота (A6). Ждём осадки кадров.
+      self.pending_collect_retry = 4
+      -- И сбрасываем таймер простоя: на доске только что произошло событие,
+      -- дающее новый ход. Без этого сдвиг дракона (дуга 0.7 с) успевал сжечь
+      -- весь запас ещё в полёте, и первый же отказ после посадки уходил в
+      -- уступку — та же дыра, что с цветком, только другим путём.
+      self.auto_collect_wait = 0
+   elseif message_id == hash("auto_collect_none_final") then
+      -- Курсор не смог выполнить сдвиг (слот исчез, пока летело сообщение).
+      auto_collect_give_up(self)
    elseif message_id == hash("dragons_collected") then
       if self.tutorial_mode then
          self.currentState = self.states.WIN
          sfx.victory()
          tutorial_state.request_victory()
+      elseif board_cleared(self) then
+         -- Последняя масть драконов улетела в ячейку — стол пуст, это победа.
+         -- Единственная точка, где партия выигрывается после авто-сбора; сюда же
+         -- приходит ручной сбор, поэтому оба пути закрыты одним условием.
+         declare_victory(self)
       else
          -- После сбора драконов проверяем auto-finish
          msg.post(self.cursor, "send_auto_finish_check")
+         -- Драконы могли собраться не все (ячейка освободилась только сейчас) —
+         -- дожимаем оставшиеся кнопки, если номиналы уже все в foundation.
+         if (self.base_cards_count or 0) >= 27 and dragons_left(self) > 0
+            and not self.debug_replaying then
+            begin_auto_collect(self)   -- ввод остаётся глухим до конца цепочки
+         else
+            end_auto_collect(self)     -- G4: цепочка кончилась, вернуть управление
+         end
       end
    elseif message_id == hash("debug_solve") then
       if DEBUG_SOLVER then debug_solve(self) end
@@ -1068,6 +1441,23 @@ function update(self, dt)
          if can_auto_finish(self, check) then
             print("[MAIN] can_auto_finish = true — starting auto-finish")
             start_auto_finish(self)
+         end
+      end
+   end
+   -- G7: следующий шаг авто-сбора после сдвига дракона. Отложено на кадры по
+   -- той же причине, что и pending_af_check: счётчик кнопки поднимается из
+   -- update() слота, а не в момент drop_success.
+   -- Бюджет ожидания тикает по времени, а не по кадрам: на 120 Гц кадровый
+   -- счётчик отмерил бы вдвое меньше реального (ревью блока J).
+   if self.auto_collecting then
+      self.auto_collect_wait = (self.auto_collect_wait or 0) + (dt or 0)
+   end
+   if self.pending_collect_retry then
+      self.pending_collect_retry = self.pending_collect_retry - 1
+      if self.pending_collect_retry <= 0 then
+         self.pending_collect_retry = nil
+         if self.auto_collecting then
+            msg.post(self.cursor, "auto_collect_dragons")
          end
       end
    end

@@ -311,7 +311,7 @@ function M.legal_moves(state)
       for from_col = 1, 8 do
          local card = col_top(from_col)
          -- free_cell.script:46-49 accepts ANY card type (B5). The flower is handled
-         -- by the mandatory auto-fly (apply_mandatory) before branching, so it is
+         -- by the mandatory auto-fly (apply_mandatory_tracked) before branching, so it is
          -- never a tableau top at a search node — no guard needed here.
          if card then
             moves[#moves + 1] = { type="to_free_cell", from_col=from_col, to_slot=fc_slot }
@@ -711,86 +711,6 @@ local function state_hash(state)
                      .. (state.dragons_collected.green and "1" or "0")
 
    return table.concat(parts, "")
-end
-
--- Apply all mandatory/greedy moves that are always beneficial:
---   1. Flower auto-fly (flower on tableau top → flower slot)
---   2. Value-2 auto-move to foundation
---   3. Safe foundation moves (per can_move_to_foundation_safe)
--- Dragon collect is a BRANCHING move (legal_moves), not mandatory: it consumes
--- a free cell and is not always safe.
--- Returns (new_state, appended_moves_list) where appended_moves_list is a list
--- of move objects applied. Returns original state + empty list if nothing applies.
-local function apply_mandatory(state, path)
-   local changed = true
-   local s = state
-   local new_path = path
-
-   while changed do
-      changed = false
-      repeat -- Lua 5.1 has no `continue`/`goto`; `break` here = "restart while loop"
-
-      -- 1. Flower auto-fly
-      for col_i = 1, 8 do
-         local col = s.tableau[col_i]
-         if #col > 0 and col[#col].is_flower then
-            local move = { type="flower_auto" }
-            s = M.apply_move(s, move)
-            new_path = new_path .. "\0" -- placeholder; we use a list below
-            changed = true
-            break
-         end
-      end
-
-      -- 2. Value-2 auto-move to foundation (any tableau top with value==2)
-      for col_i = 1, 8 do
-         local col = s.tableau[col_i]
-         if #col > 0 then
-            local top = col[#col]
-            if type(top.value) == "number" and top.value == 2 then
-               local move = { type="to_foundation", from_col=col_i }
-               s = M.apply_move(s, move)
-               changed = true
-               break
-            end
-         end
-      end
-      if changed then break end
-
-      -- 3. Safe foundation moves from tableau tops and free cells
-      -- From tableau tops
-      for col_i = 1, 8 do
-         local col = s.tableau[col_i]
-         if #col > 0 then
-            local top = col[#col]
-            if not top.is_dragon and not top.is_flower then
-               if M.can_move_to_foundation_safe(top, s.foundation_top) then
-                  local move = { type="to_foundation", from_col=col_i }
-                  s = M.apply_move(s, move)
-                  changed = true
-                  break
-               end
-            end
-         end
-      end
-      if changed then break end
-
-      -- From free cells
-      for slot_i, fc in ipairs(s.free_cells) do
-         if fc.card and not fc.is_blocked then
-            if M.can_move_to_foundation_safe(fc.card, s.foundation_top) then
-               local move = { type="to_foundation", from_free_cell=slot_i }
-               s = M.apply_move(s, move)
-               changed = true
-               break
-            end
-         end
-      end
-
-      until true
-   end
-
-   return s
 end
 
 -- Version that tracks moves applied (returns new state + move list)

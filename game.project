@@ -28,11 +28,11 @@ app_icon_114x114 = /assets/app_icons/icon_114.png
 app_icon_72x72 = /assets/app_icons/icon_72.png
 app_icon_144x144 = /assets/app_icons/icon_144.png
 app_icon_167x167 = /assets/app_icons/icon_167.png
-bundle_identifier = com.example.todo
+bundle_identifier = com.neurophage.shenzhensolitaire
 icons_asset = /assets/Assets.car
 
 [osx]
-bundle_identifier = com.example.todo
+bundle_identifier = com.neurophage.shenzhensolitaire
 
 [android]
 app_icon_36x36 = /assets/app_icons/icon_36.png

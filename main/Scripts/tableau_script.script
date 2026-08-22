@@ -105,10 +105,17 @@ function update_visible_cards(self)
       end
    end
 
-   -- Обновляем состояние всех карт в стопке
+   -- Обновляем состояние всех карт в стопке.
+   -- G5: шаг зависит от ДЛИНЫ колонки — длинная сжимается, чтобы влезть в экран
+   -- (config.stack_offset_y). Это единственное авторитетное место раскладки:
+   -- сюда приходит и раздача, и дроп, и перенос стопки, и всё пересчитывается
+   -- целиком. Поэтому промежуточные цели анимаций (например -40 в cursor)
+   -- допустимы: кадром позже карты садятся ровно сюда.
+   local slot_y = go.get_position().y
+   local pitch = config.stack_offset_y(#self.stack, slot_y)
    for i, card in ipairs(self.stack) do
       local z_index = (i == #self.stack) and config.Z_CARD_LAST_IN_STACK or config.Z_CARD_STACK_BASE + i * config.Z_CARD_STACK_STEP
-      local y = go.get_position().y + (i-1) * config.STACK_CARD_OFFSET_Y
+      local y = slot_y + (i-1) * pitch
       go.set_position(vmath.vector3(go.get_position().x, y, z_index), card.id)
    end
 

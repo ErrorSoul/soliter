@@ -51,12 +51,16 @@ FRAME_MS = 17               # one frame at 60fps
 HOLD_MS = 250               # press duration; must span several engine frames
 
 # Slot centres in game coords, read from main/Levels/soliter.collection.
-FREE_CELL = {1: (80, 457), 2: (193, 457), 3: (309, 457)}
-TABLEAU_X = {1: 77, 2: 193, 3: 309, 4: 425, 5: 541, 6: 657, 7: 773, 8: 889}
+# G6: the grid was squeezed left (pitch 116 -> 104, first centre 65) to clear the
+# right rail at x 868..946. Keep these in step with the collection -- a stale
+# TABLEAU_X does not fail loudly, it just drags from the wrong pixel.
+FREE_CELL = {1: (65, 457), 2: (169, 457), 3: (273, 457)}
+TABLEAU_X = {1: 65, 2: 169, 3: 273, 4: 377, 5: 481, 6: 585, 7: 689, 8: 793}
 TABLEAU_TOP_Y = 299         # depth 0; each further card is 35px lower
-CARD_PITCH = 35
-FLOWER_SLOT = (541, 457)
+CARD_PITCH = 35             # only true while the column fits (config.stack_offset_y)
+FLOWER_SLOT = (377, 457)    # G6: flower moved to column 4, dragon buttons to column 5
 PLAY_BUTTON = (480, 232)
+RESTART_BUTTON = (907, 56)   # G6: правый рельс, см. gui/ui.gui
 
 BENIGN = (re.compile(r"^INFO:"), re.compile(r"Defold Engine \d"), re.compile(r"^Downloading"))
 FATAL = (
@@ -167,6 +171,18 @@ class Session:
         self.page.screenshot(path=path)
         self.note("shot", os.path.basename(path))
         return path
+
+    def patch(self, x, y, half_w, half_h):
+        """Сырые пиксели прямоугольника в игровых координатах.
+
+        Нужен там, где утверждение звучит как «на экране стало ДРУГОЕ», а не
+        «ярче/темнее»: текст на канвасе не прочитать из DOM, но два снимка
+        одной и той же кнопки на разных языках обязаны различаться."""
+        cx, cy = self._map(x, y)
+        sx, sy = self._map(x + half_w, y + half_h)
+        w, h = abs(sx - cx) * 2, abs(sy - cy) * 2
+        clip = {"x": max(cx - w / 2, 0), "y": max(cy - h / 2, 0), "width": w, "height": h}
+        return self.page.screenshot(clip=clip)
 
     def brightness(self, x, y, half=18):
         """Mean luminance of a small patch at a game coord.
@@ -505,6 +521,337 @@ def scenario_freecell(s):
     s.fail("no deal solvable within budget after 12 attempts")
 
 
+
+def scenario_focus(s):
+    """D2: требования Я.Игр к HTML5-обёртке — жесты, меню, звук на потере фокуса.
+
+    Проверяем не «строка есть в шаблоне», а ВЫЧИСЛЕННЫЙ браузером стиль и
+    реальную реакцию на событие: шаблон можно поправить и не собрать, а можно
+    собрать и получить перекрытое правило.
+    """
+    s.boot()
+
+    style = s.page.evaluate(
+        "() => ({"
+        " body: getComputedStyle(document.body).overscrollBehaviorY,"
+        " html: getComputedStyle(document.documentElement).overscrollBehaviorY,"
+        " canvas: getComputedStyle(document.getElementById('canvas')).touchAction"
+        "})")
+    s.note("style", f"overscroll html={style['html']} body={style['body']}, canvas touch-action={style['canvas']}")
+    s.expect(style["html"] == "none" and style["body"] == "none",
+             f"страница всё ещё пружинит/прокручивается: {style}")
+    s.expect(style["canvas"] == "none",
+             f"жесты над канвасом не отданы игре: touch-action={style['canvas']}")
+
+    # По канвасу меню давит и сам движок, поэтому проверяем страницу целиком:
+    # долгий тап на мобиле легко попадает мимо канваса (леттербокс-поля).
+    prevented = s.page.evaluate(
+        "() => {const out = {};"
+        " for (const id of ['canvas', 'app-container']) {"
+        "   const e = new MouseEvent('contextmenu', {bubbles: true, cancelable: true});"
+        "   document.getElementById(id).dispatchEvent(e); out[id] = e.defaultPrevented; }"
+        " const b = new MouseEvent('contextmenu', {bubbles: true, cancelable: true});"
+        " document.body.dispatchEvent(b); out.body = b.defaultPrevented; return out;}")
+    s.note("menu", f"contextmenu подавлен: {prevented}")
+    s.expect(all(prevented.values()),
+             f"контекстное меню не подавлено — долгий тап откроет его: {prevented}")
+
+    s.press_play()
+    s.wait(2, "звук успел завестись")
+
+    # Видимость подменяем на самой странице: headless-браузер вкладки не
+    # переключает, а сторож в шаблоне читает именно document.hidden.
+    def visibility(hidden):
+        s.page.evaluate(
+            "(h) => { Object.defineProperty(document, 'hidden', {value: h, configurable: true});"
+            " Object.defineProperty(document, 'visibilityState', {value: h ? 'hidden' : 'visible', configurable: true});"
+            " document.dispatchEvent(new Event('visibilitychange')); }", hidden)
+
+    # Читаем ИЗМЕРЕННОЕ состояние контекстов (states=...), а не строку намерения.
+    # Ревью блока H: прежняя проверка ловила «[AUDIO] suspended», а эта строка
+    # печаталась от флага muted — вырежи из сторожа suspend()/resume() целиком,
+    # и сценарий оставался зелёным. Теперь такая мутация его роняет.
+    def audio_states(line):
+        # wait_for_log отдаёт строку целиком, состояния достаём отдельно.
+        m = re.search(r"states=([a-z,]+)", line or "")
+        return m.group(1).split(",") if m else []
+
+    visibility(True)
+    line = s.wait_for_log(r"\[AUDIO\] suspended ctx=[1-9][0-9]* states=", 10, "focus lost")
+    st = audio_states(line)
+    s.expect(st and all(x == "suspended" for x in st),
+             f"вкладка ушла в фон, а контекст не приглушён: {line}")
+    visibility(False)
+    line = s.wait_for_log(r"\[AUDIO\] resumed ctx=[1-9][0-9]* states=", 10, "focus back")
+    st = audio_states(line)
+    s.expect(st and all(x == "running" for x in st),
+             f"вкладка вернулась, а звук так и остался выключен: {line}")
+
+    # Быстрый разворот: уйти и вернуться, не дав suspend() доехать. suspend и
+    # resume асинхронны, и сторож, который смотрит только на c.state, здесь
+    # разъезжается — resume не зовётся (state ещё "running"), а suspend доезжает
+    # уже после. Найдено ревью блока I. Вкладка видима — звук обязан играть.
+    # Оба события — в ОДНОМ evaluate, синхронно: между двумя отдельными
+    # page.evaluate проходит несколько миллисекунд, и suspend() успевает
+    # доехать, то есть окно закрывается само (замерено: A/B на стороже без
+    # перепроверки такой разворот не ловил).
+    s.page.evaluate(
+        "() => { const set = (h) => {"
+        "   Object.defineProperty(document, 'hidden', {value: h, configurable: true});"
+        "   Object.defineProperty(document, 'visibilityState', {value: h ? 'hidden' : 'visible', configurable: true});"
+        "   document.dispatchEvent(new Event('visibilitychange')); };"
+        " set(true); set(false); }")
+    s.wait(3, "промисы аудио осели")
+    tail = [e["text"] for e in s.logs_matching(r"\[AUDIO\] .* ctx=[1-9][0-9]* states=")]
+    last = tail[-1] if tail else ""
+    st = audio_states(last)
+    s.note("audio", f"после быстрого разворота: {last}")
+    s.expect(st and all(x == "running" for x in st),
+             f"после быстрого ухода-возврата звук остался глухим: {last}")
+
+
+
+def scenario_restartrace(s):
+    """(г) из ревью блока H: show() шлёт unload и тут же async_load одному и
+    тому же collectionproxy, не дожидаясь proxy_unloaded.
+
+    Сценарий давит именно в окно: RESTART нажимается дважды подряд без пауз, а
+    третий раз — посреди загрузки уровня. Судим по столу и по ошибкам движка:
+    после того как пыль осела, стол обязан быть разложен, а в логе не должно
+    быть жалоб прокси. Пустой стол или ошибка загрузки — это и есть гонка.
+    """
+    s.boot()
+    s.press_play()
+
+    felt = s.brightness(*FREE_CELL[1])   # пустая ячейка = эталон сукна
+    s.note("felt", f"эталон сукна {felt:.0f}")
+
+    # ЗАМЕР, без которого сценарий проверял бы не то: от клика RESTART до
+    # «I am MAIN SCRIPT» проходит 60-80 мс, а обычный click_game держит кнопку
+    # HOLD_MS=250 мс, то есть нажатия идут раз в ~270 мс. Очередь таких кликов
+    # в окно загрузки НЕ ПОПАДАЕТ ни разу — она проверяет восемь честных
+    # последовательных рестартов, а не гонку. Поэтому здесь нажатие короткое:
+    # 40 мс — это ~2.4 кадра при 60fps, движок его видит, а интервал (~50 мс)
+    # меньше окна загрузки, и клики ложатся внутрь него.
+    def fast_click(label):
+        cx, cy = s._map(*RESTART_BUTTON)
+        s.page.mouse.move(cx, cy)
+        s.page.mouse.down()
+        s.page.wait_for_timeout(40)
+        s.page.mouse.up()
+        s.note("click", f"fast RESTART {label}")
+
+    board = (480, 300, 380, 200)
+    for label, times in (("медленный", 2), ("в окно загрузки", 8)):
+        loads_before = len(s.logs_matching(r"I am MAIN SCRIPT"))
+        before = s.patch(*board)
+        for n in range(times):
+            if label == "медленный":
+                s.click_game(*RESTART_BUTTON, label=f"RESTART {n + 1} ({label})")
+            else:
+                fast_click(f"{n + 1}")
+        s.wait(5, f"{label} рестарт осел")
+        loads = len(s.logs_matching(r"I am MAIN SCRIPT")) - loads_before
+        s.note("loads", f"{label}: нажатий {times}, загрузок уровня {loads}")
+        # Ноль загрузок означало бы, что короткое нажатие движок не увидел —
+        # тогда «гонки нет» доказывало бы только то, что мы не нажимали.
+        s.expect(loads > 0, f"{label}: ни одной загрузки уровня — нажатия не дошли до движка")
+
+        if label != "медленный":
+            # Ревью блока J (grok-4.5): «загрузка была» не то же самое, что
+            # «нажатия перекрыли загрузку». Требуем ровно то, ради чего сценарий
+            # существует: каждое нажатие дошло, и интервал между нажатиями
+            # МЕНЬШЕ задержки загрузки (замер: 60-80 мс). Тогда очередь по
+            # построению ложится внутрь окна, а не рядом с ним.
+            s.expect(loads >= times,
+                     f"{label}: нажатий {times}, а загрузок {loads} — часть кликов движок проглотил, "
+                     f"перекрытия не было")
+            clicks = [e["t"] for e in s.log if "fast RESTART" in e["text"]][-times:]
+            gaps = [round(b - a, 3) for a, b in zip(clicks, clicks[1:])]
+            lat = [e["t"] for e in s.log if "DEBUG:SCRIPT: I am MAIN SCRIPT" in e["text"]][-loads:]
+            worst = max(gaps) if gaps else 0
+            s.note("overlap", f"интервал между нажатиями {gaps}, загрузок {len(lat)}")
+            s.expect(worst < 0.15,
+                     f"{label}: нажатия разъехались на {worst:.3f} с — это больше окна загрузки, "
+                     f"очередь била мимо гонки")
+
+        # enumerate(dict) отдаёт КЛЮЧИ, а не значения: сюда уезжали x = 1..8
+        # вместо 65..793, то есть восемь замеров одной и той же точки у левого
+        # края. Поймано ревью блока I. Оракул был бессмысленным, а «8 из 8» в
+        # логе — самообманом.
+        dealt = sum(1 for x in TABLEAU_X.values()
+                    if s.brightness(x, TABLEAU_TOP_Y) - felt > s.GAP)
+        s.note("board", f"{label}: колонок с картой {dealt} из {len(TABLEAU_X)}")
+        s.expect(dealt == len(TABLEAU_X),
+                 f"{label} рестарт: стол разложен не полностью ({dealt} из {len(TABLEAU_X)})")
+        # «Восемь ярких верхушек» одинаково верно и для НОВОЙ раздачи, и для
+        # старой, оставшейся на экране (ревью блока I). Поэтому ещё и требуем,
+        # чтобы стол СТАЛ ДРУГИМ: рестарт тасует заново, две одинаковые раздачи
+        # подряд практически невозможны.
+        after = s.patch(*board)
+        s.expect(after != before,
+                 f"{label} рестарт: стол не изменился — старая раздача осталась на экране")
+
+    bad = [e["text"] for e in s.log
+           if re.search(r"(?i)proxy", e["text"]) and re.search(r"(?i)error|fail|assert", e["text"])]
+    s.expect(not bad, f"движок пожаловался на прокси: {bad[:3]}")
+
+
+def scenario_debugkeys(s):
+    """Блок D: dev-клавиши S / R / Space живут ровно в debug-сборке.
+
+    Сценарий двусторонний и сам определяет, чего ждать, по строке варианта из
+    game_manager.init. Гонять его надо на ОБОИХ бандлах: на release он ловит
+    клавиши, уехавшие в магазин, на debug — что мы не сломали собственный стенд
+    (census и freecell перебирают раздачи клавишей Space, win решает партию R).
+    Односторонняя проверка тут ничего не стоит: «клавиша молчит» одинаково верно
+    и для правильно закрытого флага, и для сломанного ввода.
+    """
+    # Релизный движок Defold не печатает в консоль ВООБЩЕ (замерено: в
+    # release-бандле нет ни «Defold Engine», ни наших print). Поэтому у
+    # сценария две руки: в debug читаем логи, в release — пиксели. Ждать логов
+    # от релиза бессмысленно, а «логов нет, значит клавиши мертвы» — ложная
+    # зелень: логов нет и у живых клавиш.
+    s.wait(6, "движок грузится")
+    s.measure()
+    variant = s.wait_for_log(r"\[DEBUG\] dev-клавиши: (on|off)", 5, "вариант сборки")
+    dev = bool(variant and variant.strip().endswith("on"))
+    s.note("variant", f"логи: {'есть' if variant else 'молчат (release)'} → режим {'debug' if dev else 'release'}")
+
+    if dev:
+        s.expect(s.logs_matching(r"Defold Engine"), "engine never announced itself")
+        s.press_play()
+        deals_before = len(s.logs_matching(r"I am MAIN SCRIPT"))
+
+        s.key("s", "solver")
+        s.wait(2, "солвер успел бы отчитаться")
+        solver_spoke = bool(s.logs_matching(r"\[SOLVER\]"))
+        s.key("r", "replay")
+        s.wait(2, "реплей успел бы отчитаться")
+        replay_spoke = bool(s.logs_matching(r"\[REPLAY\]"))
+        s.key("Space", "restart")
+        s.wait(3, "уровень успел бы перезагрузиться")
+        dealt_again = len(s.logs_matching(r"I am MAIN SCRIPT")) > deals_before
+
+        s.note("keys", f"S→{solver_spoke} R→{replay_spoke} Space→{dealt_again}")
+        s.expect(solver_spoke, "debug-сборка: S не запустил солвер — стенд остался без инструмента")
+        # R считался, но вердикт по нему не ставился (ревью блока I): сломанный
+        # debug_replay оставлял сценарий зелёным, а от R зависят win/census/freecell.
+        s.expect(replay_spoke, "debug-сборка: R не отдал партию реплею — сценарий win работать не будет")
+        s.expect(dealt_again, "debug-сборка: Space не пересдал — census/freecell работать не будут")
+        return
+
+    # ---- release: судим по столу, а не по логам ----
+    board = (480, 300, 380, 200)   # весь игровой стол целиком
+    before_play = s.patch(*board)
+    s.click_game(*PLAY_BUTTON, label="PLAY")
+    s.wait(4, "раздача осела")
+    dealt = s.patch(*board)
+    # Контроль: если PLAY не сработал, дальше «ничего не изменилось» доказывало
+    # бы только то, что мы смотрим на пустой экран.
+    s.expect(dealt != before_play, "release: PLAY не разложил стол — сравнивать нечего")
+
+    s.wait(3, "стол стоит без ввода")
+    idle = s.patch(*board)
+    s.expect(idle == dealt, "release: стол меняется сам по себе — пиксельная проверка тут не судья")
+
+    # ⚠ ГРАНИЦА МЕТОДА, уточнена ревью блока I. В release движок молчит, поэтому
+    # судить можно только по столу — и по столу видно не всё:
+    #   S  — не двигает карты вообще (только считает и печатает), значит живую S
+    #        от мёртвой здесь не отличить НИКОГДА;
+    #   R  — двигает, но при неразрешимой в бюджете раздаче debug_replay выходит
+    #        сразу, ничего не тронув. То есть «R мёртв» иногда ложная зелень
+    #        (бюджет реплея 40k; на сидах 1..40 около 12% раздач не решаются).
+    #   Space — пересдаёт всегда. Это и есть настоящий различитель флага в
+    #        release; мутация M.enabled=true ловится именно им (и, когда повезёт
+    #        с раздачей, ещё и R).
+    # Все три проверки оставлены: лишняя не мешает, а Space держит вердикт.
+    s.key("s", "solver")
+    s.wait(3, "солвер успел бы отыграть")
+    after_s = s.patch(*board)
+    s.expect(after_s == idle, "release: клавиша S всё ещё что-то делает со столом")
+
+    s.key("r", "replay")
+    s.wait(4, "реплей успел бы повести карты")
+    after_r = s.patch(*board)
+    s.expect(after_r == idle, "release: клавиша R всё ещё отдаёт партию автоигроку")
+
+    s.key("Space", "restart")
+    s.wait(4, "пересдача успела бы случиться")
+    after_space = s.patch(*board)
+    s.expect(after_space == idle, "release: пробел всё ещё перезапускает партию")
+    s.note("keys", "release: S/R/Space стол не тронули")
+
+
+def scenario_audiobg(s):
+    """D2: игра, загруженная В ФОНЕ, не должна звучать.
+
+    Отдельный сценарий, потому что проверяемый момент — СОЗДАНИЕ контекста, а не
+    реакция на событие. Движок создаёт AudioContext асинхронно внутри
+    EngineLoader.load; если к этому времени вкладка уже без фокуса, сторож обязан
+    приглушить контекст сразу, а не ждать следующего blur/visibilitychange.
+    Найдено ревью блока H (обе модели) — до правки в конструкторе не было apply().
+
+    Фокус подменяем ДО первого скрипта страницы (add_init_script), иначе движок
+    успеет создать контекст раньше подмены и замер уедет.
+    """
+    s.page.add_init_script(
+        "Object.defineProperty(document, 'hasFocus', {value: function () { return false; },"
+        " configurable: true});")
+    s.page.goto(s.url)
+    s.boot()
+    s.press_play()
+
+    # Смотрим ВЕСЬ лог, а не «следующую новую строку»: сторож печатает свой
+    # вердикт в момент создания контекста, то есть ещё до press_play, и курсор
+    # wait_for_log эту строку уже прошёл бы (замерено: строка есть, проверка
+    # мимо). ctx=0 — событие фокуса до рождения контекста, оно не в счёт.
+    #
+    # ⚠ Что здесь на самом деле различитель (уточнено ревью блока I). Chromium
+    # часто рождает AudioContext уже suspended из-за autoplay-политики, поэтому
+    # states=suspended сам по себе НИЧЕГО не доказывает — он был бы таким и без
+    # сторожа. Доказывает первая проверка: сторож вообще ОТЧИТАЛСЯ о живом
+    # контексте, а отчитаться он может только из apply(), которого до этой
+    # правки в конструкторе не было. Замерено мутацией: убрать apply() из
+    # Patched → «сторож ни разу не отчитался», FAIL.
+    hits = [e["text"] for e in s.logs_matching(r"\[AUDIO\] .* ctx=[1-9][0-9]* states=")]
+    s.note("audio", f"строк сторожа с живым контекстом: {len(hits)}; последняя: {hits[-1] if hits else '—'}")
+    s.expect(bool(hits), "сторож ни разу не отчитался о живом контексте — apply() при создании не сработал")
+    bad = [h for h in hits if not all(x == "suspended" for x in re.search(r"states=([a-z,]+)", h).group(1).split(","))]
+    s.expect(not bad, f"контекст создан без фокуса и остался звучать: {bad}")
+
+
+def scenario_i18n(s):
+    """H2/H3: язык приходит из ?lang= (так его задают Я.Игры) и реально доезжает
+    до подписей на экране.
+
+    Проверка не «в логе написано ru»: логи врут дёшево. Снимаем одну и ту же
+    кнопку рельса на двух языках и требуем, чтобы картинка отличалась — если
+    подпись осталась английским хардкодом из ui.gui, снимки совпадут побайтно.
+    """
+    base = s.url.split("?")[0]
+    shots = {}
+    for lang in ("en", "ru"):
+        s.page.goto(f"{base}?lang={lang}")
+        s.boot()
+        got = s.wait_for_log(r"\[I18N\] язык: (\w+)", 20, f"lang={lang}")
+        s.expect(got and got.strip().endswith(lang), f"движок не переключился на {lang}: {got}")
+        s.press_play()
+        s.wait(2, "раздача осела")
+        s.shot(f"rail-{lang}")
+        shots[lang] = s.patch(907, 56, 35, 28)   # кнопка RESTART в рельсе
+
+    s.expect(shots["en"] != shots["ru"],
+             "подпись кнопки не изменилась при смене языка — текст остался хардкодом в ui.gui")
+    from PIL import Image
+    for lang, buf in shots.items():
+        img = Image.open(io.BytesIO(buf)).convert("L")
+        px = list(img.getdata())
+        spread = max(px) - min(px)
+        s.note("label", f"{lang}: контраст подписи {spread}")
+        s.expect(spread > 40, f"на кнопке {lang} не видно текста (контраст {spread}) — тофу или пусто")
+
+
 def scenario_census(s):
     """C5: press R on a board whose FLOWER HAS ALREADY LANDED.
 
@@ -523,7 +870,14 @@ def scenario_census(s):
     s.shot("dealt")
 
     felt = s.brightness(*FREE_CELL[3])
-    for attempt in range(1, 13):
+    # Лотерея: цветок улетает во время раздачи, только если оказался верхним в
+    # своей колонке — примерно 8 шансов из 40, то есть ~20% на раздачу. При 12
+    # попытках сценарий врёт «провал» в 0.8^12 ≈ 7% прогонов, и это измерено:
+    # один прогон дал 12 раздач подряд с закопанным цветком, а два следующих на
+    # ТОЙ ЖЕ сборке прошли. 25 попыток опускают ложный провал до ~0.4%.
+    ATTEMPTS = 25
+    landed = 0
+    for attempt in range(1, ATTEMPTS + 1):
         s.note("attempt", f"deal {attempt}")
         b = s.brightness(*FLOWER_SLOT)
         s.note("pixel", f"flower slot luminance={b:.0f} vs felt {felt:.0f}")
@@ -531,6 +885,7 @@ def scenario_census(s):
             s.key("Space", "flower still buried in a column -- re-deal")
             s.wait(3)
             continue
+        landed += 1
         s.shot("flower-landed")
 
         s.key("r", "debug_replay")
@@ -551,12 +906,17 @@ def scenario_census(s):
             return
         s.key("Space", "new deal")
         s.wait(3, "re-deal")
-    s.fail("no deal both dropped its flower and solved within budget after 12 attempts")
+    s.fail(f"за {ATTEMPTS} раздач цветок приземлился {landed} раз, и ни одна такая "
+           f"партия не решилась в бюджете — если landed==0, это лотерея раздачи, "
+           f"а не регрессия")
 
 
 SCENARIOS = {"boot": scenario_boot, "hittest": scenario_hittest,
              "stuck": scenario_stuck, "win": scenario_win,
-             "freecell": scenario_freecell, "census": scenario_census}
+             "freecell": scenario_freecell, "census": scenario_census,
+             "focus": scenario_focus, "audiobg": scenario_audiobg,
+             "debugkeys": scenario_debugkeys, "restartrace": scenario_restartrace,
+             "i18n": scenario_i18n}
 
 
 def main():
@@ -574,6 +934,8 @@ def main():
                     help="serve WITHOUT cross-origin isolation (no SharedArrayBuffer), "
                          "which is what a host that omits COOP/COEP gives you")
     ap.add_argument("--headed", action="store_true")
+    ap.add_argument("--query", default="",
+                    help="query-строка к index.html, например lang=ru (H2: так язык задают Я.Игры)")
     args = ap.parse_args()
 
     if not os.path.isfile(os.path.join(args.bundle, "index.html")):
@@ -582,7 +944,7 @@ def main():
     vw, vh = (int(v) for v in args.viewport.lower().split("x"))
 
     httpd, port = serve(args.bundle, coi=not args.no_coi)
-    url = f"http://127.0.0.1:{port}/index.html"
+    url = f"http://127.0.0.1:{port}/index.html" + (f"?{args.query}" if args.query else "")
     print(f"serving {args.bundle}\n  at {url}  viewport={vw}x{vh} dpr={args.dpr}  "
           f"cross-origin-isolated={not args.no_coi}\n")
 
@@ -598,6 +960,7 @@ def main():
         page = browser.new_page(viewport={"width": vw, "height": vh},
                                 device_scale_factor=args.dpr)
         s = Session(page, args.out)
+        s.url = url
 
         def on_console(m):
             kind = classify(m.text)

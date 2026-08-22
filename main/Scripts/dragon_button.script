@@ -45,6 +45,14 @@ function on_message(self, message_id, message, sender)
       timer.delay(1.5, false, function()
          msg.post("/card_table#main", "dragons_collected")
       end)
+   elseif message_id == hash("collect_failed") then
+      -- G4: курсор не нашёл ячейку, куда посадить масть (кнопки горят по общему
+      -- счётчику свободных ячеек, а сядут драконы в конкретную). Сбор не
+      -- состоялся — возвращаем кнопку в строй, иначе она останется навсегда
+      -- потушенной при counter == 4. Отложенный dragons_collected отменить
+      -- нельзя, но он безвреден: main просто пересчитает стол.
+      self.is_enable = true
+      check_state(self)
    elseif message_id == hash("collect_done") then
       -- C6: масть собрали МИМО кнопки — так делает реплей солвера (`debug_replay`
       -- шлёт четырём драконам `drop_success{complete=true}` напрямую, повторяя
