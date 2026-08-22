@@ -960,7 +960,10 @@ end)
 
 local function win27_self(dragons_on_table)
    local stacks = {}
-   for i = 1, 8 do stacks[i] = { cards = {} } end
+   -- slot_id обязателен: dragon_relocation (G7) ищет пустую колонку и называет
+   -- её курсору именно этим полем. Без него зеркало отличалось бы от боевого,
+   -- и тест проверял бы не тот код.
+   for i = 1, 8 do stacks[i] = { slot_id = "tableau_slot" .. i, cards = {} } end
    for i = 1, (dragons_on_table or 0) do
       table.insert(stacks[1].cards, { id = "go" .. i, data = { value = "d", suit = "red", is_dragon = true } })
    end
@@ -977,6 +980,23 @@ local function win27_self(dragons_on_table)
       tutorial_mode = false,
       auto_finishing = false,
    }
+end
+
+-- G7: доска, где сдвигать НЕКУДА — все восемь колонок заняты. Двенадцать
+-- драконов по колонкам: 1..4 по два, 5..8 по одному. Только на такой доске
+-- уступка «победа поверх драконов» вообще имеет право сработать.
+local function win27_no_move_self()
+   local self = win27_self(0)
+   local n = 0
+   for i = 1, 8 do
+      local how_many = (i <= 4) and 2 or 1
+      for _ = 1, how_many do
+         n = n + 1
+         self.tableau_stacks[i].cards[#self.tableau_stacks[i].cards + 1] =
+            { id = "d" .. n, data = { value = "d", suit = "red", is_dragon = true } }
+      end
+   end
+   return self
 end
 
 H.test("WIN27 драконы на столе: победы нет, уходит команда авто-сбора", function()
@@ -1126,7 +1146,7 @@ end)
 H.test("G4 отказ авто-сбора возвращает игроку ввод", function()
    load_script("main/Scripts/main.script")
    msg.clear()
-   local self = win27_self(4)
+   local self = win27_no_move_self()
    self.base_cards_count = 20 -- победы не будет, но управление вернуть обязаны
    self.auto_collecting = true
    on_message(self, hash("auto_collect_none"), {}, "cursor")
@@ -1156,13 +1176,13 @@ H.test("WIN27 курсор докладывает main, когда ни одна
    return true
 end)
 
-H.test("WIN27 собирать нечем (дракон под драконом) — победа всё равно объявляется", function()
-   -- Замер probe_win27: 4 из 15 таких партий не имеют НИ ОДНОЙ горящей кнопки.
-   -- Без этого выхода игрок остался бы без победы вообще — регрессия хуже
-   -- исходного бага.
+H.test("WIN27 ни собрать, ни сдвинуть — победа всё равно объявляется", function()
+   -- G7 оставил уступку хвостом: она срабатывает, только когда пустой колонки
+   -- нет вообще. Без этого выхода игрок остался бы без победы — регрессия
+   -- хуже исходного бага «Victory поверх драконов».
    load_script("main/Scripts/main.script")
    msg.clear()
-   local self = win27_self(4)
+   local self = win27_no_move_self()
    on_message(self, hash("auto_collect_none"), {}, "cursor")
    if self.currentState ~= "win" then
       return false, "курсор доложил, что собрать нечем — партия обязана засчитаться"
@@ -1173,7 +1193,7 @@ end)
 H.test("WIN27 доклад «собирать нечем» до раскладки номиналов победы не даёт", function()
    load_script("main/Scripts/main.script")
    msg.clear()
-   local self = win27_self(4)
+   local self = win27_no_move_self()
    self.base_cards_count = 20 -- партия ещё идёт
    on_message(self, hash("auto_collect_none"), {}, "cursor")
    if self.currentState == "win" then
@@ -1491,5 +1511,195 @@ H.test("G5 порядок карт в колонке сверху вниз со�
    end
    return true
 end)
+
+-- ============================================================
+-- G7 — авто-сбор двигает дракона, чтобы открыть закопанного
+-- ============================================================
+-- Замер reviews/probe_dragon_unblock.lua (60 раздач): из 15 партий, доходящих
+-- до foundation=27 при живых драконах, одним сбором доигрываются 10, со
+-- сдвигом на пустую колонку — 15 из 15, столько же, сколько даёт полный
+-- перебор. То есть сдвиг закрывает разрыв целиком, а не частично.
+
+H.test("G7 есть пустая колонка — вместо победы уходит команда сдвинуть дракона", function()
+   load_script("main/Scripts/main.script")
+   msg.clear()
+   local self = win27_self(4)   -- 4 дракона в колонке 1, колонки 2..8 пусты
+   self.auto_collecting = true
+   on_message(self, hash("auto_collect_none"), {}, "cursor")
+   if self.currentState == "win" then
+      return false, "победа поверх живых драконов, хотя дракона было куда сдвинуть"
+   end
+   if stub.msg_count("auto_move_dragon") ~= 1 then
+      return false, "команда сдвига не ушла ровно один раз"
+   end
+   if stub.msg_count("enable_input") ~= 0 then
+      return false, "ввод вернули посреди цепочки — палец подерётся с авто-сбором"
+   end
+   for _, e in ipairs(msg.log) do
+      if e.id == "auto_move_dragon" then
+         if e.to ~= "cursor_go" then return false, "команда ушла не курсору: " .. tostring(e.to) end
+         if e.data.card.id ~= "go4" then
+            return false, "двигать надо ВЕРХНЮЮ карту колонки, а выбрана " .. tostring(e.data.card.id)
+         end
+         if e.data.slot_id ~= "tableau_slot2" then
+            return false, "целью должна быть пустая колонка, а не " .. tostring(e.data.slot_id)
+         end
+      end
+   end
+   return true
+end)
+
+H.test("G7 одинокого дракона не двигают — иначе цепочка зациклится", function()
+   load_script("main/Scripts/main.script")
+   msg.clear()
+   local self = win27_self(0)
+   -- по одному дракону в колонках 1 и 2, остальные пусты: сдвиг ничего не
+   -- откроет, а гонять карту между пустыми колонками можно вечно
+   self.tableau_stacks[1].cards = { { id = "a", data = { value = "d", suit = "red", is_dragon = true } } }
+   self.tableau_stacks[2].cards = { { id = "b", data = { value = "d", suit = "blue", is_dragon = true } } }
+   on_message(self, hash("auto_collect_none"), {}, "cursor")
+   if stub.msg_count("auto_move_dragon") ~= 0 then
+      return false, "двигаем карту, под которой ничего нет — это и есть петля"
+   end
+   if self.currentState ~= "win" then
+      return false, "сдвигать нечего и собирать нечем — партия обязана засчитаться"
+   end
+   return true
+end)
+
+H.test("G7 двигают верхушку САМОЙ высокой колонки", function()
+   load_script("main/Scripts/main.script")
+   msg.clear()
+   local self = win27_self(0)
+   local function dragon(id) return { id = id, data = { value = "d", suit = "red", is_dragon = true } } end
+   self.tableau_stacks[1].cards = { dragon("x1"), dragon("x2") }
+   self.tableau_stacks[3].cards = { dragon("y1"), dragon("y2"), dragon("y3") }
+   self.auto_collecting = true
+   on_message(self, hash("auto_collect_none"), {}, "cursor")
+   for _, e in ipairs(msg.log) do
+      if e.id == "auto_move_dragon" and e.data.card.id ~= "y3" then
+         return false, "выбрана " .. tostring(e.data.card.id) .. ", а глубже закопано в колонке 3"
+      end
+   end
+   return true
+end)
+
+H.test("G7 бюджет сдвигов не даёт цепочке крутиться вечно", function()
+   load_script("main/Scripts/main.script")
+   msg.clear()
+   local self = win27_self(4)
+   self.auto_collect_moves = 24   -- потолок выбран
+   self.auto_collecting = true
+   on_message(self, hash("auto_collect_none"), {}, "cursor")
+   if stub.msg_count("auto_move_dragon") ~= 0 then
+      return false, "бюджет исчерпан, а сдвиг всё равно заказан"
+   end
+   if stub.msg_count("enable_input") ~= 1 then
+      return false, "сдались — обязаны вернуть ввод игроку"
+   end
+   return true
+end)
+
+H.test("G7 в туториале дракона не двигают", function()
+   load_script("main/Scripts/main.script")
+   msg.clear()
+   local self = win27_self(4)
+   self.tutorial_mode = true
+   on_message(self, hash("auto_collect_none"), {}, "cursor")
+   if stub.msg_count("auto_move_dragon") ~= 0 then
+      return false, "туториальной доской распоряжается сценарий, а не авто-сбор"
+   end
+   return true
+end)
+
+H.test("G7 после сдвига цепочка возобновляется, но не в тот же кадр", function()
+   load_script("main/Scripts/main.script")
+   msg.clear()
+   local self = win27_self(4)
+   self.auto_collecting = true
+   on_message(self, hash("auto_collect_moved"), {}, "cursor")
+   if stub.msg_count("auto_collect_dragons") ~= 0 then
+      return false, "заказ ушёл немедленно: occupy_slot и счётчик кнопки ещё в очереди"
+   end
+   for _ = 1, 4 do update(self, 0.016) end
+   if stub.msg_count("auto_collect_dragons") ~= 1 then
+      return false, "цепочка не возобновилась — стол замрёт с заглушённым вводом"
+   end
+   for _ = 1, 4 do update(self, 0.016) end
+   if stub.msg_count("auto_collect_dragons") ~= 1 then
+      return false, "заказ повторился — сдвиг пойдёт по кругу"
+   end
+   return true
+end)
+
+H.test("G7 сдвиг после отмены авто-сбора не возобновляет цепочку", function()
+   load_script("main/Scripts/main.script")
+   msg.clear()
+   local self = win27_self(4)
+   self.auto_collecting = false   -- игрок уже получил управление
+   on_message(self, hash("auto_collect_moved"), {}, "cursor")
+   for _ = 1, 6 do update(self, 0.016) end
+   if stub.msg_count("auto_collect_dragons") ~= 0 then
+      return false, "цепочка ожила сама по себе и отберёт у игрока ввод"
+   end
+   return true
+end)
+
+H.test("G7 курсор действительно двигает карту: полёт → drop_success → доклад", function()
+   load_script("main/Scripts/cursor.script")
+   msg.clear()
+   stub.anims = {}
+   local self = {
+      flying_count = 0,
+      tableau_slots = { tableau_slot5 = { is_empty = true, pos = vmath.vector3(481, 299, 0) } },
+   }
+   local card = { id = "d_red_go", data = { value = "d", suit = "red", is_dragon = true } }
+   on_message(self, hash("auto_move_dragon"), { card = card, slot_id = "tableau_slot5" }, "main")
+   if not self.input_disabled then
+      return false, "ввод не заглушён: палец успеет схватить летящего дракона"
+   end
+   if self.flying_count ~= 1 then
+      return false, "полёт не учтён в flying_count — auto-finish решит, что стол в покое"
+   end
+   if stub.msg_count("drop_success") ~= 0 then
+      return false, "карта села, не долетев"
+   end
+   stub.flush_anims(2)   -- дуга это две вложенные анимации
+   if self.flying_count ~= 0 then
+      return false, "flying_count не вернулся к нулю — стол останется «в полёте» навсегда"
+   end
+   local drop, moved = nil, 0
+   for _, e in ipairs(msg.log) do
+      if e.id == "drop_success" then drop = e end
+      if e.id == "auto_collect_moved" then moved = moved + 1 end
+   end
+   if not drop then return false, "после полёта не отправлен drop_success" end
+   if drop.to ~= "d_red_go" then return false, "drop_success ушёл не карте: " .. tostring(drop.to) end
+   if drop.data.slot_id ~= "tableau_slot5" then
+      return false, "карта садится не в ту колонку: " .. tostring(drop.data.slot_id)
+   end
+   if drop.data.card ~= card then
+      return false, "в occupy_slot уедет не та запись карты — зеркало разъедется"
+   end
+   if moved ~= 1 then return false, "main не узнал о сдвиге, цепочка встанет" end
+   return true
+end)
+
+H.test("G7 курсор не летит в исчезнувший слот", function()
+   load_script("main/Scripts/cursor.script")
+   msg.clear()
+   stub.anims = {}
+   local self = { flying_count = 0, tableau_slots = {} }
+   on_message(self, hash("auto_move_dragon"),
+              { card = { id = "d_go" }, slot_id = "tableau_slot5" }, "main")
+   if self.flying_count ~= 0 then
+      return false, "flying_count увеличен без полёта — ровно так падал G4"
+   end
+   if stub.msg_count("auto_collect_none_final") ~= 1 then
+      return false, "курсор промолчал: main будет ждать доклада вечно"
+   end
+   return true
+end)
+
 
 return H

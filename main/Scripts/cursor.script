@@ -509,12 +509,43 @@ function on_message(self, message_id, message, sender)
          -- Ни одной горящей кнопки. Так бывает, когда дракон лежит НА драконе:
          -- нижний ни разу не был верхушкой, счётчик масти не дошёл до 4.
          -- Замер (reviews/probe_win27.lua): 4 из 15 партий с драконами на
-         -- foundation=27 — именно такие. Сдвинуть дракона, чтобы открыть
-         -- следующего, авто-сбор не умеет, поэтому сообщаем main: доиграть
-         -- нечем. Иначе игрок остаётся без победы вовсе — регрессия хуже
-         -- исходного бага «Victory поверх драконов».
+         -- foundation=27 — именно такие. Что делать дальше, решает main: у него
+         -- полное зеркало колонок, он и выбирает, какого дракона сдвинуть
+         -- (G7, ветка auto_collect_none в main.script).
          msg.post("/card_table#main", "auto_collect_none")
       end
+   elseif message_id == hash("auto_move_dragon") then
+      -- G7: открыть закопанного дракона, сдвинув лежащего на нём на пустую
+      -- колонку. Кого и куда — решил main; курсор только рука.
+      --
+      -- Летим и садимся ровно тем же путём, что и все автоматические отправки
+      -- (send_to_flower_slot / send_to_base_slot): fly_card_arc → drop_success →
+      -- occupy_slot + remove_card. Второго механизма перемещения карт здесь
+      -- намеренно нет: у реплея свой (snapshot_and_go_map), и он живёт за
+      -- гардом debug_replaying — расплодить третий значит расплодить и
+      -- расхождения зеркал.
+      local slot = self.tableau_slots and self.tableau_slots[message.slot_id]
+      local card = message.card
+      if not (slot and card and card.id) then
+         -- Мир изменился, пока сообщение шло: доигрывать нечем.
+         print("[DRAGON] сдвиг отменён: нет слота " .. tostring(message.slot_id))
+         msg.post("/card_table#main", "auto_collect_none_final")
+         return
+      end
+      self.input_disabled = true
+      local target = slot.pos
+      self.flying_count = self.flying_count + 1  -- A3
+      fly_card_arc(card.id, target, 0, function()
+         self.flying_count = self.flying_count - 1  -- A3
+         msg.post(card.id, 'drop_success', {
+                     slot_id = message.slot_id,
+                     position = target,
+                     card = card
+         })
+         -- Следующий шаг цепочки заказывает main: ему нужно дождаться, пока
+         -- осядут occupy_slot/remove_card и счётчик кнопки.
+         msg.post("/card_table#main", "auto_collect_moved")
+      end)
    elseif message_id == hash("slot_with_card") and self.pending_drop then
       self.selected_card = message.id
       self.selected_card_data = message

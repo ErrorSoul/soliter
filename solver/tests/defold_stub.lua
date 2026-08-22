@@ -7,6 +7,7 @@ function M.install()
    M.go_props = {}
    M.go_positions = {}
    M.go_self_pos = { x = 0, y = 0, z = 0 }
+   M.anims = {}
    _G.hash = function(s) return tostring(s) end
 
    -- vector3 needs `+` because scripts add offsets to message.position.
@@ -44,7 +45,14 @@ function M.install()
       set_position = function(pos, id)
          if id ~= nil then M.go_positions[tostring(id)] = pos end
       end,
-      animate = function() end,
+      -- G7: анимации складываем в очередь и прокручиваем ВРУЧНУЮ (M.flush_anims).
+      -- Автозапуск здесь недопустим: fly_card_arc вкладывает вторую анимацию в
+      -- колбэк первой, и «мгновенная» анимация превратила бы полёт в
+      -- синхронный вызов — тест перестал бы отличать «карта долетела» от
+      -- «карту отправили лететь».
+      animate = function(_id, _prop, _pb, _to, _easing, _dur, _delay, cb)
+         if cb then M.anims[#M.anims + 1] = cb end
+      end,
       cancel_animations = function() end,
       -- go.set/go.get держат общий стор свойств: скрипты читают то, что писали
       -- (card.script читает euler.z, чтобы доводить поворот маятником).
@@ -89,6 +97,17 @@ M.window_size = { 960, 540 }
 M.go_props = {}
 M.go_positions = {}
 M.go_self_pos = { x = 0, y = 0, z = 0 }
+M.anims = {}
+
+-- Прокрутить очередь колбэков анимаций. rounds — сколько раз подряд: полёт по
+-- дуге (fly_card_arc) состоит из двух вложенных анимаций, значит нужно два.
+function M.flush_anims(rounds)
+   for _ = 1, (rounds or 1) do
+      local q = M.anims
+      M.anims = {}
+      for i = 1, #q do q[i]() end
+   end
+end
 
 function M.set_window(w, h)
    M.window_size = { w, h }

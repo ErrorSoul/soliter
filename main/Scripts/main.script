@@ -65,6 +65,11 @@ function init(self)
    -- C5: цветок приземлился в свой слот (зеркало flower_slot->main). Сбрасывается
    -- здесь же, где и остальные зеркала: новая партия = перезагрузка коллекции.
    self.flower_collected = false
+   -- G7: сколько раз авто-сбор уже сдвигал дракона, чтобы открыть закопанного.
+   -- Бюджет на партию, а не на цепочку: сдвигов принципиально не может быть
+   -- больше, чем закопанных карт (каждый уменьшает их число на единицу), так
+   -- что упор в потолок означает поломку инварианта, а не длинную партию.
+   self.auto_collect_moves = 0
    -- C5: перепись карт в снапшоте имеет смысл только для настоящей раздачи —
    -- отладочные раскладки и туториал заведомо не 40 карт.
    self.is_full_deal = not (self.tutorial_mode or DEBUG_DRAGONS or DEBUG_AUTO_FINISH or DEBUG_LONG_COLUMN)
@@ -1032,6 +1037,47 @@ function board_cleared(self)
       and dragons_left(self) == 0
 end
 
+-- G7: какого дракона сдвинуть и на какую пустую колонку, чтобы открыть
+-- лежащего под ним. Кнопка масти горит только при ЧЕТЫРЁХ открытых драконах
+-- (верхушки колонок + незапечатанные ячейки), поэтому дракон под драконом не
+-- поднимает счётчик, и без сдвига партия не доигрывается: замер
+-- reviews/probe_dragon_unblock.lua — из 15 партий, доходящих до foundation=27
+-- при живых драконах, одним лишь сбором доигрываются 10, со сдвигом на пустую
+-- колонку — все 15 (столько же, сколько даёт полный перебор).
+--
+-- Источник обязан иметь под собой ещё карту (#cards >= 2). Это не украшение:
+-- каждый такой сдвиг уменьшает число закопанных карт ровно на единицу, поэтому
+-- цепочка конечна и не может зациклиться, гоняя одинокого дракона между двумя
+-- пустыми колонками. Берём самую высокую колонку — так закопанные вскрываются
+-- быстрее всего.
+--
+-- Возвращает (карта, slot_id) или nil, если сдвигать нечего или некуда.
+function dragon_relocation(self)
+   local empty_slot = nil
+   for i = 1, 8 do
+      local st = self.tableau_stacks and self.tableau_stacks[i]
+      if st and #st.cards == 0 then
+         empty_slot = st.slot_id
+         break
+      end
+   end
+   if not empty_slot then return nil end
+
+   local best, best_depth = nil, 1
+   for i = 1, 8 do
+      local st = self.tableau_stacks and self.tableau_stacks[i]
+      local cards = st and st.cards
+      if cards and #cards >= 2 and #cards > best_depth then
+         local top = cards[#cards]
+         if top.data and top.data.is_dragon then
+            best, best_depth = top, #cards
+         end
+      end
+   end
+   if not best then return nil end
+   return best, empty_slot
+end
+
 -- G4: на время авто-сбора ввод глушится (курсор делит pending_drop с пальцем).
 -- Флаг нужен, чтобы вернуть ввод ровно тому, кто его забрал: у auto-finish свой
 -- замок (start_auto_finish), и снимать его отсюда нельзя.
@@ -1044,6 +1090,26 @@ function end_auto_collect(self)
    if self.auto_collecting then
       self.auto_collecting = false
       msg.post(self.cursor, "enable_input")
+   end
+end
+
+-- G7/G2a: доигрывать нечем — ни собрать масть, ни сдвинуть дракона.
+--
+-- G4: авто-сбор глушит ввод на время сбора (pending_drop общий с пальцем).
+-- Управление игроку возвращаем ЗДЕСЬ, до решения о победе: иначе при отказе от
+-- победы (туториал, < 27) стол останется глухим навсегда. Через
+-- end_auto_collect, а не напрямую: у auto-finish свой замок, и снимать чужой мы
+-- не имеем права.
+--
+-- Победу засчитываем: все номиналы разложены, партия выиграна по существу, и
+-- руками игрок тоже ничего сделать не может. На замере
+-- (reviews/probe_dragon_unblock.lua, 60 раздач) после G7 эта ветка не
+-- срабатывала ни разу, но она остаётся хвостом: доска без единой пустой
+-- колонки и без свободной ячейки теоретически возможна.
+function auto_collect_give_up(self)
+   end_auto_collect(self)
+   if not self.tutorial_mode and (self.base_cards_count or 0) >= 27 then
+      declare_victory(self)
    end
 end
 
@@ -1202,21 +1268,26 @@ function on_message(self, message_id, message, sender)
       -- card_to_base ещё в очереди сообщений. Откладываем на 2 кадра в update().
       self.pending_af_check = { free_cells = message.free_cells, frames = 2 }
    elseif message_id == hash("auto_collect_none") then
-      -- G4: авто-сбор глушит ввод на время сбора (pending_drop общий с пальцем).
-      -- Сбор не состоялся — управление игроку возвращаем ЗДЕСЬ, до решения о
-      -- победе: иначе при отказе от победы (туториал, < 27) стол останется
-      -- глухим навсегда. Через end_auto_collect, а не напрямую: у auto-finish
-      -- свой замок, и снимать чужой мы не имеем права.
-      end_auto_collect(self)
-      -- Курсор доложил: собирать нечем (дракон под драконом — кнопка не горит).
-      -- Все номиналы уже разложены, партия выиграна по существу, и держать
-      -- игрока без победы нельзя. Объявляем победу, как это делалось до правки
-      -- G2. Доиграть такие партии до буквально пустого стола можно только
-      -- научив авто-сбор СДВИГАТЬ дракона на пустую колонку — это отдельная
-      -- задача, см. блок G в plans/review-fixes.md.
-      if not self.tutorial_mode and (self.base_cards_count or 0) >= 27 then
-         declare_victory(self)
+      -- Курсор доложил: ни одной горящей кнопки с посадочной ячейкой.
+      -- G7: раньше здесь сразу объявлялась победа поверх живых драконов. Теперь
+      -- сначала пробуем ОТКРЫТЬ закопанного дракона, сдвинув лежащего на нём на
+      -- пустую колонку — и только если сдвигать нечего или некуда, уступаем.
+      local card, slot_id = dragon_relocation(self)
+      local budget = (self.auto_collect_moves or 0) < 24   -- страховка от петли
+      if card and slot_id and budget and not self.tutorial_mode and not self.debug_replaying then
+         self.auto_collect_moves = (self.auto_collect_moves or 0) + 1
+         msg.post(self.cursor, "auto_move_dragon", { card = card, slot_id = slot_id })
+      else
+         auto_collect_give_up(self)
       end
+   elseif message_id == hash("auto_collect_moved") then
+      -- Дракон сел на пустую колонку. Считать заново нельзя немедленно: в
+      -- очереди ещё occupy_slot/remove_card, а счётчик кнопки поднимет
+      -- last_card_to_slot из update() слота (A6). Ждём осадки кадров.
+      self.pending_collect_retry = 4
+   elseif message_id == hash("auto_collect_none_final") then
+      -- Курсор не смог выполнить сдвиг (слот исчез, пока летело сообщение).
+      auto_collect_give_up(self)
    elseif message_id == hash("dragons_collected") then
       if self.tutorial_mode then
          self.currentState = self.states.WIN
@@ -1262,6 +1333,18 @@ function update(self, dt)
          if can_auto_finish(self, check) then
             print("[MAIN] can_auto_finish = true — starting auto-finish")
             start_auto_finish(self)
+         end
+      end
+   end
+   -- G7: следующий шаг авто-сбора после сдвига дракона. Отложено на кадры по
+   -- той же причине, что и pending_af_check: счётчик кнопки поднимается из
+   -- update() слота, а не в момент drop_success.
+   if self.pending_collect_retry then
+      self.pending_collect_retry = self.pending_collect_retry - 1
+      if self.pending_collect_retry <= 0 then
+         self.pending_collect_retry = nil
+         if self.auto_collecting then
+            msg.post(self.cursor, "auto_collect_dragons")
          end
       end
    end
