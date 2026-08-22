@@ -1165,12 +1165,25 @@ end
 -- flower_collected приходит только из flower_slot.occupy_slot, то есть ПОСЛЕ
 -- посадки. Победа успевала объявиться прямо посреди дуги. На 120 Гц кадровый
 -- бюджет был бы вдвое короче — ещё хуже.
--- 2 секунды: полёт 0.7 с плюс запас на задержку старта и на то, что открывшийся
--- под цветком дракон должен ещё зажечь кнопку.
+-- 2 секунды: полёт 0.7 с плюс запас на задержку старта дуги.
+--
+-- И отдельный запас ПОСЛЕ посадки — ревью блока J (grok-4.6). Прошлая версия
+-- обещала этот запас в комментарии, но не делала: ожидание жило только пока
+-- `not flower_collected`, а флаг взводится в тот же кадр, что и посадка
+-- (flower_slot.occupy_slot). Кнопка же загорается ПОЗЖЕ и другим путём:
+-- remove_card ставит pending_top_check → следующий tableau.update шлёт
+-- send_counter_to_button → dragon_button.check_state → set_button_state курсору.
+-- Порядок обновления игровых объектов в Defold не фиксирован, так что курсор
+-- вполне может прочитать ещё погасшую кнопку и ответить auto_collect_none — и
+-- уступка объявляла победу за кадр до того, как кнопка зажжётся.
+-- Поэтому таймер обнуляется на посадке цветка (см. обработчик flower_collected)
+-- и после неё даётся короткий SETTLE_SECONDS на эту цепочку.
 local FLOWER_WAIT_SECONDS = 2.0
+local SETTLE_SECONDS = 0.3
 
 function auto_collect_give_up(self)
-   if not self.flower_collected and (self.auto_collect_wait or 0) < FLOWER_WAIT_SECONDS then
+   local budget = self.flower_collected and SETTLE_SECONDS or FLOWER_WAIT_SECONDS
+   if (self.auto_collect_wait or 0) < budget then
       self.pending_collect_retry = 4
       return
    end
@@ -1340,6 +1353,10 @@ function on_message(self, message_id, message, sender)
       -- C5: см. flower_slot.script. Флаг только взводится: обратно цветок из слота
       -- не достаётся, а новая партия перезагружает коллекцию (init сбрасывает).
       self.flower_collected = true
+      -- Посадка цветка открыла карту под ним. Даём цепочке «верхушка → счётчик →
+      -- кнопка → курсор» отработать, прежде чем уступка решит, что ходов нет:
+      -- таймер ожидания считается с этого момента (ревью блока J).
+      self.auto_collect_wait = 0
    elseif message_id == hash("check_auto_finish") then
       -- B2: не оцениваем немедленно — каскад drop_success→remove_card→зеркало и
       -- card_to_base ещё в очереди сообщений. Откладываем на 2 кадра в update().
@@ -1416,9 +1433,9 @@ function update(self, dt)
    -- G7: следующий шаг авто-сбора после сдвига дракона. Отложено на кадры по
    -- той же причине, что и pending_af_check: счётчик кнопки поднимается из
    -- update() слота, а не в момент drop_success.
-   -- Бюджет ожидания цветка тикает по времени, а не по кадрам: на 120 Гц
-   -- кадровый счётчик отмерил бы вдвое меньше реального (ревью блока J).
-   if self.auto_collecting and not self.flower_collected then
+   -- Бюджет ожидания тикает по времени, а не по кадрам: на 120 Гц кадровый
+   -- счётчик отмерил бы вдвое меньше реального (ревью блока J).
+   if self.auto_collecting then
       self.auto_collect_wait = (self.auto_collect_wait or 0) + (dt or 0)
    end
    if self.pending_collect_retry then

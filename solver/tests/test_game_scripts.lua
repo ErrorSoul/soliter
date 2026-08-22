@@ -1004,6 +1004,25 @@ local function win27_no_move_self()
    return self
 end
 
+-- Кадры крутим ТАК ЖЕ, как их крутит игра: update, а на каждый новый запрос
+-- к курсору отвечаем auto_collect_none — курсор в изоляции не отвечает сам.
+-- Возвращает, сколько раз main переспросил курсор.
+local function run_collect_frames(self, seconds, dt)
+   dt = dt or 0.016
+   local asked = stub.msg_count("auto_collect_dragons")
+   local frames = math.floor(seconds / dt)
+   for _ = 1, frames do
+      update(self, dt)
+      local now = stub.msg_count("auto_collect_dragons")
+      if now > asked then
+         asked = now
+         on_message(self, hash("auto_collect_none"), {}, "cursor")
+      end
+      if self.currentState == "win" then break end
+   end
+   return asked
+end
+
 H.test("WIN27 драконы на столе: победы нет, уходит команда авто-сбора", function()
    load_script("main/Scripts/main.script")
    msg.clear()
@@ -1155,6 +1174,9 @@ H.test("G4 отказ авто-сбора возвращает игроку вв
    self.base_cards_count = 20 -- победы не будет, но управление вернуть обязаны
    self.auto_collecting = true
    on_message(self, hash("auto_collect_none"), {}, "cursor")
+   -- Уступка не мгновенная: после посадки цветка ей дают SETTLE_SECONDS на то,
+   -- чтобы открывшийся дракон успел зажечь кнопку (ревью блока J).
+   run_collect_frames(self, 1.0)
    if stub.msg_count("enable_input") ~= 1 then
       return false, "ввод заглушен на время сбора и не возвращён — стол останется глухим"
    end
@@ -1188,7 +1210,12 @@ H.test("WIN27 ни собрать, ни сдвинуть — победа всё
    load_script("main/Scripts/main.script")
    msg.clear()
    local self = win27_no_move_self()
+   -- auto_collecting=true — так и приходит auto_collect_none в игре: доклад
+   -- курсора возможен только внутри уже начатого сбора. Без флага таймер
+   -- ожидания в update не тикает, и тест мерил бы не тот путь.
+   self.auto_collecting = true
    on_message(self, hash("auto_collect_none"), {}, "cursor")
+   run_collect_frames(self, 1.0)   -- уступка не мгновенная: SETTLE_SECONDS на зажигание кнопки
    if self.currentState ~= "win" then
       return false, "курсор доложил, что собрать нечем — партия обязана засчитаться"
    end
@@ -1562,7 +1589,9 @@ H.test("G7 одинокого дракона не двигают — иначе 
    -- откроет, а гонять карту между пустыми колонками можно вечно
    self.tableau_stacks[1].cards = { { id = "a", data = { value = "d", suit = "red", is_dragon = true } } }
    self.tableau_stacks[2].cards = { { id = "b", data = { value = "d", suit = "blue", is_dragon = true } } }
+   self.auto_collecting = true
    on_message(self, hash("auto_collect_none"), {}, "cursor")
+   run_collect_frames(self, 1.0)   -- уступка не мгновенная: SETTLE_SECONDS на зажигание кнопки
    if stub.msg_count("auto_move_dragon") ~= 0 then
       return false, "двигаем карту, под которой ничего нет — это и есть петля"
    end
@@ -1596,6 +1625,7 @@ H.test("G7 бюджет сдвигов не даёт цепочке крутит
    self.auto_collect_moves = 24   -- потолок выбран
    self.auto_collecting = true
    on_message(self, hash("auto_collect_none"), {}, "cursor")
+   run_collect_frames(self, 1.0)   -- уступка не мгновенная: SETTLE_SECONDS на зажигание кнопки
    if stub.msg_count("auto_move_dragon") ~= 0 then
       return false, "бюджет исчерпан, а сдвиг всё равно заказан"
    end
@@ -1720,6 +1750,7 @@ H.test("G7 победа снимает замок авто-сбора на лю�
          on_message(self, hash("dragons_collected"), {}, "dragon_button")
       else
          on_message(self, hash("auto_collect_none"), {}, "cursor")
+         run_collect_frames(self, 1.0)
       end
       if self.currentState ~= "win" then
          return false, case .. ": победы не случилось, тест проверяет не то"
@@ -1743,25 +1774,6 @@ end)
 -- Пара тестов, а не один: «не сдаваться, пока цветок на столе» в одиночку
 -- зеленело бы и от «не сдаваться никогда», то есть от партии, которая после
 -- отказа авто-сбора зависает без победы навсегда.
--- Кадры крутим ТАК ЖЕ, как их крутит игра: update, а на каждый новый запрос
--- к курсору отвечаем auto_collect_none — курсор в изоляции не отвечает сам.
--- Возвращает, сколько раз main переспросил курсор.
-local function run_collect_frames(self, seconds, dt)
-   dt = dt or 0.016
-   local asked = stub.msg_count("auto_collect_dragons")
-   local frames = math.floor(seconds / dt)
-   for _ = 1, frames do
-      update(self, dt)
-      local now = stub.msg_count("auto_collect_dragons")
-      if now > asked then
-         asked = now
-         on_message(self, hash("auto_collect_none"), {}, "cursor")
-      end
-      if self.currentState == "win" then break end
-   end
-   return asked
-end
-
 H.test("уступка ждёт дольше, чем длится полёт цветка", function()
    msg.clear()
    load_script("main/Scripts/main.script")
@@ -1819,15 +1831,26 @@ H.test("уступка не ждёт вечно: закопанный цвето
    return true
 end)
 
-H.test("цветок сел — уступка больше не тянет время", function()
+H.test("после посадки цветка кнопке дают зажечься", function()
+   -- Ревью блока J (grok-4.6): flower_collected взводится в тот же кадр, что и
+   -- посадка, а кнопка загорается позже и другим путём (верхушка → счётчик →
+   -- кнопка → курсор). Сдаваться в этот момент — значит объявить победу за кадр
+   -- до того, как ход появится.
    msg.clear()
    load_script("main/Scripts/main.script")
    local self = win27_no_move_self()
-   self.flower_collected = true    -- цветок уже в своём слоте
+   self.flower_collected = false
    self.auto_collecting = true
    on_message(self, hash("auto_collect_none"), {}, "cursor")
+   run_collect_frames(self, 0.7)          -- цветок в дуге
+   on_message(self, hash("flower_collected"), {}, "flower_slot")
+   run_collect_frames(self, 0.1)          -- цепочка кнопки ещё идёт
+   if self.currentState == "win" then
+      return false, "сдались сразу после посадки — кнопка ещё не успела зажечься"
+   end
+   run_collect_frames(self, 1.0)          -- запас вышел, ходов так и нет
    if self.currentState ~= "win" then
-      return false, "цветка на столе нет, ходов нет — уступка обязана сработать сразу"
+      return false, "запас кончился, а победы нет — игрок остался ни с чем"
    end
    return true
 end)
