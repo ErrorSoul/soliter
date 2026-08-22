@@ -8,6 +8,13 @@
 
 	<title>ShenzenSolitare 1.0</title>
 	<style type='text/css'>
+	/* Требование Я.Игр (D2): страница не должна прокручиваться, пружинить и
+	   перезагружаться жестом. Это НЕ раскладка — ни размеры, ни позиции здесь
+	   не меняются, только реакция браузера на жест. */
+	html, body {
+		overscroll-behavior: none;
+	}
+
 	body {
 		position: fixed;
 		margin:0;
@@ -33,6 +40,9 @@
 		border: 0;
 		width: 100%;
 		vertical-align: bottom;
+		/* D2: все жесты над канвасом принадлежат игре — ни скролла, ни
+		   двойного тапа для зума, ни pull-to-refresh посреди драга карты. */
+		touch-action: none;
 	}
 
 	#canvas-container {
@@ -105,6 +115,54 @@
 			<canvas id="canvas" class="canvas-app-canvas" tabindex="1" width="960" height="540"></canvas>
 		</div>
 	</div>
+
+	<script id='audio-focus-guard' type='text/javascript'>
+		// D2: звук обязан гаснуть, когда вкладка ушла в фон или потеряла фокус
+		// (требование Я.Игр). Делаем это в шаблоне, а не в Lua: событие
+		// window.WINDOW_EVENT_FOCUS_LOST в js-web у нас воспроизводимо не
+		// приходило (замерено в headless Chromium — триггер не коррелировал с
+		// blur/visibilitychange), а непроверенный путь в релиз не едет.
+		//
+		// К AudioContext движка не лезем через внутренние символы: перехватываем
+		// сам конструктор и держим список созданных контекстов — это не зависит
+		// от того, как Defold назвал свои поля. Важно оказаться раньше СТАРТА
+		// движка, а не раньше тега dmloader.js: контекст создаётся уже внутри
+		// EngineLoader.load, асинхронно (проверено мутацией — перенос этого
+		// блока под загрузчик ничего не менял, ctx по-прежнему 1).
+		(function () {
+			var contexts = [];
+			["AudioContext", "webkitAudioContext"].forEach(function (name) {
+				var Orig = window[name];
+				if (!Orig) { return; }
+				function Patched() {
+					var ctx = new (Function.prototype.bind.apply(Orig, [null].concat([].slice.call(arguments))))();
+					contexts.push(ctx);
+					return ctx;
+				}
+				Patched.prototype = Orig.prototype;
+				window[name] = Patched;
+			});
+
+			function apply() {
+				var muted = document.hidden || !document.hasFocus();
+				contexts.forEach(function (c) {
+					if (muted && c.state === "running") { c.suspend(); }
+					else if (!muted && c.state === "suspended") { c.resume(); }
+				});
+				console.log("[AUDIO] " + (muted ? "suspended" : "resumed") + " ctx=" + contexts.length);
+			}
+
+			document.addEventListener("visibilitychange", apply);
+			window.addEventListener("blur", apply);
+			window.addEventListener("focus", apply);
+		})();
+	</script>
+
+	<script id='context-menu-guard' type='text/javascript'>
+		// D2: долгий тап по карте на мобиле открывал бы контекстное меню прямо
+		// посреди перетаскивания, а правая кнопка — на десктопе.
+		document.addEventListener("contextmenu", function (e) { e.preventDefault(); }, { passive: false });
+	</script>
 
 	<script id='engine-loader' type='text/javascript' src="dmloader.js"></script>
 	<script id='engine-setup' type='text/javascript'>

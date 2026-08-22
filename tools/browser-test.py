@@ -508,6 +508,60 @@ def scenario_freecell(s):
     s.fail("no deal solvable within budget after 12 attempts")
 
 
+
+def scenario_focus(s):
+    """D2: требования Я.Игр к HTML5-обёртке — жесты, меню, звук на потере фокуса.
+
+    Проверяем не «строка есть в шаблоне», а ВЫЧИСЛЕННЫЙ браузером стиль и
+    реальную реакцию на событие: шаблон можно поправить и не собрать, а можно
+    собрать и получить перекрытое правило.
+    """
+    s.boot()
+
+    style = s.page.evaluate(
+        "() => ({"
+        " body: getComputedStyle(document.body).overscrollBehaviorY,"
+        " html: getComputedStyle(document.documentElement).overscrollBehaviorY,"
+        " canvas: getComputedStyle(document.getElementById('canvas')).touchAction"
+        "})")
+    s.note("style", f"overscroll html={style['html']} body={style['body']}, canvas touch-action={style['canvas']}")
+    s.expect(style["html"] == "none" and style["body"] == "none",
+             f"страница всё ещё пружинит/прокручивается: {style}")
+    s.expect(style["canvas"] == "none",
+             f"жесты над канвасом не отданы игре: touch-action={style['canvas']}")
+
+    # По канвасу меню давит и сам движок, поэтому проверяем страницу целиком:
+    # долгий тап на мобиле легко попадает мимо канваса (леттербокс-поля).
+    prevented = s.page.evaluate(
+        "() => {const out = {};"
+        " for (const id of ['canvas', 'app-container']) {"
+        "   const e = new MouseEvent('contextmenu', {bubbles: true, cancelable: true});"
+        "   document.getElementById(id).dispatchEvent(e); out[id] = e.defaultPrevented; }"
+        " const b = new MouseEvent('contextmenu', {bubbles: true, cancelable: true});"
+        " document.body.dispatchEvent(b); out.body = b.defaultPrevented; return out;}")
+    s.note("menu", f"contextmenu подавлен: {prevented}")
+    s.expect(all(prevented.values()),
+             f"контекстное меню не подавлено — долгий тап откроет его: {prevented}")
+
+    s.press_play()
+    s.wait(2, "звук успел завестись")
+
+    # Видимость подменяем на самой странице: headless-браузер вкладки не
+    # переключает, а сторож в шаблоне читает именно document.hidden.
+    def visibility(hidden):
+        s.page.evaluate(
+            "(h) => { Object.defineProperty(document, 'hidden', {value: h, configurable: true});"
+            " Object.defineProperty(document, 'visibilityState', {value: h ? 'hidden' : 'visible', configurable: true});"
+            " document.dispatchEvent(new Event('visibilitychange')); }", hidden)
+
+    visibility(True)
+    s.expect(s.wait_for_log(r"\[AUDIO\] suspended ctx=[1-9]", 10, "focus lost"),
+             "вкладка ушла в фон, а звуковой контекст не приглушён")
+    visibility(False)
+    s.expect(s.wait_for_log(r"\[AUDIO\] resumed ctx=[1-9]", 10, "focus back"),
+             "вкладка вернулась, а звук так и остался выключен")
+
+
 def scenario_census(s):
     """C5: press R on a board whose FLOWER HAS ALREADY LANDED.
 
@@ -569,7 +623,8 @@ def scenario_census(s):
 
 SCENARIOS = {"boot": scenario_boot, "hittest": scenario_hittest,
              "stuck": scenario_stuck, "win": scenario_win,
-             "freecell": scenario_freecell, "census": scenario_census}
+             "freecell": scenario_freecell, "census": scenario_census,
+             "focus": scenario_focus}
 
 
 def main():
