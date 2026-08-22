@@ -566,13 +566,56 @@ def scenario_focus(s):
             " Object.defineProperty(document, 'visibilityState', {value: h ? 'hidden' : 'visible', configurable: true});"
             " document.dispatchEvent(new Event('visibilitychange')); }", hidden)
 
-    visibility(True)
-    s.expect(s.wait_for_log(r"\[AUDIO\] suspended ctx=[1-9]", 10, "focus lost"),
-             "вкладка ушла в фон, а звуковой контекст не приглушён")
-    visibility(False)
-    s.expect(s.wait_for_log(r"\[AUDIO\] resumed ctx=[1-9]", 10, "focus back"),
-             "вкладка вернулась, а звук так и остался выключен")
+    # Читаем ИЗМЕРЕННОЕ состояние контекстов (states=...), а не строку намерения.
+    # Ревью блока H: прежняя проверка ловила «[AUDIO] suspended», а эта строка
+    # печаталась от флага muted — вырежи из сторожа suspend()/resume() целиком,
+    # и сценарий оставался зелёным. Теперь такая мутация его роняет.
+    def audio_states(line):
+        # wait_for_log отдаёт строку целиком, состояния достаём отдельно.
+        m = re.search(r"states=([a-z,]+)", line or "")
+        return m.group(1).split(",") if m else []
 
+    visibility(True)
+    line = s.wait_for_log(r"\[AUDIO\] suspended ctx=[1-9][0-9]* states=", 10, "focus lost")
+    st = audio_states(line)
+    s.expect(st and all(x == "suspended" for x in st),
+             f"вкладка ушла в фон, а контекст не приглушён: {line}")
+    visibility(False)
+    line = s.wait_for_log(r"\[AUDIO\] resumed ctx=[1-9][0-9]* states=", 10, "focus back")
+    st = audio_states(line)
+    s.expect(st and all(x == "running" for x in st),
+             f"вкладка вернулась, а звук так и остался выключен: {line}")
+
+
+
+def scenario_audiobg(s):
+    """D2: игра, загруженная В ФОНЕ, не должна звучать.
+
+    Отдельный сценарий, потому что проверяемый момент — СОЗДАНИЕ контекста, а не
+    реакция на событие. Движок создаёт AudioContext асинхронно внутри
+    EngineLoader.load; если к этому времени вкладка уже без фокуса, сторож обязан
+    приглушить контекст сразу, а не ждать следующего blur/visibilitychange.
+    Найдено ревью блока H (обе модели) — до правки в конструкторе не было apply().
+
+    Фокус подменяем ДО первого скрипта страницы (add_init_script), иначе движок
+    успеет создать контекст раньше подмены и замер уедет.
+    """
+    s.page.add_init_script(
+        "Object.defineProperty(document, 'hasFocus', {value: function () { return false; },"
+        " configurable: true});")
+    s.page.goto(s.url)
+    s.boot()
+    s.press_play()
+
+    # Смотрим ВЕСЬ лог, а не «следующую новую строку»: сторож печатает свой
+    # вердикт в момент создания контекста, то есть ещё до press_play, и курсор
+    # wait_for_log эту строку уже прошёл бы (замерено: строка есть, проверка
+    # мимо). ctx=0 — событие фокуса до рождения контекста, оно не в счёт.
+    hits = [e["text"] for e in s.logs_matching(r"\[AUDIO\] .* ctx=[1-9][0-9]* states=")]
+    s.note("audio", f"строк сторожа с живым контекстом: {len(hits)}; последняя: {hits[-1] if hits else '—'}")
+    s.expect(bool(hits), "сторож ни разу не отчитался о живом контексте — apply() при создании не сработал")
+    bad = [h for h in hits if not all(x == "suspended" for x in re.search(r"states=([a-z,]+)", h).group(1).split(","))]
+    s.expect(not bad, f"контекст создан без фокуса и остался звучать: {bad}")
 
 
 def scenario_i18n(s):
@@ -668,7 +711,8 @@ def scenario_census(s):
 SCENARIOS = {"boot": scenario_boot, "hittest": scenario_hittest,
              "stuck": scenario_stuck, "win": scenario_win,
              "freecell": scenario_freecell, "census": scenario_census,
-             "focus": scenario_focus, "i18n": scenario_i18n}
+             "focus": scenario_focus, "audiobg": scenario_audiobg,
+             "i18n": scenario_i18n}
 
 
 def main():

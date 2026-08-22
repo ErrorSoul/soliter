@@ -144,19 +144,39 @@
 				function Patched() {
 					var ctx = new (Function.prototype.bind.apply(Orig, [null].concat([].slice.call(arguments))))();
 					contexts.push(ctx);
+					// Ревью блока H (обе модели): без этого вызова контекст, созданный,
+					// когда вкладка УЖЕ в фоне или без фокуса, остаётся running до
+					// следующего события — то есть игра в фоновой вкладке звучит.
+					// Движок создаёт контекст асинхронно внутри EngineLoader.load,
+					// так что момент создания — единственное место, где это видно.
+					apply();
 					return ctx;
 				}
 				Patched.prototype = Orig.prototype;
 				window[name] = Patched;
 			});
 
+			// В лог идёт ИЗМЕРЕННОЕ состояние контекстов, а не намерение сторожа.
+			// Ревью блока H (grok-4.6): строка «[AUDIO] suspended» печаталась от
+			// флага muted, поэтому стенд оставался зелёным, даже если убрать
+			// suspend/resume целиком. Теперь стенд читает states=... и такая
+			// мутация его роняет. suspend()/resume() асинхронны — состояние
+			// снимаем после того, как обещания осели.
 			function apply() {
 				var muted = document.hidden || !document.hasFocus();
-				contexts.forEach(function (c) {
-					if (muted && c.state === "running") { c.suspend(); }
-					else if (!muted && c.state === "suspended") { c.resume(); }
+				var ops = contexts.map(function (c) {
+					if (muted && c.state === "running") { return c.suspend(); }
+					if (!muted && c.state === "suspended") { return c.resume(); }
+					return null;
 				});
-				console.log("[AUDIO] " + (muted ? "suspended" : "resumed") + " ctx=" + contexts.length);
+				function report() {
+					console.log("[AUDIO] " + (muted ? "suspended" : "resumed") +
+						" ctx=" + contexts.length +
+						" states=" + contexts.map(function (c) { return c.state; }).join(","));
+				}
+				Promise.all(ops.map(function (p) {
+					return (p && typeof p.then === "function") ? p : Promise.resolve();
+				})).then(report, report);
 			}
 
 			document.addEventListener("visibilitychange", apply);
