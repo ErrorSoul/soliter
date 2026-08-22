@@ -9,6 +9,17 @@
 -- Числа берутся из НАСТОЯЩИХ файлов проекта (gui/ui.gui и коллекции), а не из
 -- копии в тесте: иначе тест зазеленеет на своей копии, пока игра разъезжается.
 -- Запускать из корня репозитория (как и весь run_all.lua).
+--
+-- ГРАНИЦА МЕТОДА (ревью блока H, обе модели — принято как есть, не как баг).
+-- Это инвариант ФАЙЛ↔ФАЙЛ, а не проверка попадания пальцем. Прямоугольник
+-- считается как «центр ± size/2» в авторских координатах; настоящий
+-- gui.pick_node учитывает ещё pivot, adjust_mode и ADJUST_REFERENCE_PARENT, а
+-- карты живут в мире через coords.screen_to_world. На ровно 960x540 при
+-- дефолтных pivot/adjust эти две модели совпадают — но это совпадение
+-- дефолтов, и тест его не проверяет: поставь restart_button pivot PIVOT_SW,
+-- и pick начнёт есть колонку 8, а тест останется зелёным.
+-- Настоящую геометрию попадания держит сценарий hittest в tools/browser-test.py:
+-- он кликает по живой сборке на 960x540, 1200x540 и 800x600.
 
 local new_harness = require("solver.tests.harness")
 local stub = require("solver.tests.defold_stub")
@@ -40,12 +51,36 @@ local function parse_collection(path)
    return out
 end
 
+-- Разбор блока protobuf-text по СЧЁТУ СКОБОК, а не по «закрывающая на нулевой
+-- колонке». Ревью блока H (grok-4.5): прежний шаблон "\nnodes%s*{(.-)\n}"
+-- держался на том, что Defold пишет `}` без отступа — сдвинь её на два пробела,
+-- и парсер вернёт НОЛЬ нод. Проверено мутацией входа: тест обязан падать, а не
+-- охранять пустое множество.
+local function blocks(src, header)
+   local out = {}
+   local pos = 1
+   while true do
+      local s, e = src:find("\n" .. header .. "%s*{", pos)
+      if not s then break end
+      local depth, i = 1, e + 1
+      while depth > 0 and i <= #src do
+         local ch = src:sub(i, i)
+         if ch == "{" then depth = depth + 1
+         elseif ch == "}" then depth = depth - 1 end
+         i = i + 1
+      end
+      out[#out + 1] = src:sub(e + 1, i - 2)
+      pos = i
+   end
+   return out
+end
+
 -- Ноды gui: id + position{} + size{}. Пропущенная координата в protobuf-text
 -- означает 0, поэтому x/y читаем по отдельности и подставляем 0.
 local function parse_gui(path)
    local src = read(path)
    local out = {}
-   for chunk in src:gmatch("\nnodes%s*{(.-)\n}") do
+   for _, chunk in ipairs(blocks(src, "nodes")) do
       local id = chunk:match('\n%s*id: "([^"]+)"')
       if id then
          local pos = chunk:match("position%s*{(.-)}") or ""
