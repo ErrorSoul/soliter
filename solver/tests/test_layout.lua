@@ -84,6 +84,14 @@ local function column_rect(slot, n, name)
    return { l = slot.x - CARD_W / 2, r = slot.x + CARD_W / 2, b = bottom, t = top, name = name }
 end
 
+-- Ростер обязателен целиком. Проверено мутацией входа: если переименовать
+-- free_slot1 в ОБЕИХ коллекциях (или сломать регексп ровно на одном слоте),
+-- элемент просто выпадает из разбора — и «если нашлось» пропускало его мимо
+-- всех проверок наложения, оставляя набор зелёным. Тест на пустом разборе
+-- обязан падать громко, иначе он охраняет пустое множество.
+local CARD_SLOTS = { "free_slot1", "free_slot2", "free_slot3",
+                     "base_slot1", "base_slot2", "base_slot3", "flower_slot" }
+
 -- Всё, что игрок должен видеть и хватать: 8 колонок на максимальной длине,
 -- служебный ряд и кнопки драконов.
 local function board_rects(coll)
@@ -93,14 +101,15 @@ local function board_rects(coll)
       if not slot then error("нет tableau_slot" .. i .. " в коллекции") end
       out[#out + 1] = column_rect(slot, MAX_COLUMN, "колонка " .. i)
    end
-   for _, id in ipairs({ "free_slot1", "free_slot2", "free_slot3",
-                         "base_slot1", "base_slot2", "base_slot3", "flower_slot" }) do
+   for _, id in ipairs(CARD_SLOTS) do
       local s = coll[id]
-      if s then out[#out + 1] = rect(s.x, s.y, CARD_W, CARD_H, id) end
+      if not s then error("нет " .. id .. " в коллекции (сломан разбор или слот пропал)") end
+      out[#out + 1] = rect(s.x, s.y, CARD_W, CARD_H, id)
    end
    for i = 1, 3 do
       local s = coll["dragon_button" .. i]
-      if s then out[#out + 1] = rect(s.x, s.y, config.BTN_SIZE.x, config.BTN_SIZE.y, "dragon_button" .. i) end
+      if not s then error("нет dragon_button" .. i .. " в коллекции") end
+      out[#out + 1] = rect(s.x, s.y, config.BTN_SIZE.x, config.BTN_SIZE.y, "dragon_button" .. i)
    end
    return out
 end
@@ -141,6 +150,17 @@ end)
 H.test("G6 обе коллекции раскладывают слоты одинаково", function()
    local a = parse_collection("main/Levels/soliter.collection")
    local b = parse_collection("main/Levels/soliter1.collection")
+   -- Сначала — что разбор вообще что-то нашёл в ОБЕИХ. Без этого сравнение
+   -- «все ключи a совпадают с b» истинно на двух пустых таблицах.
+   for _, id in ipairs(CARD_SLOTS) do
+      if not a[id] then return false, id .. " не разобран в soliter.collection" end
+      if not b[id] then return false, id .. " не разобран в soliter1.collection" end
+   end
+   for i = 1, 8 do
+      local id = "tableau_slot" .. i
+      if not a[id] then return false, id .. " не разобран в soliter.collection" end
+      if not b[id] then return false, id .. " не разобран в soliter1.collection" end
+   end
    for id, pa in pairs(a) do
       local pb = b[id]
       if pb then
@@ -149,6 +169,11 @@ H.test("G6 обе коллекции раскладывают слоты оди�
          end
       elseif id ~= "background" then
          return false, id .. " есть в soliter.collection, но нет в soliter1.collection"
+      end
+   end
+   for id in pairs(b) do
+      if not a[id] and id ~= "background" then
+         return false, id .. " есть в soliter1.collection, но нет в soliter.collection"
       end
    end
    return true
