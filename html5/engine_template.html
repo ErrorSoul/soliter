@@ -3,10 +3,17 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, minimal-ui, shrink-to-fit=no">
+	<!-- viewport-fit=cover есть в стоковом шаблоне, а в нашем форке потерялся: без него
+	     на телефонах с вырезом канвас упирается в safe-area и по краям остаются поля. -->
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, minimal-ui, shrink-to-fit=no, viewport-fit=cover">
 	<meta name="apple-mobile-web-app-capable" content="yes">
 
-	<title>ShenzenSolitare 1.0</title>
+	<!-- Подстановки движка. Шаблон — форк стокового builtins/manifests/web/engine_template.html,
+	     и в нём эти четыре места были ЗАПЕЧЕНЫ значениями (имя игры, версия, размер канваса).
+	     Это мина: переименуй игру в game.project — bob соберёт NewName.js, а загрузчик так и
+	     будет просить ShenzenSolitare.js, и HTML5-сборка молча перестанет запускаться.
+	     Возвращены плейсхолдеры; подстановка проверена на настоящей сборке. -->
+	<title>{{project.title}} {{project.version}}</title>
 	<style type='text/css'>
 	/* Требование Я.Игр (D2): страница не должна прокручиваться, пружинить и
 	   перезагружаться жестом. Это НЕ раскладка — ни размеры, ни позиции здесь
@@ -112,7 +119,7 @@
 			<p>WebGL is not supported by your browser.</p>
 		</div>
 		<div id="canvas-container" class="canvas-app-canvas-container">
-			<canvas id="canvas" class="canvas-app-canvas" tabindex="1" width="960" height="540"></canvas>
+			<canvas id="canvas" class="canvas-app-canvas" tabindex="1" width="{{display.width}}" height="{{display.height}}"></canvas>
 		</div>
 	</div>
 
@@ -173,7 +180,7 @@
 			runningFromFileWarning.style.display = "block";
 		}
 		else {
-			EngineLoader.load("canvas", "ShenzenSolitare");
+			EngineLoader.load("canvas", "{{exe-name}}");
 			runningFromFileWarning.parentNode.removeChild(runningFromFileWarning);
 		}
 	</script>
