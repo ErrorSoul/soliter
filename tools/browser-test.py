@@ -641,8 +641,10 @@ def scenario_restartrace(s):
         s.page.mouse.up()
         s.note("click", f"fast RESTART {label}")
 
+    board = (480, 300, 380, 200)
     for label, times in (("медленный", 2), ("в окно загрузки", 8)):
         loads_before = len(s.logs_matching(r"I am MAIN SCRIPT"))
+        before = s.patch(*board)
         for n in range(times):
             if label == "медленный":
                 s.click_game(*RESTART_BUTTON, label=f"RESTART {n + 1} ({label})")
@@ -664,6 +666,13 @@ def scenario_restartrace(s):
         s.note("board", f"{label}: колонок с картой {dealt} из {len(TABLEAU_X)}")
         s.expect(dealt == len(TABLEAU_X),
                  f"{label} рестарт: стол разложен не полностью ({dealt} из {len(TABLEAU_X)})")
+        # «Восемь ярких верхушек» одинаково верно и для НОВОЙ раздачи, и для
+        # старой, оставшейся на экране (ревью блока I). Поэтому ещё и требуем,
+        # чтобы стол СТАЛ ДРУГИМ: рестарт тасует заново, две одинаковые раздачи
+        # подряд практически невозможны.
+        after = s.patch(*board)
+        s.expect(after != before,
+                 f"{label} рестарт: стол не изменился — старая раздача осталась на экране")
 
     bad = [e["text"] for e in s.log
            if re.search(r"(?i)proxy", e["text"]) and re.search(r"(?i)error|fail|assert", e["text"])]

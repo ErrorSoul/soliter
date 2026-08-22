@@ -70,6 +70,30 @@ end
 
 local function col_empty(s, i) return #s.tableau[i] == 0 end
 
+-- Цветок с верхушки улетает САМ — это делает игра (tableau_script:
+-- last_card_to_slot при value == 'f'), а не игрок. Ревью блока I (grok-4.6):
+-- в первой версии зонда этого хода не было ВООБЩЕ, поэтому «полный перебор»
+-- ходил по урезанному графу и честно упирался в доски, где сверху лежит
+-- цветок. Отсюда и родился неверный вывод «безнадёжно».
+local function flower_on_top(s)
+   for i = 1, 8 do
+      local col = s.tableau[i]
+      local top = col[#col]
+      if top and (top.is_flower or top.value == "f") then return true end
+   end
+   return false
+end
+
+-- Применить всё, что игра сделала бы сама, прежде чем решать, что ход невозможен.
+local function settle(s)
+   local guard = 0
+   while flower_on_top(s) and guard < 8 do
+      s = rules.apply_move(s, { type = "flower_auto" })
+      guard = guard + 1
+   end
+   return s
+end
+
 -- Сдвиг верхнего дракона на ПУСТУЮ колонку. Именно этот ход умеет сделать
 -- палец, значит его же должен делать авто-сбор.
 local function moves_to_empty(s)
@@ -136,8 +160,9 @@ end
 -- срабатывает РАНЬШЕ, чем игрок исчерпал ходы.
 -- Возвращает: драконов осталось, свободных ячеек, пустых колонок.
 local function give_up_snapshot(s0)
-   local s = s0
+   local s = settle(s0)
    for _ = 1, STEP_CAP do
+      s = settle(s)
       local c = collects(s)
       if #c > 0 then
          s = rules.apply_move(s, c[1])
@@ -157,8 +182,9 @@ local function give_up_snapshot(s0)
 end
 
 local function greedy(s0, allow_cell)
-   local s = s0
+   local s = settle(s0)
    for _ = 1, STEP_CAP do
+      s = settle(s)
       local c = collects(s)
       if #c > 0 then
          s = rules.apply_move(s, c[1])
@@ -199,6 +225,7 @@ end
 -- бюджет на восьмой тысяче узлов», а на этом различии держится вывод
 -- «сдвиг в ячейку не спас бы» (см. комментарий у auto_collect_give_up).
 local function best_reachable(s0, budget_max)
+   s0 = settle(s0)
    local seen, best, budget = {}, dragons_alive(s0), budget_max or 20000
    local stack = { s0 }
    seen[key(s0)] = true
@@ -213,7 +240,7 @@ local function best_reachable(s0, budget_max)
       for _, m in ipairs(moves_to_empty(s)) do cand[#cand + 1] = m.mv end
       for _, mv in ipairs(moves_to_cell(s)) do cand[#cand + 1] = mv end
       for _, mv in ipairs(cand) do
-         local ns = rules.apply_move(s, mv)
+         local ns = settle(rules.apply_move(s, mv))
          local k = key(ns)
          if not seen[k] then
             seen[k] = true
@@ -246,8 +273,9 @@ for seed = ONLY or 1, ONLY or SEEDS do
          cases = cases + 1
          local a = greedy(hit, false)
          -- политика A = только сбор: отдельная петля без сдвигов
-         local only = hit
+         local only = settle(hit)
          for _ = 1, STEP_CAP do
+            only = settle(only)
             local c = collects(only)
             if #c == 0 then break end
             only = rules.apply_move(only, c[1])

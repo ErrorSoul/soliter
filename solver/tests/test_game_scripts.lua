@@ -979,6 +979,11 @@ local function win27_self(dragons_on_table)
       base_slots = {},
       tutorial_mode = false,
       auto_finishing = false,
+      -- Цветок УЖЕ в своём слоте. Это не украшение фикстуры: на foundation=27
+      -- цветок либо улетел, либо ещё лежит на столе — и во втором случае
+      -- сдаваться рано, потому что он улетит сам через кадр (ревью блока I).
+      -- Доска, где уступка вообще имеет право сработать, — та, где цветка нет.
+      flower_collected = true,
    }
 end
 
@@ -1729,6 +1734,54 @@ H.test("G7 победа снимает замок авто-сбора на лю�
    return true
 end)
 
+
+-- Ревью блока I (grok-4.6): уступка срабатывала на кадр раньше, чем нужно.
+-- Замер зонда, который это подтвердил: сиды 150 и 261 казались безнадёжными
+-- ровно потому, что в наборе ходов не было автоулёта цветка. Стоило добавить
+-- его — обе доски доигрываются до нуля драконов.
+--
+-- Пара тестов, а не один: «не сдаваться, пока цветок на столе» в одиночку
+-- зеленело бы и от «не сдаваться никогда», то есть от партии, которая после
+-- отказа авто-сбора зависает без победы навсегда.
+H.test("уступка ждёт, пока цветок улетит сам", function()
+   msg.clear()
+   load_script("main/Scripts/main.script")
+   local self = win27_no_move_self()
+   self.flower_collected = false   -- цветок ещё на столе, улетит следующим кадром
+   self.auto_collecting = true
+   on_message(self, hash("auto_collect_none"), {}, "cursor")
+   if self.currentState == "win" then
+      return false, "победа объявлена, пока цветок на столе — за кадр до того, как всё решилось бы само"
+   end
+   if not self.pending_collect_retry then
+      return false, "не сдались, но и переспросить не собираемся — партия повиснет"
+   end
+   if not self.auto_collecting then
+      return false, "замок авто-сбора снят, значит переспрашивать будет некому"
+   end
+   return true
+end)
+
+H.test("уступка не ждёт вечно: закопанный цветок не держит партию", function()
+   msg.clear()
+   load_script("main/Scripts/main.script")
+   local self = win27_no_move_self()
+   self.flower_collected = false
+   self.auto_collecting = true
+   -- Цветок закопан намертво: сколько ни переспрашивай, он не всплывёт.
+   for _ = 1, 20 do
+      if self.currentState == "win" then break end
+      self.pending_collect_retry = nil
+      on_message(self, hash("auto_collect_none"), {}, "cursor")
+   end
+   if self.currentState ~= "win" then
+      return false, "переспрашиваем бесконечно — игрок остался без победы на доске, где ходов нет"
+   end
+   if self.auto_collecting then
+      return false, "победа объявлена, а замок авто-сбора остался взведён"
+   end
+   return true
+end)
 
 -- G3: авто-финиш не должен стартовать, когда взять нечего.
 --
