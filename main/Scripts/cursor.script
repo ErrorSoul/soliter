@@ -458,6 +458,26 @@ function on_message(self, message_id, message, sender)
          end
          msg.post("/card_table#main", "check_auto_finish", { free_cells = free_cell_cards })
       end
+   elseif message_id == hash("auto_collect_dragons") then
+      -- Все номиналы разложены, на столе остались только драконы. Нажимаем
+      -- кнопки сбора ЗА игрока, ровно тем же путём, что и палец (см. ветку
+      -- hit.check_dragon_buttons в on_input): pending_drop + get_dragon_cards.
+      -- Своего пути сбора здесь нет намеренно — второй путь разъехался бы с
+      -- первым, как уже было с зеркалами ячеек.
+      local delay = 0
+      for btn_id, btn in pairs(self.dragon_buttons or {}) do
+         if btn.is_active then
+            local captured_id, captured_color = btn_id, btn.sprite
+            -- Кнопка сама ждёт 1.5с до dragons_collected (дуга драконов +
+            -- полёт цветка), поэтому масти разносим по времени: иначе вторая
+            -- масть полетит в ячейку, которую первая ещё не заняла.
+            timer.delay(delay, false, function()
+               self.pending_drop = { slot_id = captured_id, color = captured_color }
+               msg.post(captured_id, "get_dragon_cards")
+            end)
+            delay = delay + 1.7
+         end
+      end
    elseif message_id == hash("slot_with_card") and self.pending_drop then
       self.selected_card = message.id
       self.selected_card_data = message

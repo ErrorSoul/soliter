@@ -205,6 +205,7 @@ UI (ui.gui_script.update)
 | `free_cell_changed` | free_cell → main | `{slot_id, card?, is_blocked}` | Зеркало содержимого ячейки (C4): ФИНАЛЬНОЕ состояние, не дельта. Без `card` = ячейка пуста |
 | `flower_collected` | flower_slot → main | — | Цветок сел в свой слот (C5). Иначе снапшот забывает его: из tableau он ушёл, а `snap.flower` жил только на время полёта |
 | `collect_done` | main → dragon_button | — | Масть собрана МИМО кнопки (реплей солвера, C6): ставит `is_enable=false` + `check_state`, т.е. состояние после человеческого клика |
+| `auto_collect_dragons` | main → cursor | — | Все 27 номиналов в foundation, на столе остались только драконы: курсор нажимает горящие кнопки сбора сам, тем же путём, что палец (`pending_drop` + `get_dragon_cards`), масти разносит по 1.7с. Не шлётся во время `debug_replaying` — доской владеет директор реплея |
 
 ### Реестр зеркал доски — КТО ЧИТАЕТ (не удалять как «мёртвое»)
 
@@ -217,7 +218,7 @@ UI (ui.gui_script.update)
 |---|---|---|---|
 | `main.tableau_stacks` | раздача; дельта `tableau_card_added/removed`; локальный remove в `auto_finish_step` | **релизный** `can_auto_finish` / `find_next_auto_card` + снапшот | остаётся |
 | `main.foundation_top` | `init`; `card_to_base` | **релизный** авто-финиш + снапшот | остаётся |
-| `main.free_cell_state` | `init`; `free_cell_changed` (C4) | только снапшот | формально мёртв — **не удалять** без решения |
+| `main.free_cell_state` | `init`; `free_cell_changed` (C4) | снапшот + **релизное условие победы** (`live_cells`/`board_cleared`) | остаётся — победа читает его напрямую |
 | `main.flower_collected` | `init`; `flower_collected` (C5) | только снапшот | формально мёртв — **не удалять** без решения |
 | `cursor.free_slots` | `set_free_slots`; `update_free_slot` | **релизный** путь: `get_dragon_cards`, `send_auto_finish_check` → `can_auto_finish` | остаётся |
 

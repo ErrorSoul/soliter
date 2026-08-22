@@ -916,6 +916,48 @@ function find_next_auto_card(self)
    return nil
 end
 
+-- Живые (не запечатанные) карты в свободных ячейках. Читает зеркало C4.
+function live_cells(self)
+   local n = 0
+   for _, fc in ipairs(self.free_cell_state or {}) do
+      if fc.card and not fc.is_blocked then n = n + 1 end
+   end
+   return n
+end
+
+-- Несобранные драконы: на столе или припаркованные в незапечатанной ячейке.
+function dragons_left(self)
+   local n = 0
+   for i = 1, 8 do
+      local stack = self.tableau_stacks and self.tableau_stacks[i]
+      if stack then
+         for _, card in ipairs(stack.cards) do
+            if card.data and card.data.is_dragon then n = n + 1 end
+         end
+      end
+   end
+   for _, fc in ipairs(self.free_cell_state or {}) do
+      if fc.card and not fc.is_blocked and fc.card.value == "d" then n = n + 1 end
+   end
+   return n
+end
+
+-- Настоящее условие победы: все номиналы в foundation, ячейки свободны от живых
+-- карт, драконов на столе не осталось. Это то же самое, что считает целью
+-- солвер (rules.lua is_goal) — раньше игра и её эталон расходились.
+function board_cleared(self)
+   return (self.base_cards_count or 0) >= 27
+      and live_cells(self) == 0
+      and dragons_left(self) == 0
+end
+
+function declare_victory(self)
+   if self.currentState == self.states.WIN then return end
+   self.currentState = self.states.WIN
+   sfx.victory()
+   tutorial_state.request_victory()
+end
+
 function auto_finish_step(self)
    local card, stack_index = find_next_auto_card(self)
    if not card then
@@ -1007,9 +1049,22 @@ function on_message(self, message_id, message, sender)
          self.suit_to_base[message.suit] = message.slot_id
       end
       if not self.tutorial_mode and self.base_cards_count >= 27 then
-         self.currentState = self.states.WIN
-         sfx.victory()
-         tutorial_state.request_victory()
+         -- Все 27 номиналов разложены — но это ещё не пустой стол. Замер по 60
+         -- раздачам: в 15 из 57 решаемых партий (26%) в этот момент на столе
+         -- лежат 4 несобранных дракона, и раньше игра показывала Victory прямо
+         -- поверх них. Доигрываем драконов сами; победу объявит проверка на
+         -- `dragons_collected` (тот же путь, что и при ручном сборе, — если
+         -- авто-нажатие почему-то не сработает, игрок дожмёт кнопки руками и
+         -- всё равно выиграет).
+         if board_cleared(self) then
+            declare_victory(self)
+         elseif not self.debug_replaying then
+            -- Во время реплея солвера доской распоряжается директор: он сам
+            -- собирает драконов своими директивами. Влезть сюда с авто-сбором
+            -- значит собрать масть раньше директивы и рассинхронить план —
+            -- та же причина, по которой отказывает can_auto_finish (стр. 858).
+            msg.post(self.cursor, "auto_collect_dragons")
+         end
       end
       -- B2: авто-улёт двойки поднимает foundation без хода игрока — перепроверяем
       -- auto-finish (round-trip через cursor даёт свежие free_cells).
@@ -1055,9 +1110,20 @@ function on_message(self, message_id, message, sender)
          self.currentState = self.states.WIN
          sfx.victory()
          tutorial_state.request_victory()
+      elseif board_cleared(self) then
+         -- Последняя масть драконов улетела в ячейку — стол пуст, это победа.
+         -- Единственная точка, где партия выигрывается после авто-сбора; сюда же
+         -- приходит ручной сбор, поэтому оба пути закрыты одним условием.
+         declare_victory(self)
       else
          -- После сбора драконов проверяем auto-finish
          msg.post(self.cursor, "send_auto_finish_check")
+         -- Драконы могли собраться не все (ячейка освободилась только сейчас) —
+         -- дожимаем оставшиеся кнопки, если номиналы уже все в foundation.
+         if (self.base_cards_count or 0) >= 27 and dragons_left(self) > 0
+            and not self.debug_replaying then
+            msg.post(self.cursor, "auto_collect_dragons")
+         end
       end
    elseif message_id == hash("debug_solve") then
       if DEBUG_SOLVER then debug_solve(self) end

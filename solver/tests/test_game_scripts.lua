@@ -953,6 +953,101 @@ H.test("BUG auto-finish объявляет победу, пока числова
    return false, "победа объявлена при 26 картах в foundation и живой 10_red в свободной ячейке"
 end)
 
+-- ─── Победа = пустой стол, а не «27 номиналов» ──────────────────────────────
+-- Замер (reviews/probe_win27.lua, 60 раздач): в 15 из 57 решаемых партий 27-я
+-- числовая карта садится, когда на столе ещё лежат 4 дракона. Раньше Victory
+-- всплывал прямо поверх них. Теперь игра сама дожимает кнопки сбора.
+
+local function win27_self(dragons_on_table)
+   local stacks = {}
+   for i = 1, 8 do stacks[i] = { cards = {} } end
+   for i = 1, (dragons_on_table or 0) do
+      table.insert(stacks[1].cards, { id = "go" .. i, data = { value = "d", suit = "red", is_dragon = true } })
+   end
+   return {
+      tableau_stacks = stacks,
+      foundation_top = { red = 10, blue = 10, green = 10 },
+      base_cards_count = 27,
+      free_cell_state = { {}, {}, {} },
+      states = { WIN = "win", PLAYING = "playing" },
+      currentState = "playing",
+      cursor = "cursor_go",
+      suit_to_base = {},
+      base_slots = {},
+      tutorial_mode = false,
+      auto_finishing = false,
+   }
+end
+
+H.test("WIN27 драконы на столе: победы нет, уходит команда авто-сбора", function()
+   load_script("main/Scripts/main.script")
+   msg.clear()
+   local self = win27_self(4)
+   self.base_cards_count = 26 -- 27-я придёт сообщением
+   on_message(self, hash("card_to_base"), { suit = "red", value = 10, slot_id = "base_slot1" }, "card")
+   if self.currentState == "win" then
+      return false, "победа объявлена, пока на столе 4 несобранных дракона"
+   end
+   if stub.msg_count("auto_collect_dragons") ~= 1 then
+      return false, "main обязан попросить курсор дожать кнопки сбора ровно один раз"
+   end
+   return true
+end)
+
+H.test("WIN27 во время реплея солвера авто-сбор не влезает", function()
+   load_script("main/Scripts/main.script")
+   msg.clear()
+   local self = win27_self(4)
+   self.base_cards_count = 26
+   self.debug_replaying = true -- доской распоряжается директор реплея
+   on_message(self, hash("card_to_base"), { suit = "red", value = 10, slot_id = "base_slot1" }, "card")
+   if stub.msg_count("auto_collect_dragons") ~= 0 then
+      return false, "авто-сбор перебил директиву реплея — план солвера рассинхронится"
+   end
+   return true
+end)
+
+H.test("WIN27 стол реально пуст: победа объявляется сразу", function()
+   load_script("main/Scripts/main.script")
+   msg.clear()
+   local self = win27_self(0)
+   self.base_cards_count = 26
+   on_message(self, hash("card_to_base"), { suit = "red", value = 10, slot_id = "base_slot1" }, "card")
+   if self.currentState ~= "win" then
+      return false, "стол пуст и все номиналы разложены — это победа"
+   end
+   if stub.msg_count("auto_collect_dragons") ~= 0 then
+      return false, "собирать нечего, команда авто-сбора лишняя"
+   end
+   return true
+end)
+
+H.test("WIN27 победа приходит после того, как авто-сбор доиграл драконов", function()
+   load_script("main/Scripts/main.script")
+   msg.clear()
+   local self = win27_self(0)
+   -- сбор состоялся: ячейки запечатаны собранными драконами
+   self.free_cell_state = { { card = { value = "d", suit = "red" }, is_blocked = true }, {}, {} }
+   on_message(self, hash("dragons_collected"), {}, "dragon_button")
+   if self.currentState ~= "win" then
+      return false, "после сбора последней масти стол пуст — победа обязана быть объявлена"
+   end
+   return true
+end)
+
+H.test("WIN27 дракон в ячейке НЕ запечатан — это не победа", function()
+   load_script("main/Scripts/main.script")
+   msg.clear()
+   local self = win27_self(0)
+   -- дракон просто припаркован игроком, масть не собрана
+   self.free_cell_state = { { card = { value = "d", suit = "red" }, is_blocked = false }, {}, {} }
+   on_message(self, hash("dragons_collected"), {}, "dragon_button")
+   if self.currentState == "win" then
+      return false, "припаркованный дракон — не собранный; стол не пуст"
+   end
+   return true
+end)
+
 -- Парный тест к предыдущему: гард обязан пропускать ЧЕСТНУЮ победу. Без него
 -- «починка» вида «никогда не побеждать» тоже красила бы тест выше в зелёный.
 H.test("BUG честная победа проходит: в ячейках только собранные драконы", function()
