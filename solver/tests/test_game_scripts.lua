@@ -1730,4 +1730,48 @@ H.test("G7 победа снимает замок авто-сбора на лю�
 end)
 
 
+-- G3: авто-финиш не должен стартовать, когда взять нечего.
+--
+-- Пара тестов, а не один: проверка «не стартует» в одиночку зеленела бы и от
+-- «не стартует никогда», то есть от полностью выключённого авто-финиша.
+local function g3_board(cards, foundation)
+   return {
+      tutorial_mode = false, auto_finishing = false, debug_replaying = false,
+      states = { PLAYING = "playing", WIN = "win" }, currentState = "playing",
+      foundation_top = foundation,
+      tableau_stacks = { { cards = cards } },
+      free_cell_state = {},
+   }
+end
+
+H.test("G3 закопанная под своей же старшей картой девятка не запускает авто-финиш", function()
+   load_script("main/Scripts/main.script")
+   -- Снизу вверх: 9_red, сверху 10_red. Обе «безопасны» (чужие фундаменты на 9),
+   -- но фундамент красной ждёт 9, а сверху лежит 10.
+   local cards = {
+      { id = "c9r",  data = { value = 9,  suit = "red" } },
+      { id = "c10r", data = { value = 10, suit = "red" } },
+   }
+   local self = g3_board(cards, { red = 8, blue = 9, green = 9 })
+   if can_auto_finish(self, { free_cells = {} }) then
+      return false, "авто-финиш стартовал на колонке, где верхушка не та: 0.5 с глухого ввода впустую"
+   end
+   return true
+end)
+
+H.test("G3 та же колонка в правильном порядке авто-финиш запускает", function()
+   load_script("main/Scripts/main.script")
+   -- Те же две карты, но 9 сверху — жадному съёму есть с чего начать.
+   local cards = {
+      { id = "c10r", data = { value = 10, suit = "red" } },
+      { id = "c9r",  data = { value = 9,  suit = "red" } },
+   }
+   local self = g3_board(cards, { red = 8, blue = 9, green = 9 })
+   if not can_auto_finish(self, { free_cells = {} }) then
+      return false, "авто-финиш не стартовал там, где верхушка ровно следующая — проверка убила саму функцию"
+   end
+   return true
+end)
+
+
 return H
