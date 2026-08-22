@@ -1,6 +1,7 @@
 local DEBUG_DEAL = false -- false = нормальная тасовка, true = синие драконы сверху стеков
 local DEBUG_AUTO_FINISH = false -- true = тестовая раздача для auto-finish
 local DEBUG_DRAGONS = false -- true = тест сбора драконов подряд: red→blue→green
+local DEBUG_LONG_COLUMN = false -- true = G5: колонка из 12 карт, худший случай по высоте
 local tutorial_state = require("main.Scripts.tutorial_state")
 local sfx = require("main.Scripts.sfx")
 local config = require("main.Scripts.config")
@@ -43,6 +44,8 @@ function init(self)
       deal_dragon_test(self)
    elseif DEBUG_AUTO_FINISH then
       deal_auto_finish_test(self)
+   elseif DEBUG_LONG_COLUMN then
+      deal_long_column_test(self)
    else
       self.deck = create_deck(self)
       shuffle_deck(self)
@@ -64,7 +67,7 @@ function init(self)
    self.flower_collected = false
    -- C5: перепись карт в снапшоте имеет смысл только для настоящей раздачи —
    -- отладочные раскладки и туториал заведомо не 40 карт.
-   self.is_full_deal = not (self.tutorial_mode or DEBUG_DRAGONS or DEBUG_AUTO_FINISH)
+   self.is_full_deal = not (self.tutorial_mode or DEBUG_DRAGONS or DEBUG_AUTO_FINISH or DEBUG_LONG_COLUMN)
    self.base_slots = get_base_slots()
    self.tableau_slots = get_tableau_slots(self.tutorial_mode)
    self.free_slots = get_free_slots()
@@ -149,7 +152,7 @@ function deal_cards(self)
             card_data = table.remove(self.debug_blue_dragons)
          end
 
-         local card_offset = vmath.vector3(0, (card_index - 1) * config.STACK_CARD_OFFSET_Y, 0)
+         local card_offset = vmath.vector3(0, (card_index - 1) * config.stack_offset_y(cards_in_stack, stack_position.y), 0)
          local target_position = stack_position + card_offset
 
          local z = 0.2 + card_index * 0.001
@@ -220,7 +223,7 @@ function deal_dragon_test(self)
       local cards_in_stack = #cards
 
       for card_index, card_data in ipairs(cards) do
-         local card_offset = vmath.vector3(0, (card_index - 1) * config.STACK_CARD_OFFSET_Y, 0)
+         local card_offset = vmath.vector3(0, (card_index - 1) * config.stack_offset_y(cards_in_stack, stack_position.y), 0)
          local target_position = stack_position + card_offset
          local start_pos = vmath.vector3(480, 270, 0.2)
          local card = factory.create("#card_factory", start_pos, vmath.quat(0, 0, 0, 1))
@@ -250,6 +253,70 @@ end
 -- Тестовая раздача для auto-finish:
 -- 6 карт (3 масти × 2-3). 2-ки авто-улетят, потом двинь одну 3-ку →
 -- auto-finish подхватит остальные две 3-ки.
+-- G5: худший достижимый случай по длине колонки — 12 карт в первой колонке.
+-- 5 «раздатых» (сверху десятка) + достройка 9..3 разных мастей. Двойка сверху
+-- не лежит: она улетает в foundation сама, поэтому 12, а не 13. Раздача нужна
+-- глазами убедиться, что сжатый корешок читается и верхнюю карту видно —
+-- юнит-тест проверяет координаты, но не рендер.
+function deal_long_column_test(self)
+   local tableau_positions = get_tableau_positions(self)
+   self.tableau_stacks = {}
+
+   local long_col = {
+      {id="4_red",   value=4,  suit="red"},
+      {id="7_blue",  value=7,  suit="blue"},
+      {id="d_green", value="d", suit="green", is_dragon=true},
+      {id="6_red",   value=6,  suit="red"},
+      {id="10_blue", value=10, suit="blue"},
+      {id="9_red",   value=9,  suit="red"},
+      {id="8_green", value=8,  suit="green"},
+      {id="7_red",   value=7,  suit="red"},
+      {id="6_green", value=6,  suit="green"},
+      {id="5_red",   value=5,  suit="red"},
+      {id="4_green", value=4,  suit="green"},
+      {id="3_red",   value=3,  suit="red"},
+   }
+   local layout = {
+      {1, long_col},
+      {2, {{id="9_blue", value=9, suit="blue"}}},
+   }
+
+   for i = 1, 8 do
+      local slot_id = "tableau_slot" .. i
+      self.tableau_stacks[i] = { slot_id = slot_id, cards = {}, animations_completed = 0 }
+   end
+
+   for _, stack_def in ipairs(layout) do
+      local stack_index = stack_def[1]
+      local cards = stack_def[2]
+      local stack_position = tableau_positions[stack_index]
+      local slot_id = "tableau_slot" .. stack_index
+      local cards_in_stack = #cards
+
+      for card_index, card_data in ipairs(cards) do
+         local card_offset = vmath.vector3(0, (card_index - 1) * config.stack_offset_y(cards_in_stack, stack_position.y), 0)
+         local target_position = stack_position + card_offset
+         local start_pos = vmath.vector3(480, 270, 0.2)
+         local card = factory.create("#card_factory", start_pos, vmath.quat(0, 0, 0, 1))
+         msg.post(card, "set_card", { data = card_data, slot_id = slot_id })
+         table.insert(self.tableau_stacks[stack_index].cards, { id = card, data = card_data, slot_id = slot_id })
+         table.insert(self.cards, card)
+         local delay = 0.04 * (stack_index + card_index)
+         go.set(card, "scale", vmath.vector3(0.5, 0.5, 1))
+         go.animate(card, "scale", go.PLAYBACK_ONCE_FORWARD,
+             vmath.vector3(1, 1, 1), go.EASING_OUTQUAD, 0.25, delay)
+         go.animate(card, "position", go.PLAYBACK_ONCE_FORWARD, target_position, go.EASING_OUTQUAD, 0.25, delay, function()
+            self.tableau_stacks[stack_index].animations_completed = self.tableau_stacks[stack_index].animations_completed + 1
+            if self.tableau_stacks[stack_index].animations_completed == cards_in_stack then
+               msg.post(slot_id, "update_stack", { cursor = self.cursor, index = stack_index, stack = self.tableau_stacks[stack_index].cards })
+               print("[LONGCOL] колонка " .. stack_index .. ": " .. cards_in_stack .. " карт, шаг "
+                     .. string.format("%.2f", -config.stack_offset_y(cards_in_stack, stack_position.y)))
+            end
+         end)
+      end
+   end
+end
+
 function deal_auto_finish_test(self)
    local tableau_positions = get_tableau_positions(self)
    self.tableau_stacks = {}
@@ -282,7 +349,7 @@ function deal_auto_finish_test(self)
       local cards_in_stack = #cards
 
       for card_index, card_data in ipairs(cards) do
-         local card_offset = vmath.vector3(0, (card_index - 1) * config.STACK_CARD_OFFSET_Y, 0)
+         local card_offset = vmath.vector3(0, (card_index - 1) * config.stack_offset_y(cards_in_stack, stack_position.y), 0)
          local target_position = stack_position + card_offset
          local start_pos = vmath.vector3(480, 270, 0.2)
          local card = factory.create("#card_factory", start_pos, vmath.quat(0, 0, 0, 1))
@@ -360,7 +427,7 @@ function deal_tutorial_cards(self)
       local cards_in_stack = #cards
 
       for card_index, card_data in ipairs(cards) do
-         local card_offset = vmath.vector3(0, (card_index - 1) * config.STACK_CARD_OFFSET_Y, 0)
+         local card_offset = vmath.vector3(0, (card_index - 1) * config.stack_offset_y(cards_in_stack, stack_position.y), 0)
          local target_position = stack_position + card_offset
 
          local start_pos = vmath.vector3(480, 270, 0.2)
@@ -694,9 +761,15 @@ function debug_replay(self)
 
    -- Position helpers (director owns target slots; game obeys the slot_id it gets).
    local tableau_pos = get_tableau_positions(self)
+   -- depth — 0-based место карты в колонке, значит после посадки в колонке будет
+   -- depth+1 карт. G5: шаг больше не константа -35 (см. config.stack_offset_y),
+   -- и захардкоженное значение промахивалось бы мимо реальной позиции тем
+   -- сильнее, чем длиннее колонка. Дирижёр реплея обязан целиться туда же, куда
+   -- потом посадит карту tableau_script.update_visible_cards.
    local function tcol(col, depth)
       local b = tableau_pos[col]
-      return "tableau_slot" .. col, vmath.vector3(b.x, b.y + depth * -35, 0.2 + (depth + 1) * 0.001)
+      local pitch = config.stack_offset_y(depth + 1, b.y)
+      return "tableau_slot" .. col, vmath.vector3(b.x, b.y + depth * pitch, 0.2 + (depth + 1) * 0.001)
    end
    local function fcell(ord)
       local id = "free_slot" .. ord

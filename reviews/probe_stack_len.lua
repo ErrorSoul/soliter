@@ -49,7 +49,9 @@ local function forced(state)
                moved = true
                break
             elseif top.is_flower and not s.flower_slot.occupied then
-               s = rules.apply_move(s, { type = "to_flower", from_col = col })
+               -- имя хода в rules.lua — flower_auto; с чужим именем apply_move
+               -- молча возвращал то же состояние и forced() крутился вечно
+               s = rules.apply_move(s, { type = "flower_auto" })
                moved = true
                break
             end

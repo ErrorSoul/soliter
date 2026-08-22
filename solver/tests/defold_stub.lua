@@ -5,6 +5,8 @@ local M = {}
 
 function M.install()
    M.go_props = {}
+   M.go_positions = {}
+   M.go_self_pos = { x = 0, y = 0, z = 0 }
    _G.hash = function(s) return tostring(s) end
 
    -- vector3 needs `+` because scripts add offsets to message.position.
@@ -31,8 +33,17 @@ function M.install()
 
    _G.go = {
       get_id = function() return "self_go" end,
-      get_position = function() return { x = 0, y = 0, z = 0 } end,
-      set_position = function() end,
+      -- G5: раскладка стопки читает позицию слота и пишет позиции карт. Без
+      -- этого стора tableau_script.update_visible_cards нечем проверить: шаг
+      -- зависит от длины колонки, а значит проверять надо КООРДИНАТЫ, а не факт
+      -- вызова. get_position() без id — это сам слот (M.go_self_pos).
+      get_position = function(id)
+         if id == nil then return M.go_self_pos end
+         return M.go_positions[tostring(id)] or { x = 0, y = 0, z = 0 }
+      end,
+      set_position = function(pos, id)
+         if id ~= nil then M.go_positions[tostring(id)] = pos end
+      end,
       animate = function() end,
       cancel_animations = function() end,
       -- go.set/go.get держат общий стор свойств: скрипты читают то, что писали
@@ -76,6 +87,8 @@ end
 -- Canvas the game believes it is running on; coords tests resize it.
 M.window_size = { 960, 540 }
 M.go_props = {}
+M.go_positions = {}
+M.go_self_pos = { x = 0, y = 0, z = 0 }
 
 function M.set_window(w, h)
    M.window_size = { w, h }

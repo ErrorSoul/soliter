@@ -1359,4 +1359,137 @@ H.test("FX drag_lag растёт вглубь стопки и упирается
    return true
 end)
 
+
+-- ============================================================
+-- G5. Длинная колонка не влезала в экран
+-- ============================================================
+-- Замер (reviews/probe_stack_len.lua): слот tableau на y=299, карта 150 px,
+-- экран 0..540. При постоянном шаге 35 px целиком видны 7 карт, восьмая уже
+-- обрезана, а с двенадцатой ВЕРХНЯЯ карта колонки — единственная, которую можно
+-- взять, — целиком уходит под нижнюю кромку: партия становится недоигрываемой.
+-- Потолок длины колонки 12 (5 раздатых + 9..3 сверху; двойка сверху не лежит,
+-- она сама улетает в foundation), плюс 13-я на время полёта этой двойки.
+
+-- config.lua требует Defold-овский vmath — стабы уже установлены выше.
+local config = require("main.Scripts.config")
+
+local SLOT_Y, CARD_H, SCREEN_H = 299, 150, 540
+
+local function column_bottom(n)
+   -- нижняя кромка ПОСЛЕДНЕЙ карты колонки из n карт
+   local pitch = config.stack_offset_y(n, SLOT_Y)
+   return SLOT_Y + (n - 1) * pitch - CARD_H / 2
+end
+
+H.test("G5 короткая колонка сохраняет привычный шаг 35 px", function()
+   for n = 1, 7 do
+      local pitch = -config.stack_offset_y(n, SLOT_Y)
+      if math.abs(pitch - 35) > 0.001 then
+         return false, "колонка из " .. n .. " карт влезает и сжиматься не должна, шаг = " .. pitch
+      end
+   end
+   return true
+end)
+
+H.test("G5 колонка любой достижимой длины помещается в экран", function()
+   for n = 1, 13 do
+      local bottom = column_bottom(n)
+      if bottom < 0 then
+         return false, "колонка из " .. n .. " карт вылезает за низ экрана на "
+            .. string.format("%.1f", -bottom) .. " px — верхнюю карту не взять"
+      end
+      local top = SLOT_Y + CARD_H / 2
+      if top > SCREEN_H then
+         return false, "колонка из " .. n .. " карт вылезает за верх экрана"
+      end
+   end
+   return true
+end)
+
+H.test("G5 сжатый корешок всё ещё показывает ранг карты", function()
+   -- Ранг занимает верхние 16 px спрайта 90x150 (замер по всем 27 номиналам:
+   -- цветные строки 2..15, дальше разрыв и начало арта).
+   local RANK_STRIP = 16
+   for n = 1, 13 do
+      local pitch = -config.stack_offset_y(n, SLOT_Y)
+      if pitch < RANK_STRIP then
+         return false, "при " .. n .. " картах видно " .. string.format("%.1f", pitch)
+            .. " px — ранг (" .. RANK_STRIP .. " px) обрезан"
+      end
+   end
+   return true
+end)
+
+-- Главный тест: гоняем НАСТОЯЩИЙ tableau_script и смотрим координаты, которые
+-- он выставил картам, а не факт вызова.
+H.test("G5 tableau_script реально раскладывает 12 карт в пределах экрана", function()
+   load_script("main/Scripts/tableau_script.script")
+   msg.clear()
+   stub.go_self_pos = { x = 77, y = SLOT_Y, z = 0 }
+   stub.go_positions = {}
+
+   -- Худший достижимый случай: 5 раздатых + достройка 9..3 на раздатую 10.
+   local stack = {}
+   local dealt = { { value = 4, suit = "red" }, { value = 7, suit = "blue" },
+                   { value = "d", suit = "green" }, { value = 6, suit = "red" },
+                   { value = 10, suit = "blue" } }
+   for i, d in ipairs(dealt) do
+      stack[#stack + 1] = { id = "deal" .. i, data = d }
+   end
+   local suits = { "red", "green", "red", "green", "red", "green", "red" }
+   for k, v in ipairs({ 9, 8, 7, 6, 5, 4, 3 }) do
+      stack[#stack + 1] = { id = "run" .. v, data = { value = v, suit = suits[k] } }
+   end
+   if #stack ~= 12 then return false, "фикстура собрана неверно: " .. #stack .. " карт" end
+
+   local self = { is_empty = false, pending_top_check = false, stack = {}, index = 1 }
+   on_message(self, hash("update_stack"),
+              { stack = stack, index = 1, cursor = "cursor" }, "main")
+
+   local placed = 0
+   for _, card in ipairs(stack) do
+      local pos = stub.go_positions[card.id]
+      if not pos then
+         return false, "карте " .. card.id .. " не выставлена позиция"
+      end
+      placed = placed + 1
+      if pos.y - CARD_H / 2 < 0 then
+         return false, "карта " .. card.id .. " ушла за низ экрана: низ = "
+            .. string.format("%.1f", pos.y - CARD_H / 2)
+      end
+      if pos.y + CARD_H / 2 > SCREEN_H then
+         return false, "карта " .. card.id .. " ушла за верх экрана"
+      end
+   end
+   if placed ~= 12 then return false, "разложено " .. placed .. " карт из 12" end
+
+   -- И верхняя карта колонки — та, которую игрок хватает, — должна остаться
+   -- целиком видимой, иначе колонку не разобрать.
+   local last = stub.go_positions["run3"]
+   if last.y - CARD_H / 2 < 0 then
+      return false, "верхняя карта колонки обрезана снизу — её нельзя взять"
+   end
+   return true
+end)
+
+H.test("G5 порядок карт в колонке сверху вниз сохранён", function()
+   load_script("main/Scripts/tableau_script.script")
+   msg.clear()
+   stub.go_self_pos = { x = 77, y = SLOT_Y, z = 0 }
+   stub.go_positions = {}
+   local stack = {}
+   for i = 1, 12 do stack[i] = { id = "c" .. i, data = { value = i, suit = "red" } } end
+   local self = { is_empty = false, pending_top_check = false, stack = {}, index = 1 }
+   on_message(self, hash("update_stack"),
+              { stack = stack, index = 1, cursor = "cursor" }, "main")
+   for i = 2, 12 do
+      local prev = stub.go_positions["c" .. (i - 1)]
+      local cur  = stub.go_positions["c" .. i]
+      if not (cur.y < prev.y) then
+         return false, "карта " .. i .. " не ниже предыдущей — стопка перепутана"
+      end
+   end
+   return true
+end)
+
 return H
