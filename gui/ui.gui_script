@@ -15,8 +15,29 @@ local function update_tutorial_hint(step)
     gui.set_text(gui.get_node("tutorial_step_text"), string.format(i18n.t("tutorial_step"), step + 1))
 end
 
+-- H3: статические подписи живут в ui.gui как английский хардкод. Проставляем их
+-- здесь, в одном месте: иначе перевод жил бы в двух источниках сразу, и любой
+-- новый язык надо было бы вносить ещё и в .gui руками.
+local STATIC_LABELS = {
+    restart_text       = "restart",
+    restart_text1      = "tutorial",
+    title_text         = "title",
+    play_text          = "play",
+    victory_menu_text  = "menu",
+    tutorial_skip_text = "skip",
+}
+
+local function apply_language()
+    i18n.set_lang(i18n.detect())
+    for node_id, key in pairs(STATIC_LABELS) do
+        gui.set_text(gui.get_node(node_id), i18n.t(key))
+    end
+    print("[I18N] язык: " .. tostring(i18n.lang))
+end
+
 function init(self)
     msg.post(".", "acquire_input_focus")
+    apply_language()
     -- Скрыть игровые кнопки до начала игры
     gui.set_enabled(gui.get_node("hud_rail"), false)
     gui.set_enabled(gui.get_node("restart_button"), false)

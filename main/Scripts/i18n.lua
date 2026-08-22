@@ -76,4 +76,39 @@ function M.set_lang(lang)
     end
 end
 
+-- H2: определить язык. Порядок намеренный.
+--
+-- 1. `?lang=xx` в адресе. Явный внешний выбор бьёт настройку системы, и это
+--    единственный способ переключить язык без SDK — обычным html5.run. Так
+--    локализация не ждёт интеграции SDK (D1), и её можно прогнать в любом
+--    браузере (сценарий стенда `i18n` этим и пользуется).
+--    ⚠ Документированный источник языка на Я.Играх — `ysdk.environment.i18n.lang`;
+--    что платформа кладёт язык ещё и в URL, я НЕ проверял по первоисточнику.
+--    Когда приедет D1, SDK должен идти первым приоритетом, выше этой ветки.
+-- 2. Язык системы/браузера — разумный дефолт вне Я.Игр.
+-- 3. Английский.
+--
+-- Незнакомый код молча игнорируем: set_lang сам отсеет то, чего нет в strings.
+local function two_letters(s)
+    if type(s) ~= "string" then return nil end
+    local code = s:match("^%s*([A-Za-z][A-Za-z])")
+    return code and code:lower() or nil
+end
+
+function M.detect()
+    if html5 then
+        local ok, search = pcall(html5.run, "window.location.search")
+        if ok and type(search) == "string" then
+            local code = two_letters(search:match("[?&]lang=([^&]+)"))
+            if code and M.strings[code] then return code end
+        end
+    end
+    local ok, info = pcall(sys.get_sys_info)
+    if ok and info then
+        local code = two_letters(info.device_language) or two_letters(info.language)
+        if code and M.strings[code] then return code end
+    end
+    return "en"
+end
+
 return M

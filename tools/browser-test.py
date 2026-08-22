@@ -171,6 +171,18 @@ class Session:
         self.note("shot", os.path.basename(path))
         return path
 
+    def patch(self, x, y, half_w, half_h):
+        """Сырые пиксели прямоугольника в игровых координатах.
+
+        Нужен там, где утверждение звучит как «на экране стало ДРУГОЕ», а не
+        «ярче/темнее»: текст на канвасе не прочитать из DOM, но два снимка
+        одной и той же кнопки на разных языках обязаны различаться."""
+        cx, cy = self._map(x, y)
+        sx, sy = self._map(x + half_w, y + half_h)
+        w, h = abs(sx - cx) * 2, abs(sy - cy) * 2
+        clip = {"x": max(cx - w / 2, 0), "y": max(cy - h / 2, 0), "width": w, "height": h}
+        return self.page.screenshot(clip=clip)
+
     def brightness(self, x, y, half=18):
         """Mean luminance of a small patch at a game coord.
 
@@ -562,6 +574,38 @@ def scenario_focus(s):
              "вкладка вернулась, а звук так и остался выключен")
 
 
+
+def scenario_i18n(s):
+    """H2/H3: язык приходит из ?lang= (так его задают Я.Игры) и реально доезжает
+    до подписей на экране.
+
+    Проверка не «в логе написано ru»: логи врут дёшево. Снимаем одну и ту же
+    кнопку рельса на двух языках и требуем, чтобы картинка отличалась — если
+    подпись осталась английским хардкодом из ui.gui, снимки совпадут побайтно.
+    """
+    base = s.url.split("?")[0]
+    shots = {}
+    for lang in ("en", "ru"):
+        s.page.goto(f"{base}?lang={lang}")
+        s.boot()
+        got = s.wait_for_log(r"\[I18N\] язык: (\w+)", 20, f"lang={lang}")
+        s.expect(got and got.strip().endswith(lang), f"движок не переключился на {lang}: {got}")
+        s.press_play()
+        s.wait(2, "раздача осела")
+        s.shot(f"rail-{lang}")
+        shots[lang] = s.patch(907, 56, 35, 28)   # кнопка RESTART в рельсе
+
+    s.expect(shots["en"] != shots["ru"],
+             "подпись кнопки не изменилась при смене языка — текст остался хардкодом в ui.gui")
+    from PIL import Image
+    for lang, buf in shots.items():
+        img = Image.open(io.BytesIO(buf)).convert("L")
+        px = list(img.getdata())
+        spread = max(px) - min(px)
+        s.note("label", f"{lang}: контраст подписи {spread}")
+        s.expect(spread > 40, f"на кнопке {lang} не видно текста (контраст {spread}) — тофу или пусто")
+
+
 def scenario_census(s):
     """C5: press R on a board whose FLOWER HAS ALREADY LANDED.
 
@@ -624,7 +668,7 @@ def scenario_census(s):
 SCENARIOS = {"boot": scenario_boot, "hittest": scenario_hittest,
              "stuck": scenario_stuck, "win": scenario_win,
              "freecell": scenario_freecell, "census": scenario_census,
-             "focus": scenario_focus}
+             "focus": scenario_focus, "i18n": scenario_i18n}
 
 
 def main():
@@ -642,6 +686,8 @@ def main():
                     help="serve WITHOUT cross-origin isolation (no SharedArrayBuffer), "
                          "which is what a host that omits COOP/COEP gives you")
     ap.add_argument("--headed", action="store_true")
+    ap.add_argument("--query", default="",
+                    help="query-строка к index.html, например lang=ru (H2: так язык задают Я.Игры)")
     args = ap.parse_args()
 
     if not os.path.isfile(os.path.join(args.bundle, "index.html")):
@@ -650,7 +696,7 @@ def main():
     vw, vh = (int(v) for v in args.viewport.lower().split("x"))
 
     httpd, port = serve(args.bundle, coi=not args.no_coi)
-    url = f"http://127.0.0.1:{port}/index.html"
+    url = f"http://127.0.0.1:{port}/index.html" + (f"?{args.query}" if args.query else "")
     print(f"serving {args.bundle}\n  at {url}  viewport={vw}x{vh} dpr={args.dpr}  "
           f"cross-origin-isolated={not args.no_coi}\n")
 
@@ -666,6 +712,7 @@ def main():
         page = browser.new_page(viewport={"width": vw, "height": vh},
                                 device_scale_factor=args.dpr)
         s = Session(page, args.out)
+        s.url = url
 
         def on_console(m):
             kind = classify(m.text)
