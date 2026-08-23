@@ -193,6 +193,55 @@ H.test("D1 меню не считается геймплеем: до start_game 
    return true
 end)
 
+-- --------------------------------------------------------------------- победа
+
+-- Минимальный gui: ноды — просто их имена, вся отрисовка — no-op. Нужен ровно
+-- для того, чтобы загрузить настоящий ui.gui_script и прогнать его update.
+local function fake_gui()
+   local g = {
+      EASING_OUTQUAD = 0, EASING_OUTBACK = 1,
+      get_node = function(name) return name end,
+      set_text = function() end,
+      set_enabled = function() end,
+      is_enabled = function() return true end,
+      set_color = function() end,
+      set_position = function() end,
+      set_scale = function() end,
+      animate = function() end,
+      pick_node = function() return false end,
+   }
+   return g
+end
+
+H.test("D1 победа сообщает платформе, что партия кончилась", function()
+   local tutorial_state = require("main.Scripts.tutorial_state")
+   _G.gui = fake_gui()
+   _G.html5 = nil
+   load_script("gui/ui.gui_script")
+   local self = {}
+   init(self)
+   msg.clear()
+
+   tutorial_state.is_tutorial = false
+   tutorial_state.show_victory = true
+   update(self, 0.016)
+   local first = stub.msg_count("gameplay_over")
+   -- Экран победы висит дальше, уровень ещё загружен: второй раз платформе
+   -- говорить нечего.
+   update(self, 0.016)
+   local second = stub.msg_count("gameplay_over")
+   tutorial_state.reset()
+   _G.gui = nil
+
+   if first ~= 1 then
+      return false, "победа не сказала game_manager про конец геймплея (ушло " .. first .. ")"
+   end
+   if second ~= 1 then
+      return false, "gameplay_over ушёл повторно на следующем кадре (" .. second .. ")"
+   end
+   return true
+end)
+
 -- ---------------------------------------------------------------------- язык
 
 H.test("D1 язык из SDK бьёт ?lang= в адресе", function()
