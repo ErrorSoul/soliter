@@ -367,7 +367,19 @@ def scenario_win(s):
     `debug_replay` (key R) plans from a live snapshot and then emits the same
     drop_success/move_stack messages a human drag emits, so this exercises the
     whole message flow -- auto-flights, dragon collection, auto-finish -- and
-    prints its own verdict from foundation_top."""
+    prints its own verdict from foundation_top.
+
+    Здесь же живёт единственная сквозная проверка D1 «победа гасит геймплей для
+    платформы»: фальшивый SDK ставится тем же add_init_script, что в `yasdk`.
+    Так решено после того, как ОБА внешних ревьюера показали одну и ту же дыру:
+    в `yasdk` единственный `stop` приходит от `visibilitychange`, то есть изнутри
+    JS, и мутация «мост глотает gameplay(false)» проходила и юниты, и стенд.
+    Победа — единственный путь, где `gameplay(false)` уходит из Lua, а до победы
+    доезжает только этот сценарий: дублировать сюда всю езду ради отдельного
+    сценария дороже, чем три строки проверки в конце.
+    """
+    s.page.add_init_script(YA_STUB)
+    s.page.goto(s.url)
     s.boot()
     s.press_play()
     s.shot("dealt")
@@ -387,6 +399,17 @@ def scenario_win(s):
             s.expect(result, "replay never reported a verdict (stalled mid-line)")
             s.expect(result and "WIN" in result,
                      f"replay finished without a win: {result}")
+
+            # D1: партия кончилась — платформе обязан уйти GameplayAPI.stop.
+            # Вкладку тут никто не прятал, поэтому единственный источник stop —
+            # цепочка ui.gui_script → gameplay_over → game_manager → мост.
+            s.wait(1.5, "оверлей победы поднялся, сообщение дошло")
+            calls = s.page.evaluate("window.__yaStub.calls.join(',')")
+            s.note("ya", f"цепочка вызовов платформы за партию: {calls}")
+            s.expect(calls.endswith("stop"),
+                     f"победа не погасила геймплей для платформы: {calls}")
+            s.expect(calls.startswith("ready,start"),
+                     f"порядок вызовов за партию нарушен: {calls}")
             return
         s.key("Space", "new deal")  # playwright key name, not "space"
         s.wait(3, "re-deal")
