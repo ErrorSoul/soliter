@@ -209,6 +209,155 @@
 		document.addEventListener("contextmenu", function (e) { e.preventDefault(); }, { passive: false });
 	</script>
 
+	<!-- D1: SDK Яндекс.Игр. Путь /sdk.js — от корня хоста-обёртки, так в требованиях
+	     платформы. Вне iframe Я.Игр это 404: тег молча не грузится, YaGames не
+	     появляется, мост уходит в состояние "absent" и игра работает как обычно. -->
+	<script id='ya-sdk' type='text/javascript' src="/sdk.js"></script>
+	<script id='ya-bridge' type='text/javascript'>
+		// D1: весь промис-код SDK живёт здесь, а не в Lua-строках. html5.run умеет
+		// только "выполнить JS и вернуть строку", поэтому Lua опрашивает короткие
+		// геттеры (state/lang), а вся асинхронность и парность вызовов — тут.
+		//
+		// Инициализацию начинаем сразу, не дожидаясь Lua: промис успевает
+		// разрешиться, пока грузится движок, и язык доезжает до первой отрисовки.
+		window.__ya = (function () {
+			var state = "absent";     // absent | pending | ready | failed
+			var sdk = null;
+			var lang = "";
+			var readySent = false;
+			var wantGameplay = false; // чего хочет игра (уровень загружен)
+			var gameplayOn = false;   // что реально отправлено в SDK
+			var trace = [];
+
+			function mark(name) {
+				trace.push(name);
+				console.log("[YA] " + name);
+			}
+
+			function feature(name) {
+				// Состав features у песочницы и продакшена отличается — каждый
+				// вызов проверяет наличие, а не полагается на схему.
+				if (!sdk || !sdk.features) {
+					return null;
+				}
+				var f = sdk.features[name];
+				return (f && typeof f === "object") ? f : null;
+			}
+
+			function applyGameplay() {
+				// Условие НЕ то же, что у сторожа звука выше: тот гасит и по
+				// !document.hasFocus(), иначе клик в адресную строку не мьютит
+				// вкладку. Для GameplayAPI такой же критерий слал бы в метрики
+				// Яндекса start/stop на каждый клик мимо канваса, поэтому здесь
+				// только document.hidden. Две разные проверки — намеренно.
+				if (state !== "ready") {
+					return;
+				}
+				// Порядок для платформы: сначала LoadingAPI.ready (игра
+				// загрузилась), только потом GameplayAPI.start. Игрок успевает
+				// нажать PLAY, пока промис SDK ещё не разрешился, — тогда
+				// wantGameplay уже true, и без этой проверки start уходил бы
+				// раньше ready. Поймано сценарием yasdk с медленным SDK.
+				if (!readySent) {
+					return;
+				}
+				var on = wantGameplay && !document.hidden;
+				if (on === gameplayOn) {
+					return;
+				}
+				var api = feature("GameplayAPI");
+				if (!api) {
+					return;
+				}
+				gameplayOn = on;
+				try {
+					if (on) {
+						api.start();
+					} else {
+						api.stop();
+					}
+					mark("gameplay-" + (on ? "start" : "stop"));
+				} catch (e) {
+					mark("gameplay-threw " + e);
+				}
+			}
+
+			function init() {
+				if (typeof YaGames === "undefined" || !YaGames || typeof YaGames.init !== "function") {
+					mark("absent");
+					return;
+				}
+				state = "pending";
+				var p;
+				try {
+					p = YaGames.init();
+				} catch (e) {
+					state = "failed";
+					mark("init-threw " + e);
+					return;
+				}
+				p.then(function (s) {
+					sdk = s;
+					state = "ready";
+					try {
+						lang = (s.environment && s.environment.i18n && s.environment.i18n.lang) || "";
+					} catch (e) {
+						lang = "";
+					}
+					mark("ready lang=" + lang);
+					applyGameplay();
+				}, function (e) {
+					state = "failed";
+					mark("init-failed " + e);
+				});
+			}
+
+			document.addEventListener("visibilitychange", applyGameplay);
+			init();
+
+			return {
+				state: function () {
+					return state;
+				},
+				lang: function () {
+					return lang;
+				},
+				trace: function () {
+					return trace.join(",");
+				},
+				loadingReady: function () {
+					// Ровно один раз за жизнь страницы. Уровень перезагружается
+					// сколько угодно — платформе это знать не нужно.
+					if (readySent || state !== "ready") {
+						return "";
+					}
+					readySent = true;
+					var api = feature("LoadingAPI");
+					if (!api) {
+						mark("no-LoadingAPI");
+						applyGameplay();
+						return "";
+					}
+					try {
+						api.ready();
+						mark("loading-ready");
+					} catch (e) {
+						mark("ready-threw " + e);
+					}
+					// Если PLAY нажали раньше, чем SDK ответил, старт геймплея
+					// ждал именно этого момента.
+					applyGameplay();
+					return "";
+				},
+				gameplay: function (on) {
+					wantGameplay = !!on;
+					applyGameplay();
+					return "";
+				}
+			};
+		})();
+	</script>
+
 	<script id='engine-loader' type='text/javascript' src="dmloader.js"></script>
 	<script id='engine-setup' type='text/javascript'>
 	</script>

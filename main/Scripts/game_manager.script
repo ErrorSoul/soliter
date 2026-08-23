@@ -1,5 +1,6 @@
 local sfx = require("main.Scripts.sfx")
 local debug_flags = require("main.Scripts.debug_flags")
+local yandex = require("main.Scripts.yandex")
 
 local function show(self, proxy)
    if self.current_proxy then
@@ -20,18 +21,51 @@ function init(self)
    msg.post(".", "acquire_input_focus")
    self.current_proxy = nil
    self.current_level = "soliter"
+   -- D1: жизненный цикл SDK держим ЗДЕСЬ, а не в main.script. main.script живёт
+   -- внутри level proxy и умирает на каждом рестарте — LoadingAPI.ready() оттуда
+   -- уходил бы платформе повторно, а он обязан прозвучать ровно один раз.
+   self.ya_settled = false
    -- Не грузим уровень сразу, ждём start_game от UI
+end
+
+function update(self, dt)
+   -- Ждём, пока промис SDK разрешится: до этого языка ещё нет. Мост уже начал
+   -- init на загрузке страницы, так что здесь только опрос состояния.
+   if self.ya_settled then
+      return
+   end
+   local state = yandex.state()
+   if state == "pending" then
+      return
+   end
+   self.ya_settled = true
+   print("[YA] state=" .. state)
+   if state ~= "ready" then
+      return
+   end
+   yandex.loading_ready()
+   -- Язык приезжает асинхронно, а подписи уже нарисованы в ui.init — просим
+   -- перекрасить. Если SDK нет, сообщения нет и остаётся язык из i18n.detect().
+   msg.post("/main#ui", "language_ready")
 end
 
 function on_message(self, message_id, message, sender)
    if message_id == hash("start_game") then
+      yandex.gameplay(true)
       show(self, "#level_proxy")
    elseif message_id == hash("restart_level") then
+      yandex.gameplay(true)
       show(self, "#level_proxy")
    elseif message_id == hash("switch_level") then
+      yandex.gameplay(true)
       self.current_level = (self.current_level == "soliter") and "soliter1" or "soliter"
       show(self, self.current_level == "soliter" and "#level_proxy" or "#level_proxy1")
+   elseif message_id == hash("gameplay_over") then
+      -- D1: партия кончилась (победа), но уровень ещё на экране под оверлеем.
+      -- Для платформы это уже не геймплей.
+      yandex.gameplay(false)
    elseif message_id == hash("unload_level") then
+      yandex.gameplay(false)
       sfx.clear()
       if self.current_proxy then
          msg.post(self.current_proxy, "unload")

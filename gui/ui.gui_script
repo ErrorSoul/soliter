@@ -161,6 +161,9 @@ function update(self, dt)
     end
     if tutorial_state.show_victory then
         tutorial_state.show_victory = false
+        -- D1: партия окончена — для платформы геймплей кончился здесь, а не
+        -- когда игрок уйдёт в меню. Уровень под оверлеем ещё загружен.
+        msg.post("/main#game_manager", "gameplay_over")
         local overlay = gui.get_node("victory_overlay")
         local title = gui.get_node("text1")
         local btn_play = gui.get_node("victory_restart")
@@ -211,4 +214,9 @@ function update(self, dt)
 end
 
 function on_message(self, message_id, message)
+    -- D1: SDK ответил язык игрока уже после init — подписи перекрашиваем.
+    -- apply_language идемпотентна: пишет тексты по тем же ключам заново.
+    if message_id == hash("language_ready") then
+        apply_language()
+    end
 end

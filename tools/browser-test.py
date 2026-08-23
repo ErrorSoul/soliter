@@ -911,12 +911,164 @@ def scenario_census(s):
            f"а не регрессия")
 
 
+# Фальшивый SDK платформы. Промис разрешается НАМЕРЕННО ПОЗДНО: без задержки он
+# успевает ответить раньше, чем ui.gui_script нарисует подписи в init, и сценарий
+# зеленел бы даже без перекраски по language_ready (замерено — так и было).
+# 6 с больше, чем boot ждёт движок, поэтому первый язык гарантированно НЕ от SDK.
+YA_STUB_DELAY_MS = 8000
+YA_STUB = """
+window.__yaStub = { calls: [], lang: "ru" };
+window.YaGames = {
+    init: function () {
+        return new Promise(function (resolve) {
+            setTimeout(function () {
+                resolve({
+                    environment: { i18n: { lang: window.__yaStub.lang } },
+                    features: {
+                        LoadingAPI: { ready: function () { window.__yaStub.calls.push("ready"); } },
+                        GameplayAPI: {
+                            start: function () { window.__yaStub.calls.push("start"); },
+                            stop: function () { window.__yaStub.calls.push("stop"); }
+                        }
+                    }
+                });
+            }, %d);
+        });
+    }
+};
+""" % YA_STUB_DELAY_MS
+
+
+def scenario_yasdk(s):
+    """D1: мост к SDK Яндекс.Игр под фальшивым YaGames.
+
+    Настоящую песочницу платформы локально не поднять, поэтому здесь проверяется
+    ровно то, что от игры зависит: КАКИЕ вызовы и в КАКОМ ПОРЯДКЕ уходят в SDK,
+    и что язык игрока с платформы бьёт всё остальное. Прогон в песочнице Я.Игр
+    этим НЕ заменяется и остаётся открытым пунктом D1.
+
+    Фальшивку ставим через add_init_script — она обязана существовать до первого
+    скрипта страницы, иначе мост в шаблоне не увидит YaGames и уйдёт в "absent"
+    (та же ошибка, что уже ловилась на гонке звука: page.evaluate поздно).
+    Сам /sdk.js при этом честно отдаёт 404 — заодно видно, что 404 не фатален.
+
+    Порядок частей важен: снимок БЕЗ SDK снимается первым, потому что
+    add_init_script остаётся на все последующие переходы страницы.
+    """
+    base = s.url.split("?")[0]
+
+    # --- 1. Без SDK, ?lang=en: как игра выглядит без платформы.
+    s.page.goto(f"{base}?lang=en")
+    s.boot()
+    s.press_play()
+    s.wait(2, "раздача осела")
+    en_shot = s.patch(907, 56, 35, 28)      # кнопка RESTART в рельсе
+    s.shot("rail-no-sdk")
+
+    # --- 2. С SDK. Язык платформы ru, а в адресе по-прежнему ?lang=en:
+    # если приоритет перепутан, подпись останется английской.
+    s.page.add_init_script(YA_STUB)
+    s.page.goto(f"{base}?lang=en")
+    # Лог накопительный, и часть 1 уже положила туда свою строку про язык.
+    # Дальше смотрим только то, что напечатала ЭТА загрузка страницы.
+    mark = len(s.log)
+    s.boot()
+
+    def calls():
+        return s.page.evaluate("window.__yaStub.calls.join(',')")
+
+    # Пока промис молчит, игра обязана жить по прежним правилам: язык из ?lang=,
+    # платформе ещё ничего не ушло. Это же доказывает, что дальше меряется
+    # ПОЗДНИЙ приход языка, а не совпадение.
+    early = [e["text"] for e in s.log[mark:] if "[I18N] язык: " in e["text"]]
+    s.expect(early and early[0].strip().endswith("en"),
+             f"до ответа SDK язык должен быть en из ?lang=, а был: {early[:1]}")
+    s.expect(calls() == "",
+             f"до ответа SDK платформе уже что-то ушло: {calls()}")
+
+    # Ждём именно ru: курсор wait_for_log стоит с прошлой части сценария, и
+    # шаблон (\w+) немедленно поймал бы старую строку про en (замерено).
+    got = s.wait_for_log(r"\[I18N\] язык: ru", 20, "язык от SDK")
+    s.expect(got, "язык от SDK не доехал до подписей: перекраски по language_ready не было")
+    s.note("ya", f"мост: {s.page.evaluate('window.__ya ? window.__ya.trace() : \"нет моста\"')}")
+    s.expect(calls() == "ready",
+             f"после ответа SDK платформе должен уйти ровно LoadingAPI.ready, ушло: {calls()}")
+
+    s.press_play()
+    s.wait(2, "раздача осела")
+    s.expect(calls() == "ready,start",
+             f"начало партии должно дать GameplayAPI.start, получили: {calls()}")
+
+    ru_shot = s.patch(907, 56, 35, 28)
+    s.shot("rail-sdk-ru")
+    s.expect(en_shot != ru_shot,
+             "подпись кнопки одинакова с ?lang=en и с языком SDK ru — приоритет языка не работает")
+
+    # --- 3. Вкладка ушла в фон → геймплей остановлен, вернулась → возобновлён.
+    s.page.evaluate(
+        "Object.defineProperty(document, 'hidden', {value: true, configurable: true});"
+        "document.dispatchEvent(new Event('visibilitychange'));")
+    s.wait(0.5, "фон")
+    s.expect(calls() == "ready,start,stop",
+             f"уход вкладки в фон не остановил геймплей: {calls()}")
+
+    s.page.evaluate(
+        "Object.defineProperty(document, 'hidden', {value: false, configurable: true});"
+        "document.dispatchEvent(new Event('visibilitychange'));")
+    s.wait(0.5, "возврат")
+    s.expect(calls() == "ready,start,stop,start",
+             f"возврат вкладки не возобновил геймплей: {calls()}")
+
+    # --- 4. Повторный старт уровня не шлёт второй start подряд.
+    s.click_game(*RESTART_BUTTON, label="RESTART")
+    s.wait(2, "уровень перезагрузился")
+    s.expect(calls() == "ready,start,stop,start",
+             f"рестарт внутри партии продублировал start: {calls()}")
+    s.note("ya", f"цепочка после части 4: {calls()}")
+
+    # --- 5. Игрок нажал PLAY РАНЬШЕ, чем ответил SDK. Платформе всё равно
+    # сначала должен уйти LoadingAPI.ready («игра загрузилась»), и только потом
+    # GameplayAPI.start. Эту дыру нашёл сам сценарий, когда SDK стал медленным:
+    # до правки уходило start,ready.
+    s.page.goto(f"{base}?lang=en")
+    s.boot()
+    s.press_play()
+    s.expect(calls() == "",
+             f"SDK ещё молчит, а платформе уже что-то ушло: {calls()}")
+    s.wait(YA_STUB_DELAY_MS / 1000.0, "SDK наконец ответил")
+    s.expect(calls() == "ready,start",
+             f"порядок для платформы нарушен, ожидали ready,start: {calls()}")
+    s.note("ya", f"ранний PLAY: {calls()}")
+
+    # --- 6. Негативный контроль осознанного расхождения со сторожем звука.
+    # Звук гаснет и по потере ФОКУСА (клик в адресную строку), а геймплей —
+    # только по уходу вкладки в фон, иначе в метрики Яндекса полетит start/stop
+    # на каждый клик мимо канваса. Проверяется тем, что игра БЕЗ ФОКУСА, но на
+    # переднем плане, всё равно даёт GameplayAPI.start.
+    #
+    # ⚠ Синтетический window.dispatchEvent(new Event('blur')) здесь НЕ годится
+    # и раньше стоял тут зря: он не меняет document.hasFocus(), поэтому мутация
+    # «гасить геймплей и по фокусу» его проходила (замерено). Фокус подменяем до
+    # первого скрипта страницы, как в сценарии focus.
+    s.page.add_init_script(
+        "Object.defineProperty(document, 'hasFocus', {value: function () { return false; },"
+        " configurable: true});")
+    s.page.goto(f"{base}?lang=en")
+    s.boot()
+    s.wait(YA_STUB_DELAY_MS / 1000.0, "SDK ответил")
+    s.press_play()
+    s.wait(1, "старт партии дошёл до моста")
+    s.expect(calls() == "ready,start",
+             f"вкладка без фокуса, но на переднем плане — геймплей обязан идти: {calls()}")
+    s.note("ya", f"без фокуса: {calls()}")
+
+
 SCENARIOS = {"boot": scenario_boot, "hittest": scenario_hittest,
              "stuck": scenario_stuck, "win": scenario_win,
              "freecell": scenario_freecell, "census": scenario_census,
              "focus": scenario_focus, "audiobg": scenario_audiobg,
              "debugkeys": scenario_debugkeys, "restartrace": scenario_restartrace,
-             "i18n": scenario_i18n}
+             "i18n": scenario_i18n, "yasdk": scenario_yasdk}
 
 
 def main():
