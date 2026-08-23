@@ -27,11 +27,31 @@ local STATIC_LABELS = {
     tutorial_skip_text = "skip",
 }
 
+-- Тексты экрана победы зависят от режима (туториал / обычная партия), поэтому
+-- живут отдельной функцией: их проставляет и сам экран победы, и перекраска
+-- языка. Раньше они были заинлайнены в update, и при позднем языке от SDK
+-- заголовок оставался на старом языке рядом с уже переведённой кнопкой MENU
+-- (находка внешнего ревью D1).
+local function apply_victory_texts()
+    if tutorial_state.is_tutorial then
+        gui.set_text(gui.get_node("text1"), i18n.t("well_done"))
+        gui.set_text(gui.get_node("text"), i18n.t("play_now"))
+    else
+        gui.set_text(gui.get_node("text1"), i18n.t("victory"))
+        gui.set_text(gui.get_node("text"), i18n.t("play_again"))
+    end
+end
+
 local function apply_language()
     i18n.set_lang(i18n.detect())
     for node_id, key in pairs(STATIC_LABELS) do
         gui.set_text(gui.get_node(node_id), i18n.t(key))
     end
+    -- Динамические подписи тоже перекрашиваем: язык от SDK приезжает асинхронно
+    -- и может застать открытым туториал или экран победы. Ноды могут быть
+    -- выключены — gui.set_text это не мешает.
+    update_tutorial_hint(tutorial_state.step)
+    apply_victory_texts()
     print("[I18N] язык: " .. tostring(i18n.lang))
 end
 
@@ -161,6 +181,9 @@ function update(self, dt)
     end
     if tutorial_state.show_victory then
         tutorial_state.show_victory = false
+        -- D1: партия окончена — для платформы геймплей кончился здесь, а не
+        -- когда игрок уйдёт в меню. Уровень под оверлеем ещё загружен.
+        msg.post("/main#game_manager", "gameplay_over")
         local overlay = gui.get_node("victory_overlay")
         local title = gui.get_node("text1")
         local btn_play = gui.get_node("victory_restart")
@@ -177,13 +200,7 @@ function update(self, dt)
         gui.set_enabled(gui.get_node("restart_button"), false)
         gui.set_enabled(gui.get_node("tutorial_button"), false)
 
-        if tutorial_state.is_tutorial then
-            gui.set_text(title, i18n.t("well_done"))
-            gui.set_text(gui.get_node("text"), i18n.t("play_now"))
-        else
-            gui.set_text(title, i18n.t("victory"))
-            gui.set_text(gui.get_node("text"), i18n.t("play_again"))
-        end
+        apply_victory_texts()
 
         gui.set_enabled(overlay, true)
 
@@ -211,4 +228,9 @@ function update(self, dt)
 end
 
 function on_message(self, message_id, message)
+    -- D1: SDK ответил язык игрока уже после init — подписи перекрашиваем.
+    -- apply_language идемпотентна: пишет тексты по тем же ключам заново.
+    if message_id == hash("language_ready") then
+        apply_language()
+    end
 end

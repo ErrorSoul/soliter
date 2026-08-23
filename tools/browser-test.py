@@ -367,7 +367,19 @@ def scenario_win(s):
     `debug_replay` (key R) plans from a live snapshot and then emits the same
     drop_success/move_stack messages a human drag emits, so this exercises the
     whole message flow -- auto-flights, dragon collection, auto-finish -- and
-    prints its own verdict from foundation_top."""
+    prints its own verdict from foundation_top.
+
+    Здесь же живёт единственная сквозная проверка D1 «победа гасит геймплей для
+    платформы»: фальшивый SDK ставится тем же add_init_script, что в `yasdk`.
+    Так решено после того, как ОБА внешних ревьюера показали одну и ту же дыру:
+    в `yasdk` единственный `stop` приходит от `visibilitychange`, то есть изнутри
+    JS, и мутация «мост глотает gameplay(false)» проходила и юниты, и стенд.
+    Победа — единственный путь, где `gameplay(false)` уходит из Lua, а до победы
+    доезжает только этот сценарий: дублировать сюда всю езду ради отдельного
+    сценария дороже, чем три строки проверки в конце.
+    """
+    s.page.add_init_script(YA_STUB)
+    s.page.goto(s.url)
     s.boot()
     s.press_play()
     s.shot("dealt")
@@ -387,6 +399,17 @@ def scenario_win(s):
             s.expect(result, "replay never reported a verdict (stalled mid-line)")
             s.expect(result and "WIN" in result,
                      f"replay finished without a win: {result}")
+
+            # D1: партия кончилась — платформе обязан уйти GameplayAPI.stop.
+            # Вкладку тут никто не прятал, поэтому единственный источник stop —
+            # цепочка ui.gui_script → gameplay_over → game_manager → мост.
+            s.wait(1.5, "оверлей победы поднялся, сообщение дошло")
+            calls = s.page.evaluate("window.__yaStub.calls.join(',')")
+            s.note("ya", f"цепочка вызовов платформы за партию: {calls}")
+            s.expect(calls.endswith("stop"),
+                     f"победа не погасила геймплей для платформы: {calls}")
+            s.expect(calls.startswith("ready,start"),
+                     f"порядок вызовов за партию нарушен: {calls}")
             return
         s.key("Space", "new deal")  # playwright key name, not "space"
         s.wait(3, "re-deal")
@@ -911,12 +934,214 @@ def scenario_census(s):
            f"а не регрессия")
 
 
+# Фальшивый SDK платформы. Промис разрешается НАМЕРЕННО ПОЗДНО: без задержки он
+# успевает ответить раньше, чем ui.gui_script нарисует подписи в init, и сценарий
+# зеленел бы даже без перекраски по language_ready (замерено — так и было).
+# 20 с заведомо больше, чем занимают загрузка движка и раздача, поэтому окно
+# «SDK ещё думает, а игрок уже играет» гарантированно существует.
+YA_STUB_DELAY_MS = 20000
+YA_STUB = """
+window.__yaStub = { calls: [], lang: "ru" };
+window.YaGames = {
+    init: function () {
+        return new Promise(function (resolve) {
+            setTimeout(function () {
+                resolve({
+                    environment: { i18n: { lang: window.__yaStub.lang } },
+                    features: {
+                        LoadingAPI: { ready: function () { window.__yaStub.calls.push("ready"); } },
+                        GameplayAPI: {
+                            start: function () { window.__yaStub.calls.push("start"); },
+                            stop: function () { window.__yaStub.calls.push("stop"); }
+                        }
+                    }
+                });
+            }, %d);
+        });
+    }
+};
+""" % YA_STUB_DELAY_MS
+
+
+def scenario_yasdk(s):
+    """D1: мост к SDK Яндекс.Игр под фальшивым YaGames.
+
+    Настоящую песочницу платформы локально не поднять, поэтому здесь проверяется
+    ровно то, что от игры зависит: КАКИЕ вызовы и в КАКОМ ПОРЯДКЕ уходят в SDK и
+    доезжает ли язык игрока до подписей. Прогон в песочнице Я.Игр этим НЕ
+    заменяется и остаётся открытым пунктом D1.
+
+    Фальшивку ставим через add_init_script — она обязана существовать до первого
+    скрипта страницы, иначе мост в шаблоне не увидит YaGames и уйдёт в "absent"
+    (та же ошибка, что уже ловилась на гонке звука: page.evaluate поздно). Сам
+    /sdk.js при этом честно отдаёт 404 — заодно видно, что 404 не фатален.
+
+    Вердикты берутся из ПИКСЕЛЕЙ и из счётчика вызовов в самой фальшивке, а не
+    из консоли движка: в release-сборке движок в консоль молчит, и сценарий,
+    завязанный на его print, там был бы слепым. Поэтому гонять можно на обоих
+    бандлах.
+
+    Порядок частей важен: снимок БЕЗ SDK снимается первым, потому что
+    add_init_script остаётся на все последующие переходы страницы.
+    """
+    base = s.url.split("?")[0]
+    RAIL = (907, 56, 35, 28)   # кнопка RESTART в рельсе
+    BOARD = (480, 300, 380, 200)   # весь игровой стол
+
+    # Ни boot(), ни press_play() тут не годятся: обе ждут print движка, а
+    # release молчит в консоль. Ждём время и судим по столу.
+    def boot():
+        s.wait(6, "движок грузится")
+        s.measure()
+
+    def play(label):
+        before = s.patch(*BOARD)
+        s.click_game(*PLAY_BUTTON, label="PLAY")
+        s.wait(4, "раздача осела")
+        s.expect(s.patch(*BOARD) != before, f"{label}: PLAY не разложил стол")
+
+    # --- 1. Без SDK, ?lang=en: как игра выглядит без платформы.
+    s.page.goto(f"{base}?lang=en")
+    boot()
+    play("без SDK")
+    en_shot = s.patch(*RAIL)
+    s.shot("rail-no-sdk")
+
+    # --- 2. С SDK. Язык платформы ru, а в адресе по-прежнему ?lang=en: если
+    # приоритет перепутан, подпись останется английской. SDK отвечает нарочно
+    # медленно, поэтому PLAY успевает случиться РАНЬШЕ ответа — и это же
+    # проверяет порядок вызовов для платформы.
+    s.page.add_init_script(YA_STUB)
+    s.page.goto(f"{base}?lang=en")
+    boot()
+
+    def calls():
+        return s.page.evaluate("window.__yaStub.calls.join(',')")
+
+    def trace():
+        return s.page.evaluate("window.__ya ? window.__ya.trace() : 'нет моста'")
+
+    play("SDK ещё думает")
+    s.expect(calls() == "", f"SDK ещё молчит, а платформе уже что-то ушло: {calls()}")
+    pending_shot = s.patch(*RAIL)
+    s.expect(pending_shot == en_shot,
+             "пока SDK не ответил, подпись обязана остаться прежней (en из ?lang=)")
+
+    s.wait(15, "SDK наконец ответил")
+    s.note("ya", f"мост: {trace()}")
+    # Порядок для платформы: сначала «игра загрузилась», потом «начался геймплей».
+    # Дыру нашёл сам сценарий, когда SDK стал медленным: уходило start,ready.
+    s.expect(calls() == "ready,start",
+             f"порядок для платформы нарушен, ожидали ready,start: {calls()}")
+
+    ru_shot = s.patch(*RAIL)
+    s.shot("rail-sdk-ru")
+    s.expect(en_shot != ru_shot,
+             "подпись кнопки одинакова с ?lang=en и с языком SDK ru — либо приоритет "
+             "языка не работает, либо подписи не перекрасили по language_ready")
+
+    # --- 3. Вкладка ушла в фон → геймплей остановлен, вернулась → возобновлён.
+    s.page.evaluate(
+        "Object.defineProperty(document, 'hidden', {value: true, configurable: true});"
+        "document.dispatchEvent(new Event('visibilitychange'));")
+    s.wait(0.5, "фон")
+    s.expect(calls() == "ready,start,stop",
+             f"уход вкладки в фон не остановил геймплей: {calls()}")
+
+    s.page.evaluate(
+        "Object.defineProperty(document, 'hidden', {value: false, configurable: true});"
+        "document.dispatchEvent(new Event('visibilitychange'));")
+    s.wait(0.5, "возврат")
+    s.expect(calls() == "ready,start,stop,start",
+             f"возврат вкладки не возобновил геймплей: {calls()}")
+
+    # --- 4. Повторный старт уровня не шлёт второй start подряд.
+    s.click_game(*RESTART_BUTTON, label="RESTART")
+    s.wait(2, "уровень перезагрузился")
+    s.expect(calls() == "ready,start,stop,start",
+             f"рестарт внутри партии продублировал start: {calls()}")
+    s.note("ya", f"цепочка после части 4: {calls()}")
+
+    # --- 5. Негативный контроль осознанного расхождения со сторожем звука.
+    # Звук гаснет и по потере ФОКУСА (клик в адресную строку), а геймплей —
+    # только по уходу вкладки в фон, иначе в метрики Яндекса полетит start/stop
+    # на каждый клик мимо канваса. Проверяется тем, что игра БЕЗ ФОКУСА, но на
+    # переднем плане, всё равно даёт GameplayAPI.start.
+    #
+    # ⚠ Синтетический window.dispatchEvent(new Event('blur')) здесь НЕ годится
+    # и сначала стоял тут зря: он не меняет document.hasFocus(), поэтому мутация
+    # «гасить геймплей и по фокусу» его проходила (замерено). Фокус подменяем до
+    # первого скрипта страницы, как в сценарии focus.
+    s.page.add_init_script(
+        "Object.defineProperty(document, 'hasFocus', {value: function () { return false; },"
+        " configurable: true});")
+    s.page.goto(f"{base}?lang=en")
+    boot()
+    s.wait(YA_STUB_DELAY_MS / 1000.0, "SDK ответил")
+    play("без фокуса")
+    s.expect(calls() == "ready,start",
+             f"вкладка без фокуса, но на переднем плане — геймплей обязан идти: {calls()}")
+    s.note("ya", f"без фокуса: {calls()}")
+
+
+def scenario_resize(s):
+    """Требование Я.Игр (раздел 2): игра корректно рендерится при ресайзе окна,
+    а на мобиле прогресс не теряется при смене ориентации.
+
+    Это единственная проверка ресайза как СОБЫТИЯ: `hittest` гоняется на разных
+    вьюпортах, но каждый раз с нуля — окно там не меняется по ходу партии, и
+    сброс раздачи на ресайзе он бы не заметил.
+
+    Оракул — вектор глубин восьми колонок: они обязаны пережить ресайз без
+    изменений. Ограничение метода честно: по пикселям НЕ видно, какие именно
+    карты лежат, поэтому раздача, случайно совпавшая по глубинам, прошла бы. На
+    debug-сборке к этому добавляется прямая проверка, что уровень не грузился
+    заново. В конце — негативный контроль: принудительная пересдача обязана
+    вектор глубин сломать, иначе весь сценарий ничего не различает.
+    """
+    s.boot()
+    s.press_play()
+    s.wait(2, "раздача осела")
+    felt = s.brightness(*FREE_CELL[1])   # пустая ячейка = эталон сукна
+
+    def depths(label):
+        s.measure()
+        v = [s.exposed_depth(c, felt) for c in range(1, 9)]
+        s.note("depths", f"{label}: {v}")
+        return v
+
+    before = depths("960x540")
+    s.expect(any(d is not None for d in before),
+             "стол пуст ещё до ресайза — сравнивать нечего")
+    deals_before = len(s.logs_matching(r"I am MAIN SCRIPT"))
+    s.shot("before-resize")
+
+    for w, h in ((1200, 540), (800, 600), (960, 540)):
+        s.page.set_viewport_size({"width": w, "height": h})
+        s.wait(2, f"ресайз {w}x{h} осел")
+        s.shot(f"resized-{w}x{h}")
+        s.expect(depths(f"{w}x{h}") == before,
+                 f"после ресайза {w}x{h} раздача изменилась — прогресс потерян")
+
+    if deals_before:   # debug-сборка: движок печатает
+        s.expect(len(s.logs_matching(r"I am MAIN SCRIPT")) == deals_before,
+                 "ресайз перезагрузил уровень — прогресс потерян")
+
+        # Негативный контроль: пересдача обязана сломать вектор глубин, иначе
+        # проверка выше зеленела бы и на потерянном прогрессе.
+        s.key("Space", "пересдача")
+        s.wait(3, "новая раздача осела")
+        s.expect(depths("после пересдачи") != before,
+                 "вектор глубин не различает даже полную пересдачу — оракул слепой")
+
+
 SCENARIOS = {"boot": scenario_boot, "hittest": scenario_hittest,
              "stuck": scenario_stuck, "win": scenario_win,
              "freecell": scenario_freecell, "census": scenario_census,
              "focus": scenario_focus, "audiobg": scenario_audiobg,
              "debugkeys": scenario_debugkeys, "restartrace": scenario_restartrace,
-             "i18n": scenario_i18n}
+             "i18n": scenario_i18n, "yasdk": scenario_yasdk,
+             "resize": scenario_resize}
 
 
 def main():

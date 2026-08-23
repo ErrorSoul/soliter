@@ -1926,4 +1926,161 @@ H.test("G3 та же колонка в правильном порядке ав�
 end)
 
 
+-- Победа и цветок (внешнее ревью 2026-08-23, подтверждено зондом на живых
+-- функциях main.script). Две дыры в правиле победы, разные по природе:
+--   1. board_cleared не смотрел на цветок вообще. 27 номиналов в foundation,
+--      драконов нет, ячейки пусты — а цветок ещё в колонке, и это считалось
+--      чистым столом. Victory уходил на кадр раньше, чем цветок улетал.
+--   2. Уступка авто-сбора объявляла победу «просто по 27 номиналам», не глядя
+--      на ячейки: карта в незапечатанной ячейке (цветок, пойманный в окно H6)
+--      давала Victory при живом ходе у игрока.
+-- Ветку с живыми ДРАКОНАМИ трогать нельзя: это осознанный запасной выход G2a,
+-- его держат шесть тестов выше — здесь он пинуется явно, чтобы правку «привести
+-- всё к board_cleared» нельзя было сделать молча.
+local function board27(fields)
+   local self = {
+      base_cards_count = 27,
+      free_cell_state = { {}, {}, {} },
+      tableau_stacks = {},
+      states = { WIN = "win" }, currentState = "play",
+      tutorial_mode = false, cursor = "cursor",
+   }
+   for i = 1, 8 do self['tableau_stacks'][i] = { slot_id = "tableau_slot" .. i, cards = {} } end
+   for k, v in pairs(fields or {}) do self[k] = v end
+   return self
+end
+
+H.test("победа: цветок ещё в колонке — стол НЕ чист", function()
+   load_script("main/Scripts/main.script")
+   local self = board27({ flower_collected = false })
+   self.tableau_stacks[1].cards = {
+      { id = "go_f", data = { value = "f", suit = "flower", is_flower = true } },
+   }
+   if board_cleared(self) then
+      return false, "цветок на столе, а board_cleared говорит «чисто» — Victory уйдёт раньше его полёта"
+   end
+   -- ...а как только он сел в свой слот — чисто.
+   self.tableau_stacks[1].cards = {}
+   self.flower_collected = true
+   if not board_cleared(self) then
+      return false, "цветок сел, стол пуст, а победа так и не признана"
+   end
+   return true
+end)
+
+H.test("победа: уступка не засчитывает партию при живой карте в ячейке", function()
+   load_script("main/Scripts/main.script")
+   local self = board27({
+      auto_collecting = true,
+      auto_collect_wait = 99,          -- бюджет ожидания давно вышел
+      flower_collected = false,
+      free_cell_state = {
+         { card = { id = "go_f", data = { value = "f", suit = "flower" } }, is_blocked = false },
+         {}, {},
+      },
+   })
+   auto_collect_give_up(self)
+   if self.currentState == "win" then
+      return false, "карта в незапечатанной ячейке, у игрока есть ход — а партия уже засчитана"
+   end
+   return true
+end)
+
+H.test("победа: запасной выход G2a остаётся — драконы на столе партию засчитывают", function()
+   load_script("main/Scripts/main.script")
+   local self = board27({
+      auto_collecting = true,
+      auto_collect_wait = 99,
+      flower_collected = true,
+   })
+   self.tableau_stacks[1].cards = {
+      { id = "go_d", data = { value = "d", suit = "red", is_dragon = true } },
+   }
+   auto_collect_give_up(self)
+   if self.currentState ~= "win" then
+      return false, "собрать нечем и сдвинуть некуда — это тупик, партия обязана засчитаться (G2a)"
+   end
+   return true
+end)
+
+
+-- Доска L6 целиком: цветок ЗАКОПАН под драконом, ни одной пустой колонки, ячейки
+-- пусты. Обе внешние модели назвали одно: решение «уступка не требует ни цветка,
+-- ни пустого стола» держал ровно один старый тест, а этой формы в фикстурах не
+-- было вообще. Тест фиксирует ПРИНЯТОЕ поведение, а не желаемое:
+--
+--   * уступка засчитывает партию (запасной выход G2a);
+--   * по духу G2a («ходов нет») это натяжка: ячейки пусты, игрок мог бы
+--     припарковать покрывающего дракона и раскопать цветок;
+--   * но легальной игрой такую доску воспроизвести не удалось НИКОМУ:
+--     grok-4.6 — свой зонд на rules.deal/solve: `[flower,dragon]` бывает только
+--     из раздачи (дракона на цветок не положить), таких раздач 41 из 500; на
+--     7 из 15 «покрывающего не снимаем» партий foundation=27 достигается при
+--     закопанном цветке — и во ВСЕХ семи есть пустая колонка, то есть авто-сбор
+--     раскапывает; упакованный стол (0 пустых колонок) не получился;
+--     grok-4.5 — сиды 1..500: форма не встретилась ни разу;
+--     мой probe_dragon_unblock (сиды 1..300) этот край НЕ покрывает вовсе —
+--     его settle() поднимает только верхушечный цветок.
+--
+-- Если поведение решат менять (парковать дракона в ячейку, см. L6), этот тест
+-- обязан упасть — он и написан, чтобы менять его пришлось осознанно.
+H.test("победа: доска L6 (цветок под драконом, нет пустых колонок) — принятый G2a", function()
+   load_script("main/Scripts/main.script")
+   local function dragon(suit)
+      return { id = "go_d_" .. suit .. tostring(math.random(1e6)),
+               data = { value = "d", suit = suit, is_dragon = true } }
+   end
+   local self = board27({ auto_collecting = true, auto_collect_wait = 99, flower_collected = false })
+   local cols = {
+      { { id = "go_f", data = { value = "f", suit = "flower", is_flower = true } }, dragon("red") },
+      { dragon("red") }, { dragon("red") },
+      { dragon("red"), dragon("blue") },
+      { dragon("blue") }, { dragon("blue") },
+      { dragon("blue"), dragon("green") },
+      { dragon("green"), dragon("green"), dragon("green") },
+   }
+   for i = 1, 8 do self.tableau_stacks[i].cards = cols[i] end
+
+   -- Предпосылки доски: сдвигать некуда и собирать нечего.
+   local card_to_move = dragon_relocation(self)
+   if card_to_move then
+      return false, "фикстура сломалась: пустая колонка нашлась, доска уже не тот край"
+   end
+   if dragons_left(self) ~= 12 then
+      return false, "фикстура сломалась: живых драконов " .. dragons_left(self) .. " вместо 12"
+   end
+
+   auto_collect_give_up(self)
+   if self.currentState ~= "win" then
+      return false, "принятое поведение G2a изменилось: партия больше не засчитывается. "
+         .. "Если это осознанно — правь тест вместе с решением, а не молча"
+   end
+   return true
+end)
+
+-- Зеркало цветка: обработчик flower_collected — единственное место, где
+-- выставляется флаг, от которого теперь зависит board_cleared. Без этого теста
+-- «обработчик ничего не делает» оставляло сьют полностью зелёным (находка
+-- grok-4.6): победа всё равно приходила бы, но через уступку и на 2 секунды
+-- позже, то есть правило board_cleared было бы мёртвым.
+H.test("победа: flower_collected — единственный источник флага, и он живой", function()
+   load_script("main/Scripts/main.script")
+   local self = board27({ auto_collecting = true, auto_collect_wait = 1.5, flower_collected = false })
+   if board_cleared(self) then
+      return false, "фикстура: стол уже считается чистым до посадки цветка"
+   end
+   on_message(self, hash("flower_collected"), {}, "flower_slot")
+   if not self.flower_collected then
+      return false, "обработчик не выставил флаг — board_cleared стал недостижим"
+   end
+   if (self.auto_collect_wait or 0) ~= 0 then
+      return false, "посадка цветка не обнулила таймер простоя: " .. tostring(self.auto_collect_wait)
+   end
+   if not board_cleared(self) then
+      return false, "цветок сел, стол пуст, а board_cleared всё ещё говорит «не чисто»"
+   end
+   return true
+end)
+
+
 return H
