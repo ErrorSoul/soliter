@@ -2004,4 +2004,83 @@ H.test("победа: запасной выход G2a остаётся — др�
 end)
 
 
+-- Доска L6 целиком: цветок ЗАКОПАН под драконом, ни одной пустой колонки, ячейки
+-- пусты. Обе внешние модели назвали одно: решение «уступка не требует ни цветка,
+-- ни пустого стола» держал ровно один старый тест, а этой формы в фикстурах не
+-- было вообще. Тест фиксирует ПРИНЯТОЕ поведение, а не желаемое:
+--
+--   * уступка засчитывает партию (запасной выход G2a);
+--   * по духу G2a («ходов нет») это натяжка: ячейки пусты, игрок мог бы
+--     припарковать покрывающего дракона и раскопать цветок;
+--   * но легальной игрой такую доску воспроизвести не удалось НИКОМУ:
+--     grok-4.6 — свой зонд на rules.deal/solve: `[flower,dragon]` бывает только
+--     из раздачи (дракона на цветок не положить), таких раздач 41 из 500; на
+--     7 из 15 «покрывающего не снимаем» партий foundation=27 достигается при
+--     закопанном цветке — и во ВСЕХ семи есть пустая колонка, то есть авто-сбор
+--     раскапывает; упакованный стол (0 пустых колонок) не получился;
+--     grok-4.5 — сиды 1..500: форма не встретилась ни разу;
+--     мой probe_dragon_unblock (сиды 1..300) этот край НЕ покрывает вовсе —
+--     его settle() поднимает только верхушечный цветок.
+--
+-- Если поведение решат менять (парковать дракона в ячейку, см. L6), этот тест
+-- обязан упасть — он и написан, чтобы менять его пришлось осознанно.
+H.test("победа: доска L6 (цветок под драконом, нет пустых колонок) — принятый G2a", function()
+   load_script("main/Scripts/main.script")
+   local function dragon(suit)
+      return { id = "go_d_" .. suit .. tostring(math.random(1e6)),
+               data = { value = "d", suit = suit, is_dragon = true } }
+   end
+   local self = board27({ auto_collecting = true, auto_collect_wait = 99, flower_collected = false })
+   local cols = {
+      { { id = "go_f", data = { value = "f", suit = "flower", is_flower = true } }, dragon("red") },
+      { dragon("red") }, { dragon("red") },
+      { dragon("red"), dragon("blue") },
+      { dragon("blue") }, { dragon("blue") },
+      { dragon("blue"), dragon("green") },
+      { dragon("green"), dragon("green"), dragon("green") },
+   }
+   for i = 1, 8 do self.tableau_stacks[i].cards = cols[i] end
+
+   -- Предпосылки доски: сдвигать некуда и собирать нечего.
+   local card_to_move = dragon_relocation(self)
+   if card_to_move then
+      return false, "фикстура сломалась: пустая колонка нашлась, доска уже не тот край"
+   end
+   if dragons_left(self) ~= 12 then
+      return false, "фикстура сломалась: живых драконов " .. dragons_left(self) .. " вместо 12"
+   end
+
+   auto_collect_give_up(self)
+   if self.currentState ~= "win" then
+      return false, "принятое поведение G2a изменилось: партия больше не засчитывается. "
+         .. "Если это осознанно — правь тест вместе с решением, а не молча"
+   end
+   return true
+end)
+
+-- Зеркало цветка: обработчик flower_collected — единственное место, где
+-- выставляется флаг, от которого теперь зависит board_cleared. Без этого теста
+-- «обработчик ничего не делает» оставляло сьют полностью зелёным (находка
+-- grok-4.6): победа всё равно приходила бы, но через уступку и на 2 секунды
+-- позже, то есть правило board_cleared было бы мёртвым.
+H.test("победа: flower_collected — единственный источник флага, и он живой", function()
+   load_script("main/Scripts/main.script")
+   local self = board27({ auto_collecting = true, auto_collect_wait = 1.5, flower_collected = false })
+   if board_cleared(self) then
+      return false, "фикстура: стол уже считается чистым до посадки цветка"
+   end
+   on_message(self, hash("flower_collected"), {}, "flower_slot")
+   if not self.flower_collected then
+      return false, "обработчик не выставил флаг — board_cleared стал недостижим"
+   end
+   if (self.auto_collect_wait or 0) ~= 0 then
+      return false, "посадка цветка не обнулила таймер простоя: " .. tostring(self.auto_collect_wait)
+   end
+   if not board_cleared(self) then
+      return false, "цветок сел, стол пуст, а board_cleared всё ещё говорит «не чисто»"
+   end
+   return true
+end)
+
+
 return H
