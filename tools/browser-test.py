@@ -1135,13 +1135,74 @@ def scenario_resize(s):
                  "вектор глубин не различает даже полную пересдачу — оракул слепой")
 
 
+def scenario_dealrng(s):
+    """D4: две раздачи, попавшие в одну секунду, обязаны быть РАЗНЫМИ.
+
+    `shuffle_deck` сидировал генератор на каждую раздачу через `os.time()`, а
+    тот идёт целыми секундами: два рестарта подряд брали один seed и давали
+    побайтово одинаковую колоду. Пиксельные оракулы этого не видят —
+    `restartrace` сравнивает стол с тем, что было ДО серии рестартов, и восемь
+    одинаковых раздач подряд проходят у него как «стол изменился».
+
+    Оракул — отпечаток разложенного стола из debug-лога вместе с `os.time()`
+    той же раздачи. Сценарий сперва доказывает, что вообще попал в окно (есть
+    хотя бы одна секунда с ДВУМЯ раздачами) и только потом требует, чтобы их
+    отпечатки различались. Без первой проверки зелёный результат означал бы
+    всего лишь «мы нажимали слишком медленно, чтобы столкнуться».
+
+    Только debug-сборка: отпечаток печатает `deal_cards` под `debug_flags`.
+    """
+    s.boot()
+    s.press_play()
+    # Не wait_for_log: press_play возвращается уже ПОСЛЕ первой раздачи, и её
+    # строку курсор лога успевает пройти — первый прогон сценария из-за этого
+    # ругался «отпечатка нет», печатая отпечатки строкой выше.
+    s.expect(s.logs_matching(r"\[DEAL\] fingerprint="),
+             "раздача не напечатала отпечаток — сборка не debug или лог не тот")
+
+    # hold=40 мс вместо штатных 250: движок такое нажатие видит (замерено в
+    # restartrace), а раздачи ложатся плотнее — иначе на секунду приходится
+    # меньше двух пересдач и столкновению просто негде случиться.
+    for n in range(12):
+        s.key("Space", f"пересдача {n + 1}", hold=40)
+    s.wait(3, "последняя раздача осела")
+
+    rx = re.compile(r"\[DEAL\] fingerprint=(\d+) t=(\d+)")
+    deals = []
+    for e in s.logs_matching(r"\[DEAL\] fingerprint="):
+        m = rx.search(e["text"])
+        if m:
+            deals.append((m.group(1), int(m.group(2))))
+    s.expect(len(deals) >= 3, f"раздач в логе {len(deals)} — нажатия не дошли до движка")
+
+    by_sec = {}
+    for fp, t in deals:
+        by_sec.setdefault(t, []).append(fp)
+    crowded = {t: fps for t, fps in by_sec.items() if len(fps) >= 2}
+    s.note("deals", f"раздач {len(deals)}, разных секунд {len(by_sec)}, "
+                    f"секунд с ≥2 раздачами {len(crowded)}")
+    s.expect(crowded,
+             "ни одна секунда не собрала двух раздач — сценарий не попал в окно бага, "
+             "проверять нечего")
+    for t, fps in sorted(crowded.items()):
+        s.note("second", f"t={t}: раздач {len(fps)}, различных колод {len(set(fps))}")
+        s.expect(len(set(fps)) == len(fps),
+                 f"в секунду t={t} попало {len(fps)} раздач, а различных колод "
+                 f"{len(set(fps))} — генератор сидируется от os.time() на каждую раздачу")
+
+    all_fps = [fp for fp, _ in deals]
+    s.expect(len(set(all_fps)) == len(all_fps),
+             f"{len(all_fps)} раздач дали всего {len(set(all_fps))} различных колод — "
+             f"совпадение двух честных тасовок 40 карт невозможно")
+
+
 SCENARIOS = {"boot": scenario_boot, "hittest": scenario_hittest,
              "stuck": scenario_stuck, "win": scenario_win,
              "freecell": scenario_freecell, "census": scenario_census,
              "focus": scenario_focus, "audiobg": scenario_audiobg,
              "debugkeys": scenario_debugkeys, "restartrace": scenario_restartrace,
              "i18n": scenario_i18n, "yasdk": scenario_yasdk,
-             "resize": scenario_resize}
+             "resize": scenario_resize, "dealrng": scenario_dealrng}
 
 
 def main():
