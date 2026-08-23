@@ -1926,4 +1926,82 @@ H.test("G3 та же колонка в правильном порядке ав�
 end)
 
 
+-- Победа и цветок (внешнее ревью 2026-08-23, подтверждено зондом на живых
+-- функциях main.script). Две дыры в правиле победы, разные по природе:
+--   1. board_cleared не смотрел на цветок вообще. 27 номиналов в foundation,
+--      драконов нет, ячейки пусты — а цветок ещё в колонке, и это считалось
+--      чистым столом. Victory уходил на кадр раньше, чем цветок улетал.
+--   2. Уступка авто-сбора объявляла победу «просто по 27 номиналам», не глядя
+--      на ячейки: карта в незапечатанной ячейке (цветок, пойманный в окно H6)
+--      давала Victory при живом ходе у игрока.
+-- Ветку с живыми ДРАКОНАМИ трогать нельзя: это осознанный запасной выход G2a,
+-- его держат шесть тестов выше — здесь он пинуется явно, чтобы правку «привести
+-- всё к board_cleared» нельзя было сделать молча.
+local function board27(fields)
+   local self = {
+      base_cards_count = 27,
+      free_cell_state = { {}, {}, {} },
+      tableau_stacks = {},
+      states = { WIN = "win" }, currentState = "play",
+      tutorial_mode = false, cursor = "cursor",
+   }
+   for i = 1, 8 do self['tableau_stacks'][i] = { slot_id = "tableau_slot" .. i, cards = {} } end
+   for k, v in pairs(fields or {}) do self[k] = v end
+   return self
+end
+
+H.test("победа: цветок ещё в колонке — стол НЕ чист", function()
+   load_script("main/Scripts/main.script")
+   local self = board27({ flower_collected = false })
+   self.tableau_stacks[1].cards = {
+      { id = "go_f", data = { value = "f", suit = "flower", is_flower = true } },
+   }
+   if board_cleared(self) then
+      return false, "цветок на столе, а board_cleared говорит «чисто» — Victory уйдёт раньше его полёта"
+   end
+   -- ...а как только он сел в свой слот — чисто.
+   self.tableau_stacks[1].cards = {}
+   self.flower_collected = true
+   if not board_cleared(self) then
+      return false, "цветок сел, стол пуст, а победа так и не признана"
+   end
+   return true
+end)
+
+H.test("победа: уступка не засчитывает партию при живой карте в ячейке", function()
+   load_script("main/Scripts/main.script")
+   local self = board27({
+      auto_collecting = true,
+      auto_collect_wait = 99,          -- бюджет ожидания давно вышел
+      flower_collected = false,
+      free_cell_state = {
+         { card = { id = "go_f", data = { value = "f", suit = "flower" } }, is_blocked = false },
+         {}, {},
+      },
+   })
+   auto_collect_give_up(self)
+   if self.currentState == "win" then
+      return false, "карта в незапечатанной ячейке, у игрока есть ход — а партия уже засчитана"
+   end
+   return true
+end)
+
+H.test("победа: запасной выход G2a остаётся — драконы на столе партию засчитывают", function()
+   load_script("main/Scripts/main.script")
+   local self = board27({
+      auto_collecting = true,
+      auto_collect_wait = 99,
+      flower_collected = true,
+   })
+   self.tableau_stacks[1].cards = {
+      { id = "go_d", data = { value = "d", suit = "red", is_dragon = true } },
+   }
+   auto_collect_give_up(self)
+   if self.currentState ~= "win" then
+      return false, "собрать нечем и сдвинуть некуда — это тупик, партия обязана засчитаться (G2a)"
+   end
+   return true
+end)
+
+
 return H

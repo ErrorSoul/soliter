@@ -1061,12 +1061,64 @@ def scenario_yasdk(s):
     s.note("ya", f"без фокуса: {calls()}")
 
 
+def scenario_resize(s):
+    """Требование Я.Игр (раздел 2): игра корректно рендерится при ресайзе окна,
+    а на мобиле прогресс не теряется при смене ориентации.
+
+    Это единственная проверка ресайза как СОБЫТИЯ: `hittest` гоняется на разных
+    вьюпортах, но каждый раз с нуля — окно там не меняется по ходу партии, и
+    сброс раздачи на ресайзе он бы не заметил.
+
+    Оракул — вектор глубин восьми колонок: они обязаны пережить ресайз без
+    изменений. Ограничение метода честно: по пикселям НЕ видно, какие именно
+    карты лежат, поэтому раздача, случайно совпавшая по глубинам, прошла бы. На
+    debug-сборке к этому добавляется прямая проверка, что уровень не грузился
+    заново. В конце — негативный контроль: принудительная пересдача обязана
+    вектор глубин сломать, иначе весь сценарий ничего не различает.
+    """
+    s.boot()
+    s.press_play()
+    s.wait(2, "раздача осела")
+    felt = s.brightness(*FREE_CELL[1])   # пустая ячейка = эталон сукна
+
+    def depths(label):
+        s.measure()
+        v = [s.exposed_depth(c, felt) for c in range(1, 9)]
+        s.note("depths", f"{label}: {v}")
+        return v
+
+    before = depths("960x540")
+    s.expect(any(d is not None for d in before),
+             "стол пуст ещё до ресайза — сравнивать нечего")
+    deals_before = len(s.logs_matching(r"I am MAIN SCRIPT"))
+    s.shot("before-resize")
+
+    for w, h in ((1200, 540), (800, 600), (960, 540)):
+        s.page.set_viewport_size({"width": w, "height": h})
+        s.wait(2, f"ресайз {w}x{h} осел")
+        s.shot(f"resized-{w}x{h}")
+        s.expect(depths(f"{w}x{h}") == before,
+                 f"после ресайза {w}x{h} раздача изменилась — прогресс потерян")
+
+    if deals_before:   # debug-сборка: движок печатает
+        s.expect(len(s.logs_matching(r"I am MAIN SCRIPT")) == deals_before,
+                 "ресайз перезагрузил уровень — прогресс потерян")
+
+        # Негативный контроль: пересдача обязана сломать вектор глубин, иначе
+        # проверка выше зеленела бы и на потерянном прогрессе.
+        s.key("Space", "пересдача")
+        s.wait(3, "новая раздача осела")
+        s.expect(depths("после пересдачи") != before,
+                 "вектор глубин не различает даже полную пересдачу — оракул слепой")
+
+
 SCENARIOS = {"boot": scenario_boot, "hittest": scenario_hittest,
              "stuck": scenario_stuck, "win": scenario_win,
              "freecell": scenario_freecell, "census": scenario_census,
              "focus": scenario_focus, "audiobg": scenario_audiobg,
              "debugkeys": scenario_debugkeys, "restartrace": scenario_restartrace,
-             "i18n": scenario_i18n, "yasdk": scenario_yasdk}
+             "i18n": scenario_i18n, "yasdk": scenario_yasdk,
+             "resize": scenario_resize}
 
 
 def main():

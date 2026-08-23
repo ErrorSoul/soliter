@@ -269,13 +269,18 @@
 				if (!api) {
 					return;
 				}
-				gameplayOn = on;
+				// Флаг ставим ТОЛЬКО после успешного вызова. Иначе упавший
+				// start() оставлял gameplayOn = true, следующий applyGameplay
+				// видел «уже включено» и выходил — платформа так и не узнавала о
+				// начале партии, и повторить было некому (находка внешнего
+				// ревью D1).
 				try {
 					if (on) {
 						api.start();
 					} else {
 						api.stop();
 					}
+					gameplayOn = on;
 					mark("gameplay-" + (on ? "start" : "stop"));
 				} catch (e) {
 					mark("gameplay-threw " + e);

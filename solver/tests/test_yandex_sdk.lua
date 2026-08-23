@@ -198,10 +198,12 @@ end)
 -- Минимальный gui: ноды — просто их имена, вся отрисовка — no-op. Нужен ровно
 -- для того, чтобы загрузить настоящий ui.gui_script и прогнать его update.
 local function fake_gui()
+   local texts = {}
    local g = {
+      texts = texts,
       EASING_OUTQUAD = 0, EASING_OUTBACK = 1,
       get_node = function(name) return name end,
-      set_text = function() end,
+      set_text = function(node, value) texts[node] = value end,
       set_enabled = function() end,
       is_enabled = function() return true end,
       set_color = function() end,
@@ -238,6 +240,46 @@ H.test("D1 победа сообщает платформе, что партия
    end
    if second ~= 1 then
       return false, "gameplay_over ушёл повторно на следующем кадре (" .. second .. ")"
+   end
+   return true
+end)
+
+H.test("D1 поздний язык перекрашивает и экран победы, и хинт туториала", function()
+   local tutorial_state = require("main.Scripts.tutorial_state")
+   local i18n = require("main.Scripts.i18n")
+   local bridge = new_bridge({ state = "pending", lang = "", search = "?lang=en" })
+   _G.html5 = fake_html5(bridge)
+   _G.gui = fake_gui()
+   load_script("gui/ui.gui_script")
+   local self = {}
+   init(self)                       -- SDK ещё молчит: язык из ?lang=en
+   -- Рисуем экран победы ДО ответа SDK: именно так и получается смесь языков,
+   -- если поздний язык перекрашивает только статические подписи рельса.
+   tutorial_state.is_tutorial = false
+   tutorial_state.show_victory = true
+   update(self, 0.016)
+   if gui.texts["text1"] ~= i18n.strings.en.victory then
+      return false, "экран победы до ответа SDK должен быть английским, а он: "
+         .. tostring(gui.texts["text1"])
+   end
+
+   -- SDK ответил позже, чем нарисовали подписи.
+   bridge.state, bridge.lang = "ready", "ru"
+   on_message(self, hash("language_ready"), {}, "game_manager")
+   local title, hint = gui.texts["text1"], gui.texts["tutorial_text"]
+   local step_text = gui.texts["tutorial_step_text"]
+   _G.gui = nil
+   _G.html5 = nil
+   tutorial_state.reset()
+
+   if title ~= i18n.strings.ru.victory then
+      return false, "заголовок победы остался на старом языке: " .. tostring(title)
+   end
+   if hint ~= i18n.strings.ru.tutorial_hint_0 then
+      return false, "хинт туториала остался на старом языке: " .. tostring(hint)
+   end
+   if not step_text then
+      return false, "счётчик шагов туториала при перекраске не тронули"
    end
    return true
 end)
