@@ -860,17 +860,6 @@ function debug_replay(self)
          end
          local first = card_by_go[d.card_gos[1]]
          notify_dragon_button_collected(self, first and first.data and first.data.suit)
-         -- Кнопку мы обошли — значит и её отложенный `dragons_collected` никто не
-         -- пришлёт. А победа объявляется ИМЕННО на нём: ветка `card_to_base` при
-         -- 27 картах во время реплея молчит (доской распоряжается дирижёр), и
-         -- если масть собрана последним действием партии, стол остаётся пустым
-         -- БЕЗ экрана победы. Поймано сценарием `win` 2026-08-23: реплей допечатал
-         -- «WIN ✓ — all foundations complete», на скриншоте чистый стол, а
-         -- платформе `GameplayAPI.stop` так и не ушёл. Задержка та же, что у
-         -- кнопки (1.5 с): раньше драконы ещё летят, и зеркала ячеек не обновлены.
-         timer.delay(1.5, false, function()
-            msg.post("/card_table#main", "dragons_collected")
-         end)
       end
    end
 
@@ -910,7 +899,22 @@ end
 -- не пара строк в dispatch, чтобы адресацию «масть → кнопка» можно было проверить
 -- тестом: она держится на поле `sprite` из `get_dragon_buttons`, и мутация внутри
 -- dispatch тест-копию логики не роняла (замерено).
+--
+-- Второе дело этой функции — отложенный `dragons_collected`. Кнопку реплей
+-- обходит, значит её собственный `timer.delay(1.5) -> dragons_collected`
+-- (dragon_button.script:45) никто не пришлёт. А победа объявляется ИМЕННО на
+-- этом сообщении: ветка `card_to_base` при 27 картах во время реплея молчит
+-- намеренно (доской распоряжается дирижёр). Если масть собрана ПОСЛЕДНИМ
+-- действием партии, победу не объявлял никто — пустой стол, foundation 10/10/10
+-- и ни экрана победы, ни `GameplayAPI.stop` платформе. Поймано сценарием `win`
+-- 2026-08-23, до этого он был зелёным 13 прогонов подряд.
+-- Задержка та же, что у кнопки: раньше драконы ещё летят и зеркала ячеек не
+-- обновлены. Сообщение уходит независимо от того, нашлась ли кнопка: сбор
+-- состоялся в любом случае, а main на этом сообщении просто пересчитывает стол.
 function notify_dragon_button_collected(self, suit)
+   timer.delay(1.5, false, function()
+      msg.post("/card_table#main", "dragons_collected")
+   end)
    if not suit or not self.dragon_buttons then return end
    for btn_id, btn in pairs(self.dragon_buttons) do
       if btn.sprite == suit then msg.post(btn_id, "collect_done") end
