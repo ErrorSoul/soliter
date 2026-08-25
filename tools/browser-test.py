@@ -1376,8 +1376,81 @@ def scenario_dragonrestart(s):
         s.expect_card_at(cell[0], cell[1], felt, "карта доехала до ячейки после рестарта")
 
 
+def scenario_celldrain(s):
+    """L2: авто-финиш обязан забрать последнюю карту ИЗ СВОБОДНОЙ ЯЧЕЙКИ.
+
+    ⚠ ТРЕБУЕТ бандла с `DEBUG_CELL_DRAIN = true` в main.script. Собрать такую
+    доску настоящей раздачей стенд не может: нужно, чтобы у игрока остался
+    ровно один ход и он вёл в ячейку.
+
+    Раскладка (main.script, deal_cell_drain_test): колонка 1 = [2_red, 3_red],
+    колонки 2 и 3 — по двойке. Двойки 2 и 3 улетают сами (blue=2, green=2),
+    2_red закопана под 3_red. Сценарий делает единственный доступный ход —
+    уводит 3_red в ячейку, — после чего 2_red открывается и улетает сама.
+    Стол пуст, в ячейке лежит 3_red, foundation ждёт ровно её.
+
+    ДО правки L2 здесь не происходило ничего: `can_auto_finish` считал
+    оставшиеся карты по одним колонкам, получал ноль и отказывал, а победу
+    держала (правильно!) проверка cell_occupied в auto_finish_step. Игрок
+    дотаскивал последнюю карту руками. Этот сценарий — негативный контроль к
+    правке: на сборке без неё он обязан ПАДАТЬ по таймауту победы.
+
+    Оракул тройной, потому что каждый по отдельности врёт: строка лога
+    (авто-финиш мог бы отработать и без победы), пустая ячейка (карту мог
+    забрать кто угодно) и поднявшийся экран победы в пикселях."""
+    s.boot()
+    s.press_play()
+    s.shot("dealt")
+
+    cell = FREE_CELL[1]
+    felt = s.brightness(*cell)
+    # Колонка 1 раздаётся на две карты, поэтому верхушка на глубине 1.
+    d = s.exposed_depth(1, felt, max_depth=2)
+    if not s.expect(d is not None, "колонка 1 пуста — бандл собран без DEBUG_CELL_DRAIN?"):
+        return
+    s.expect(s.logs_matching(r"I am MAIN SCRIPT"), "уровень не загрузился")
+
+    s.drag_game(TABLEAU_X[1], TABLEAU_TOP_Y - d * CARD_PITCH, cell[0], cell[1],
+                "3_red -> свободная ячейка 1")
+
+    # Дальше СЛЕДИМ, а не ждём. Оракул — порядок трёх событий: карта легла в
+    # ячейку, потом ячейка опустела, потом объявлена победа. Ждать паузой здесь
+    # нельзя, и это измерено: первая версия делала wait(2.0), а к этому моменту
+    # авто-финиш успевал отработать целиком и поднять экран победы — тот
+    # закрывает весь кадр иллюстрацией, и пятачок ячейки читался ярким. Проверка
+    # «карта в ячейке» проходила по картинке победы, а проверка «ячейка пуста»
+    # по ней же падала. Оба вывода были про оверлей, а не про карту.
+    saw_parked, saw_empty, victory = False, False, None
+    for _ in range(150):
+        b = s.brightness(cell[0], cell[1])
+        if not saw_parked:
+            if b - felt > s.GAP:
+                saw_parked = True
+                s.note("pixel", f"3_red села в ячейку (luminance={b:.0f} vs felt {felt:.0f})")
+        elif not saw_empty and b - felt <= s.GAP:
+            saw_empty = True
+            s.note("pixel", f"ячейка опустела — карту забрал авто-финиш (luminance={b:.0f})")
+        hits = s.logs_matching(r"\[MAIN\] auto-finish complete")
+        if hits:
+            victory = hits[-1]["text"]
+            break
+        s.page.wait_for_timeout(100)
+
+    s.expect(saw_parked, "3_red не доехала до ячейки — ход не состоялся, проверять нечего")
+    s.expect(victory, "авто-финиш не забрал последнюю карту из ячейки: "
+                      "стол пуст, ход есть, а победы нет")
+    s.expect(saw_empty, "победа объявлена, но ячейка ни разу не была замечена пустой — "
+                        "значит победу дали поверх карты в ячейке")
+    s.wait(2.0, "экран победы поднялся")
+    s.shot("after")
+    # Экран победы закрывает весь кадр: там, где был стол, теперь иллюстрация.
+    s.expect(s.brightness(TABLEAU_X[8], TABLEAU_TOP_Y) - felt > s.GAP,
+             "экран победы не поднялся — на месте стола по-прежнему фон")
+
+
 SCENARIOS = {"boot": scenario_boot, "hittest": scenario_hittest,
              "guilock": scenario_guilock, "dragonrestart": scenario_dragonrestart,
+             "celldrain": scenario_celldrain,
              "stuck": scenario_stuck, "win": scenario_win,
              "freecell": scenario_freecell, "census": scenario_census,
              "focus": scenario_focus, "audiobg": scenario_audiobg,

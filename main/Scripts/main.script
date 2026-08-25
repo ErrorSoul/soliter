@@ -2,6 +2,7 @@ local DEBUG_DEAL = false -- false = нормальная тасовка, true = 
 local DEBUG_AUTO_FINISH = false -- true = тестовая раздача для auto-finish
 local DEBUG_DRAGONS = false -- true = тест сбора драконов подряд: red→blue→green
 local DEBUG_LONG_COLUMN = false -- true = G5: колонка из 12 карт, худший случай по высоте
+local DEBUG_CELL_DRAIN = false -- true = L2: доска, где последняя карта остаётся в свободной ячейке
 local tutorial_state = require("main.Scripts.tutorial_state")
 local sfx = require("main.Scripts.sfx")
 local config = require("main.Scripts.config")
@@ -54,6 +55,8 @@ function init(self)
       deal_auto_finish_test(self)
    elseif DEBUG_LONG_COLUMN then
       deal_long_column_test(self)
+   elseif DEBUG_CELL_DRAIN then
+      deal_cell_drain_test(self)
    else
       self.deck = create_deck(self)
       shuffle_deck(self)
@@ -80,7 +83,7 @@ function init(self)
    self.auto_collect_moves = 0
    -- C5: перепись карт в снапшоте имеет смысл только для настоящей раздачи —
    -- отладочные раскладки и туториал заведомо не 40 карт.
-   self.is_full_deal = not (self.tutorial_mode or DEBUG_DRAGONS or DEBUG_AUTO_FINISH or DEBUG_LONG_COLUMN)
+   self.is_full_deal = not (self.tutorial_mode or DEBUG_DRAGONS or DEBUG_AUTO_FINISH or DEBUG_LONG_COLUMN or DEBUG_CELL_DRAIN)
    self.base_slots = get_base_slots()
    self.tableau_slots = get_tableau_slots(self.tutorial_mode)
    self.free_slots = get_free_slots()
@@ -390,6 +393,75 @@ function deal_auto_finish_test(self)
          local target_position = stack_position + card_offset
          local start_pos = vmath.vector3(480, 270, 0.2)
          local card = factory.create("#card_factory", start_pos, vmath.quat(0, 0, 0, 1))
+         msg.post(card, "set_card", { data = card_data, slot_id = slot_id })
+         table.insert(self.tableau_stacks[stack_index].cards, { id = card, data = card_data, slot_id = slot_id })
+         table.insert(self.cards, card)
+         local delay = 0.04 * (stack_index + card_index)
+         go.set(card, "scale", vmath.vector3(0.5, 0.5, 1))
+         go.animate(card, "scale", go.PLAYBACK_ONCE_FORWARD,
+             vmath.vector3(1, 1, 1), go.EASING_OUTQUAD, 0.25, delay)
+         go.animate(card, "position", go.PLAYBACK_ONCE_FORWARD, target_position, go.EASING_OUTQUAD, 0.25, delay, function()
+            self.tableau_stacks[stack_index].animations_completed = self.tableau_stacks[stack_index].animations_completed + 1
+            if self.tableau_stacks[stack_index].animations_completed == cards_in_stack then
+               msg.post(slot_id, "update_stack", { cursor = self.cursor, index = stack_index, stack = self.tableau_stacks[stack_index].cards })
+            end
+         end)
+      end
+   end
+
+   for i = 1, 8 do
+      if #self.tableau_stacks[i].cards == 0 then
+         msg.post("tableau_slot" .. i, "update_stack", { cursor = self.cursor, index = i, stack = {} })
+      end
+   end
+end
+
+-- L2: раскладка ровно под «последняя карта лежит в свободной ячейке».
+-- Инструмент стенда (сценарий `celldrain`), не игровой режим.
+--
+-- Раздача: колонка 1 = [2_red, 3_red] (тройка сверху, двойка под ней),
+-- колонки 2 и 3 — по одной двойке. Двойки колонок 2 и 3 улетают в foundation
+-- сами (blue=2, green=2), 2_red остаётся закопанной под 3_red.
+--
+-- Дальше ход ровно один: увести 3_red в свободную ячейку. Тогда открывается
+-- 2_red и тоже улетает сама (red=2), стол пуст — а 3_red лежит в ячейке. Это и
+-- есть доска L2: до правки авто-финиш её не трогал (`#remaining == 0` по одним
+-- только колонкам), победа не объявлялась, и последнюю карту игрок дотаскивал
+-- руками. Значения подобраны так, чтобы safe-проверка пропускала обе карты:
+-- при blue=2/green=2 тройка красных проходит как 3 <= min_other + 1.
+function deal_cell_drain_test(self)
+   local tableau_positions = get_tableau_positions(self)
+   self.tableau_stacks = {}
+
+   local layout = {
+      {1, {
+         {id="2_red", value=2, suit="red"},
+         {id="3_red", value=3, suit="red"},
+      }},
+      {2, {
+         {id="2_blue", value=2, suit="blue"},
+      }},
+      {3, {
+         {id="2_green", value=2, suit="green"},
+      }},
+   }
+
+   for i = 1, 8 do
+      local slot_id = "tableau_slot" .. i
+      self.tableau_stacks[i] = { slot_id = slot_id, cards = {}, animations_completed = 0 }
+   end
+
+   for _, stack_def in ipairs(layout) do
+      local stack_index = stack_def[1]
+      local cards = stack_def[2]
+      local stack_position = tableau_positions[stack_index]
+      local slot_id = "tableau_slot" .. stack_index
+      local cards_in_stack = #cards
+
+      for card_index, card_data in ipairs(cards) do
+         local card_offset = vmath.vector3(0, (card_index - 1) * config.stack_offset_y(cards_in_stack, stack_position.y), 0)
+         local target_position = stack_position + card_offset
+         local card = factory.create("#card_factory", vmath.vector3(480, 270, 0.2), vmath.quat(0, 0, 0, 1))
          msg.post(card, "set_card", { data = card_data, slot_id = slot_id })
          table.insert(self.tableau_stacks[stack_index].cards, { id = card, data = card_data, slot_id = slot_id })
          table.insert(self.cards, card)
@@ -1027,6 +1099,23 @@ function can_auto_finish(self, message)
          end
       end
    end
+   -- L2: и карты из живых ячеек — раз авто-финиш их теперь забирает, они обязаны
+   -- пройти ту же safe-проверку, что и карты колонок. Заодно это чинит случай,
+   -- ради которого всё и затевалось: колонки пусты, в ячейке лежит последняя
+   -- карта — раньше здесь срабатывало «#remaining == 0 ⇒ false», и партия
+   -- дожималась руками.
+   --
+   -- Кладём только НОМИНАЛЫ. Дракона в живой ячейке отсекает гард выше (по
+   -- payload курсора), а цветок в ячейке сюда попадать не должен вовсе: он не
+   -- играется в foundation никогда, и, оказавшись в `remaining`, запретил бы
+   -- авто-финиш целиком — вместе с разбором колонок, который он и на такой
+   -- доске делает честно. Победы там всё равно не будет, её держит cell_occupied.
+   for _, fc in ipairs(self.free_cell_state or {}) do
+      local data = fc.card and fc.card.data
+      if data and not fc.is_blocked and type(data.value) == "number" then
+         table.insert(remaining, fc.card)
+      end
+   end
 
    if #remaining == 0 then return false end
 
@@ -1064,6 +1153,8 @@ function can_auto_finish(self, message)
    return true
 end
 
+-- Возвращает: карта, индекс колонки, порядковый номер ячейки.
+-- Ровно одно из двух последних заполнено — оно и говорит, откуда карта взялась.
 function find_next_auto_card(self)
    for i = 1, 8 do
       local stack = self.tableau_stacks[i]
@@ -1074,6 +1165,31 @@ function find_next_auto_card(self)
             if top_card.data.value == expected then
                return top_card, i
             end
+         end
+      end
+   end
+   -- L2: карта, припаркованная в свободной ячейке, — такой же кандидат, как
+   -- верхушка колонки. Раньше сюда не заглядывали, и партия, где последняя
+   -- карта лежит в ячейке, доигрывалась руками: колонки пустели, авто-финиш
+   -- останавливался, а победа не объявлялась (её и не должна была — ровно за
+   -- этим в auto_finish_step стоит проверка cell_occupied). Ложной победы не
+   -- было; было недоигранное удобство. Теперь ячейка разгребается, и проверка
+   -- cell_occupied остаётся на месте — она страхует случай, когда карту из
+   -- ячейки положить всё-таки некуда.
+   --
+   -- Колонки идут ПЕРВЫМИ намеренно: карта в ячейке никому не мешает и никого
+   -- не держит, а верхушка колонки открывает то, что под ней.
+   for ord, fc in ipairs(self.free_cell_state or {}) do
+      local card = fc.card
+      local data = card and card.data
+      -- Запечатанная ячейка — стопка собранных драконов, её не трогаем.
+      -- Проверяем и флаги, и сам value: зеркало ячейки кладёт карту как есть, а
+      -- dragons_left уже обжигался на том, что читал не то поле (см. G4 там же).
+      if data and not fc.is_blocked
+         and not data.is_dragon and not data.is_flower
+         and data.value ~= 'd' and data.value ~= 'f' then
+         if data.value == self.foundation_top[data.suit] + 1 then
+            return card, nil, ord
          end
       end
    end
@@ -1313,7 +1429,7 @@ function declare_victory(self)
 end
 
 function auto_finish_step(self)
-   local card, stack_index = find_next_auto_card(self)
+   local card, stack_index, cell_ord = find_next_auto_card(self)
    if not card then
       self.auto_finishing = false
       msg.post(self.cursor, "enable_input")
@@ -1377,8 +1493,16 @@ function auto_finish_step(self)
    })
 
    -- Локальное удаление для немедленной консистентности find_next_auto_card;
-   -- зеркальный tableau_card_removed придёт позже и no-op'нется (поиск по id).
-   table.remove(self.tableau_stacks[stack_index].cards)
+   -- зеркальный tableau_card_removed / free_cell_changed придёт позже и скажет
+   -- то же самое. Своего механизма переноса здесь нет: карта получает тот же
+   -- drop_success, что и от руки игрока, а освобождение прежнего владельца
+   -- делает card.script — он шлёт remove_card тому слоту, чей id у него записан
+   -- (для ячейки это и вернёт счётчик кнопкам).
+   if cell_ord then
+      self.free_cell_state[cell_ord] = {}
+   else
+      table.remove(self.tableau_stacks[stack_index].cards)
+   end
 
    timer.delay(0.4, false, function()
       auto_finish_step(self)

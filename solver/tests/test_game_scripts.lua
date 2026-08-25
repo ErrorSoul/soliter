@@ -2279,4 +2279,125 @@ H.test("H6 запрет захвата и авто-отправка описыв
 end)
 
 
+-- ---------------------------------------------------------------------------
+-- L2. Авто-финиш не разгребал свободные ячейки: `find_next_auto_card` ходил
+-- только по верхушкам колонок. Партия, где последняя карта припаркована,
+-- доигрывалась руками — колонки пустели, авто-финиш останавливался, победы не
+-- было. Ложной победы при этом не случалось: её держала проверка
+-- `cell_occupied` в auto_finish_step, и она остаётся на месте — страхует
+-- случай, когда карту из ячейки положить действительно некуда.
+local function drain_board(cells, foundation)
+   return {
+      tutorial_mode = false, auto_finishing = true, debug_replaying = false,
+      states = { PLAYING = "playing", WIN = "win" }, currentState = "playing",
+      foundation_top = foundation or { red = 2, blue = 2, green = 2 },
+      tableau_stacks = { { cards = {} }, { cards = {} }, { cards = {} }, { cards = {} },
+                         { cards = {} }, { cards = {} }, { cards = {} }, { cards = {} } },
+      free_cell_state = cells,
+      base_cards_count = 3,
+      base_slots = {
+         base_slot1 = { is_empty = false, pos = { x = 0, y = 0, z = 0 } },
+         base_slot2 = { is_empty = true,  pos = { x = 0, y = 0, z = 0 } },
+      },
+      suit_to_base = { red = "base_slot1" },
+      cursor = "cursor",
+   }
+end
+
+H.test("L2 авто-финиш забирает последнюю карту из свободной ячейки", function()
+   load_script("main/Scripts/main.script")
+   msg.clear()
+   local self = drain_board({ { card = { id = "go_3r", data = { value = 3, suit = "red" } } }, {}, {} })
+   auto_finish_step(self)
+   local sent = last_msg("drop_success")
+   if not sent then
+      return false, "стол пуст, в ячейке лежит ровно та карта, которую ждёт foundation — а хода нет"
+   end
+   if sent.to ~= "go_3r" then
+      return false, "улетела не карта из ячейки, а " .. tostring(sent.to)
+   end
+   if self.free_cell_state[1].card then
+      return false, "зеркало ячейки не очищено — следующий шаг пошлёт ту же карту второй раз"
+   end
+   return true
+end)
+
+H.test("L2 разгребание ячейки доводит партию до победы", function()
+   load_script("main/Scripts/main.script")
+   local self = drain_board({ { card = { id = "go_3r", data = { value = 3, suit = "red" } } }, {}, {} })
+   auto_finish_step(self)          -- забрал карту из ячейки
+   self.foundation_top.red = 3     -- карта приземлилась (card_to_base)
+   auto_finish_step(self)          -- следующий шаг: брать нечего
+   if self.currentState ~= "win" then
+      return false, "стол и ячейки пусты, а победы нет"
+   end
+   return true
+end)
+
+H.test("L2 запечатанную ячейку авто-финиш не трогает", function()
+   load_script("main/Scripts/main.script")
+   msg.clear()
+   -- Стопка собранных драконов. Значение специально «съедобное» для foundation,
+   -- чтобы проверка ловилась именно на is_blocked, а не на масти.
+   local self = drain_board({
+      { card = { id = "go_pile", data = { value = 3, suit = "red" } }, is_blocked = true }, {}, {} })
+   auto_finish_step(self)
+   if stub.msg_count("drop_success") > 0 then
+      return false, "авто-финиш растащил запечатанную ячейку — собранные драконы улетели в foundation"
+   end
+   -- Ячейка запечатана, живых карт нет ⇒ это победа, а не тупик.
+   if self.currentState ~= "win" then
+      return false, "запечатанная ячейка не должна мешать победе"
+   end
+   return true
+end)
+
+H.test("L2 карта из ячейки проходит ту же safe-проверку, что и карты колонок", function()
+   load_script("main/Scripts/main.script")
+   -- 9_red при синем/зелёном фундаменте на 3: класть её рано — другая масть
+   -- отстаёт больше чем на единицу. То же правило, что и для верхушек колонок.
+   local self = drain_board(
+      { { card = { id = "go_9r", data = { value = 9, suit = "red" } } }, {}, {} },
+      { red = 8, blue = 3, green = 3 })
+   self.auto_finishing = false
+   if can_auto_finish(self, { free_cells = {} }) then
+      return false, "safe-проверка не применилась к карте из ячейки"
+   end
+   -- Контроль: та же карта при подтянувшихся мастях доигрывается.
+   local ok = drain_board(
+      { { card = { id = "go_9r", data = { value = 9, suit = "red" } } }, {}, {} },
+      { red = 8, blue = 8, green = 8 })
+   ok.auto_finishing = false
+   if not can_auto_finish(ok, { free_cells = {} }) then
+      return false, "ячейку с играбельной картой не признали основанием для авто-финиша"
+   end
+   return true
+end)
+
+H.test("L2 колонка обслуживается раньше ячейки", function()
+   load_script("main/Scripts/main.script")
+   msg.clear()
+   local self = drain_board({ { card = { id = "go_3r", data = { value = 3, suit = "red" } } }, {}, {} })
+   self.tableau_stacks[1].cards = { { id = "go_3b", data = { value = 3, suit = "blue" } } }
+   auto_finish_step(self)
+   local sent = last_msg("drop_success")
+   if not sent or sent.to ~= "go_3b" then
+      return false, "верхушка колонки должна уходить первой: под ней могут быть другие карты, "
+         .. "а карта в ячейке никого не держит"
+   end
+   return true
+end)
+
+H.test("L2 цветок в ячейке не запрещает авто-финиш колонок", function()
+   load_script("main/Scripts/main.script")
+   local self = drain_board({ { card = { id = "go_f", data = { value = "f", suit = "flower" } } }, {}, {} })
+   self.auto_finishing = false
+   self.tableau_stacks[1].cards = { { id = "go_3r", data = { value = 3, suit = "red" } } }
+   if not can_auto_finish(self, { free_cells = {} }) then
+      return false, "цветок в ячейке не играется в foundation, но и разбирать колонки не мешает"
+   end
+   return true
+end)
+
+
 return H
