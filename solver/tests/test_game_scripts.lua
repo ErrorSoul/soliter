@@ -2111,5 +2111,46 @@ H.test("победа: flower_collected — единственный источн
    return true
 end)
 
+-- M2 (ревью грока-4.5 по блоку M): посадка цветка не проверяла победу вовсе —
+-- обработчик только взводил флаг. Пока цветок был последним событием ТОЛЬКО в
+-- цепочке авто-сбора, дыру закрывала уступка (её таймер обнуляется здесь же).
+-- Но если авто-сбор не запускался — игрок сам дожал последнюю масть кнопкой, а
+-- цветок приземлился на полсекунды позже (дуга дракона ~0.7 с + полёт цветка
+-- ~0.7 с против таймера кнопки 1.5 с) — `dragons_collected` уходит в ветку
+-- «ещё не чисто», auto_collecting=false, и переспрашивать некому. Стол пуст,
+-- победы нет. Тот же тупик даёт цветок, припаркованный игроком в ячейку и потом
+-- перенесённый в слот (свободная ячейка принимает любую карту, free_cell:71-76).
+--
+-- Фикстура нарочно БЕЗ auto_collecting: именно так выглядит ручной путь, и
+-- именно он не был закрыт ничем.
+H.test("M2 посадка цветка на пустом столе объявляет победу", function()
+   load_script("main/Scripts/main.script")
+   local self = board27({ flower_collected = false })
+   if self.currentState == "win" then
+      return false, "фикстура: партия выиграна ещё до посадки цветка"
+   end
+   on_message(self, hash("flower_collected"), {}, "flower_slot")
+   if self.currentState ~= "win" then
+      return false, "стол пуст, цветок в слоте — а победы нет и платформе stop не уйдёт"
+   end
+   return true
+end)
+
+-- Обратная сторона M2: проверка на посадке цветка не имеет права объявлять
+-- победу на НЕдоигранной доске. Без этого теста «declare_victory безусловно»
+-- прошло бы предыдущий тест и вернуло ровно тот баг, от которого чинили L1.
+H.test("M2 посадка цветка при живых драконах победой НЕ является", function()
+   load_script("main/Scripts/main.script")
+   local self = board27({ flower_collected = false })
+   self.tableau_stacks[3].cards = {
+      { id = "go_d1", data = { value = "d", suit = "red", is_dragon = true } },
+   }
+   on_message(self, hash("flower_collected"), {}, "flower_slot")
+   if self.currentState == "win" then
+      return false, "победа объявлена поверх живого дракона на столе"
+   end
+   return true
+end)
+
 
 return H
