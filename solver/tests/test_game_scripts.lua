@@ -915,9 +915,17 @@ H.test("M1 replay's dragon_collect also tells main the suit is collected", funct
    -- оставляет свой отложенный вызов непролитым. Без сброса flush() выполнил бы
    -- оба, и тест считал бы ДВА сообщения там, где проверяет одно.
    timer.pending = {}
+   timer.delays = {}
    notify_dragon_button_collected(self, "green")
    if stub.msg_count("dragons_collected") > 0 then
       return false, "сообщение ушло сразу — драконы ещё летят, зеркала ячеек не обновлены"
+   end
+   -- Величина задержки здесь смысловая, а не «на глазок»: дуга драконов ~0.7 с,
+   -- и до её конца зеркала ячеек не обновлены. Ревью блока M поймало, что стаб
+   -- эту величину выбрасывал, то есть укоротить её до 0.01 можно было молча.
+   if (timer.delays[1] or 0) < 1.5 then
+      return false, "задержка " .. tostring(timer.delays[1]) .. " с — короче дуги драконов, "
+         .. "сообщение придёт на неготовые зеркала"
    end
    timer.flush()
    if stub.msg_count("dragons_collected") ~= 1 then
