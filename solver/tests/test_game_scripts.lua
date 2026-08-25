@@ -2388,6 +2388,31 @@ H.test("L2 колонка обслуживается раньше ячейки",
    return true
 end)
 
+-- Смычка L2 с точкой победы 3 (`auto_collect_give_up`). Та ветка объявляет
+-- победу по ослабленному условию «27 номиналов + нет живых ячеек», и L2 меняет
+-- МОМЕНТ, когда ячейка становится пустой: теперь её опустошает цепочка таймеров
+-- авто-финиша, а не рука игрока. Столкнуться они не могут, и причина
+-- арифметическая, а не в замках: уступка вообще не запускается раньше 27
+-- номиналов (оба вызова begin_auto_collect стоят за этим порогом), а при 27
+-- разложенных номиналах в живой ячейке может лежать только дракон или цветок —
+-- ни того, ни другого авто-финиш не берёт. Пин на случай, если порог когда-то
+-- опустят.
+H.test("L2 при 27 номиналах авто-финишу в ячейках брать нечего", function()
+   load_script("main/Scripts/main.script")
+   for _, card in ipairs({
+      { id = "go_d", data = { value = "d", suit = "red", is_dragon = true } },
+      { id = "go_f", data = { value = "f", suit = "flower", is_flower = true } },
+   }) do
+      local self = drain_board({ { card = card }, {}, {} }, { red = 10, blue = 10, green = 10 })
+      self.base_cards_count = 27
+      if find_next_auto_card(self) ~= nil then
+         return false, "авто-финиш собрался взять из ячейки " .. tostring(card.data.value)
+            .. " — при 27 номиналах это ломает арифметику, на которой держится уступка"
+      end
+   end
+   return true
+end)
+
 H.test("L2 цветок в ячейке не запрещает авто-финиш колонок", function()
    load_script("main/Scripts/main.script")
    local self = drain_board({ { card = { id = "go_f", data = { value = "f", suit = "flower" } } }, {}, {} })

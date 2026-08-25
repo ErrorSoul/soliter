@@ -967,7 +967,12 @@ function debug_replay(self)
    local step
    local function arm(delay)
       local h = timer.delay(delay, false, function() step() end)
-      self.replay_last_tick = os.clock()
+      -- Копим dt из update, а НЕ os.clock(): в emscripten os.clock меряет
+      -- процессорное время, и в задросселенной вкладке (одна из подозреваемых
+      -- причин стойки) он почти не растёт — сторож молчал бы ровно там, где он
+      -- и нужен. Считать кадрами тоже нельзя: 120 Гц отмерил бы вдвое меньше
+      -- реального (та же ошибка, что ревью блока J поймало у бюджета уступки).
+      self.replay_idle = 0
       self.replay_stall_reported = false
       if h == timer.INVALID_TIMER_HANDLE then
          print(string.format("[REPLAY] ТАЙМЕР НЕ ВЗВЁЛСЯ на директиве %d/%d — пул таймеров исчерпан", i, #directives))
@@ -1690,11 +1695,12 @@ function update(self, dt)
    -- а следующий не пришёл — цепочка мертва, а кадры (эта самая функция) идут.
    -- Печатаем один раз на остановку, иначе лог зальёт. Только debug-сборка:
    -- реплея в релизе нет вовсе.
-   if DEBUG_SOLVER and self.debug_replaying and self.replay_last_tick then
-      if os.clock() - self.replay_last_tick > 3.0 and not self.replay_stall_reported then
+   if DEBUG_SOLVER and self.debug_replaying and self.replay_idle then
+      self.replay_idle = self.replay_idle + (dt or 0)
+      if self.replay_idle > 3.0 and not self.replay_stall_reported then
          self.replay_stall_reported = true
          print(string.format("[REPLAY] СТОЙКА: %.1f с без шага, кадры идут — оборвалась цепочка таймеров",
-            os.clock() - self.replay_last_tick))
+            self.replay_idle))
       end
    end
    if self.pending_collect_retry then
