@@ -1,0 +1,709 @@
+<title>Каталог на 20 тысяч</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;700&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;0,7..72,700;1,7..72,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+:root {
+  --paper:      #EEEFE8;
+  --surface:    #F8F8F3;
+  --surface-2:  #E4E6DC;
+  --ink:        #191A16;
+  --ink-soft:   #40453B;
+  --muted:      #6C7165;
+  --rule:       #D3D6C9;
+  --rule-soft:  #E1E3D8;
+  --red:        #A32A22;
+  --red-wash:   #F0DFDC;
+  --green:      #1F5B43;
+  --green-wash: #DCE7DF;
+  --shadow:     0 1px 0 rgba(25,26,22,.06);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper:      #14170F;
+    --surface:    #1B1F16;
+    --surface-2:  #242A1E;
+    --ink:        #E9EBE0;
+    --ink-soft:   #C3C7B8;
+    --muted:      #939A88;
+    --rule:       #2F3628;
+    --rule-soft:  #262C20;
+    --red:        #E38175;
+    --red-wash:   #3A211C;
+    --green:      #7BC29C;
+    --green-wash: #1C2E24;
+    --shadow:     0 1px 0 rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"] {
+  --paper:      #14170F;
+  --surface:    #1B1F16;
+  --surface-2:  #242A1E;
+  --ink:        #E9EBE0;
+  --ink-soft:   #C3C7B8;
+  --muted:      #939A88;
+  --rule:       #2F3628;
+  --rule-soft:  #262C20;
+  --red:        #E38175;
+  --red-wash:   #3A211C;
+  --green:      #7BC29C;
+  --green-wash: #1C2E24;
+  --shadow:     0 1px 0 rgba(0,0,0,.4);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Literata", Georgia, "Times New Roman", serif;
+  font-size: 17px;
+  line-height: 1.62;
+  margin: 0;
+  padding: 0 20px 96px;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap { max-width: 812px; margin: 0 auto; }
+
+/* ---------- masthead ---------- */
+
+.masthead {
+  padding: 64px 0 30px;
+  border-bottom: 2px solid var(--ink);
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.eyebrow {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+}
+h1 {
+  font-family: "Unbounded", "Trebuchet MS", sans-serif;
+  font-weight: 700;
+  font-size: clamp(30px, 6.2vw, 50px);
+  line-height: 1.02;
+  letter-spacing: -.025em;
+  margin: 0;
+  text-wrap: balance;
+}
+.standfirst {
+  font-size: 19px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  margin: 0;
+  max-width: 60ch;
+}
+.standfirst b { color: var(--ink); font-weight: 700; }
+
+/* ---------- legend ---------- */
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  padding: 18px 0 0;
+}
+
+/* ---------- source tags ---------- */
+
+.t {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  color: var(--muted);
+  white-space: nowrap;
+  vertical-align: 2px;
+}
+.t-of  { color: var(--green); border-color: var(--green); background: var(--green-wash); }
+.t-no  { color: var(--red);   border-color: var(--red);   background: var(--red-wash); }
+.t-me  { color: var(--ink-soft); border-color: var(--rule); }
+.t-dev { color: var(--ink-soft); border-color: var(--rule); border-style: dashed; }
+
+/* ---------- sections ---------- */
+
+section { padding-top: 58px; }
+
+.sec-head {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 0 16px;
+  align-items: baseline;
+  border-top: 1px solid var(--rule);
+  padding-top: 16px;
+  margin-bottom: 12px;
+}
+.sec-num {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--red);
+  letter-spacing: .06em;
+  padding-top: 6px;
+}
+h2 {
+  font-family: "Unbounded", "Trebuchet MS", sans-serif;
+  font-weight: 600;
+  font-size: clamp(20px, 3.4vw, 26px);
+  line-height: 1.16;
+  letter-spacing: -.02em;
+  margin: 0;
+  text-wrap: balance;
+}
+.sec-q {
+  grid-column: 2;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11.5px;
+  letter-spacing: .04em;
+  color: var(--muted);
+  margin-top: 8px;
+}
+.sec-body { padding-left: 60px; }
+@media (max-width: 640px) {
+  .sec-head { grid-template-columns: 30px 1fr; gap: 0 10px; }
+  .sec-q { grid-column: 2; }
+  .sec-body { padding-left: 0; }
+}
+
+h3 {
+  font-family: "Literata", Georgia, serif;
+  font-weight: 700;
+  font-size: 17.5px;
+  letter-spacing: -.005em;
+  margin: 34px 0 10px;
+  color: var(--ink);
+}
+p { margin: 0 0 14px; max-width: 66ch; }
+p.lead { font-size: 18.5px; color: var(--ink-soft); }
+
+a { color: var(--ink); text-decoration-color: var(--rule); text-underline-offset: 3px; }
+a:hover { text-decoration-color: var(--red); }
+a:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; border-radius: 2px; }
+
+ul, ol { margin: 0 0 16px; padding-left: 22px; max-width: 66ch; }
+li { margin-bottom: 8px; }
+li::marker { color: var(--muted); }
+
+strong { font-weight: 700; }
+em { font-style: italic; color: var(--ink-soft); }
+
+.num {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  font-size: .94em;
+}
+
+/* ---------- callouts ---------- */
+
+.note {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--muted);
+  padding: 16px 18px;
+  margin: 22px 0;
+  font-size: 16px;
+}
+.note.warn { border-left-color: var(--red); }
+.note.good { border-left-color: var(--green); }
+.note p:last-child { margin-bottom: 0; }
+.note-label {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  display: block;
+  margin-bottom: 7px;
+}
+.note.warn .note-label { color: var(--red); }
+.note.good .note-label { color: var(--green); }
+
+/* ---------- tables ---------- */
+
+.tw { overflow-x: auto; margin: 22px 0; border: 1px solid var(--rule); background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; min-width: 520px; }
+caption {
+  text-align: left;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 12px 14px 10px;
+  border-bottom: 1px solid var(--rule);
+}
+th, td { padding: 9px 14px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--rule-soft); }
+thead th {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--rule);
+  white-space: nowrap;
+}
+tbody tr:last-child td { border-bottom: none; }
+td.n, th.n { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
+tr.hi td { background: var(--surface-2); font-weight: 700; }
+td.neg { color: var(--red); }
+td.pos { color: var(--green); }
+
+/* ---------- rating chips (catalog motif) ---------- */
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 16px 0 20px; }
+.chip {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 7px;
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  color: var(--ink-soft);
+  border-radius: 2px;
+}
+.chip.lo { color: var(--red); border-color: var(--red); background: var(--red-wash); }
+.chip.hi { color: var(--green); border-color: var(--green); background: var(--green-wash); }
+
+.scale {
+  display: grid;
+  grid-template-columns: minmax(120px, 200px) 1fr auto;
+  gap: 6px 14px;
+  align-items: center;
+  margin: 18px 0 24px;
+  font-size: 14.5px;
+}
+.scale .lbl { color: var(--ink-soft); }
+.scale .bar { background: var(--surface-2); height: 12px; position: relative; }
+.scale .bar i { display: block; height: 100%; background: var(--green); }
+.scale .bar.dim i { background: var(--muted); }
+.scale .val {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 13px; font-weight: 600;
+}
+
+/* ---------- footer ---------- */
+
+.sources { padding-top: 56px; border-top: 2px solid var(--ink); margin-top: 62px; }
+.sources ol { font-size: 14px; color: var(--ink-soft); max-width: 74ch; }
+.sources li { margin-bottom: 6px; }
+.kicker {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 18px;
+}
+</style>
+
+<div class="wrap">
+
+<header class="masthead">
+  <div class="eyebrow">
+    <span>Яндекс Игры</span><span>Срез рынка · 25 августа 2026</span><span>Для решения по релизу</span>
+  </div>
+  <h1>Каталог на 20 тысяч</h1>
+  <p class="standfirst">За 2025 год платформа опубликовала <b>24 000</b> игр и сняла <b>29 000</b>. Поток заявок с тех пор удвоился, каталог не вырос. Рынок перешёл из режима «набрать объём» в режим отбраковки — и это меняет всё, что нужно делать при запуске.</p>
+  <div class="legend">
+    <span class="t t-of">Официально</span>
+    <span class="t t-me">СМИ</span>
+    <span class="t t-dev">Слова разработчика</span>
+    <span class="t t-no">Не установлено</span>
+  </div>
+</header>
+
+<section>
+  <div class="sec-head">
+    <div class="sec-num">01</div>
+    <h2>Сколько новых игр и что с каталогом</h2>
+    <div class="sec-q">поток, отбраковка, аудитория</div>
+  </div>
+  <div class="sec-body">
+
+  <p class="lead">Ключевой перелом произошёл в 2025-м: платформа впервые сняла больше игр, чем опубликовала, и с тех пор держит каталог примерно на одном уровне при растущем входящем потоке.</p>
+
+  <div class="tw">
+  <table>
+    <caption>Каталог и поток по годам</caption>
+    <thead><tr><th>Год</th><th class="n">Опубликовано</th><th class="n">Снято</th><th class="n">Каталог на конец</th><th class="n">MAU</th></tr></thead>
+    <tbody>
+      <tr><td>2022</td><td class="n">7 800</td><td class="n">—</td><td class="n">&gt;14 000</td><td class="n">—</td></tr>
+      <tr><td>2023</td><td class="n">17 000</td><td class="n">9 000</td><td class="n">—</td><td class="n">30–33 млн</td></tr>
+      <tr><td>2024</td><td class="n">~29 000</td><td class="n">&gt;30 000</td><td class="n">~28 000</td><td class="n">45 млн</td></tr>
+      <tr class="hi"><td>2025</td><td class="n">24 000</td><td class="n neg">29 000</td><td class="n">19 000</td><td class="n">&gt;50 млн</td></tr>
+      <tr><td>апр. 2026</td><td class="n">—</td><td class="n">—</td><td class="n">&gt;20 000</td><td class="n">45 млн</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>Все цифры — из интервью руководителей платформы и презентации на РИФ-2026 <span class="t t-of">Официально</span>. Из 29 тысяч снятых в 2025-м примерно <span class="num">10 000</span> убрал новый алгоритм оценки: «убрали из каталога около 10 тысяч непопулярных проектов с низким рейтингом» — Никита Бокарев, App2Top, 27.01.2026.</p>
+
+  <h3>Поток заявок за год удвоился</h3>
+  <p>24 июня 2026 платформа сообщила: <strong>на модерацию приходит около 10 000 заявок в месяц</strong>, тогда как в 2025-м медиана была около 5 000. Названная причина — вайбкодинг: «разрабатывать игры стало легче, поэтому поток релизов усилился» <span class="t t-of">Официально</span>. Там же: <span class="num">72 %</span> отказов связаны с проблемным UI, SDK и техническими недочётами; отключена кнопка обнуления модерации, которой обходили очередь.</p>
+
+  <div class="note warn">
+    <span class="note-label">Арифметика, которая всё объясняет</span>
+    <p>При 10 тыс. заявок в месяц входящий поток идёт к <span class="num">120 000</span> заявок в год. Каталог при этом держится около 19–20 тыс. Даже с поправкой на повторные подачи после отказов это значит одно: платформа физически не может пропустить сколько-нибудь заметную долю потока и не собирается. <span class="t t-no">Оценка</span> — точная доля прохождения не публикуется.</p>
+  </div>
+
+  <p>Свежие меры лета 2026 (официальный канал для разработчиков): автоматические техпроверки до ручной модерации, обязательные чек-листы перед первой публикацией и после отказов, обновлённые правила возрастных рейтингов с примерами, и — отдельно показательно — <strong>обязательная декларация использования ИИ</strong> при подаче (полностью / частично / нет), «для статистики, на решение модерации не влияет».</p>
+
+  <h3>Аудитория: рост замедлился, состав сместился</h3>
+  <div class="scale">
+    <span class="lbl">2023 → 2024</span><span class="bar"><i style="width:100%"></i></span><span class="val pos">+36 %</span>
+    <span class="lbl">2024 → 2025</span><span class="bar dim"><i style="width:28%"></i></span><span class="val">+10 %</span>
+  </div>
+  <p style="font-size:14.5px;color:var(--muted);max-width:62ch">«+10 %» — цифра платформы из январского интервью, из того же источника, что и спорные 50 млн. Если апрельский слайд с 45 млн считать актуальным, рост 2024→2025 ближе к нулю. Вывод о замедлении верен при любом прочтении — второе даёт замедление ещё более резкое.</p>
+  <p>Профиль игрока — не тот, что обычно предполагают под словом «браузерка»: <span class="num">58 %</span> женщин, <span class="num">80 %</span> старше 25 лет, <strong>почти 30 % — старше 55</strong>, средний плейтайм 50–60 минут. Устройства: 40 % десктоп, 50 % мобильный браузер, 10 % прочее. Международный трафик — около 40 %, это подтверждает и действующая документация <span class="t t-of">Официально</span>.</p>
+
+  <div class="note">
+    <span class="note-label">Расхождение, которое я не стал сглаживать</span>
+    <p>Январь 2026: «преодолели отметку в 50 млн активных игроков в месяц». Апрель 2026, слайд на РИФ: «45 миллионов игроков в месяц», плейтайм 50 минут. Обе цифры официальные. Вероятнее всего апрельский слайд не обновлён — 45 млн / 50 мин это ровно показатели итогов 2024 года, — но подтвердить это нечем. Считать по нижней границе: <strong>MAU около 45–50 млн, рост замедлился до однозначных—низких двузначных процентов</strong>.</p>
+  </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">
+    <div class="sec-num">02</div>
+    <h2>Жанры: по количеству и по трафику это разные списки</h2>
+    <div class="sec-q">что в каталоге против того, что реально играют</div>
+  </div>
+  <div class="sec-body">
+
+  <p>В каталоге сейчас 28 категорий. Среди них появилась отдельная <strong>«Мидкорные»</strong> — прямое отражение стратегической ставки платформы. Официальная формулировка тренда 2025 года: «мидкор вошёл в топ-5 самых популярных жанров» <span class="t t-of">Официально</span>. Поимённо топ-5 не раскрывается <span class="t t-no">Не установлено</span>.</p>
+
+  <h3>Что я увидел в витрине 25 августа 2026</h3>
+  <p>Я снял первые 24 карточки в нескольких категориях — это верх выдачи, ранжированный самой платформой, то есть срез «лучшего в жанре», а не всего жанра. Рейтинг — та самая метрика 0–100, по которой платформа снимает игры с публикации.</p>
+
+  <div class="tw">
+  <table>
+    <caption>Медиана рейтинга по верху категории · мой подсчёт, 25.08.2026, n = 24</caption>
+    <thead><tr><th>Категория</th><th class="n">Медиана</th><th class="n">Разброс</th><th>Что там лежит</th></tr></thead>
+    <tbody>
+      <tr class="hi"><td>Головоломки</td><td class="n pos">71,5</td><td class="n">43–89</td><td>сортировки, три-в-ряд, «найди отличия», merge</td></tr>
+      <tr class="hi"><td>Пасьянсы (тег)</td><td class="n pos">70,5</td><td class="n">22–83</td><td>Косынка, Паук, Пирамида, Скорпион, Агнес</td></tr>
+      <tr><td>Карточные</td><td class="n">68,5</td><td class="n">56–83</td><td>Дурак, Козёл, тысяча + те же пасьянсы</td></tr>
+      <tr><td>Для подростков <em>(тег аудитории, не жанр)</em></td><td class="n neg">50,0</td><td class="n">22–72</td><td>брейнроты, Лабубу, Майн-моды, ГТА-клоны, кейс-батлы</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>Последняя строка — не корректное сравнение: «Для подростков» это тег аудитории, который собирает шлак из всех жанров сразу, а не жанровая категория. Приводить её стоит как иллюстрацию того, как выглядит нижний ярус каталога, а не как замер разрыва.</p>
+  <p>Устойчивый вывод проще и от сравнения не зависит: <strong>верх жанровых категорий пасьянсов и головоломок держится около 70 по метрике платформы</strong>, а метрика эта считается из времени на игрока, дневной аудитории и возвращаемости. Липкие жанры выигрывают там структурно — в них возвращаются.</p>
+
+  <div class="chips">
+    <span class="chip hi">Паук 83</span><span class="chip hi">Klondike 82</span><span class="chip">Косынка-РК 78</span><span class="chip">Дурак 78</span><span class="chip">Паук-2024 77</span><span class="chip">Косынка 75</span><span class="chip">Коврик 70</span><span class="chip">Пирамида 54</span><span class="chip lo">Паук и Паучиха 22</span>
+  </div>
+  <p style="font-size:14.5px;color:var(--muted);max-width:60ch">Рейтинги карточных игр из витрины. Всё, что ≤ 30 три недели подряд, снимается с публикации — последняя карточка в этом ряду доживает последние дни.</p>
+
+  <h3>Куда движется трафик</h3>
+  <ul>
+    <li><strong>Вверх:</strong> мидкор с гибридной монетизацией, портированные мобильные хиты, стратегии, RPG, сложные симуляторы. Платформа прямо называет студии, притащившие такие проекты: Red Brix Wall, TAPCLAP, HeroCraft, VIZOR Games, Helio Games <span class="t t-of">Официально</span>.</li>
+    <li><strong>Массово, но дёшево:</strong> брейнрот-тренд, симуляторы кейсов, игры по чужим IP, текстовые симуляторы переписок — это верх по количеству релизов 2025 года <span class="t t-me">СМИ</span>, и ровно та зона, откуда платформа вычищает каталог.</li>
+    <li><strong>Стабильно:</strong> классические казуальные жанры — пасьянсы, три-в-ряд, «найди отличия», маджонг. Не растут взрывно, но и не вымываются.</li>
+  </ul>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">
+    <div class="sec-num">03</div>
+    <h2>Где коммерчески живые ниши</h2>
+    <div class="sec-q">и чего они стоят в рублях</div>
+  </div>
+  <div class="sec-body">
+
+  <p class="lead">Сначала экономика, иначе разговор о нишах бессмыслен.</p>
+
+  <div class="tw">
+  <table>
+    <caption>Условия площадки · лицензионное соглашение, редакция 28.11.2025</caption>
+    <thead><tr><th>Параметр</th><th>Значение</th><th>Пункт</th></tr></thead>
+    <tbody>
+      <tr><td>Доля разработчика</td><td class="n">50 % от дохода Яндекса, без НДС</td><td class="n">8.1</td></tr>
+      <tr><td>Порог выплаты</td><td class="n">3 000 ₽</td><td class="n">8.15</td></tr>
+      <tr><td>Срок выплаты</td><td class="n">20 рабочих дней после месяца</td><td class="n">8.18</td></tr>
+      <tr><td>Внутренняя валюта</td><td class="n">1 ян = 1 ₽</td><td>справка</td></tr>
+      <tr><td>Комиссия с внутриигровых покупок</td><td class="n neg">не публикуется</td><td>—</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>50 % — на уровне лучшей мировой практики (у Poki тоже 50 %, у GameDistribution 33 %). Цифра «до 30 % комиссии с инаппов» гуляет по вторичным источникам, но в официальных документах я её не нашёл <span class="t t-no">Не установлено</span>.</p>
+
+  <h3>Сколько это в деньгах</h3>
+  <p>Публичных eCPM по Яндекс Играм за 2025–2026 нет <span class="t t-no">Не установлено</span>. Есть два ориентира, и они не сходятся между собой почти на порядок.</p>
+
+  <div class="tw">
+  <table>
+    <caption>Две реконструкции дохода с игрока в день</caption>
+    <thead><tr><th>Откуда</th><th class="n">₽ с игрока в день</th><th>Чего стоит</th></tr></thead>
+    <tbody>
+      <tr><td>Кейс: 600–800 игроков → 600–800 ₽/день</td><td class="n">≈ 1,0</td><td>июнь 2026, но см. предупреждение ниже</td></tr>
+      <tr><td>Пересчёт из CPM ≈ 50 ₽ при 2–4 показах на сессию</td><td class="n">0,1–0,2</td><td>CPM из кейса судоку, 2023; неизвестно, до или после доли разработчика</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="note warn">
+    <span class="note-label">Ориентир, который я не могу закрепить</span>
+    <p>Верхнюю цифру даёт <strong>ровно тот кейс, где доход потом обнулили за аномальные клики по баннеру</strong> (раздел 04). Часть этих 600–800 ₽/день с высокой вероятностью — та самая накрутка, из-за которой месяц и списали. Нижняя реконструкция опирается на CPM трёхлетней давности и на догадку о числе показов.</p>
+    <p>Честный вывод: <strong>от 0,1 до 1 ₽ с игрока в день</strong> на чисто рекламной монетизации. В переводе на цель — <span class="num">30 000</span> ₽/мес требует где-то от <span class="num">1 000</span> до <span class="num">10 000</span> DAU. Разброс в десять раз — это и есть текущее состояние знания; закрывается он только собственной статистикой после релиза. <span class="t t-no">Не установлено</span></p>
+  </div>
+
+  <h3>Что живо, что мертво</h3>
+  <ul>
+    <li><span class="t t-of">Ставка платформы</span> <strong>Мидкор с внутриигровыми покупками.</strong> Выручка разработчиков от IAP выросла на <span class="num">75 %</span> за 2025 год. Но это ниша для команды, а не для соло: тяжёлая графика, LiveOps, поддержка.</li>
+    <li><span class="t t-me">Данные каталога</span> <strong>Качественная классическая казуалка.</strong> Высокие рейтинги при умеренной конкуренции по качеству. Клонов много, хороших мало.</li>
+    <li><span class="t t-me">Наблюдение</span> <strong>Оригинальная механика в старом жанре.</strong> Самое интересное место: жанр знакомый (не надо объяснять, что это), механика новая (нет прямых конкурентов). Подробнее — раздел 06.</li>
+    <li><span class="t t-dev">Мнение</span> <strong>Мёртво:</strong> конвейер гиперказуальных клонов. Расчёт «сделаю 100 игр по две недели ради 20 000 ₽/мес» ломается о правило 2.13 — большинство таких игр не переживает три недели.</li>
+  </ul>
+
+  <h3>Куда ещё можно идти</h3>
+  <p>Короткий ответ для разработчика-резидента РФ: <strong>особо никуда</strong>. VK Mini Apps сопоставимы по аудитории (~45 млн MAU), но органика там, по единственному прямому сравнению, в разы слабее <span class="t t-dev">Слова разработчика, 2023</span>. Telegram после краха тапалок для обычной казуальной игры бесперспективен. CrazyGames (50 млн MAU) и Poki (100 млн MAU) больше Яндекса, но <strong>выплаты туда упираются в отсутствующую финансовую инфраструктуру</strong>: Payoneer закрыт для РФ с декабря 2022, PayPal и Wise не работают, CrazyGames платит через Tipalti, который по России отправляет в поддержку. Рабочая схема — иностранное юрлицо, то есть отдельный проект, а не «ещё одна кнопка публикации».</p>
+  <p>При этом сама платформа советует не запираться: «Веб живёт не „Яндексом“ единым… лучше размещаться везде» — представитель Яндекс Игр, КИИ Минск 2025.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">
+    <div class="sec-num">04</div>
+    <h2>Кто успешен и за счёт чего</h2>
+    <div class="sec-q">механизм, а не список названий</div>
+  </div>
+  <div class="sec-body">
+
+  <p class="lead">Успех на этой платформе почти целиком определяется тем, что происходит с игрой в первые три недели. Дальше алгоритм только закрепляет результат.</p>
+
+  <h3>Как устроен трафик — из официальной документации</h3>
+  <ol>
+    <li><strong>Ранжирование ведёт ML</strong> по шести метрикам: заполненность карточки, рейтинг игры, число сессий, длительность сессии, возвращаемость, доход.</li>
+    <li><strong>Раздел «Новые» даёт менее 30 % трафика</strong> и держит игру ровно неделю, один раз — при первой публикации. Переиздание под тем же ID считается обновлением и в новинки не возвращает.</li>
+    <li><strong>Основной трафик — рекомендации.</strong> Система примерно неделю тестирует игру на разных аудиториях, затем увеличивает поток успешным и срезает слабым.</li>
+    <li><strong>«Популярные» отбираются вручную</strong>: адаптив под устройства, локализация минимум рус+англ, качественные промоматериалы, сильные метрики, использование SDK.</li>
+  </ol>
+
+  <div class="note warn">
+    <span class="note-label">Пункт 2.13 — главный фильтр платформы</span>
+    <p>«Рейтинг игры выше 30. Если в течение 3 недель у игры держится рейтинг 30 и ниже (или отсутствует), она будет снята с публикации.» Рейтинг считается из времени на игрока, дневной аудитории и возвращаемости; формируется примерно через две недели после публикации и <strong>вообще не считается при дневной аудитории меньше 10 игроков</strong> — для сохранения публикации нужно стабильно больше 10 игроков в день в течение 20 дней. <span class="t t-of">Официально</span></p>
+  </div>
+
+  <p>Отсюда — «замкнутый круг», на который жалуются разработчики: чтобы получить органику, нужен рейтинг; чтобы набрать рейтинг, нужен трафик. У игры, вышедшей без стартового трафика, есть 21 день, чтобы найти 10+ игроков в день. Это, а не качество кода, убивает большинство релизов.</p>
+
+  <h3>Что общего у тех, кто вытянул</h3>
+  <ul>
+    <li><strong>Удержание, а не установка.</strong> Все шесть факторов ранжирования, кроме заполненности карточки, — это про возврат игрока. Постмортем провалившейся escape-игры: D1 = 9,08 %, D3 = 3,32 %, резкий спад после пика <span class="t t-dev">Слова разработчика</span>. Вывод автора — делать «системные» игры, а не линейные, которые кончаются.</li>
+    <li><strong>Промоматериалы как половина работы.</strong> Заполненность карточки — единственный фактор ранжирования, который контролируется полностью и до релиза. Разработчик с портфелем &gt;100 тыс. ₽/мес формулирует прямо: промо «это 80 % успеха», текст на иконке — ошибка.</li>
+    <li><strong>Мобильная адаптация.</strong> 50 % трафика — мобильный браузер. Потеря мобильной оптимизации напрямую связывается разработчиками с падением органики.</li>
+    <li><strong>Локализация.</strong> 40 % трафика международный; рус+англ — формальное требование для попадания в «Популярные».</li>
+    <li><strong>Ловля тренда убивает.</strong> Автор escape-игры потратил 10 месяцев и вышел, когда жанр уже отыграл. Тренд на этой платформе живёт меньше цикла разработки.</li>
+  </ul>
+
+  <div class="note warn">
+    <span class="note-label">Риск, о котором стоит знать заранее</span>
+    <p>Кейс июня 2026: рекламная сеть зафиксировала аномальные клики (бот-атака на баннер), и разработчику <strong>обнулили доход за весь месяц</strong>, забанили рекламный блок и отказали в перерасчёте — игра осталась в каталоге без монетизации. <span class="t t-dev">Единичный кейс, версия одной стороны</span>. Аргумент в пользу того, чтобы не строить всю экономику на баннере.</p>
+  </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">
+    <div class="sec-num">05</div>
+    <h2>Как изменилась картина и что из этого следует</h2>
+    <div class="sec-q">стратегия</div>
+  </div>
+  <div class="sec-body">
+
+  <div class="tw">
+  <table>
+    <caption>Что было и что стало</caption>
+    <thead><tr><th>Измерение</th><th>2023–2024</th><th>2026</th></tr></thead>
+    <tbody>
+      <tr><td>Логика платформы</td><td>набрать объём каталога</td><td class="pos">отбраковка по качеству</td></tr>
+      <tr><td>Каталог</td><td>рос до ~28 000</td><td>удерживается ~20 000</td></tr>
+      <tr><td>Входящий поток</td><td class="n">~5 000 заявок/мес</td><td class="n neg">~10 000 заявок/мес</td></tr>
+      <tr><td>Рост аудитории</td><td class="n">+36 % за год</td><td class="n">+10 % за год</td></tr>
+      <tr><td>Ставка на жанр</td><td>гиперказуал</td><td>мидкор + гибридная монетизация</td></tr>
+      <tr><td>Монетизация</td><td>почти только реклама</td><td>реклама + IAP, IAP +75 % за год</td></tr>
+      <tr><td>Порог выживания</td><td>фактически отсутствовал</td><td class="neg">рейтинг &gt;30 за 3 недели</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>Одной фразой: <strong>предложение растёт вдвое в год, спрос — на десять процентов, и платформа закрывает разрыв отбраковкой.</strong> Вайбкодинг завалил модерацию дешёвыми играми, и реакция площадки — не расширение пропускной способности, а ужесточение фильтра. Это плохая новость для конвейера и хорошая для одного проработанного проекта.</p>
+
+  <h3>Стратегия, которая следует из этих цифр</h3>
+  <ol>
+    <li><strong>Одна игра, доведённая до конца, а не портфель.</strong> Раньше объёмная стратегия окупалась длинным хвостом; правило 2.13 её сломало. Хвост теперь удаляют.</li>
+    <li><strong>Планировать релиз как трёхнедельную кампанию, а не как дату.</strong> Первые 21 день — единственное окно. К моменту публикации должны быть готовы: полностью заполненная карточка на рус+англ, промо и видео, мобильная адаптация, SDK, и источник стартового трафика на 10+ игроков в день.</li>
+    <li><strong>Проектировать под метрику рейтинга.</strong> Он считается из времени, DAU и возвращаемости — значит нужна причина зайти завтра: ежедневная раздача, статистика серий, продолжение партии, цели.</li>
+    <li><strong>Гибридная монетизация с первого дня.</strong> Рекламный доход с игрока плохо предсказуем и разнится на порядок, IAP — это то, что растёт на 75 % в год, и то, чему платформа даёт трафик. Плюс это страховка от истории с обнулением рекламного дохода.</li>
+    <li><strong>Не гнаться за трендом.</strong> Цикл тренда короче цикла разработки — подтверждено и брейнротом, и escape-волной. Выигрывает вечнозелёный жанр, сделанный лучше, чем принято.</li>
+    <li><strong>Яндекс как основной канал, зарубежные порталы — как отдельный проект.</strong> Не из-за качества площадок, а из-за выплат.</li>
+  </ol>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">
+    <div class="sec-num">06</div>
+    <h2>Что это значит для пасьянса Shenzhen</h2>
+    <div class="sec-q">go-to-market для конкретного проекта</div>
+  </div>
+  <div class="sec-body">
+
+  <p class="lead">Проект попадает в рынок почти идеально по жанру — и имеет одну нерешённую проблему, которая к рынку отношения не имеет.</p>
+
+  <h3>Что играет за</h3>
+  <ul>
+    <li><strong>Демография совпадает точно.</strong> 58 % женщин, 80 % старше 25, почти 30 % старше 55 — это ровно аудитория пасьянса. Платформа сама пришла к тому игроку, который в такое играет.</li>
+    <li><strong>Жанр структурно выигрывает у метрики рейтинга.</strong> Верх пасьянсов держит медиану 70,5 при том, что это в основном шаблонные клоны Косынки. Рейтинг измеряет возвращаемость — а в пасьянс возвращаются даже когда он сделан кое-как.</li>
+    <li><strong>Прямых конкурентов нет.</strong> Все 24 игры в верху карточной категории — классика: Косынка, Паук, Пирамида, Скорпион, Агнес, Алжирское терпение, Коврик, плюс Дурак и Козёл. Игры с механикой Shenzhen в каталоге нет: поиск по «шэньчжэнь» ничего не даёт <span class="t t-me">Мой подсчёт, 25.08.2026</span>. На CrazyGames и Poki её тоже нет.</li>
+    <li><strong>Механика решает задачу удержания сама.</strong> Раздача — короткая сессия с ясным исходом, есть нерешаемые расклады, есть счёт по времени. Это готовый каркас под ежедневную задачу и серии.</li>
+  </ul>
+
+  <h3>Что играет против</h3>
+  <ul>
+    <li><strong>Жанр непривычен.</strong> Косынку не надо объяснять, Shenzhen — надо. Обучение первым 30 секундам критично: игрок, который не понял правила, уходит, а уход бьёт по рейтингу напрямую.</li>
+    <li><strong>Ориентация.</strong> 50 % трафика — мобильный браузер, а платформа показывает заглушку при неправильной ориентации. 960×540 landscape для восьми колонок оправдан, и все крупные референсы жанра горизонтальные — но данных «landscape против vertical для пасьянсов» нет <span class="t t-no">Не установлено</span>. Минимум — заглушка должна быть внятной, а не системной.</li>
+    <li><strong>Стартовый трафик.</strong> 10+ игроков в день двадцать дней подряд — это то, о чём нужно позаботиться до релиза, а не после.</li>
+  </ul>
+
+  <div class="note warn">
+    <span class="note-label">Открытый блокер: название</span>
+    <p>Shenzhen Solitaire — часть Shenzhen I/O. Zachtronics была куплена <strong>Alliance Media Holdings ещё в 2016 году</strong>, и правообладатель жив: сайт zachtronics.com активен, в феврале–марте 2026 вышло DLC для Opus Magnum. Есть официальные релизы — на Steam, на itch.io за $2.99, порт на iOS от Metaversal Studios. <strong>Публичного разрешения на клоны найти не удалось</strong> — ни разрешения, ни запрета, ни DMCA-прецедентов <span class="t t-no">Не установлено</span>.</p>
+    <p>Правила самой игры авторским правом не охраняются, но название, визуальный язык, масти и арт — другой вопрос. Требования Яндекс Игр это задевают напрямую: п. 3.5 «Авторские права на все материалы принадлежат создателю» и п. 5.12 «Название игры уникально в рамках каталога для всех языков». Коммерческий релиз на монетизируемой площадке — не то же самое, что бесплатный фан-проект на itch.io.</p>
+    <p>Практический выход: собственное название и собственный арт (по образцу переименованного клона «Guangzhou Solitaire»), никаких упоминаний Shenzhen I/O и Zachtronics в маркетинге. Закрыть вопрос окончательно можно только письмом на zach@zachtronics.com. <em>Это разбор открытых источников, не юридическая консультация.</em></p>
+  </div>
+
+  <h3>Порядок действий</h3>
+  <ol>
+    <li>Решить вопрос с названием и артом — это блокирует подачу, а не релиз.</li>
+    <li>Довести онбординг: первые 30 секунд должны объяснять масти и драконов без текста.</li>
+    <li>Заложить причину вернуться завтра: ежедневная раздача, серия, статистика.</li>
+    <li>Заполнить карточку целиком на русском и английском, с промо и видео — это единственный фактор ранжирования, который управляется до публикации.</li>
+    <li>Подготовить rewarded-точки: подсказка, отмена хода сверх лимита, пересдача нерешаемого расклада, авто-доигрывание. Не ставить прогресс в зависимость от рекламы.</li>
+    <li>Обеспечить стартовые 10+ игроков в день на три недели.</li>
+    <li>Подавать с запасом по срокам: модерация 3–5 рабочих дней в норме, очередь сейчас перегружена, повторная подача — не раньше чем через 24 часа после отказа.</li>
+  </ol>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">
+    <div class="sec-num">07</div>
+    <h2>Куда ещё можно выложить ту же игру</h2>
+    <div class="sec-q">карта площадок, август 2026</div>
+  </div>
+  <div class="sec-body">
+
+  <h3>Российский контур</h3>
+  <div class="tw">
+  <table>
+    <caption>Площадки РФ · аудитория, условия, состояние</caption>
+    <thead><tr><th>Площадка</th><th class="n">Аудитория</th><th>Разработчику</th><th>Состояние</th></tr></thead>
+    <tbody>
+      <tr class="hi"><td>Яндекс Игры</td><td class="n">45–50 млн MAU</td><td class="n">50 %</td><td class="pos">основной канал</td></tr>
+      <tr><td>Одноклассники</td><td class="n">33–34 млн MAU</td><td class="n">50 % (10 % по бонусным ОКам)</td><td>жива; только ИП/самозанятый/юрлицо, проверка СБ</td></tr>
+      <tr><td>VK Play</td><td class="n">16,7 млн MAU</td><td class="n">95 %</td><td class="neg">для рекламной казуалки слабо; f2p-промо свернули</td></tr>
+      <tr><td>VK Mini Apps</td><td class="n">ВК 92,5 млн MAU</td><td class="n">не публикуется</td><td>нужен свой бэкенд и соц-механики</td></tr>
+      <tr><td>MAX (мини-приложения)</td><td class="n">107 млн регистраций</td><td class="n neg">не документировано</td><td>новый канал, экономика неизвестна</td></tr>
+      <tr><td>RuStore мини-приложения</td><td class="n">&gt;50 млн MAU стора</td><td class="n neg">не найдено</td><td>формат запущен в 2026, условий нет</td></tr>
+      <tr><td>Дзен игры</td><td class="n">—</td><td class="n">—</td><td class="neg">только ПК + VK ID, открытого приёма не видно</td></tr>
+      <tr><td>Rambler, Photostrana, NashStore</td><td class="n">—</td><td class="n">—</td><td class="neg">не каналы для веб-игр в 2026</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>Единственное прямое сравнение на одной и той же игре (судоку, 2023): органика на Яндекс Играх в <span class="num">5</span> раз выше, чем на VK Play, а рекламный доход — «в сотни раз больше» <span class="t t-dev">Слова разработчика</span>. Данные старые, но других прямых замеров нет.</p>
+
+  <h3>Западный контур</h3>
+  <div class="tw">
+  <table>
+    <caption>Международные площадки · модель и доступность</caption>
+    <thead><tr><th>Площадка</th><th class="n">Трафик</th><th>Модель</th><th>Эксклюзив</th></tr></thead>
+    <tbody>
+      <tr><td>Poki</td><td class="n">100 млн MAU</td><td>revshare либо разовый фикс</td><td class="neg">эксклюзив 5 лет — «предпочтительный» вариант</td></tr>
+      <tr><td>CrazyGames</td><td class="n">~100 млн визитов/квартал</td><td class="n">60 % реклама / 70 % покупки</td><td class="pos">не требуется</td></tr>
+      <tr><td>Playgama</td><td class="n">450 млн+ <em>(их цифра)</em></td><td class="n">70 → 80 → 90 %</td><td class="pos">не требуется; SDK держит Defold</td></tr>
+      <tr><td>Y8</td><td class="n">30 млн+ MAU</td><td class="n">50 %</td><td class="pos">параллель разрешена прямым текстом</td></tr>
+      <tr><td>GameMonetize</td><td class="n">—</td><td class="n">45 % (90 % как паблишер)</td><td>—</td></tr>
+      <tr><td>GameDistribution</td><td class="n">—</td><td class="n">33 %</td><td>—</td></tr>
+      <tr><td>itch.io</td><td class="n">свой трафик</td><td class="n">сам ставишь, дефолт 90 %</td><td class="pos">нет</td></tr>
+      <tr><td>Kongregate</td><td class="n">—</td><td class="n neg">закрыт для новых игр с 2020</td><td>—</td></tr>
+      <tr><td>Facebook Web Games</td><td class="n">—</td><td class="n neg">закрывается 30.09.2026</td><td>—</td></tr>
+      <tr><td>YouTube Playables</td><td class="n">~450 игр всего</td><td>только реклама, без инаппов</td><td class="neg">private preview, вход по приглашению</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="note warn">
+    <span class="note-label">Барьер, который решает всё</span>
+    <p>Деньги с западных площадок резиденту РФ получить нечем: Payoneer закрыт с декабря 2022, PayPal и Wise не работают, CrazyGames платит через Tipalti, который по России отправляет в поддержку. Рабочая схема — иностранное юрлицо. Поэтому западный контур это не «ещё одна кнопка публикации», а отдельный проект с юридической частью.</p>
+  </div>
+
+  <p>Отдельная модель, про которую редко помнят: <strong>разовая лицензия вместо revshare</strong>. Неэксклюзивная лицензия идёт за <span class="num">$300–800</span> за площадку, эксклюзивный выкуп отполированной игры — от <span class="num">$5 000</span> и выше <span class="t t-me">СМИ</span>. Poki для игры, уже стоящей на других веб-порталах, прямо предлагает «one-time flat license fee instead, with no revenue share» <span class="t t-of">Официально</span>.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">
+    <div class="sec-num">08</div>
+    <h2>Что установить не удалось</h2>
+    <div class="sec-q">границы этого отчёта</div>
+  </div>
+  <div class="sec-body">
+  <ul>
+    <li><strong>eCPM и ARPDAU по Яндекс Играм за 2025–2026.</strong> Публичных цифр нет. Две доступные реконструкции дают 0,1 и 1 ₽ с игрока в день, причём верхняя взята из кейса с подтверждённой накруткой кликов. Разброс в десять раз не закрывается открытыми источниками.</li>
+    <li><strong>Комиссия с внутриигровых покупок.</strong> В лицензионном соглашении есть только общие 50 %; «до 30 %» встречается лишь во вторичных источниках.</li>
+    <li><strong>Топ-5 жанров поимённо.</strong> Известно только, что мидкор туда вошёл.</li>
+    <li><strong>MAU на середину 2026.</strong> Официальные 50 млн (январь) и 45 млн (апрель) не сходятся; причина расхождения не подтверждена.</li>
+    <li><strong>Полное число пасьянсов в каталоге.</strong> Витрина отдаёт первые 24 карточки, счётчика категории нет.</li>
+    <li><strong>Retention жанра на платформе и конверсия landscape против vertical.</strong> Ни у платформы, ни у аналитиков публично не найдено.</li>
+    <li><strong>Позиция правообладателя Shenzhen Solitaire по клонам.</strong> Ни разрешения, ни запрета, ни прецедентов.</li>
+  </ul>
+  </div>
+</section>
+
+<div class="sources">
+  <div class="kicker">Источники</div>
+  <ol>
+    <li>Лицензионное соглашение Яндекс Игр, ред. 28.11.2025 — <a href="https://yandex.ru/legal/licensegames/ru/">yandex.ru/legal/licensegames/ru</a></li>
+    <li>Требования к игре (пп. 1.21, 2.10, 2.13, 3.5, 3.6, 5.12) — <a href="https://yandex.ru/dev/games/doc/ru/concepts/requirements">yandex.ru/dev/games/doc/ru/concepts/requirements</a></li>
+    <li>Органическое продвижение и ранжирование — <a href="https://yandex.ru/dev/games/doc/ru/concepts/ranking-and-featuring">yandex.ru/dev/games/doc/ru/concepts/ranking-and-featuring</a></li>
+    <li>Метрики и расчёт рейтинга — <a href="https://yandex.ru/dev/games/doc/ru/concepts/metric">yandex.ru/dev/games/doc/ru/concepts/metric</a></li>
+    <li>Итоги 2025, интервью Н. Бокарева, App2Top, 27.01.2026 — <a href="https://app2top.ru/2025-in-video-games/summarno-opublikovali-24-ty-syach-igr-a-snyali-29-ty-syach-nikita-bokarev-iz-yandeks-igry-ob-itogah-2025-goda-237710.html">app2top.ru</a></li>
+    <li>Итоги 2024, интервью Н. Бокарева, App2Top — <a href="https://app2top.ru/2024/my-dostigli-otmetki-v-45-mln-aktivny-h-igrokov-v-mesyats-nikita-bokarev-iz-yandeks-igry-ob-itogah-2024-goda-227015.html">app2top.ru</a></li>
+    <li>Изменения модерации, App2Top, 24.06.2026 — <a href="https://app2top.ru/news/moderatsiya-novy-h-proektov-na-yandeks-igrah-izmenitsya-razrabotchiki-prisy-layut-slishkom-mnogo-zayavok-241421.html">app2top.ru</a></li>
+    <li>Доклад Яндекс Игр на КИИ Минск, App2Top, 19.05.2025 — <a href="https://app2top.ru/conferences/kii-minsk-2025-doklad-yandeks-igr-o-vebe-i-iap-monetizatsii-230690.html">app2top.ru</a></li>
+    <li>Сессия «Яндекс Игры: возможности для разработчиков», РИФ-2026, 28.04.2026 — <a href="https://rif.ru/news/cmogtd0ui000208lk0bmiutxy">rif.ru</a></li>
+    <li>Официальный канал для разработчиков — <a href="https://t.me/s/yangamesdevnews">t.me/yangamesdevnews</a></li>
+    <li>Кейс с обнулением дохода, vc.ru, 02.06.2026 — <a href="https://vc.ru/claim/2959132-kak-yandeks-igry-obnulili-dokhod-indi-razrabotchika">vc.ru</a></li>
+    <li>Постмортем escape-игры, DTF, 08.09.2025 — <a href="https://dtf.ru/indie/4014132">dtf.ru</a></li>
+    <li>Опыт запуска судоку на Яндекс Играх и VK Play, App2Top — <a href="https://app2top.ru/publishing/opy-t-zapuska-sudoku-na-yandeks-igrah-i-vk-play-danny-e-auditoriya-benchmarki-208592.html">app2top.ru</a></li>
+    <li>Alliance Media Holdings о покупке Zachtronics, 2016 — <a href="https://www.prnewswire.com/news-releases/alliance-media-holdings-announces-strategic-initiatives-and-the-acquisition-of-zachtronics-llc-300274664.html">prnewswire.com</a></li>
+    <li>Opus Magnum: De Re Metallica, 2026 — <a href="https://www.zachtronics.com/de-re-metallica/">zachtronics.com</a></li>
+    <li>Условия выплат CrazyGames — <a href="https://docs.crazygames.com/payouts/">docs.crazygames.com</a>; условия Poki — <a href="https://sdk.poki.com/deals">sdk.poki.com/deals</a></li>
+    <li>Витрина каталога, срезы категорий «Карточные», «Головоломки», тег «Пасьянсы», 25.08.2026 — <a href="https://yandex.ru/games/">yandex.ru/games</a></li>
+  </ol>
+</div>
+
+</div>

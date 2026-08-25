@@ -815,13 +815,15 @@ function debug_replay(self)
       local id = "free_slot" .. ord
       return id, self.free_slots[id].pos
    end
-   -- Foundation slot per suit. The game binds these via cursor.base_slot_trace
-   -- (cursor.script:30-34): each suit has a unique preferred base slot, so the
-   -- binding is fixed (the auto-flown value-2 always lands on it). We mirror that
-   -- exact mapping rather than first-empty, so a 3+ never races the 2's async
-   -- card_to_base and lands on the wrong foundation.
-   local BASE_OF_SUIT = { red = "base_slot1", blue = "base_slot2", green = "base_slot3" }
-   local function base_for(suit) return BASE_OF_SUIT[suit] end
+   -- Foundation slot per suit. The game binds these in cursor.send_to_base_slot
+   -- through the SAME config.BASE_SLOT_TRACE: each suit has a preferred base
+   -- slot, so the binding is fixed (the auto-flown value-2 always lands on it).
+   -- We mirror that exact mapping rather than first-empty, so a 3+ never races
+   -- the 2's async card_to_base and lands on the wrong foundation.
+   -- F8: маппинг берём из config, а не переписываем третьей копией. Раньше он
+   -- жил здесь литералом, и «мы повторяем привязку курсора» держалось на том,
+   -- что кто-то помнит про оба места.
+   local function base_for(suit) return config.BASE_SLOT_TRACE[suit] end
 
    local function dispatch(d)
       if d.auto then return end  -- game auto-flies it (flower / tableau value-2)

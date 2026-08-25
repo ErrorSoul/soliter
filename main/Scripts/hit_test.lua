@@ -1,6 +1,7 @@
 -- hit_test.lua — проверки попадания курсора в игровые объекты
 -- Все функции принимают cursor state (self из cursor.script).
 local config = require("main.Scripts.config")
+local tutorial_state = require("main.Scripts.tutorial_state")
 local M = {}
 
 function M.is_point_in_rect(x, y, rect_pos, half_size)
@@ -22,7 +23,17 @@ end
 
 function M.check_tableau_slots(state, cursor_x, cursor_y)
    for stack_index, stack in ipairs(state.tableau_stacks) do
-      if #stack > 0 then
+      -- H6: колонку, чья верхушка вот-вот улетит сама, не отдаём вообще —
+      -- ни верхушку, ни карты под ней. Под ней потому, что любой захват группы
+      -- тянется ДО верхушки (см. цикл ниже: от найденной карты до #stack), то
+      -- есть улетающая карта всё равно оказалась бы в руке.
+      --
+      -- Верхушка — это stack[#stack]: курсор получает набор от
+      -- tableau_script.update_visible_cards уже развёрнутым (reverse_table), и
+      -- last_card_to_slot берёт ту же самую карту.
+      local leaving = #stack > 0
+         and config.auto_flies_from_tableau(stack[#stack].data, tutorial_state.is_tutorial)
+      if #stack > 0 and not leaving then
          local last_card_index = #stack
          local last_card = stack[last_card_index]
          local last_card_pos = go.get_position(last_card.id)

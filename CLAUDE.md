@@ -26,6 +26,7 @@
 - [architecture.md](./architecture.md) — архитектура, структура коллекций, message-passing, z-index система
 - [docs/responsive-explained.md](./docs/responsive-explained.md) — как работает респонсив в Defold (проекция, GUI, input)
 - [docs/sounds.md](./docs/sounds.md) — звуковая система: sfx.lua, sound_manager, cross-collection workaround
+- [docs/market-2026.md](./docs/market-2026.md) — **рынок Яндекс Игр, срез 2026-08-25**: кто может публиковаться (ИП/самозанятость НЕ обязательны), revshare 50 %, п. 2.13 (рейтинг >30 за 3 недели), как раздаётся трафик, вилка дохода, ниша пасьянсов, блокер по названию, другие площадки. Полная версия с таблицами — артефакт https://claude.ai/code/artifact/ee84e927-77c9-47e4-830d-979c6b4da88c
 
 ## Build
 

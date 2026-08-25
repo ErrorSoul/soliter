@@ -1219,7 +1219,165 @@ def scenario_dealrng(s):
              f"случайная коллизия хеша так часто не бывает, это одинаковые колоды")
 
 
+DRAGON_BUTTON = {1: (481, 508), 2: (481, 406), 3: (481, 457)}
+
+
+def scenario_guilock(s):
+    """H7: кнопки рельса не спрашивают замок авто-сбора — ЧТО именно от этого ломается.
+
+    Это замер, а не починка. Претензия ревью звучала так: `disable_input`
+    глушит только `cursor.on_input`, а RESTART/TUTORIAL живут в
+    `ui.gui_script` и остаются нажимаемыми — нажатие посреди полёта карт
+    уводит в `game_manager.show`, то есть выгружает коллекцию, пока
+    `go.animate` ещё летит и её колбэк собирается постить `drop_success`.
+
+    Два окна, в каждом жмём RESTART:
+      A) раздача: цветок и открытые двойки летят дугой (`flying_count > 0`);
+      B) середина реплея: `cursor.input_disabled = true` — игрок заглушен
+         движком НАМЕРЕННО, и рельс остаётся единственной живой поверхностью.
+    Третье — ручной сбор драконов — в сценарии `dragonrestart`: на честной
+    раздаче кнопка не загорается (замер ниже), нужен бандл DEBUG_DRAGONS.
+
+    Оракул на каждую фазу: ни одной FATAL-строки, новая раздача приехала
+    (`I am MAIN SCRIPT`), стол разложен и в него МОЖНО ИГРАТЬ — карта из
+    первой колонки паркуется в свободную ячейку. Последнее обязательно:
+    выгрузка посреди анимации может оставить не труп, а живого калеку —
+    например, курсор с ненулевым `flying_count`, который молча съедает нажатия.
+    """
+    def fatals():
+        return len([e for e in s.log if e["kind"] == "FATAL"])
+
+    def playable(tag):
+        """Стол разложен и принимает ход: верхушка колонки 1 -> свободная ячейка 1."""
+        cell = FREE_CELL[1]
+        felt = s.brightness(*cell)
+        d = s.exposed_depth(1, felt)
+        if not s.expect(d is not None, f"{tag}: колонка 1 пуста — раздачи не случилось"):
+            return
+        s.expect_empty_at(cell[0], cell[1], felt, f"{tag}: ячейка 1 до хода")
+        s.drag_game(TABLEAU_X[1], TABLEAU_TOP_Y - d * CARD_PITCH, cell[0], cell[1],
+                    f"{tag}: верхушка колонки 1 -> ячейка 1")
+        s.wait(1.5, "карта садится")
+        s.expect_card_at(cell[0], cell[1], felt, f"{tag}: карта доехала до ячейки")
+
+    def restart_now(tag, hold=40):
+        before = fatals()
+        s.click_game(*RESTART_BUTTON, label=f"{tag}: RESTART", hold=hold)
+        got = s.wait_for_log(r"I am MAIN SCRIPT", 20, f"{tag}: пересдача")
+        s.expect(got, f"{tag}: RESTART не перезагрузил уровень")
+        s.wait(3, "раздача осела")
+        s.expect(fatals() == before,
+                 f"{tag}: выгрузка посреди полёта дала {fatals() - before} фатальных строк")
+        s.shot(tag)
+        playable(tag)
+
+    s.boot()
+    # --- A: рестарт прямо в дуге раздачи -------------------------------------
+    # press_play ждёт 2.5 с и промахивается мимо окна: цветок садится за ~0.7 с.
+    s.click_game(*PLAY_BUTTON, label="PLAY")
+    s.expect(s.wait_for_log(r"I am MAIN SCRIPT", 20, "первая раздача"),
+             "PLAY не загрузил уровень")
+    s.page.wait_for_timeout(250)   # середина дуги цветка/двоек
+    restart_now("A-deal-flight")
+
+    # --- B: рестарт посреди реплея -------------------------------------------
+    # Директивы теперь печатаются по одной (M4), поэтому окно ловится точно, а
+    # не «через N секунд после старта».
+    hit_b = False
+    for attempt in range(1, 7):
+        s.key("r", f"debug_replay {attempt}")
+        verdict = s.wait_for_log(
+            r"\[REPLAY\] (SOLVED|timeout|budget_exhausted|unsolvable|no_solution|planner desync|снапшот)", 90)
+        if verdict and "SOLVED" in verdict:
+            s.expect(s.wait_for_log(r"\[REPLAY\] d (\d+)/", 30, "первая директива"),
+                     "реплей не напечатал ни одной директивы")
+            s.wait(4, "реплей разогнался, карты в полёте")
+            restart_now("B-replay")
+            hit_b = True
+            break
+        s.key("Space", "новая раздача", hold=40)
+        s.wait(3, "пересдача")
+    s.expect(hit_b, "за 6 попыток ни одна раздача не решилась в бюджете — фазы B не было")
+
+    # Фаза C (рестарт посреди РУЧНОГО сбора драконов) живёт отдельным сценарием
+    # `dragonrestart`: на честной раздаче кнопка не загорается — замерено, 24
+    # пересдачи подряд не дали ни одной. Оно и понятно: чтобы масть собралась
+    # сама собой, все четыре её дракона должны оказаться верхушками, а раздача
+    # такого не обещает. Нужна раскладка DEBUG_DRAGONS, то есть другой бандл.
+
+
+def _lit_dragon_button(s):
+    """Номер пульсирующей кнопки или None.
+
+    Ищем по ПУЛЬСУ, а не по цвету: `dragon_button.check_state` гоняет scale
+    пингпонгом ровно у горящей кнопки, поэтому два снимка одного пятачка с
+    интервалом дают разные байты только у живой анимации. Цветовой порог
+    пришлось бы подбирать под каждый спрайт масти."""
+    for n, (x, y) in DRAGON_BUTTON.items():
+        a = s.patch(x, y, 24, 24)
+        s.page.wait_for_timeout(260)
+        b = s.patch(x, y, 24, 24)
+        if a != b:
+            s.note("dragon", f"кнопка {n} пульсирует — масть собрана")
+            return n
+    return None
+
+
+def scenario_dragonrestart(s):
+    """H7, фаза C: RESTART посреди РУЧНОГО сбора драконов.
+
+    ⚠ ТРЕБУЕТ бандла, собранного с `DEBUG_DRAGONS = true` в main.script:
+    честная раздача горящую кнопку почти никогда не даёт (замер в `guilock` —
+    24 пересдачи подряд, ни одной). Отладочная раскладка кладёт красных
+    драконов верхушками четырёх колонок, и кнопка горит с первого кадра.
+
+    Это тот самый путь из претензии ревью: кнопку жмёт палец, `input_disabled`
+    на нём не выставляется вовсе, единственный замок — `flying_count` внутри
+    `cursor.on_input`, до которого рельс GUI не имеет отношения. Четыре дракона
+    летят 0.35+0.35 с плюс 0.1 с задержки на карту — окно около секунды.
+
+    Ненайденная горящая кнопка здесь не «нет окна», а провал: на этой сборке
+    она обязана гореть, и её отсутствие означает, что сломан детектор пульса,
+    а не игра. Так проверка детектора получает положительный контроль."""
+    s.boot()
+    s.press_play()
+    s.shot("dragon-deal")
+
+    n = _lit_dragon_button(s)
+    if not s.expect(n, "на сборке DEBUG_DRAGONS ни одна кнопка не пульсирует — "
+                       "либо бандл собран без флага, либо сломан детектор пульса"):
+        return
+
+    before = len([e for e in s.log if e["kind"] == "FATAL"])
+    x, y = DRAGON_BUTTON[n]
+    s.click_game(x, y, label=f"сбор драконов кнопкой {n}", hold=40)
+    s.page.wait_for_timeout(300)   # середина дуги: 0.7 с полёта + 0.1 с на карту
+    s.shot("mid-arc")
+    s.click_game(*RESTART_BUTTON, label="RESTART посреди дуги", hold=40)
+    got = s.wait_for_log(r"I am MAIN SCRIPT", 20, "пересдача")
+    s.expect(got, "RESTART посреди сбора не перезагрузил уровень")
+    s.wait(3, "раздача осела")
+    after = len([e for e in s.log if e["kind"] == "FATAL"])
+    s.expect(after == before,
+             f"выгрузка посреди сбора дала {after - before} фатальных строк")
+    s.shot("after-restart")
+
+    # Стол обязан не просто перезагрузиться, а принимать ход: выгрузка посреди
+    # анимации могла оставить курсор с ненулевым flying_count, и тогда игра
+    # молча ест нажатия. Раскладка DEBUG_DRAGONS кладёт драконов, их можно
+    # таскать в ячейки.
+    cell = FREE_CELL[1]
+    felt = s.brightness(*cell)
+    d = s.exposed_depth(1, felt)
+    if s.expect(d is not None, "колонка 1 пуста — пересдачи не случилось"):
+        s.drag_game(TABLEAU_X[1], TABLEAU_TOP_Y - d * CARD_PITCH, cell[0], cell[1],
+                    "верхушка колонки 1 -> ячейка 1")
+        s.wait(1.5, "карта садится")
+        s.expect_card_at(cell[0], cell[1], felt, "карта доехала до ячейки после рестарта")
+
+
 SCENARIOS = {"boot": scenario_boot, "hittest": scenario_hittest,
+             "guilock": scenario_guilock, "dragonrestart": scenario_dragonrestart,
              "stuck": scenario_stuck, "win": scenario_win,
              "freecell": scenario_freecell, "census": scenario_census,
              "focus": scenario_focus, "audiobg": scenario_audiobg,

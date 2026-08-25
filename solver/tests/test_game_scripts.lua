@@ -2160,5 +2160,123 @@ H.test("M2 посадка цветка при живых драконах поб
    return true
 end)
 
+-- ---------------------------------------------------------------------------
+-- H6. Карту, которую игра сейчас заберёт сама (цветок, открывшаяся двойка),
+-- игрок успевал схватить: отправку `tableau_script` откладывает до `update`
+-- (A6), `flying_count` поднимает уже ПОЛУЧАТЕЛЬ сообщения, а `on_input` кадра
+-- идёт раньше и того и другого. Дальше карта улетала из руки, и следом в неё
+-- прилетал чужой `drop_success`.
+--
+-- Проверяем ИНВАРИАНТ, а не окно в N кадров: «за карту нельзя взяться тогда и
+-- только тогда, когда игра её забирает». Тест на окно пришлось бы привязать к
+-- порядку диспетчеризации между компонентами Defold, который стабом всё равно
+-- не воспроизводится честно, — и он бы протух от любой правки этого порядка.
+local function hit_state(top_data)
+   -- Курсор получает набор от tableau_script.update_visible_cards развёрнутым,
+   -- поэтому верхушка — ПОСЛЕДНИЙ элемент (см. set_stack).
+   stub.go_positions["go_deep"] = { x = 100, y = 300, z = 0 }
+   stub.go_positions["go_top"] = { x = 100, y = 265, z = 0 }
+   return {
+      tableau_stacks = {
+         {
+            { id = "go_deep", slot_id = "tableau_slot1", data = { value = 9, suit = "green" } },
+            { id = "go_top", slot_id = "tableau_slot1", data = top_data },
+         },
+      },
+   }
+end
+
+local CARDS_H6 = {
+   { name = "открытая двойка", data = { id = "2_red", value = 2, suit = "red" }, flies_in_game = true },
+   { name = "цветок", data = { id = "flower", value = "f", suit = "flower", is_flower = true }, flies_in_game = true },
+   { name = "дракон", data = { id = "d_red", value = "d", suit = "red", is_dragon = true }, flies_in_game = false },
+   { name = "обычный номинал", data = { id = "5_blue", value = 5, suit = "blue" }, flies_in_game = false },
+}
+
+H.test("H6 за верхушку, которую игра забирает сама, взяться нельзя", function()
+   local hit = require("main.Scripts.hit_test")
+   local tutorial_state = require("main.Scripts.tutorial_state")
+   tutorial_state.is_tutorial = false
+   for _, c in ipairs(CARDS_H6) do
+      local st = hit_state(c.data)
+      local got = hit.check_tableau_slots(st, 100, 265)
+      local grabbed = got ~= nil
+      if c.flies_in_game and grabbed then
+         return false, c.name .. ": схвачена карта, которая сейчас улетит сама"
+      end
+      if not c.flies_in_game and not grabbed then
+         return false, c.name .. ": перестала браться, а игра её не забирает — партия встанет"
+      end
+   end
+   return true
+end)
+
+H.test("H6 захват группы под улетающей верхушкой тоже запрещён", function()
+   local hit = require("main.Scripts.hit_test")
+   local tutorial_state = require("main.Scripts.tutorial_state")
+   tutorial_state.is_tutorial = false
+   -- Целимся в НИЖНЮЮ карту: захват группы тянется от неё до верхушки, значит
+   -- улетающая двойка всё равно оказалась бы в руке.
+   local st = hit_state({ id = "2_red", value = 2, suit = "red" })
+   if hit.check_tableau_slots(st, 100, 300) ~= nil then
+      return false, "группа отдана вместе с улетающей двойкой"
+   end
+   -- Контроль: с обычной верхушкой та же группа берётся.
+   local ok_st = hit_state({ id = "5_blue", value = 5, suit = "blue" })
+   if hit.check_tableau_slots(ok_st, 100, 300) == nil then
+      return false, "запрет распространился на колонку с обычной верхушкой"
+   end
+   return true
+end)
+
+H.test("H6 в туториале двойку брать МОЖНО — это учебный ход игрока", function()
+   local hit = require("main.Scripts.hit_test")
+   local tutorial_state = require("main.Scripts.tutorial_state")
+   tutorial_state.is_tutorial = true
+   local st = hit_state({ id = "2_red", value = 2, suit = "red" })
+   local got = hit.check_tableau_slots(st, 100, 265)
+   tutorial_state.is_tutorial = false
+   if got == nil then
+      return false, "шаг 0 туториала требует утащить 2_red руками, а её запретили"
+   end
+   return true
+end)
+
+-- Смычка двух мест. Предикат один (config.auto_flies_from_tableau), и этот тест
+-- держит именно это: что запрет на захват и факт отправки не могут разойтись.
+-- Разъехавшись, они дают либо прежнее окно (можно схватить улетающую), либо
+-- намертво замороженную колонку (нельзя взять, но никуда и не летит).
+H.test("H6 запрет захвата и авто-отправка описывают одни и те же карты", function()
+   local hit = require("main.Scripts.hit_test")
+   local tutorial_state = require("main.Scripts.tutorial_state")
+   load_script("main/Scripts/tableau_script.script")
+   for _, tut in ipairs({ false, true }) do
+      tutorial_state.is_tutorial = tut
+      for _, c in ipairs(CARDS_H6) do
+         local grabbed = hit.check_tableau_slots(hit_state(c.data), 100, 265) ~= nil
+         msg.clear()
+         local self = {
+            stack = {
+               { id = "go_deep", data = { value = 9, suit = "green" } },
+               { id = "go_top", data = c.data },
+            },
+            cursor = "cursor",
+         }
+         last_card_to_slot(self)
+         local sent = stub.msg_count("send_to_base_slot") + stub.msg_count("send_to_flower_slot")
+         if sent > 0 and grabbed then
+            return false, c.name .. " (туториал=" .. tostring(tut) ..
+               "): игра её отправляет, а схватить всё равно можно — это и есть окно H6"
+         end
+         if sent == 0 and not grabbed then
+            return false, c.name .. " (туториал=" .. tostring(tut) ..
+               "): схватить нельзя, а никто её не забирает — колонка замерзает навсегда"
+         end
+      end
+   end
+   tutorial_state.is_tutorial = false
+   return true
+end)
+
 
 return H

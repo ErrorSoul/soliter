@@ -43,10 +43,16 @@ end
 function last_card_to_slot(self)
    local card = reverse_table(self.stack)[1]
    if card then
-      if card.data.value == 'f' then
-         msg.post(self.cursor, 'send_to_flower_slot', card)
-      elseif card.data.value == 2 and not tutorial_state.is_tutorial then
-         msg.post(self.cursor, 'send_to_base_slot', card)
+      -- H6: УХОДИТ ли карта — решает config.auto_flies_from_tableau, тот же
+      -- предикат, по которому hit_test запрещает за неё браться. Здесь остаётся
+      -- только «куда». Условие нарочно не продублировано: разъехавшись, эти два
+      -- места дали бы окно, где карта уже неприкасаемая, но никуда не летит.
+      if config.auto_flies_from_tableau(card.data, tutorial_state.is_tutorial) then
+         if card.data.value == 'f' then
+            msg.post(self.cursor, 'send_to_flower_slot', card)
+         else
+            msg.post(self.cursor, 'send_to_base_slot', card)
+         end
       elseif card.data.value == 'd' then
          msg.post(color_to_cell(card), 'send_counter_to_button', card)
       end
