@@ -882,13 +882,34 @@ function debug_replay(self)
          end
       end)
    end
-   local function step()
+   -- M4: цепочка `timer.delay -> step` один раз за семь прогонов встала посреди
+   -- партии МОЛЧА — ни ошибки, ни вердикта. Три модели прочитали этот код и
+   -- ветки тихого выхода не нашли, значит гипотезу надо не выводить, а
+   -- измерять. Печатаем номер каждой директивы (последняя строка = точка
+   -- остановки), проверяем handle таймера (timer.delay при исчерпанном пуле
+   -- возвращает INVALID_TIMER_HANDLE и НЕ ругается — единственный известный
+   -- способ оборвать цепочку без единого сообщения) и заводим сторож в update:
+   -- если он печатает, значит кадры идут, а мёртв именно таймер.
+   local step
+   local function arm(delay)
+      local h = timer.delay(delay, false, function() step() end)
+      self.replay_last_tick = os.clock()
+      self.replay_stall_reported = false
+      if h == timer.INVALID_TIMER_HANDLE then
+         print(string.format("[REPLAY] ТАЙМЕР НЕ ВЗВЁЛСЯ на директиве %d/%d — пул таймеров исчерпан", i, #directives))
+      end
+      return h
+   end
+   step = function()
       i = i + 1
       if i > #directives then finish(); return end
-      dispatch(directives[i])
-      timer.delay(REPLAY_STEP_DELAY, false, step)
+      local d = directives[i]
+      print(string.format("[REPLAY] d %d/%d %s", i, #directives, tostring(d.kind)))
+      dispatch(d)
+      arm(REPLAY_STEP_DELAY)
    end
-   timer.delay(0.5, false, step)
+   self.replay_total = #directives
+   arm(0.5)
 end
 
 -- C6: реплей собирает драконов прямыми `drop_success` — кнопка масти в этом пути
@@ -1538,6 +1559,17 @@ function update(self, dt)
    -- счётчик отмерил бы вдвое меньше реального (ревью блока J).
    if self.auto_collecting then
       self.auto_collect_wait = (self.auto_collect_wait or 0) + (dt or 0)
+   end
+   -- M4: сторож реплея. Шаг взводится на 0.6 с; если прошло больше трёх секунд,
+   -- а следующий не пришёл — цепочка мертва, а кадры (эта самая функция) идут.
+   -- Печатаем один раз на остановку, иначе лог зальёт. Только debug-сборка:
+   -- реплея в релизе нет вовсе.
+   if DEBUG_SOLVER and self.debug_replaying and self.replay_last_tick then
+      if os.clock() - self.replay_last_tick > 3.0 and not self.replay_stall_reported then
+         self.replay_stall_reported = true
+         print(string.format("[REPLAY] СТОЙКА: %.1f с без шага, кадры идут — оборвалась цепочка таймеров",
+            os.clock() - self.replay_last_tick))
+      end
    end
    if self.pending_collect_retry then
       self.pending_collect_retry = self.pending_collect_retry - 1
