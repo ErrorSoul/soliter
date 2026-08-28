@@ -22,6 +22,10 @@ local solver_bridge = require("solver.bridge")
 local solver_rules = require("solver.rules")
 local solver_view = require("solver.board_view")
 local solver_replay = require("solver.replay")
+-- Туториал v3: подсказка считается от текущей доски тем же движком правил.
+-- Это не dev-инструмент, а часть игры — едет в релизном бандле и работает
+-- независимо от debug_flags.
+local solver_hint = require("solver.hint")
 local SOLVE_BUDGET = 200000
 -- R (drive real cards) solves SYNCHRONOUSLY on the main thread before driving,
 -- so the budget caps the worst-case freeze on keypress. At 200000 a timeout deal
@@ -92,6 +96,10 @@ function init(self)
    send_messages_to_cursor(self)
    send_message_to_dragon_buttons(self)
    msg.post("@render:", "use_fixed_fit_projection", { near = -1, far = 1 })
+   -- Первая подсказка туториала. С запасом кадров: карты раздаются анимацией, а
+   -- цветок с верхушки колонки улетает сам — снапшот до его отправки описывал бы
+   -- доску, которой игрок не увидит.
+   request_tutorial_hint(self, 6)
 end
 
 
@@ -802,6 +810,174 @@ end
 function build_solver_snapshot(self)
    local snap, _, _, err = snapshot_and_go_map(self)
    return snap, err
+end
+
+-- ===================== туториал v3: подсказка от доски =====================
+--
+-- Сценарного списка шагов больше нет: после каждого осевшего хода мы снимаем ту
+-- же доску, что отдаём солверу, и спрашиваем solver/hint.lua, чем ходить. Любой
+-- ход игрока — даже «не тот» — просто меняет доску, и следующая подсказка
+-- считается заново. Раньше подсказка знала только НОМЕР шага, и увод 5_green в
+-- ячейку первым ходом делал третий шаг невыполнимым навсегда.
+--
+-- Бюджет: полный обход достижимых состояний туториальной раздачи — 9192 ребра
+-- (замер, solver/tests/test_tutorial_hint.lua). 20000 берём с запасом вдвое.
+-- Считаем СИНХРОННО в кадре, как и клавиша R, но здесь это дёшево: худший
+-- случай — стартовая доска, ~55 мс в настольном Lua, дальше на порядок меньше.
+local TUTORIAL_HINT_BUDGET = 20000
+local ORD_FREE_SLOT = {}
+for slot_id, ord in pairs(FREE_CELL_ORD) do ORD_FREE_SLOT[ord] = slot_id end
+
+local function push(list, value)
+   if value ~= nil then list[#list + 1] = value end
+end
+
+-- Часы для замера подсказки. os.clock в браузерном бандле бесполезен: замер на
+-- стенде дал ровно «0 мс» на всех семи пересчётах — разрешение грубее самого
+-- измеряемого. performance.now() отдаёт доли миллисекунды и доступен там же,
+-- где и остальной мост html5 (i18n читает через него ?lang=). Вне браузера
+-- (юнит-тесты, редактор) падаем обратно на os.clock.
+function hint_clock_ms()
+   if html5 then
+      local ok, value = pcall(html5.run, "performance.now()")
+      local ms = ok and tonumber(value)
+      if ms then return ms end
+   end
+   return os.clock() * 1000
+end
+
+-- Куда полетит карта: слот масти, если он уже занят этой мастью, иначе все
+-- свободные основания — игра принимает любое из них.
+local function hint_base_slots(self, suit)
+   local named = suit and self.suit_to_base[suit]
+   if named then return { named } end
+   local out = {}
+   for slot_id, slot in pairs(self.base_slots) do
+      if slot.is_empty then out[#out + 1] = slot_id end
+   end
+   table.sort(out)   -- pairs по хэш-таблице непредсказуем, а подсветка видна глазом
+   return out
+end
+
+local function hint_free_slots(self)
+   local out = {}
+   for ord = 1, 3 do
+      local fc = self.free_cell_state[ord]
+      if not (fc and fc.card) then push(out, ORD_FREE_SLOT[ord]) end
+   end
+   return out
+end
+
+local function hint_dragon_button(self, suit)
+   for btn_id, btn in pairs(self.dragon_buttons or {}) do
+      if btn.sprite == suit then return btn_id end
+   end
+   return nil
+end
+
+-- Ход солвера -> что подсветить на экране. Карты берём ИЗ go_map, а не поиском
+-- по data.id: в туториальной раздаче четыре дракона носят один id "d_red", и
+-- поиск по нему возвращал произвольного из них. go_map строится тем же обходом,
+-- что и снапшот, поэтому индексы в нём и в snap.tableau параллельны.
+function tutorial_hint_targets(self, snap, go_map, move)
+   local cards, slots = {}, {}
+   local function col_card(col, idx)
+      local ids = go_map.tableau[col] or {}
+      local data = snap.tableau[col] or {}
+      idx = idx or #ids
+      return ids[idx], data[idx]
+   end
+
+   local t = move.type
+   if t == "to_foundation" then
+      local go, card
+      if move.from_col then
+         go, card = col_card(move.from_col)
+      else
+         go = go_map.free_cells[move.from_free_cell]
+         local fc = snap.free_cells[move.from_free_cell]
+         card = fc and fc.card
+      end
+      push(cards, go)
+      for _, slot_id in ipairs(hint_base_slots(self, card and card.suit)) do
+         push(slots, slot_id)
+      end
+   elseif t == "to_free_cell" then
+      push(cards, (col_card(move.from_col)))
+      for _, slot_id in ipairs(hint_free_slots(self)) do push(slots, slot_id) end
+   elseif t == "dragon_collect" then
+      push(slots, hint_dragon_button(self, move.suit))
+   elseif t == "tableau_to_tableau" or t == "multi_to_tableau" or t == "from_free_cell" then
+      if move.from_col then
+         -- multi_to_tableau тянет группу от run_start до верха; подсвечиваем
+         -- нижнюю карту группы — за неё игрок и берётся.
+         push(cards, (col_card(move.from_col, move.run_start)))
+      else
+         push(cards, go_map.free_cells[move.from_slot])
+      end
+      local target = go_map.tableau[move.to_col] or {}
+      if #target > 0 then
+         push(cards, target[#target])
+      else
+         push(slots, "tableau_slot" .. tostring(move.to_col))
+      end
+   end
+   return cards, slots
+end
+
+function refresh_tutorial_hint(self)
+   if not self.tutorial_mode then return end
+   if self.currentState == self.states.WIN then return end
+   local snap, go_map, _, err = snapshot_and_go_map(self)
+   if err then
+      -- Зеркала ещё не сошлись. Штатное окно, а не поломка: сбор драконов сажает
+      -- четыре карты по очереди (i*0.1 c), и пока первая уже запечатала ячейку, а
+      -- три лежат на столе, снапшот честно отказывается описывать доску. Старую
+      -- подсказку в этот момент НЕ трогаем (пусть висит прежняя) и пробуем ещё
+      -- раз через несколько кадров. Счётчик попыток обязателен: разъехавшееся
+      -- насовсем зеркало иначе крутило бы пересчёт каждый кадр до конца партии.
+      self.hint_retries = (self.hint_retries or 0) + 1
+      if self.hint_retries <= 5 then self.pending_hint = 4 end
+      return
+   end
+   self.hint_retries = 0
+   local t0 = hint_clock_ms()
+   local hint, status = solver_hint.find(solver_bridge.from_game(snap),
+      { budget = TUTORIAL_HINT_BUDGET })
+   -- Печатаем ВСЕГДА: это и оракул браузерного сценария tutorialfree (по этим
+   -- строкам он читает, какой ход подсказан), и единственный способ увидеть
+   -- цену поиска на HTML5 — считаем-то синхронно в кадре.
+   print(string.format("[TUTOR] %s %s за %.0f мс", tostring(status),
+      hint and hint.kind or "-", hint_clock_ms() - t0))
+   if status == "timeout" then
+      -- Не хватило бюджета — молчим. Сказать «ходов нет» было бы прямой ложью,
+      -- и это худший исход, чем секунда со старой подсказкой.
+      print("[TUTOR] подсказка не уложилась в бюджет — оставляю прежнюю")
+      return
+   end
+   if status == "won" then
+      -- Масть уже собрана: победа едет к нам сообщением dragons_collected, а
+      -- пересчёт просто успел раньше. Подсказку снимаем молча — «ходов нет»
+      -- поверх выигранной партии было бы прямой ложью (ловилось на стенде).
+      tutorial_state.clear_hint()
+      return
+   end
+   if status ~= "found" then
+      tutorial_state.set_hint(nil, "stuck")
+      return
+   end
+   local cards, slots = tutorial_hint_targets(self, snap, go_map, hint.move)
+   tutorial_state.set_hint({
+      kind = hint.kind, distance = hint.distance, cards = cards, slots = slots,
+   }, "found")
+end
+
+-- Пересчёт заказываем с задержкой в кадрах по той же причине, что и
+-- pending_af_check: каскад drop_success -> remove_card -> зеркало ещё в очереди
+-- сообщений, и посчитанная сейчас подсказка описывала бы доску ДО хода.
+function request_tutorial_hint(self, frames)
+   if not self.tutorial_mode then return end
+   self.pending_hint = frames or 2
 end
 
 -- Dev tool (press 'S'): solve the current deal and animate the solver's line of
@@ -1533,6 +1709,9 @@ function on_message(self, message_id, message, sender)
       if message.suit and message.slot_id and not self.suit_to_base[message.suit] then
          self.suit_to_base[message.suit] = message.slot_id
       end
+      -- Основание поднялось — значит и подсказка другая. Отдельно от зеркала
+      -- tableau: карта могла уехать наверх из ячейки, а не из колонки.
+      request_tutorial_hint(self)
       if not self.tutorial_mode and self.base_cards_count >= 27 then
          -- Все 27 номиналов разложены — но это ещё не пустой стол. Замер
          -- (reviews/probe_dragon_unblock.lua, сиды 1..300): в 99 решённых
@@ -1564,6 +1743,7 @@ function on_message(self, message_id, message, sender)
       if stack then
          table.insert(stack.cards, message.card)
       end
+      request_tutorial_hint(self)
    elseif message_id == hash("tableau_card_removed") then
       local stack = self.tableau_stacks[message.index]
       if stack then
@@ -1574,6 +1754,7 @@ function on_message(self, message_id, message, sender)
             end
          end
       end
+      request_tutorial_hint(self)
    elseif message_id == hash("free_cell_changed") then
       -- C4: содержимое ячейки изменилось. message.card отсутствует => ячейка пуста
       -- (Defold не переносит nil-поля).
@@ -1583,6 +1764,7 @@ function on_message(self, message_id, message, sender)
       else
          print("[SNAPSHOT] free_cell_changed от неизвестной ячейки: " .. tostring(message.slot_id))
       end
+      request_tutorial_hint(self)
    elseif message_id == hash("flower_collected") then
       -- C5: см. flower_slot.script. Флаг только взводится: обратно цветок из слота
       -- не достаётся, а новая партия перезагружает коллекцию (init сбрасывает).
@@ -1641,6 +1823,10 @@ function on_message(self, message_id, message, sender)
       if self.tutorial_mode then
          self.currentState = self.states.WIN
          sfx.victory()
+         -- Победа: подсказку снимаем, иначе поверх экрана «Отлично!» осталась бы
+         -- висеть подсветка последнего хода.
+         self.pending_hint = nil
+         tutorial_state.clear_hint()
          tutorial_state.request_victory()
       elseif board_cleared(self) then
          -- Последняя масть драконов улетела в ячейку — стол пуст, это победа.
@@ -1703,6 +1889,14 @@ function update(self, dt)
          self.replay_stall_reported = true
          print(string.format("[REPLAY] СТОЙКА: %.1f с без шага, кадры идут — оборвалась цепочка таймеров",
             self.replay_idle))
+      end
+   end
+   -- Туториал v3: пересчёт подсказки, когда доска осела после хода.
+   if self.pending_hint then
+      self.pending_hint = self.pending_hint - 1
+      if self.pending_hint <= 0 then
+         self.pending_hint = nil
+         refresh_tutorial_hint(self)
       end
    end
    if self.pending_collect_retry then

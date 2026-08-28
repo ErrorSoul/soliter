@@ -2626,4 +2626,276 @@ H.test("N9c из стопки возвращаются все, кроме сдв
    return true
 end)
 
+-- ---------------------------------------------------------------------------
+-- V3. Туториал считает подсказку от ДОСКИ (solver/hint.lua), а не от номера
+-- шага. Здесь проверяется склейка: снапшот -> поиск -> id объектов для
+-- подсветки -> общий модуль tutorial_state. Сам поиск проверяет
+-- test_tutorial_hint.lua, дублировать его тут незачем.
+-- ---------------------------------------------------------------------------
+
+local TUT = require("main.Scripts.tutorial_state")
+
+local function tcard(go, data) return { id = go, data = data } end
+local function dragon(go) return tcard(go, { id = "d_red", value = "d", suit = "red", is_dragon = true }) end
+
+-- Зеркало ровно той раздачи, которую делает deal_tutorial_cards, в состоянии
+-- «цветок уже улетел». Все четыре дракона носят ОДИН data.id — на этом ломался
+-- прежний поиск карты по data.id, поэтому id объектов здесь разные.
+local function tutorial_self()
+   local stacks = {}
+   for i = 1, 8 do stacks[i] = { slot_id = "tableau_slot" .. i, cards = {} } end
+   stacks[1].cards = {
+      dragon("go_d1"),
+      tcard("go_4b", { id = "4_blue", value = 4, suit = "blue" }),
+      tcard("go_7g", { id = "7_green", value = 7, suit = "green" }),
+      tcard("go_3r", { id = "3_red", value = 3, suit = "red" }),
+      tcard("go_2r", { id = "2_red", value = 2, suit = "red" }),
+   }
+   stacks[2].cards = { tcard("go_5g", { id = "5_green", value = 5, suit = "green" }) }
+   stacks[3].cards = { dragon("go_d2") }
+   stacks[4].cards = { dragon("go_d3") }
+   stacks[5].cards = { dragon("go_d4") }
+   return {
+      tableau_stacks = stacks,
+      foundation_top = { red = 1, blue = 1, green = 1 },
+      base_cards_count = 0,
+      free_cell_state = { {}, {}, {} },
+      states = { WIN = "win", PLAYING = "playing" },
+      currentState = "playing",
+      cursor = "cursor_go",
+      suit_to_base = {},
+      base_slots = {
+         base_slot1 = { is_empty = true },
+         base_slot2 = { is_empty = true },
+         base_slot3 = { is_empty = true },
+      },
+      dragon_buttons = {
+         dragon_button1 = { sprite = "red" },
+         dragon_button2 = { sprite = "blue" },
+         dragon_button3 = { sprite = "green" },
+      },
+      tutorial_mode = true,
+      is_full_deal = false,
+      flower_collected = true,
+   }
+end
+
+local function has(list, value)
+   for _, v in ipairs(list) do if v == value then return true end end
+   return false
+end
+
+H.test("V3 первая подсказка — верхняя карта первой колонки наверх", function()
+   load_script("main/Scripts/main.script")
+   TUT.reset()
+   local self = tutorial_self()
+   refresh_tutorial_hint(self)
+   if TUT.hint_status ~= "found" then return false, "статус = " .. tostring(TUT.hint_status) end
+   if TUT.hint.kind ~= "foundation" then return false, "тип хода = " .. TUT.hint.kind end
+   if not has(TUT.hint.cards, "go_2r") then
+      return false, "подсвечена не 2_red, а " .. table.concat(TUT.hint.cards, ",")
+   end
+   -- Масть ещё нигде не лежит — годится любое пустое основание, светим все три.
+   if #TUT.hint.slots ~= 3 then
+      return false, "оснований подсвечено " .. #TUT.hint.slots
+   end
+   if not TUT.ui_dirty or not TUT.highlight_dirty then
+      return false, "подсказку положили, а перерисовать никого не попросили"
+   end
+   return true
+end)
+
+-- Тот самый ход, которым игрок ломал v2: увести 5_green в ячейку. Подсказка
+-- обязана продолжать работать — она считается от доски, а не от сценария.
+H.test("V3 после «неправильного» хода игрока подсказка остаётся живой", function()
+   load_script("main/Scripts/main.script")
+   TUT.reset()
+   local self = tutorial_self()
+   self.tableau_stacks[2].cards = {}
+   self.free_cell_state[1] = { card = tcard("go_5g", { id = "5_green", value = 5, suit = "green" }) }
+   refresh_tutorial_hint(self)
+   if TUT.hint_status ~= "found" then return false, "статус = " .. tostring(TUT.hint_status) end
+   if not has(TUT.hint.cards, "go_2r") then
+      return false, "подсказка показывает не на 2_red: " .. table.concat(TUT.hint.cards, ",")
+   end
+   return true
+end)
+
+H.test("V3 все драконы открыты — подсказка светит кнопку своей масти", function()
+   load_script("main/Scripts/main.script")
+   TUT.reset()
+   local self = tutorial_self()
+   -- Колонка 1 разобрана: остался только дракон, остальные три уже на виду.
+   self.tableau_stacks[1].cards = { dragon("go_d1") }
+   self.tableau_stacks[2].cards = {}
+   self.foundation_top.red = 3
+   self.free_cell_state[1] = { card = tcard("go_7g", { id = "7_green", value = 7, suit = "green" }) }
+   refresh_tutorial_hint(self)
+   if TUT.hint.kind ~= "dragon" then return false, "тип хода = " .. TUT.hint.kind end
+   if not has(TUT.hint.slots, "dragon_button1") then
+      return false, "подсвечена не красная кнопка: " .. table.concat(TUT.hint.slots, ",")
+   end
+   return true
+end)
+
+H.test("V3 ход на карту подсвечивает и то, что тащить, и то, куда класть", function()
+   load_script("main/Scripts/main.script")
+   local self = tutorial_self()
+   local snap, go_map = snapshot_and_go_map(self)
+   local cards, slots = tutorial_hint_targets(self, snap, go_map,
+      { type = "tableau_to_tableau", from_col = 1, to_col = 2 })
+   if not has(cards, "go_2r") then return false, "источник не подсвечен" end
+   if not has(cards, "go_5g") then return false, "карта-цель не подсвечена" end
+   if #slots ~= 0 then return false, "лишняя подсветка слота при ходе на карту" end
+   return true
+end)
+
+H.test("V3 ход в пустую колонку подсвечивает слот колонки", function()
+   load_script("main/Scripts/main.script")
+   local self = tutorial_self()
+   local snap, go_map = snapshot_and_go_map(self)
+   local cards, slots = tutorial_hint_targets(self, snap, go_map,
+      { type = "tableau_to_tableau", from_col = 1, to_col = 6 })
+   if not has(cards, "go_2r") then return false, "источник не подсвечен" end
+   if not has(slots, "tableau_slot6") then
+      return false, "пустая колонка не подсвечена: " .. table.concat(slots, ",")
+   end
+   return true
+end)
+
+H.test("V3 карта из ячейки наверх: светим её и УЖЕ занятое основание масти", function()
+   load_script("main/Scripts/main.script")
+   local self = tutorial_self()
+   self.suit_to_base.green = "base_slot2"
+   self.free_cell_state[2] = { card = tcard("go_7g", { id = "7_green", value = 7, suit = "green" }) }
+   local snap, go_map = snapshot_and_go_map(self)
+   local cards, slots = tutorial_hint_targets(self, snap, go_map,
+      { type = "to_foundation", from_free_cell = 2 })
+   if not has(cards, "go_7g") then return false, "карта из ячейки не подсвечена" end
+   if #slots ~= 1 or slots[1] ~= "base_slot2" then
+      return false, "основание масти не единственное: " .. table.concat(slots, ",")
+   end
+   return true
+end)
+
+H.test("V3 группу карт берут за нижнюю карту группы", function()
+   load_script("main/Scripts/main.script")
+   local self = tutorial_self()
+   local snap, go_map = snapshot_and_go_map(self)
+   local cards = tutorial_hint_targets(self, snap, go_map,
+      { type = "multi_to_tableau", from_col = 1, to_col = 6, run_start = 4, run_size = 2 })
+   if not has(cards, "go_3r") then
+      return false, "подсвечена не нижняя карта группы: " .. table.concat(cards, ",")
+   end
+   return true
+end)
+
+-- Снапшот отказывается описывать доску, пока зеркала не сошлись (окно посадки
+-- драконов). Врать в этот момент нельзя ни в какую сторону: ни стирать
+-- подсказку, ни объявлять тупик.
+H.test("V3 недостоверный снапшот сохраняет прежнюю подсказку и заказывает пересчёт", function()
+   load_script("main/Scripts/main.script")
+   TUT.reset()
+   TUT.set_hint({ kind = "stack", distance = 2, cards = { "go_old" }, slots = {} }, "found")
+   local self = tutorial_self()
+   -- Цветок в ячейке — снапшот такую позицию не моделирует и возвращает err.
+   self.free_cell_state[1] = { card = tcard("go_f", { id = "flower", value = "f", suit = "flower", is_flower = true }) }
+   refresh_tutorial_hint(self)
+   if TUT.hint_status ~= "found" or TUT.hint.cards[1] ~= "go_old" then
+      return false, "прежнюю подсказку затёрли"
+   end
+   if not self.pending_hint then
+      return false, "пересчёт не заказан — подсказка застрянет на прошлом ходе"
+   end
+   return true
+end)
+
+H.test("V3 попытки пересчёта не бесконечны", function()
+   load_script("main/Scripts/main.script")
+   TUT.reset()
+   local self = tutorial_self()
+   self.free_cell_state[1] = { card = tcard("go_f", { id = "flower", value = "f", suit = "flower", is_flower = true }) }
+   for _ = 1, 8 do
+      self.pending_hint = nil
+      refresh_tutorial_hint(self)
+   end
+   if self.pending_hint then
+      return false, "зеркало разъехалось насовсем, а пересчёт всё ещё крутится"
+   end
+   return true
+end)
+
+H.test("V3 ход игрока считает подсказку не в тот же кадр, а через пару кадров", function()
+   load_script("main/Scripts/main.script")
+   TUT.reset()
+   local self = tutorial_self()
+   on_message(self, hash("tableau_card_removed"), { index = 1, id = "go_2r" }, "tableau")
+   if TUT.hint ~= nil then
+      return false, "подсказку посчитали немедленно — зеркало ещё в очереди сообщений"
+   end
+   if not self.pending_hint then return false, "пересчёт не заказан" end
+   for _ = 1, 4 do update(self, 0.016) end
+   if TUT.hint_status ~= "found" then
+      return false, "после осадки кадров подсказки так и нет: " .. tostring(TUT.hint_status)
+   end
+   return true
+end)
+
+H.test("V3 вне туториала подсказку не считают вовсе", function()
+   load_script("main/Scripts/main.script")
+   TUT.reset()
+   local self = tutorial_self()
+   self.tutorial_mode = false
+   on_message(self, hash("tableau_card_removed"), { index = 1, id = "go_2r" }, "tableau")
+   on_message(self, hash("free_cell_changed"), { slot_id = "free_slot1" }, "free_cell")
+   if self.pending_hint then return false, "обычная партия заказала подсказку туториала" end
+   for _ = 1, 4 do update(self, 0.016) end
+   if TUT.hint ~= nil then return false, "подсказка появилась в обычной партии" end
+   return true
+end)
+
+H.test("V3 победа снимает подсказку и подсветку", function()
+   load_script("main/Scripts/main.script")
+   TUT.reset()
+   local self = tutorial_self()
+   TUT.set_hint({ kind = "dragon", distance = 1, cards = {}, slots = { "dragon_button1" } }, "found")
+   self.pending_hint = 2
+   on_message(self, hash("dragons_collected"), { suit = "red" }, "free_cell")
+   if TUT.hint ~= nil or TUT.hint_status ~= nil then
+      return false, "подсветка последнего хода осталась висеть поверх экрана победы"
+   end
+   if self.pending_hint then return false, "после победы всё ещё заказан пересчёт" end
+   if self.currentState ~= self.states.WIN then return false, "туториал не выигран" end
+   return true
+end)
+
+-- Окно между посадкой первого дракона и объявлением победы: ячейка уже
+-- запечатана, а сообщение dragons_collected ещё в пути. Подсказка тут обязана
+-- ЗАМОЛЧАТЬ, а не сказать «ходов не осталось» — иначе игрок на миг видит
+-- сообщение о тупике поверх выигранной партии (поймано браузерным стендом).
+H.test("V3 собранная масть снимает подсказку, а не объявляет тупик", function()
+   load_script("main/Scripts/main.script")
+   TUT.reset()
+   TUT.set_hint({ kind = "dragon", distance = 1, cards = {}, slots = { "dragon_button1" } }, "found")
+   local self = tutorial_self()
+   for i = 1, 5 do self.tableau_stacks[i].cards = {} end
+   self.free_cell_state[1] = { card = tcard("go_d1", { id = "d_red", value = "d", suit = "red", is_dragon = true }), is_blocked = true }
+   refresh_tutorial_hint(self)
+   if TUT.hint_status == "stuck" then
+      return false, "выигранная доска объявлена тупиком"
+   end
+   if TUT.hint ~= nil then return false, "подсказка осталась висеть" end
+   return true
+end)
+
+H.test("V3 выигранная доска подсказку больше не считает", function()
+   load_script("main/Scripts/main.script")
+   TUT.reset()
+   local self = tutorial_self()
+   self.currentState = self.states.WIN
+   refresh_tutorial_hint(self)
+   if TUT.hint ~= nil then return false, "после победы посчитали новую подсказку" end
+   return true
+end)
+
 return H

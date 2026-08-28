@@ -9,15 +9,6 @@ local coords = require("main.Scripts.coords")
 local hit = require("main.Scripts.hit_test")
 local ui_fx = require("main.Scripts.ui_fx")
 
-local function get_slot_target_type(slot_id)
-   if string.sub(slot_id, 1, 9) == "base_slot" then return "base"
-   elseif string.sub(slot_id, 1, 9) == "free_slot" then return "free"
-   elseif string.sub(slot_id, 1, 12) == "tableau_slot" then return "tableau_empty"
-   elseif slot_id == "flower_slot" then return "flower"
-   end
-   return "unknown"
-end
-
 -- Драг начинается «с нуля скорости». Без этого первый же кадр считал сдвиг от
 -- prev_cursor_x, оставшегося от прошлого драга (или от нуля после init), и
 -- карта стартовала с мгновенным предельным наклоном — замерено зондом в
@@ -40,7 +31,6 @@ function init(self)
    self.stack_offset = {}  -- Сохраняем смещение каждой карты относительно первой
    self.input_disabled = false
    self.flying_count = 0  -- A3: сколько карт сейчас в авто-полёте (дуга)
-   self.tutorial_highlights_applied = false
    msg.post(".", "acquire_input_focus")
    -- Draw colored text on the screen
 end
@@ -246,25 +236,6 @@ local function set_cursor(slots, params)
    end
 end
 
--- Tutorial highlight: find card GO by data id (e.g. "2_red")
-local function find_card_by_data_id(self, data_id)
-    -- Search visible stacks (pairs — stacks may have gaps)
-    for _, stack in pairs(self.tableau_stacks) do
-        for _, card in ipairs(stack) do
-            if card.data and card.data.id == data_id then
-                return card.id
-            end
-        end
-    end
-    -- Search last cards (top of each stack)
-    for _, card in pairs(self.last_cards) do
-        if card and card.data and card.data.id == data_id then
-            return card.id
-        end
-    end
-    return nil
-end
-
 local function clear_tutorial_highlights(self)
     -- Unhighlight all cards in all stacks (pairs — stacks may have gaps)
     for _, stack in pairs(self.tableau_stacks) do
@@ -290,30 +261,19 @@ local function clear_tutorial_highlights(self)
     end
 end
 
+-- v3: подсвечиваем то, что назвала подсказка (tutorial_state.hint), а она уже
+-- содержит ГОТОВЫЕ id игровых объектов — main считает их из go_map рядом со
+-- снапшотом доски. Прежний вариант искал карту по data.id, и на туториальной
+-- раздаче это было прямо неверно: четыре дракона там носят ОДИН id "d_red",
+-- поиск возвращал первого попавшегося.
 local function apply_tutorial_highlights(self)
-    local highlights = tutorial_state.HIGHLIGHTS[tutorial_state.step]
-    if not highlights then return end
-
-    -- Highlight cards
-    for _, card_data_id in ipairs(highlights.cards) do
-        local card_go = find_card_by_data_id(self, card_data_id)
-        if card_go then
-            msg.post(card_go, "highlight")
-        end
+    local hint = tutorial_state.hint
+    if not hint then return end
+    for _, card_go in ipairs(hint.cards or {}) do
+        msg.post(card_go, "highlight")
     end
-
-    -- Highlight slots
-    for _, slot_id in ipairs(highlights.slots) do
+    for _, slot_id in ipairs(hint.slots or {}) do
         msg.post(slot_id, "highlight")
-    end
-
-    -- Dynamic: highlight the base slot that already has a card (e.g. where 2_red landed)
-    if highlights.find_occupied_base then
-        for slot_id, slot in pairs(self.base_slots) do
-            if not slot.is_empty then
-                msg.post(slot_id, "highlight")
-            end
-        end
     end
 end
 
@@ -366,11 +326,11 @@ function on_message(self, message_id, message, sender)
       self.tableau_stacks[message.index] = message.stack
       local empty_flag = (#message.stack == 0)
       self.tableau_slots['tableau_slot'..message.index].is_empty = empty_flag
-      -- Trigger initial tutorial highlights once main stack (1) is loaded
-      if tutorial_state.is_tutorial and message.index == 1 and not self.tutorial_highlights_applied then
-         self.tutorial_highlights_applied = true
-         tutorial_state.highlight_dirty = true
-      end
+      -- v3: первую подсветку курсор больше не заводит сам. Раньше он ждал
+      -- прихода первой стопки и поднимал highlight_dirty, потому что подсветка
+      -- бралась из таблицы по номеру шага и была известна заранее. Теперь её
+      -- содержимое считает main (ему одному видна вся доска), и он же взводит
+      -- флаг — второй источник правды тут означал бы гонку двух подсветок.
 
    elseif message_id == hash("set_last_cards") then
       self.last_cards[message.index] = message.card
@@ -387,15 +347,9 @@ function on_message(self, message_id, message, sender)
          msg.post(self.selected_card, 'drop_success', params)
       end
 
-      -- Tutorial: advance only when the move matches expected (no blocking)
-      if tutorial_state.is_tutorial and self.selected_card_data then
-         local card_id = self.selected_card_data.data.id
-         local target_type = get_slot_target_type(self.pending_drop.slot.slot_id)
-         if tutorial_state.check_move(card_id, target_type) then
-            tutorial_state.advance()  -- sets ui_dirty flag, UI polls it
-         end
-      end
-
+      -- v3: шаг туториала здесь больше не двигаем. Подсказку пересчитывает main
+      -- от осевшей доски (зеркала tableau/free_cell), а курсор в этот момент
+      -- знает только про свой ход — по нему и получалась привязка к сценарию.
       clean_cursor(self)
       if not tutorial_state.is_tutorial then
          local free_cell_cards = {}
@@ -443,15 +397,6 @@ function on_message(self, message_id, message, sender)
          move_stack_cards(self, 'drop_success', params)
       else
          msg.post(self.selected_card, 'drop_success', params)
-      end
-
-      -- Tutorial: advance only when the move matches expected (no blocking)
-      if tutorial_state.is_tutorial and self.selected_card_data then
-         local card_id = self.selected_card_data.data.id
-         local target_card_id = self.pending_drop.card.data_id
-         if tutorial_state.check_move(card_id, "tableau_card", target_card_id) then
-            tutorial_state.advance()  -- sets ui_dirty flag, UI polls it
-         end
       end
 
       clean_cursor(self)

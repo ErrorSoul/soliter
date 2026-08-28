@@ -61,6 +61,8 @@ CARD_PITCH = 35             # only true while the column fits (config.stack_offs
 FLOWER_SLOT = (377, 457)    # G6: flower moved to column 4, dragon buttons to column 5
 PLAY_BUTTON = (480, 232)
 RESTART_BUTTON = (907, 56)   # G6: правый рельс, см. gui/ui.gui
+TUTORIAL_BUTTON = (907, 124)  # тот же рельс, кнопка под RESTART
+BASE_SLOT = {1: (585, 457), 2: (793, 457), 3: (689, 457)}  # порядок id, не слева направо
 
 BENIGN = (re.compile(r"^INFO:"), re.compile(r"Defold Engine \d"), re.compile(r"^Downloading"))
 FATAL = (
@@ -1448,6 +1450,122 @@ def scenario_celldrain(s):
              "экран победы не поднялся — на месте стола по-прежнему фон")
 
 
+def scenario_tutorialfree(s):
+    """Туториал v3: подсказка считается от ДОСКИ, а не от номера шага.
+
+    Негативный контроль к самой правке. На v2 этот сценарий обязан провалиться:
+    там подсказка привязана к шагу, и увод 5_green в свободную ячейку первым
+    ходом делает шаг «положи 4_blue на 5_green» невыполнимым навсегда — выход
+    только по SKIP. Здесь мы делаем ровно этот ход и требуем, чтобы игра
+    ПРОДОЛЖАЛА называть выполнимый ход.
+
+    Оракул — строки `[TUTOR] <статус> <тип хода> за N мс`, которые печатает
+    refresh_tutorial_hint. По ним же читается цена поиска на HTML5: считаем
+    синхронно в кадре, и если бы она была секундной, это было бы видно тут.
+
+    Раздача туториала глубже обычной: в первой колонке пять карт, верхняя
+    (2_red) лежит на depth 4. exposed_depth по умолчанию щупает как раз до 4,
+    но здесь мы координаты знаем точно и щупать не обязаны.
+    """
+    def tutor_line(label, timeout=20):
+        line = s.wait_for_log(r"\[TUTOR\] \w+ [\w-]+ за", timeout, label)
+        s.expect(line is not None, f"{label}: подсказка не посчиталась вовсе")
+        return line or ""
+
+    s.boot()
+    s.click_game(*PLAY_BUTTON, label="PLAY")
+    s.expect(s.wait_for_log(r"I am MAIN SCRIPT", 20, "обычная раздача"),
+             "PLAY не загрузил уровень")
+    s.wait(3, "обычная раздача осела")
+
+    s.click_game(*TUTORIAL_BUTTON, label="TUTORIAL")
+    s.expect(s.wait_for_log(r"I am MAIN SCRIPT", 20, "туториальная раздача"),
+             "TUTORIAL не перезагрузил уровень")
+    first = tutor_line("первая подсказка")
+    s.expect("found foundation" in first,
+             f"первая подсказка должна вести 2_red наверх, а это: {first}")
+    s.shot("tutorial-start")
+
+    # Подсветка. Ищем её ПУЛЬСОМ, а не цветом: card.script на "highlight" гоняет
+    # scale пингпонгом, значит два снимка одного пятачка с интервалом дают
+    # разные байты только у подсвеченной карты (тот же приём, что и с горящей
+    # кнопкой драконов). Текст подсказки без подсветки бесполезен — игрок не
+    # знает, о какой из десяти карт речь.
+    def pulses(x, y, half=18, gap=280):
+        a = s.patch(x, y, half, half)
+        s.page.wait_for_timeout(gap)
+        return a != s.patch(x, y, half, half)
+
+    s.expect(pulses(TABLEAU_X[1], TABLEAU_TOP_Y - 4 * CARD_PITCH),
+             "карта, о которой говорит подсказка (2_red), не подсвечена")
+    s.expect(not pulses(TABLEAU_X[2], TABLEAU_TOP_Y),
+             "подсвечена посторонняя карта (5_green) — подсветка бьёт мимо хода")
+
+    # --- тот самый ход, который ломал v2 -------------------------------------
+    # 5_green — единственная карта второй колонки, лежит на depth 0.
+    s.drag_game(TABLEAU_X[2], TABLEAU_TOP_Y, FREE_CELL[1][0], FREE_CELL[1][1],
+                "5_green -> свободная ячейка 1")
+    s.wait(1.5, "карта села, зеркала осели")
+    after = tutor_line("подсказка после «неправильного» хода")
+    s.expect("stuck" not in after,
+             f"после законного хода игрока туториал объявил тупик: {after}")
+    s.expect("found" in after,
+             f"подсказка перестала находить ход: {after}")
+    s.shot("tutorial-after-deviation")
+
+    felt = s.brightness(*FREE_CELL[3])
+    s.expect_card_at(FREE_CELL[1][0], FREE_CELL[1][1], felt, "5_green в ячейке 1")
+
+    # --- и доигрываем ПО ПОДСКАЗКЕ до победы ---------------------------------
+    # Линия посчитана заранее на той же доске (solver/hint.lua, ветка после
+    # увода 5_green): основание, основание, ячейка, ПУСТАЯ КОЛОНКА, драконы.
+    # Она отличается от сценарной линии v2 ровно тем, что и должна: 4_blue
+    # больше некуда стекать — 5_green лежит в ячейке, — и подсказка сама
+    # переводит игрока на пустую колонку. Проверяем каждый ярлык по очереди:
+    # это и есть утверждение «подсказка следует за доской».
+    steps = [
+        (TABLEAU_X[1], TABLEAU_TOP_Y - 4 * CARD_PITCH, BASE_SLOT[1][0], BASE_SLOT[1][1],
+         "2_red -> основание", "found foundation"),
+        (TABLEAU_X[1], TABLEAU_TOP_Y - 3 * CARD_PITCH, BASE_SLOT[1][0], BASE_SLOT[1][1],
+         "3_red -> то же основание", "found free_cell"),
+        (TABLEAU_X[1], TABLEAU_TOP_Y - 2 * CARD_PITCH, FREE_CELL[2][0], FREE_CELL[2][1],
+         "7_green -> ячейка 2", "found empty_column"),
+        (TABLEAU_X[1], TABLEAU_TOP_Y - 1 * CARD_PITCH, TABLEAU_X[2], TABLEAU_TOP_Y,
+         "4_blue -> пустая колонка 2", "found dragon"),
+    ]
+    for x1, y1, x2, y2, label, want in steps:
+        s.drag_game(x1, y1, x2, y2, label)
+        s.wait(1.5, "ход осел")
+        line = tutor_line(f"подсказка после «{label}»")
+        s.expect(want in line, f"после «{label}» ждали «{want}», а подсказка: {line}")
+    s.shot("tutorial-before-dragons")
+
+    # Кнопка драконов — последний ход, он же победа туториала.
+    before = s.patch(480, 270, 120, 60)
+    s.click_game(*DRAGON_BUTTON[1], label="кнопка красных драконов")
+    s.wait(4, "драконы улетают, приезжает экран победы")
+    s.expect(s.patch(480, 270, 120, 60) != before,
+             "после сбора драконов центр экрана не изменился — победы не случилось")
+    s.shot("tutorial-victory")
+
+    # Ни на одном шаге туториал не имел права сказать «ходов не осталось»: у
+    # этой раздачи тупиков нет вовсе (полный обход — 415 состояний,
+    # solver/tests/test_tutorial_hint.lua). Первый прогон этого сценария поймал
+    # тут ровно одну такую строку — в окне между посадкой дракона и объявлением
+    # победы; она и заставила завести отдельный статус "won".
+    stuck = s.logs_matching(r"\[TUTOR\] stuck")
+    s.expect(not stuck,
+             f"туториал объявлял тупик {len(stuck)} раз(а): "
+             + "; ".join(e["text"].strip()[:60] for e in stuck[:3]))
+
+    ms = [float(m) for m in
+          (re.search(r"за (\d+) мс", e["text"]).group(1)
+           for e in s.logs_matching(r"\[TUTOR\] ")
+           if re.search(r"за (\d+) мс", e["text"]))]
+    if ms:
+        s.note("perf", f"подсказка: max {max(ms):.0f} мс, всего замеров {len(ms)}")
+
+
 SCENARIOS = {"boot": scenario_boot, "hittest": scenario_hittest,
              "guilock": scenario_guilock, "dragonrestart": scenario_dragonrestart,
              "celldrain": scenario_celldrain,
@@ -1456,7 +1574,8 @@ SCENARIOS = {"boot": scenario_boot, "hittest": scenario_hittest,
              "focus": scenario_focus, "audiobg": scenario_audiobg,
              "debugkeys": scenario_debugkeys, "restartrace": scenario_restartrace,
              "i18n": scenario_i18n, "yasdk": scenario_yasdk,
-             "resize": scenario_resize, "dealrng": scenario_dealrng}
+             "resize": scenario_resize, "dealrng": scenario_dealrng,
+             "tutorialfree": scenario_tutorialfree}
 
 
 def main():
