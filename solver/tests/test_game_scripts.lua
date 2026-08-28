@@ -901,6 +901,43 @@ H.test("C6 replay's dragon_collect tells the matching button", function()
    return true
 end)
 
+-- M1: та же функция обязана прислать main отложенный `dragons_collected` —
+-- сообщение, на котором объявляется победа. Реплей собирает масть мимо кнопки, а
+-- шлёт его по таймеру именно кнопка; без этой строки партия, где сбор масти был
+-- последним ходом, кончалась пустым столом БЕЗ экрана победы (сценарий `win`,
+-- 2026-08-23). Тест держит именно отправку: сценарий стреляет не на каждой
+-- раздаче, а только там, где дракон собран последним.
+H.test("M1 replay's dragon_collect also tells main the suit is collected", function()
+   load_script("main/Scripts/main.script")
+   local self = { dragon_buttons = { dragon_button1 = { sprite = "green" } } }
+   msg.clear()
+   -- Очередь таймеров общая на весь прогон: тест C6 выше зовёт ту же функцию и
+   -- оставляет свой отложенный вызов непролитым. Без сброса flush() выполнил бы
+   -- оба, и тест считал бы ДВА сообщения там, где проверяет одно.
+   timer.pending = {}
+   timer.delays = {}
+   notify_dragon_button_collected(self, "green")
+   if stub.msg_count("dragons_collected") > 0 then
+      return false, "сообщение ушло сразу — драконы ещё летят, зеркала ячеек не обновлены"
+   end
+   -- Величина задержки здесь смысловая, а не «на глазок»: дуга драконов ~0.7 с,
+   -- и до её конца зеркала ячеек не обновлены. Ревью блока M поймало, что стаб
+   -- эту величину выбрасывал, то есть укоротить её до 0.01 можно было молча.
+   if (timer.delays[1] or 0) < 1.5 then
+      return false, "задержка " .. tostring(timer.delays[1]) .. " с — короче дуги драконов, "
+         .. "сообщение придёт на неготовые зеркала"
+   end
+   timer.flush()
+   if stub.msg_count("dragons_collected") ~= 1 then
+      return false, "main не получил dragons_collected: " .. stub.msg_count("dragons_collected")
+   end
+   local m = last_msg("dragons_collected")
+   if m.to ~= "/card_table#main" then
+      return false, "dragons_collected ушло не в main, а в " .. tostring(m.to)
+   end
+   return true
+end)
+
 H.test("C5 flower_slot tells main the flower landed", function()
    load_script("main/Scripts/flower_slot.script")
    local self = { empty = true }
@@ -2078,6 +2115,47 @@ H.test("победа: flower_collected — единственный источн
    end
    if not board_cleared(self) then
       return false, "цветок сел, стол пуст, а board_cleared всё ещё говорит «не чисто»"
+   end
+   return true
+end)
+
+-- M2 (ревью грока-4.5 по блоку M): посадка цветка не проверяла победу вовсе —
+-- обработчик только взводил флаг. Пока цветок был последним событием ТОЛЬКО в
+-- цепочке авто-сбора, дыру закрывала уступка (её таймер обнуляется здесь же).
+-- Но если авто-сбор не запускался — игрок сам дожал последнюю масть кнопкой, а
+-- цветок приземлился на полсекунды позже (дуга дракона ~0.7 с + полёт цветка
+-- ~0.7 с против таймера кнопки 1.5 с) — `dragons_collected` уходит в ветку
+-- «ещё не чисто», auto_collecting=false, и переспрашивать некому. Стол пуст,
+-- победы нет. Тот же тупик даёт цветок, припаркованный игроком в ячейку и потом
+-- перенесённый в слот (свободная ячейка принимает любую карту, free_cell:71-76).
+--
+-- Фикстура нарочно БЕЗ auto_collecting: именно так выглядит ручной путь, и
+-- именно он не был закрыт ничем.
+H.test("M2 посадка цветка на пустом столе объявляет победу", function()
+   load_script("main/Scripts/main.script")
+   local self = board27({ flower_collected = false })
+   if self.currentState == "win" then
+      return false, "фикстура: партия выиграна ещё до посадки цветка"
+   end
+   on_message(self, hash("flower_collected"), {}, "flower_slot")
+   if self.currentState ~= "win" then
+      return false, "стол пуст, цветок в слоте — а победы нет и платформе stop не уйдёт"
+   end
+   return true
+end)
+
+-- Обратная сторона M2: проверка на посадке цветка не имеет права объявлять
+-- победу на НЕдоигранной доске. Без этого теста «declare_victory безусловно»
+-- прошло бы предыдущий тест и вернуло ровно тот баг, от которого чинили L1.
+H.test("M2 посадка цветка при живых драконах победой НЕ является", function()
+   load_script("main/Scripts/main.script")
+   local self = board27({ flower_collected = false })
+   self.tableau_stacks[3].cards = {
+      { id = "go_d1", data = { value = "d", suit = "red", is_dragon = true } },
+   }
+   on_message(self, hash("flower_collected"), {}, "flower_slot")
+   if self.currentState == "win" then
+      return false, "победа объявлена поверх живого дракона на столе"
    end
    return true
 end)

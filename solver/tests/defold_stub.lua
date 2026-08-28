@@ -69,13 +69,19 @@ function M.install()
    _G.sprite = { set_constant = function() end }
    _G.sound = { play = function() end }
 
-   _G.timer = { pending = {} }
-   function _G.timer.delay(_t, _repeat, cb)
+   -- Задержку ЗАПОМИНАЕМ, а не выбрасываем: ревью блока M (grok-4.6) заметило,
+   -- что прежний стаб делал `timer.delay(0.01, ...)` и `timer.delay(1.5, ...)`
+   -- неразличимыми, а величина задержки в этом коде смысловая (дуга драконов,
+   -- полёт цветка). Тест обязан иметь возможность её проверить.
+   _G.timer = { pending = {}, delays = {} }
+   function _G.timer.delay(t, _repeat, cb)
       _G.timer.pending[#_G.timer.pending + 1] = cb
+      _G.timer.delays[#_G.timer.pending] = t
    end
    function _G.timer.flush()
       local q = _G.timer.pending
       _G.timer.pending = {}
+      _G.timer.delays = {}
       for i = 1, #q do q[i]() end
    end
 

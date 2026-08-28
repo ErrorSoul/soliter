@@ -39,7 +39,13 @@ end
 -- below independently reimplements the game in pure Lua:
 --   create_deck   (main.script:62-76)  — PER-SUIT: each suit's 2..10 then its 4
 --                                          dragons, then next suit, flower last.
---   shuffle_deck  (main.script:367-377) — seed, 20 warmups, 3 Fisher-Yates passes
+--   shuffle_deck  (main.script) — 3 Fisher-Yates passes. Сидирование и прогрев
+--                                 с 2026-08-23 живут в game_manager.init (D4:
+--                                 os.time() на каждую раздачу давал двум
+--                                 рестартам в секунду одну колоду). Тест
+--                                 сидирует локально, поэтому переезд его не
+--                                 касается — но сравнивать с игрой надо ровно
+--                                 три прохода тасовки, без seed внутри них.
 --   deal_cards    (main.script:105-148) — COLUMN-MAJOR, 8 cols × 5, removed from end.
 -- This is a Lua-vs-Lua check (both use math.random) so it CAN match exactly,
 -- validating the algorithm. It does NOT claim per-seed parity with the LIVE game

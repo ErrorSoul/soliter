@@ -385,6 +385,10 @@ def scenario_win(s):
     s.shot("dealt")
 
     # REPLAY_BUDGET is small, so most deals are not solvable; SPACE re-deals.
+    # ⚠ До правки D4 (2026-08-23) пересдачи внутри одной секунды давали ОДНУ И ТУ
+    # ЖЕ колоду — то есть сценарий выбирал доски из узкой полосы и все его
+    # прежние зелёные прогоны сделаны на ней. Первая же доска из-за её пределов
+    # уронила проверку платформенного `stop` (блок M1 в plans/review-fixes.md).
     for attempt in range(1, 13):
         s.note("attempt", f"deal {attempt}")
         s.key("r", "debug_replay")
@@ -507,7 +511,13 @@ def scenario_freecell(s):
     Without C4 that card is in no mirror at all -- it left tableau_stacks and the
     snapshot claims the cells are empty -- so the solver plans a 26-card board and
     the run ends 'DONE but NOT a win'. Verified A/B against exactly that build,
-    not assumed."""
+    not assumed.
+
+    ⚠ Сценарий перебирает раздачи клавишей Space. До правки D4 (2026-08-23)
+    пересдачи внутри одной секунды давали ОДНУ И ТУ ЖЕ колоду, поэтому «N
+    попыток» означало заметно меньше N разных досок. Сейчас сидирование одно на
+    запуск и пересдачи независимы; прежние прогоны читать как выборку меньше
+    заявленной."""
     s.boot()
     s.press_play()
     s.shot("dealt")
@@ -893,6 +903,15 @@ def scenario_census(s):
     s.shot("dealt")
 
     felt = s.brightness(*FREE_CELL[3])
+    # ⚠ Арифметика ниже считает раздачи НЕЗАВИСИМЫМИ. До правки D4 (2026-08-23)
+    # они таковыми не были: `shuffle_deck` пересидировал генератор от `os.time()`
+    # на каждую раздачу, и пересдачи внутри одной секунды давали ОДНУ И ТУ ЖЕ
+    # колоду (замер: 13 раздач → 3 различных). Значит и здесь, и в `freecell`,
+    # и в `stuck` эффективная выборка была в разы меньше номинальной, а
+    # приведённые ниже измеренные проценты получены на той же сломанной выборке.
+    # Сейчас сидирование одно на запуск (`game_manager.init`), пересдачи
+    # независимы, и числа стали честными — переизмерять их специально не стали.
+    #
     # Лотерея: цветок улетает во время раздачи, только если оказался верхним в
     # своей колонке — примерно 8 шансов из 40, то есть ~20% на раздачу. При 12
     # попытках сценарий врёт «провал» в 0.8^12 ≈ 7% прогонов, и это измерено:
@@ -1135,13 +1154,78 @@ def scenario_resize(s):
                  "вектор глубин не различает даже полную пересдачу — оракул слепой")
 
 
+def scenario_dealrng(s):
+    """D4: две раздачи, попавшие в одну секунду, обязаны быть РАЗНЫМИ.
+
+    `shuffle_deck` сидировал генератор на каждую раздачу через `os.time()`, а
+    тот идёт целыми секундами: два рестарта подряд брали один seed и давали
+    побайтово одинаковую колоду. Пиксельные оракулы этого не видят —
+    `restartrace` сравнивает стол с тем, что было ДО серии рестартов, и восемь
+    одинаковых раздач подряд проходят у него как «стол изменился».
+
+    Оракул — отпечаток разложенного стола из debug-лога вместе с `os.time()`
+    той же раздачи. Сценарий сперва доказывает, что вообще попал в окно (есть
+    хотя бы одна секунда с ДВУМЯ раздачами) и только потом требует, чтобы их
+    отпечатки различались. Без первой проверки зелёный результат означал бы
+    всего лишь «мы нажимали слишком медленно, чтобы столкнуться».
+
+    Только debug-сборка: отпечаток печатает `deal_cards` под `debug_flags`.
+    """
+    s.boot()
+    s.press_play()
+    # Не wait_for_log: press_play возвращается уже ПОСЛЕ первой раздачи, и её
+    # строку курсор лога успевает пройти — первый прогон сценария из-за этого
+    # ругался «отпечатка нет», печатая отпечатки строкой выше.
+    s.expect(s.logs_matching(r"\[DEAL\] fingerprint="),
+             "раздача не напечатала отпечаток — сборка не debug или лог не тот")
+
+    # hold=40 мс вместо штатных 250: движок такое нажатие видит (замерено в
+    # restartrace), а раздачи ложатся плотнее — иначе на секунду приходится
+    # меньше двух пересдач и столкновению просто негде случиться.
+    for n in range(12):
+        s.key("Space", f"пересдача {n + 1}", hold=40)
+    s.wait(3, "последняя раздача осела")
+
+    rx = re.compile(r"\[DEAL\] fingerprint=(\d+) t=(\d+)")
+    deals = []
+    for e in s.logs_matching(r"\[DEAL\] fingerprint="):
+        m = rx.search(e["text"])
+        if m:
+            deals.append((m.group(1), int(m.group(2))))
+    s.expect(len(deals) >= 3, f"раздач в логе {len(deals)} — нажатия не дошли до движка")
+
+    by_sec = {}
+    for fp, t in deals:
+        by_sec.setdefault(t, []).append(fp)
+    crowded = {t: fps for t, fps in by_sec.items() if len(fps) >= 2}
+    s.note("deals", f"раздач {len(deals)}, разных секунд {len(by_sec)}, "
+                    f"секунд с ≥2 раздачами {len(crowded)}")
+    s.expect(crowded,
+             "ни одна секунда не собрала двух раздач — сценарий не попал в окно бага, "
+             "проверять нечего")
+    for t, fps in sorted(crowded.items()):
+        s.note("second", f"t={t}: раздач {len(fps)}, различных колод {len(set(fps))}")
+        s.expect(len(set(fps)) == len(fps),
+                 f"в секунду t={t} попало {len(fps)} раздач, а различных колод "
+                 f"{len(set(fps))} — генератор сидируется от os.time() на каждую раздачу")
+
+    all_fps = [fp for fp, _ in deals]
+    # Формулировка «совпадение невозможно» была бы завышена: сравниваются не
+    # колоды, а 30-битные отпечатки, и четыре дракона одной масти неразличимы по
+    # id — коллизия в принципе бывает. Для нынешнего бага os.time() этого хватает
+    # с запасом: там совпадали не отпечатки, а сами колоды, десятками подряд.
+    s.expect(len(set(all_fps)) == len(all_fps),
+             f"{len(all_fps)} раздач дали всего {len(set(all_fps))} различных отпечатков — "
+             f"случайная коллизия хеша так часто не бывает, это одинаковые колоды")
+
+
 SCENARIOS = {"boot": scenario_boot, "hittest": scenario_hittest,
              "stuck": scenario_stuck, "win": scenario_win,
              "freecell": scenario_freecell, "census": scenario_census,
              "focus": scenario_focus, "audiobg": scenario_audiobg,
              "debugkeys": scenario_debugkeys, "restartrace": scenario_restartrace,
              "i18n": scenario_i18n, "yasdk": scenario_yasdk,
-             "resize": scenario_resize}
+             "resize": scenario_resize, "dealrng": scenario_dealrng}
 
 
 def main():
