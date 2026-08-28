@@ -493,6 +493,13 @@ function on_message(self, message_id, message, sender)
          end
       end
       if btn_id then
+         -- N9: сюда приходят СООБЩЕНИЕМ от main, а не из on_input, так что ветка
+         -- A2 выше по on_input тут ни при чём и драг игрока может быть жив:
+         -- держим дракона -> с чужой колонки сама улетает последняя двойка ->
+         -- 27 номиналов -> begin_auto_collect. Карту надо отдать ДО pending_drop:
+         -- abort_drag зовёт clean_cursor, а тот обнуляет pending_drop, на котором
+         -- стоит гард обработчика get_dragon_cards.
+         abort_drag(self)
          -- Ввод глушим на время сбора: pending_drop общий с пальцем.
          -- Возвращает его main — end_auto_collect, который зовут и отказ
          -- (auto_collect_give_up), и declare_victory.
@@ -526,6 +533,12 @@ function on_message(self, message_id, message, sender)
          msg.post("/card_table#main", "auto_collect_none_final")
          return
       end
+      -- N9: как и в auto_collect_dragons — сообщение от main, драг игрока может
+      -- быть жив. Отдаём карту до того, как заглушим ввод. Если сдвигают ровно ту
+      -- карту, что в руке, drop_failed успевает завести возврат, но следующий же
+      -- go.animate из fly_card_arc перебивает его по тому же свойству position,
+      -- и карта улетает куда велено (колбэк перебитой анимации Defold не зовёт).
+      abort_drag(self)
       self.input_disabled = true
       local target = slot.pos
       self.flying_count = self.flying_count + 1  -- A3

@@ -2500,4 +2500,57 @@ H.test("N9 стопка возвращается целиком, каждая к
    return true
 end)
 
+-- N9b: auto_collect_dragons и auto_move_dragon — обработчики СООБЩЕНИЙ от main,
+-- а не ветки on_input, поэтому драг игрока в них может быть жив: держим дракона,
+-- с чужой колонки сама улетает последняя двойка, 27 номиналов -> begin_auto_collect.
+-- Найдено дельта-ревью (обе модели независимо), опровергло рассуждение автора
+-- «сюда попадают только из on_input, где A2 уже отработал».
+H.test("N9b авто-сбор драконов отдаёт карту из руки и не теряет pending_drop", function()
+   load_script("main/Scripts/cursor.script")
+   local self = dragging_cursor()
+   self.dragon_buttons = { dragon_button1 = { is_active = true, sprite = "red" } }
+   self.free_slots = { free_slot1 = { is_empty = true, dragon = nil, pos = vmath.vector3(0, 0, 0) } }
+   msg.clear()
+   on_message(self, hash("auto_collect_dragons"), {}, "main")
+   local returned, asked = false, false
+   for _, m in ipairs(msg.log) do
+      if m.to == "go_in_hand" and m.id == tostring(hash("drop_failed")) then returned = true end
+      if m.id == tostring(hash("get_dragon_cards")) then asked = true end
+   end
+   if not returned then
+      return false, "карта осталась в руке — после сбора первый же press выдернет её через A2"
+   end
+   if not asked then
+      return false, "сбор не заказан: get_dragon_cards не ушёл"
+   end
+   if not self.pending_drop then
+      return false, "pending_drop обнулён — abort_drag зовут ПОСЛЕ него, и гард "
+         .. "обработчика get_dragon_cards молча провалит сбор"
+   end
+   return true
+end)
+
+H.test("N9b сдвиг дракона отдаёт карту из руки", function()
+   load_script("main/Scripts/cursor.script")
+   local self = dragging_cursor()
+   self.tableau_slots = { tableau_slot3 = { pos = vmath.vector3(300, 200, 0) } }
+   self.flying_count = 0
+   msg.clear()
+   on_message(self, hash("auto_move_dragon"), {
+      slot_id = "tableau_slot3",
+      card = { id = "go_dragon", data = { value = "d", suit = "red" } },
+   }, "main")
+   local returned = false
+   for _, m in ipairs(msg.log) do
+      if m.to == "go_in_hand" and m.id == tostring(hash("drop_failed")) then returned = true end
+   end
+   if not returned then
+      return false, "карта осталась в руке на время сдвига дракона"
+   end
+   if not self.input_disabled then
+      return false, "ввод не заглушен — отмена драга не должна отменять сам сдвиг"
+   end
+   return true
+end)
+
 return H
