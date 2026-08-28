@@ -96,6 +96,12 @@ function init(self)
    send_messages_to_cursor(self)
    send_message_to_dragon_buttons(self)
    msg.post("@render:", "use_fixed_fit_projection", { near = -1, far = 1 })
+   -- Подсказка от ПРОШЛОЙ раздачи не должна пережить перезагрузку уровня: id
+   -- игровых объектов после неё другие, и подсветка целилась бы в мертвецов.
+   -- Сегодня все входы в туториал и так зовут tutorial_state.reset (кнопки
+   -- TUTORIAL/SKIP/PLAY NOW/MENU в ui.gui_script), так что это страховка от
+   -- четвёртого входа, которого пока нет.
+   if self.tutorial_mode then tutorial_state.clear_hint() end
    -- Первая подсказка туториала. С запасом кадров: карты раздаются анимацией, а
    -- цветок с верхушки колонки улетает сам — снапшот до его отправки описывал бы
    -- доску, которой игрок не увидит.
