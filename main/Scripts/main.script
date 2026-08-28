@@ -102,10 +102,15 @@ function init(self)
    -- TUTORIAL/SKIP/PLAY NOW/MENU в ui.gui_script), так что это страховка от
    -- четвёртого входа, которого пока нет.
    if self.tutorial_mode then tutorial_state.clear_hint() end
-   -- Первая подсказка туториала. С запасом кадров: карты раздаются анимацией, а
-   -- цветок с верхушки колонки улетает сам — снапшот до его отправки описывал бы
-   -- доску, которой игрок не увидит.
-   request_tutorial_hint(self, 6)
+   -- Первая подсказка ждёт ВРЕМЯ, а не кадры, и это не педантизм. Раздача —
+   -- анимация: карты летят из центра стола (задержка до 0.28 с + полёт 0.25 с),
+   -- потом цветок улетает своей дугой (~0.7 с). Подсветка гасит анимацию
+   -- масштаба (`card.script` на highlight делает cancel_animations("scale")),
+   -- поэтому подсказка, пришедшая через 6 кадров, зажигала учебную двойку
+   -- прямо в центре стола, пока та ещё летела (находка внешнего ревью).
+   -- Кадрами это мерить нельзя: на 120 Гц их вдвое больше за то же время —
+   -- ровно та ошибка, что уже ловилась в бюджете авто-сбора.
+   if self.tutorial_mode then self.hint_delay = 1.5 end
 end
 
 
@@ -984,6 +989,12 @@ end
 function request_tutorial_hint(self, frames)
    if not self.tutorial_mode then return end
    self.pending_hint = frames or 2
+   -- Новый ход на доске — новая попытка. Без сброса счётчик, набравший пять
+   -- отказов снапшота, оставался бы взведённым до конца партии: следующий
+   -- отказ уже не переносил бы пересчёт, и подсказка залипала бы на прошлом
+   -- ходе (находка grok-4.6). Лимит должен ограничивать САМОперезаказ внутри
+   -- одного окна рассинхрона, а не жизнь подсказки вообще.
+   self.hint_retries = 0
 end
 
 -- Dev tool (press 'S'): solve the current deal and animate the solver's line of
@@ -1895,6 +1906,15 @@ function update(self, dt)
          self.replay_stall_reported = true
          print(string.format("[REPLAY] СТОЙКА: %.1f с без шага, кадры идут — оборвалась цепочка таймеров",
             self.replay_idle))
+      end
+   end
+   -- Туториал v3: первая подсказка — по времени (раздача ещё анимируется),
+   -- последующие — по кадрам (там ждём не анимацию, а очередь сообщений).
+   if self.hint_delay then
+      self.hint_delay = self.hint_delay - (dt or 0)
+      if self.hint_delay <= 0 then
+         self.hint_delay = nil
+         refresh_tutorial_hint(self)
       end
    end
    -- Туториал v3: пересчёт подсказки, когда доска осела после хода.

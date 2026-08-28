@@ -29,6 +29,36 @@ local function tutorial_state()
    return bridge.from_game(tutorial_snapshot())
 end
 
+-- Оракул легальности: ход подсказки обязан быть среди ходов, которые правила
+-- разрешают НА ЭТОЙ доске. Без него тесты проверяли только «что-то вернулось» —
+-- заглушка, всегда отдающая один и тот же ход, проходила их насквозь (находка
+-- обеих внешних моделей). Сравниваем по типу и по всем полям адресации.
+local MOVE_FIELDS = { "from_col", "to_col", "from_free_cell", "from_slot", "to_slot",
+                      "suit", "run_start", "run_size" }
+
+local function same_move(a, b)
+   if a.type ~= b.type then return false end
+   for _, f in ipairs(MOVE_FIELDS) do
+      if a[f] ~= b[f] then return false end
+   end
+   return true
+end
+
+local function move_is_legal(rules, state, move)
+   for _, m in ipairs(rules.legal_moves(state)) do
+      if same_move(m, move) then return true end
+   end
+   return false
+end
+
+local function move_str(m)
+   local parts = { m.type }
+   for _, f in ipairs(MOVE_FIELDS) do
+      if m[f] ~= nil then parts[#parts + 1] = f .. "=" .. tostring(m[f]) end
+   end
+   return table.concat(parts, " ")
+end
+
 -- ============================================================
 -- 1. Почему не rules.solve
 -- ============================================================
@@ -101,17 +131,38 @@ end)
 
 -- v2 привязывал подсказку к номеру шага, и увод 5_green в ячейку на первом ходу
 -- делал третий шаг («положи 4_blue на 5_green») невыполнимым навсегда.
-H.test("hint: 5_green уведён в ячейку — подсказка НЕ ломается", function()
+H.test("hint: 5_green уведён в ячейку — подсказка НЕ ломается и меняет линию", function(rules)
    local snap = tutorial_snapshot()
    snap.tableau[2] = {}
    snap.free_cells[1] = { card = { value = 5, suit = "green" } }
-   local h, status = hint.find(bridge.from_game(snap))
+   local state = bridge.from_game(snap)
+   local h, status = hint.find(state)
    if status ~= "found" then return false, "status = " .. tostring(status) end
-   return h.move.type == "to_foundation" and h.move.from_col == 1,
-      "ожидался вывод 2_red в основание, получен " .. h.move.type
+   if h.move.type ~= "to_foundation" or h.move.from_col ~= 1 then
+      return false, "ожидался вывод 2_red в основание, получен " .. move_str(h.move)
+   end
+   -- Проверять только первый ход мало: он совпадает со стартовым и на доске без
+   -- отклонения, то есть заглушка «всегда первая подсказка» прошла бы. Смысл v3
+   -- в ПЕРЕНАЦЕЛИВАНИИ: 4_blue больше некуда стекать, 5_green лежит в ячейке —
+   -- и линия обязана свернуть на пустую колонку.
+   local kinds = {}
+   for _ = 1, 8 do
+      local step, st = hint.find(state)
+      if st ~= "found" then break end
+      if not move_is_legal(rules, state, step.move) then
+         return false, "по дороге подсказан невозможный ход: " .. move_str(step.move)
+      end
+      kinds[#kinds + 1] = step.kind
+      state = rules.apply_move(state, step.move)
+      if state.dragons_collected.red then break end
+   end
+   local got = table.concat(kinds, ",")
+   local want = "foundation,foundation,free_cell,empty_column,dragon"
+   if got ~= want then return false, "линия после отклонения = " .. got .. ", ожидалась " .. want end
+   return true
 end)
 
-H.test("hint: все три ячейки заняты — ход всё равно находится", function()
+H.test("hint: все три ячейки заняты — находится ЗАКОННЫЙ ход", function(rules)
    local snap = tutorial_snapshot()
    snap.tableau[1] = { { value = "d", suit = "red" }, { value = 4, suit = "blue" } }
    snap.tableau[2] = {}
@@ -119,9 +170,15 @@ H.test("hint: все три ячейки заняты — ход всё равн
    snap.free_cells[2] = { card = { value = 7, suit = "green" } }
    snap.free_cells[3] = { card = { value = 3, suit = "red" } }
    snap.foundation.red = 2
-   local h, status = hint.find(bridge.from_game(snap))
+   local state = bridge.from_game(snap)
+   local h, status = hint.find(state)
    if status ~= "found" then return false, "status = " .. tostring(status) end
-   return h ~= nil
+   if not move_is_legal(rules, state, h.move) then
+      return false, "подсказан ход, которого на доске нет: " .. move_str(h.move)
+   end
+   -- Ячейки забиты, значит единственный способ разобрать колонку — основание.
+   if h.kind ~= "foundation" then return false, "тип хода = " .. h.kind end
+   return true
 end)
 
 -- Главный вывод полного обхода: у этой раздачи тупиков НЕТ. 415 достижимых
@@ -147,14 +204,24 @@ H.test("hint: полный обход раздачи — 415 состояний,
       end
    end
    if #order ~= 415 then return false, "достижимых состояний " .. #order .. ", ожидалось 415" end
+   local checked = 0
    for _, h in ipairs(order) do
       local st = nodes[h]
       if not st.dragons_collected.red then
-         local _, status = hint.find(st)
+         local hint_move, status = hint.find(st)
          if status ~= "found" then
             return false, "из достижимого состояния подсказки нет: " .. status
          end
+         -- Оракул тут не сам hint.find (иначе тест доказывал бы себя): ход
+         -- сверяется с rules.legal_moves той же доски.
+         if not move_is_legal(rules, st, hint_move.move) then
+            return false, "подсказан невозможный ход: " .. move_str(hint_move.move)
+         end
+         checked = checked + 1
       end
+   end
+   if checked ~= 351 then
+      return false, "нецелевых состояний " .. checked .. ", ожидалось 351"
    end
    return true
 end)

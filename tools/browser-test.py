@@ -1538,6 +1538,15 @@ def scenario_tutorialfree(s):
         s.wait(1.5, "ход осел")
         line = tutor_line(f"подсказка после «{label}»")
         s.expect(want in line, f"после «{label}» ждали «{want}», а подсказка: {line}")
+        if want == "found empty_column":
+            # У tableau_slot обработчика highlight не было вовсе, и Defold молча
+            # глотал сообщение: текст про пустую колонку появлялся, а колонка не
+            # загоралась. Юнит на это слеп по построению — он видит список целей,
+            # а не экран. Пустых колонок к этому моменту четыре (2, 6, 7, 8),
+            # какую выберет солвер — его дело; требуем, чтобы горела хоть одна.
+            lit = [c for c in (2, 6, 7, 8) if pulses(TABLEAU_X[c], TABLEAU_TOP_Y)]
+            s.expect(lit, "подсказка зовёт в пустую колонку, а ни одна не подсвечена")
+            s.note("highlight", f"подсвечены пустые колонки: {lit}")
     s.shot("tutorial-before-dragons")
 
     # Гашение подсветки. Курсор чистит её обходом tableau/last_cards и слотов —

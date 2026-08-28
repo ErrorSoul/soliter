@@ -66,7 +66,17 @@ function M.install()
       end,
    }
 
-   _G.sprite = { set_constant = function() end }
+   -- Константы спрайта ЗАПОМИНАЕМ: подсветка слота (ui_fx.highlight) снаружи
+   -- видна только через них и через go.animate. Пустой заглушкой нельзя было
+   -- отличить «слот загорелся» от «слот молча проглотил сообщение» — ровно этот
+   -- дефект и приехал внешним ревью (у tableau_slot обработчика highlight не
+   -- было вовсе, а тест проверял строку в массиве).
+   M.sprite_constants = {}
+   _G.sprite = {
+      set_constant = function(_url, name, value)
+         M.sprite_constants[tostring(name)] = value
+      end,
+   }
    _G.sound = { play = function() end }
 
    -- Задержку ЗАПОМИНАЕМ, а не выбрасываем: ревью блока M (grok-4.6) заметило,
@@ -104,6 +114,7 @@ M.go_props = {}
 M.go_positions = {}
 M.go_self_pos = { x = 0, y = 0, z = 0 }
 M.anims = {}
+M.sprite_constants = {}
 
 -- Прокрутить очередь колбэков анимаций. rounds — сколько раз подряд: полёт по
 -- дуге (fly_card_arc) состоит из двух вложенных анимаций, значит нужно два.

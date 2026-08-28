@@ -1,5 +1,6 @@
 local tutorial_state = require("main.Scripts.tutorial_state")
 local config = require("main.Scripts.config")
+local ui_fx = require("main.Scripts.ui_fx")
 
 function init(self)
     self.is_empty = false
@@ -94,6 +95,14 @@ function on_message(self, message_id, message, sender)
       else
          msg.post(sender, "slot_invalid")
       end
+   -- Туториал v3: подсказка «пустая колонка примет любую карту» адресует
+   -- подсветку СЛОТУ колонки. Обработчика тут не было вовсе, и Defold молча
+   -- глотал сообщение: текст появлялся, колонка не загоралась (находка внешнего
+   -- ревью grok-4.6). Тот же ui_fx и тот же масштаб, что у ячеек и оснований.
+   elseif message_id == hash("highlight") then
+      ui_fx.highlight(1.06)
+   elseif message_id == hash("unhighlight") then
+      ui_fx.unhighlight()
    end
 end
 

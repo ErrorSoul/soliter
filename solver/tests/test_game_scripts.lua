@@ -2869,6 +2869,90 @@ H.test("V3 победа снимает подсказку и подсветку"
    return true
 end)
 
+-- Находка внешнего ревью (grok-4.6): подсказка «пустая колонка примет любую
+-- карту» адресует подсветку слоту колонки, а у tableau_script обработчика
+-- highlight не было вовсе — Defold молча глотал сообщение. Прежний тест
+-- проверял строку "tableau_slot6" в массиве целей и зеленел, потому что
+-- смотрел на НАМЕРЕНИЕ, а не на то, умеет ли слот светиться.
+H.test("V3 слот пустой колонки умеет светиться и гаснуть", function()
+   load_script("main/Scripts/tableau_script.script")
+   local self = { stack = {}, is_empty = true }
+   stub.sprite_constants["tint"] = nil
+   on_message(self, hash("highlight"), {}, "cursor")
+   local lit = stub.sprite_constants["tint"]
+   if not lit then return false, "highlight не тронул спрайт слота — сообщение проглочено" end
+   if lit.x <= 1.0 or lit.y <= 1.0 then
+      return false, "тинт подсветки не ярче обычного: " .. tostring(lit.x) .. "," .. tostring(lit.y)
+   end
+   on_message(self, hash("unhighlight"), {}, "cursor")
+   local off = stub.sprite_constants["tint"]
+   if not off or off.x ~= 1 or off.y ~= 1 or off.z ~= 1 then
+      return false, "unhighlight не вернул слот в обычный цвет"
+   end
+   return true
+end)
+
+-- Вторая находка обеих моделей: курсор гасит подсветку обходом колонок и
+-- слотов, а карта, уехавшая в ячейку или в основание, ни в один из обходов не
+-- попадает — и светится до конца партии. Гасить надо ПОИМЁННО то, что зажгли.
+H.test("V3 подсветка гаснет у карты, которой уже нет в колонке", function()
+   load_script("main/Scripts/cursor.script")
+   local TUTs = require("main.Scripts.tutorial_state")
+   TUTs.is_tutorial = true
+   local self = {
+      tableau_stacks = {}, last_cards = {}, base_slots = {},
+      free_slots = {}, dragon_buttons = {},
+   }
+   -- Ход первый: подсказка светит карту, которая ЛЕЖИТ В КОЛОНКЕ.
+   TUTs.set_hint({ kind = "free_cell", distance = 3, cards = { "go_7g" }, slots = {} }, "found")
+   update(self, 0.016)
+   -- Игрок увёл её в ячейку: в зеркалах курсора её больше нет нигде.
+   TUTs.set_hint({ kind = "stack", distance = 2, cards = { "go_4b" }, slots = {} }, "found")
+   msg.clear()
+   update(self, 0.016)
+   TUTs.is_tutorial = false
+   TUTs.reset()
+   local doused = false
+   for _, m in ipairs(msg.log) do
+      if m.to == "go_7g" and m.id == tostring(hash("unhighlight")) then doused = true end
+   end
+   if not doused then
+      return false, "карта, уехавшая с поля, осталась подсвеченной навсегда"
+   end
+   return true
+end)
+
+H.test("V3 отказ снапшота не выключает подсказку до конца партии", function()
+   load_script("main/Scripts/main.script")
+   TUT.reset()
+   local self = tutorial_self()
+   local flower = tcard("go_f", { id = "flower", value = "f", suit = "flower", is_flower = true })
+   self.free_cell_state[1] = { card = flower }
+   for _ = 1, 8 do            -- зеркало врёт: лимит самоперезаказа выбран
+      self.pending_hint = nil
+      refresh_tutorial_hint(self)
+   end
+   if self.pending_hint then return false, "самоперезаказ не остановился" end
+
+   -- Новый ход на доске, а зеркало ВСЁ ЕЩЁ врёт. Лимит обязан начать отсчёт
+   -- заново, иначе один давний рассинхрон глушит пересчёт до конца партии:
+   -- ход есть, окно ещё не закрылось, а переспросить уже некому.
+   on_message(self, hash("tableau_card_removed"), { index = 1, id = "go_2r" }, "tableau")
+   for _ = 1, 4 do update(self, 0.016) end
+   if not self.pending_hint then
+      return false, "после нового хода пересчёт не перезаказан — подсказка залипла"
+   end
+
+   -- А когда зеркало сошлось — подсказка считается.
+   self.free_cell_state[1] = {}
+   on_message(self, hash("tableau_card_removed"), { index = 1, id = "go_3r" }, "tableau")
+   for _ = 1, 4 do update(self, 0.016) end
+   if TUT.hint_status ~= "found" then
+      return false, "после схождения зеркал подсказка не ожила: " .. tostring(TUT.hint_status)
+   end
+   return true
+end)
+
 -- Окно между посадкой первого дракона и объявлением победы: ячейка уже
 -- запечатана, а сообщение dragons_collected ещё в пути. Подсказка тут обязана
 -- ЗАМОЛЧАТЬ, а не сказать «ходов не осталось» — иначе игрок на миг видит

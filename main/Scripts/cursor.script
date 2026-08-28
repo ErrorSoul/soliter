@@ -236,7 +236,21 @@ local function set_cursor(slots, params)
    end
 end
 
+-- Гасим ПОИМЁННО то, что сами зажгли. Обход ниже по колонкам и слотам карту,
+-- уехавшую в свободную ячейку или в основание, не находит: у курсора нет
+-- зеркала ячеек, а в `last_cards` лежат только верхушки колонок. Подсвеченная
+-- в ячейке карта так и пульсировала до конца партии (находка обеих внешних
+-- моделей). Обход при этом оставлен: он чистит и то, что подсветили не мы —
+-- например, карту, которую основание зажгло само через свой last_card.
+local function unlight_tracked(self)
+    for _, id in ipairs(self.tutorial_lit or {}) do
+        msg.post(id, "unhighlight")
+    end
+    self.tutorial_lit = {}
+end
+
 local function clear_tutorial_highlights(self)
+    unlight_tracked(self)
     -- Unhighlight all cards in all stacks (pairs — stacks may have gaps)
     for _, stack in pairs(self.tableau_stacks) do
         for _, card in ipairs(stack) do
@@ -269,12 +283,13 @@ end
 local function apply_tutorial_highlights(self)
     local hint = tutorial_state.hint
     if not hint then return end
-    for _, card_go in ipairs(hint.cards or {}) do
-        msg.post(card_go, "highlight")
+    self.tutorial_lit = {}
+    local function light(id)
+        msg.post(id, "highlight")
+        self.tutorial_lit[#self.tutorial_lit + 1] = id
     end
-    for _, slot_id in ipairs(hint.slots or {}) do
-        msg.post(slot_id, "highlight")
-    end
+    for _, card_go in ipairs(hint.cards or {}) do light(card_go) end
+    for _, slot_id in ipairs(hint.slots or {}) do light(slot_id) end
 end
 
 -- G4: куда сядут четыре дракона масти `color` — ячейка с уже припаркованным
