@@ -534,11 +534,12 @@ function on_message(self, message_id, message, sender)
          return
       end
       -- N9: как и в auto_collect_dragons — сообщение от main, драг игрока может
-      -- быть жив. Отдаём карту до того, как заглушим ввод. Если сдвигают ровно ту
-      -- карту, что в руке, drop_failed успевает завести возврат, но следующий же
-      -- go.animate из fly_card_arc перебивает его по тому же свойству position,
-      -- и карта улетает куда велено (колбэк перебитой анимации Defold не зовёт).
-      abort_drag(self)
+      -- быть жив. Отдаём карту до того, как заглушим ввод.
+      -- N9c: КРОМЕ той карты, которую сдвигаем прямо сейчас. Ей возврат слать
+      -- нельзя — он приедет позже синхронной дуги и отменит её (см. abort_drag).
+      -- Сюда попадает и случай «дракона тащат в составе стопки»: остальные карты
+      -- стопки возвращаются, а эта улетает.
+      abort_drag(self, card.id)
       self.input_disabled = true
       local target = slot.pos
       self.flying_count = self.flying_count + 1  -- A3
@@ -692,16 +693,28 @@ end
 -- авто-финиш имеет полное право её забрать — а потом первый же press игрока
 -- отрабатывал ветку A2 и слал drop_failed карте, уже лежащей в foundation,
 -- вытаскивая её обратно на original_position. Найдено ревью grok-4.5.
-function abort_drag(self)
+--
+-- N9c. except_id — карта, которую звонящий прямо сейчас отправляет САМ; ей
+-- drop_failed слать нельзя, из руки она просто отпускается. Причина в порядке:
+-- drop_failed уходит через msg.post (очередь), а fly_card_arc зовёт go.animate
+-- СИНХРОННО, так что возврат приезжает ПОЗЖЕ дуги и отменяет её по тому же
+-- свойству position. Колбэк отменённой анимации Defold не зовёт — а в нём
+-- висят flying_count -= 1, drop_success и доклад auto_collect_moved. Утечка
+-- flying_count вешает ввод намертво: гард A3 глушит все нажатия. Мой
+-- первоначальный комментарий утверждал обратный порядок; перевёрнутым он
+-- оказался по итогам ревью (grok-4.6 и grok-4.5 независимо).
+function abort_drag(self, except_id)
    if not self.is_dragging then return end
+   local function give_back(card_id, position)
+      if except_id and card_id == except_id then return end
+      msg.post(card_id, "drop_failed", { position = position })
+   end
    if self.dragging_stack and self.stack_cards then
       for _, card in ipairs(self.stack_cards) do
-         msg.post(card.id, "drop_failed", {
-            position = self.original_position + card.relative_pos
-         })
+         give_back(card.id, self.original_position + card.relative_pos)
       end
    elseif self.selected_card then
-      msg.post(self.selected_card, 'drop_failed', {position = self.original_position})
+      give_back(self.selected_card, self.original_position)
    end
    clean_cursor(self)
 end

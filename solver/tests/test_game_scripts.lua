@@ -2553,4 +2553,77 @@ H.test("N9b сдвиг дракона отдаёт карту из руки", fu
    return true
 end)
 
+-- N9c: сдвигают РОВНО ту карту, что в руке. drop_failed уходит через msg.post,
+-- а fly_card_arc анимирует синхронно — возврат приехал бы позже дуги и отменил
+-- её по свойству position. Колбэк отменённой анимации Defold не зовёт, значит
+-- flying_count не вернулся бы к нулю НИКОГДА, а гард A3 глушит нажатия по
+-- flying_count > 0: ввод мёртв до рестарта. Найдено дельта-ревью, обе модели.
+H.test("N9c сдвигаемой карте возврат не шлём — иначе он отменит дугу", function()
+   load_script("main/Scripts/cursor.script")
+   local self = dragging_cursor()
+   self.tableau_slots = { tableau_slot3 = { pos = vmath.vector3(300, 200, 0) } }
+   self.flying_count = 0
+   msg.clear()
+   on_message(self, hash("auto_move_dragon"), {
+      slot_id = "tableau_slot3",
+      card = { id = "go_in_hand", data = { value = "d", suit = "red" } },
+   }, "main")
+   for _, m in ipairs(msg.log) do
+      if m.to == "go_in_hand" and m.id == tostring(hash("drop_failed")) then
+         return false, "возврат ушёл сдвигаемой карте — он отменит дугу, "
+            .. "flying_count утечёт и ввод останется глухим"
+      end
+   end
+   if self.is_dragging then
+      return false, "драг не сброшен, хотя карту у игрока забрали"
+   end
+   -- Дуга должна доиграть до конца: в её колбэке висит flying_count -= 1 и
+   -- drop_success. Именно этого не случилось бы, отмени её возврат.
+   stub.flush_anims(4)
+   if (self.flying_count or 0) ~= 0 then
+      return false, "flying_count не вернулся к нулю: " .. tostring(self.flying_count)
+         .. " — дуга не доиграла, ввод останется глухим"
+   end
+   local landed = false
+   for _, m in ipairs(msg.log) do
+      if m.to == "go_in_hand" and m.id == tostring(hash("drop_success")) then landed = true end
+   end
+   if not landed then
+      return false, "карта не села: drop_success из колбэка дуги не ушёл"
+   end
+   return true
+end)
+
+H.test("N9c из стопки возвращаются все, кроме сдвигаемой карты", function()
+   load_script("main/Scripts/cursor.script")
+   local self = dragging_cursor()
+   self.dragging_stack = true
+   self.selected_card = nil
+   self.stack_cards = {
+      { id = "go_other", relative_pos = vmath.vector3(0, 0, 0) },
+      { id = "go_in_hand", relative_pos = vmath.vector3(0, -30, 0) },
+   }
+   self.tableau_slots = { tableau_slot3 = { pos = vmath.vector3(300, 200, 0) } }
+   self.flying_count = 0
+   msg.clear()
+   on_message(self, hash("auto_move_dragon"), {
+      slot_id = "tableau_slot3",
+      card = { id = "go_in_hand", data = { value = "d", suit = "red" } },
+   }, "main")
+   local other, moved = false, false
+   for _, m in ipairs(msg.log) do
+      if m.id == tostring(hash("drop_failed")) then
+         if m.to == "go_other" then other = true end
+         if m.to == "go_in_hand" then moved = true end
+      end
+   end
+   if not other then
+      return false, "соседняя карта стопки осталась на курсоре"
+   end
+   if moved then
+      return false, "сдвигаемой карте всё-таки ушёл возврат"
+   end
+   return true
+end)
+
 return H
