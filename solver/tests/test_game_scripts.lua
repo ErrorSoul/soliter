@@ -2160,5 +2160,470 @@ H.test("M2 посадка цветка при живых драконах поб
    return true
 end)
 
+-- ---------------------------------------------------------------------------
+-- H6. Карту, которую игра сейчас заберёт сама (цветок, открывшаяся двойка),
+-- игрок успевал схватить: отправку `tableau_script` откладывает до `update`
+-- (A6), `flying_count` поднимает уже ПОЛУЧАТЕЛЬ сообщения, а `on_input` кадра
+-- идёт раньше и того и другого. Дальше карта улетала из руки, и следом в неё
+-- прилетал чужой `drop_success`.
+--
+-- Проверяем ИНВАРИАНТ, а не окно в N кадров: «за карту нельзя взяться тогда и
+-- только тогда, когда игра её забирает». Тест на окно пришлось бы привязать к
+-- порядку диспетчеризации между компонентами Defold, который стабом всё равно
+-- не воспроизводится честно, — и он бы протух от любой правки этого порядка.
+local function hit_state(top_data)
+   -- Курсор получает набор от tableau_script.update_visible_cards развёрнутым,
+   -- поэтому верхушка — ПОСЛЕДНИЙ элемент (см. set_stack).
+   stub.go_positions["go_deep"] = { x = 100, y = 300, z = 0 }
+   stub.go_positions["go_top"] = { x = 100, y = 265, z = 0 }
+   return {
+      tableau_stacks = {
+         {
+            { id = "go_deep", slot_id = "tableau_slot1", data = { value = 9, suit = "green" } },
+            { id = "go_top", slot_id = "tableau_slot1", data = top_data },
+         },
+      },
+   }
+end
+
+local CARDS_H6 = {
+   { name = "открытая двойка", data = { id = "2_red", value = 2, suit = "red" }, flies_in_game = true },
+   { name = "цветок", data = { id = "flower", value = "f", suit = "flower", is_flower = true }, flies_in_game = true },
+   { name = "дракон", data = { id = "d_red", value = "d", suit = "red", is_dragon = true }, flies_in_game = false },
+   { name = "обычный номинал", data = { id = "5_blue", value = 5, suit = "blue" }, flies_in_game = false },
+}
+
+H.test("H6 за верхушку, которую игра забирает сама, взяться нельзя", function()
+   local hit = require("main.Scripts.hit_test")
+   local tutorial_state = require("main.Scripts.tutorial_state")
+   tutorial_state.is_tutorial = false
+   for _, c in ipairs(CARDS_H6) do
+      local st = hit_state(c.data)
+      local got = hit.check_tableau_slots(st, 100, 265)
+      local grabbed = got ~= nil
+      if c.flies_in_game and grabbed then
+         return false, c.name .. ": схвачена карта, которая сейчас улетит сама"
+      end
+      if not c.flies_in_game and not grabbed then
+         return false, c.name .. ": перестала браться, а игра её не забирает — партия встанет"
+      end
+   end
+   return true
+end)
+
+H.test("H6 захват группы под улетающей верхушкой тоже запрещён", function()
+   local hit = require("main.Scripts.hit_test")
+   local tutorial_state = require("main.Scripts.tutorial_state")
+   tutorial_state.is_tutorial = false
+   -- Целимся в НИЖНЮЮ карту: захват группы тянется от неё до верхушки, значит
+   -- улетающая двойка всё равно оказалась бы в руке.
+   local st = hit_state({ id = "2_red", value = 2, suit = "red" })
+   if hit.check_tableau_slots(st, 100, 300) ~= nil then
+      return false, "группа отдана вместе с улетающей двойкой"
+   end
+   -- Контроль: с обычной верхушкой та же группа берётся.
+   local ok_st = hit_state({ id = "5_blue", value = 5, suit = "blue" })
+   if hit.check_tableau_slots(ok_st, 100, 300) == nil then
+      return false, "запрет распространился на колонку с обычной верхушкой"
+   end
+   return true
+end)
+
+H.test("H6 в туториале двойку брать МОЖНО — это учебный ход игрока", function()
+   local hit = require("main.Scripts.hit_test")
+   local tutorial_state = require("main.Scripts.tutorial_state")
+   tutorial_state.is_tutorial = true
+   local st = hit_state({ id = "2_red", value = 2, suit = "red" })
+   local got = hit.check_tableau_slots(st, 100, 265)
+   tutorial_state.is_tutorial = false
+   if got == nil then
+      return false, "шаг 0 туториала требует утащить 2_red руками, а её запретили"
+   end
+   return true
+end)
+
+-- Смычка двух мест. Предикат один (config.auto_flies_from_tableau), и этот тест
+-- держит именно это: что запрет на захват и факт отправки не могут разойтись.
+-- Разъехавшись, они дают либо прежнее окно (можно схватить улетающую), либо
+-- намертво замороженную колонку (нельзя взять, но никуда и не летит).
+H.test("H6 запрет захвата и авто-отправка описывают одни и те же карты", function()
+   local hit = require("main.Scripts.hit_test")
+   local tutorial_state = require("main.Scripts.tutorial_state")
+   load_script("main/Scripts/tableau_script.script")
+   for _, tut in ipairs({ false, true }) do
+      tutorial_state.is_tutorial = tut
+      for _, c in ipairs(CARDS_H6) do
+         local grabbed = hit.check_tableau_slots(hit_state(c.data), 100, 265) ~= nil
+         msg.clear()
+         local self = {
+            stack = {
+               { id = "go_deep", data = { value = 9, suit = "green" } },
+               { id = "go_top", data = c.data },
+            },
+            cursor = "cursor",
+         }
+         last_card_to_slot(self)
+         local sent = stub.msg_count("send_to_base_slot") + stub.msg_count("send_to_flower_slot")
+         if sent > 0 and grabbed then
+            return false, c.name .. " (туториал=" .. tostring(tut) ..
+               "): игра её отправляет, а схватить всё равно можно — это и есть окно H6"
+         end
+         if sent == 0 and not grabbed then
+            return false, c.name .. " (туториал=" .. tostring(tut) ..
+               "): схватить нельзя, а никто её не забирает — колонка замерзает навсегда"
+         end
+      end
+   end
+   tutorial_state.is_tutorial = false
+   return true
+end)
+
+
+-- ---------------------------------------------------------------------------
+-- L2. Авто-финиш не разгребал свободные ячейки: `find_next_auto_card` ходил
+-- только по верхушкам колонок. Партия, где последняя карта припаркована,
+-- доигрывалась руками — колонки пустели, авто-финиш останавливался, победы не
+-- было. Ложной победы при этом не случалось: её держала проверка
+-- `cell_occupied` в auto_finish_step, и она остаётся на месте — страхует
+-- случай, когда карту из ячейки положить действительно некуда.
+local function drain_board(cells, foundation)
+   return {
+      tutorial_mode = false, auto_finishing = true, debug_replaying = false,
+      states = { PLAYING = "playing", WIN = "win" }, currentState = "playing",
+      foundation_top = foundation or { red = 2, blue = 2, green = 2 },
+      tableau_stacks = { { cards = {} }, { cards = {} }, { cards = {} }, { cards = {} },
+                         { cards = {} }, { cards = {} }, { cards = {} }, { cards = {} } },
+      free_cell_state = cells,
+      base_cards_count = 3,
+      base_slots = {
+         base_slot1 = { is_empty = false, pos = { x = 0, y = 0, z = 0 } },
+         base_slot2 = { is_empty = true,  pos = { x = 0, y = 0, z = 0 } },
+      },
+      suit_to_base = { red = "base_slot1" },
+      cursor = "cursor",
+   }
+end
+
+H.test("L2 авто-финиш забирает последнюю карту из свободной ячейки", function()
+   load_script("main/Scripts/main.script")
+   msg.clear()
+   local self = drain_board({ { card = { id = "go_3r", data = { value = 3, suit = "red" } } }, {}, {} })
+   auto_finish_step(self)
+   local sent = last_msg("drop_success")
+   if not sent then
+      return false, "стол пуст, в ячейке лежит ровно та карта, которую ждёт foundation — а хода нет"
+   end
+   if sent.to ~= "go_3r" then
+      return false, "улетела не карта из ячейки, а " .. tostring(sent.to)
+   end
+   if self.free_cell_state[1].card then
+      return false, "зеркало ячейки не очищено — следующий шаг пошлёт ту же карту второй раз"
+   end
+   return true
+end)
+
+H.test("L2 разгребание ячейки доводит партию до победы", function()
+   load_script("main/Scripts/main.script")
+   local self = drain_board({ { card = { id = "go_3r", data = { value = 3, suit = "red" } } }, {}, {} })
+   auto_finish_step(self)          -- забрал карту из ячейки
+   self.foundation_top.red = 3     -- карта приземлилась (card_to_base)
+   auto_finish_step(self)          -- следующий шаг: брать нечего
+   if self.currentState ~= "win" then
+      return false, "стол и ячейки пусты, а победы нет"
+   end
+   return true
+end)
+
+H.test("L2 запечатанную ячейку авто-финиш не трогает", function()
+   load_script("main/Scripts/main.script")
+   msg.clear()
+   -- Стопка собранных драконов. Значение специально «съедобное» для foundation,
+   -- чтобы проверка ловилась именно на is_blocked, а не на масти.
+   local self = drain_board({
+      { card = { id = "go_pile", data = { value = 3, suit = "red" } }, is_blocked = true }, {}, {} })
+   auto_finish_step(self)
+   if stub.msg_count("drop_success") > 0 then
+      return false, "авто-финиш растащил запечатанную ячейку — собранные драконы улетели в foundation"
+   end
+   -- Ячейка запечатана, живых карт нет ⇒ это победа, а не тупик.
+   if self.currentState ~= "win" then
+      return false, "запечатанная ячейка не должна мешать победе"
+   end
+   return true
+end)
+
+H.test("L2 карта из ячейки проходит ту же safe-проверку, что и карты колонок", function()
+   load_script("main/Scripts/main.script")
+   -- 9_red при синем/зелёном фундаменте на 3: класть её рано — другая масть
+   -- отстаёт больше чем на единицу. То же правило, что и для верхушек колонок.
+   local self = drain_board(
+      { { card = { id = "go_9r", data = { value = 9, suit = "red" } } }, {}, {} },
+      { red = 8, blue = 3, green = 3 })
+   self.auto_finishing = false
+   if can_auto_finish(self, { free_cells = {} }) then
+      return false, "safe-проверка не применилась к карте из ячейки"
+   end
+   -- Контроль: та же карта при подтянувшихся мастях доигрывается.
+   local ok = drain_board(
+      { { card = { id = "go_9r", data = { value = 9, suit = "red" } } }, {}, {} },
+      { red = 8, blue = 8, green = 8 })
+   ok.auto_finishing = false
+   if not can_auto_finish(ok, { free_cells = {} }) then
+      return false, "ячейку с играбельной картой не признали основанием для авто-финиша"
+   end
+   return true
+end)
+
+H.test("L2 колонка обслуживается раньше ячейки", function()
+   load_script("main/Scripts/main.script")
+   msg.clear()
+   local self = drain_board({ { card = { id = "go_3r", data = { value = 3, suit = "red" } } }, {}, {} })
+   self.tableau_stacks[1].cards = { { id = "go_3b", data = { value = 3, suit = "blue" } } }
+   auto_finish_step(self)
+   local sent = last_msg("drop_success")
+   if not sent or sent.to ~= "go_3b" then
+      return false, "верхушка колонки должна уходить первой: под ней могут быть другие карты, "
+         .. "а карта в ячейке никого не держит"
+   end
+   return true
+end)
+
+-- Смычка L2 с точкой победы 3 (`auto_collect_give_up`). Та ветка объявляет
+-- победу по ослабленному условию «27 номиналов + нет живых ячеек», и L2 меняет
+-- МОМЕНТ, когда ячейка становится пустой: теперь её опустошает цепочка таймеров
+-- авто-финиша, а не рука игрока. Столкнуться они не могут, и причина
+-- арифметическая, а не в замках: уступка вообще не запускается раньше 27
+-- номиналов (оба вызова begin_auto_collect стоят за этим порогом), а при 27
+-- разложенных номиналах в живой ячейке может лежать только дракон или цветок —
+-- ни того, ни другого авто-финиш не берёт. Пин на случай, если порог когда-то
+-- опустят.
+H.test("L2 при 27 номиналах авто-финишу в ячейках брать нечего", function()
+   load_script("main/Scripts/main.script")
+   for _, card in ipairs({
+      { id = "go_d", data = { value = "d", suit = "red", is_dragon = true } },
+      { id = "go_f", data = { value = "f", suit = "flower", is_flower = true } },
+   }) do
+      local self = drain_board({ { card = card }, {}, {} }, { red = 10, blue = 10, green = 10 })
+      self.base_cards_count = 27
+      if find_next_auto_card(self) ~= nil then
+         return false, "авто-финиш собрался взять из ячейки " .. tostring(card.data.value)
+            .. " — при 27 номиналах это ломает арифметику, на которой держится уступка"
+      end
+   end
+   return true
+end)
+
+H.test("L2 цветок в ячейке не запрещает авто-финиш колонок", function()
+   load_script("main/Scripts/main.script")
+   local self = drain_board({ { card = { id = "go_f", data = { value = "f", suit = "flower" } } }, {}, {} })
+   self.auto_finishing = false
+   self.tableau_stacks[1].cards = { { id = "go_3r", data = { value = 3, suit = "red" } } }
+   if not can_auto_finish(self, { free_cells = {} }) then
+      return false, "цветок в ячейке не играется в foundation, но и разбирать колонки не мешает"
+   end
+   return true
+end)
+
+-- N9: игра отнимает ввод (авто-финиш, реплей) ровно тогда, когда игрок может
+-- держать карту в руке. Пока input_disabled, on_input не работает — release
+-- глотается, драг остаётся взведённым, а карта всё ещё числится за своим
+-- слотом, так что авто-финиш её забирает. Первый же press после enable_input
+-- отрабатывал ветку A2 и слал drop_failed карте, уже лежащей в foundation.
+local function dragging_cursor()
+   return {
+      is_dragging = true,
+      selected_card = "go_in_hand",
+      original_position = vmath.vector3(10, 20, 0),
+      input_disabled = false,
+      base_slots = {}, free_slots = {}, dragon_buttons = {},
+   }
+end
+
+H.test("N9 disable_input возвращает карту из руки, а не оставляет её висеть", function()
+   load_script("main/Scripts/cursor.script")
+   local self = dragging_cursor()
+   msg.clear()
+   on_message(self, hash("disable_input"), {}, "main")
+   local returned = false
+   for _, m in ipairs(msg.log) do
+      if m.to == "go_in_hand" and m.id == tostring(hash("drop_failed")) then returned = true end
+   end
+   if not returned then
+      return false, "карта осталась на курсоре — авто-финиш уложит её в foundation, "
+         .. "а следующий press вытащит обратно через ветку A2"
+   end
+   if self.is_dragging then
+      return false, "драг не сброшен: is_dragging остался true при отнятом вводе"
+   end
+   if not self.input_disabled then
+      return false, "ввод не заглушен — отмена драга не должна отменять сам disable_input"
+   end
+   return true
+end)
+
+H.test("N9 disable_input без драга в руке ничего не рассылает", function()
+   load_script("main/Scripts/cursor.script")
+   local self = dragging_cursor()
+   self.is_dragging = false
+   self.selected_card = nil
+   msg.clear()
+   on_message(self, hash("disable_input"), {}, "main")
+   if #msg.log > 0 then
+      return false, "на пустой руке disable_input послал " .. tostring(#msg.log)
+         .. " сообщений — лишний drop_failed двигает чужие карты"
+   end
+   return true
+end)
+
+H.test("N9 стопка возвращается целиком, каждая карта на своё смещение", function()
+   load_script("main/Scripts/cursor.script")
+   local self = dragging_cursor()
+   self.dragging_stack = true
+   self.selected_card = nil
+   self.stack_cards = {
+      { id = "go_a", relative_pos = vmath.vector3(0, 0, 0) },
+      { id = "go_b", relative_pos = vmath.vector3(0, -30, 0) },
+   }
+   msg.clear()
+   on_message(self, hash("disable_input"), {}, "main")
+   local seen = {}
+   for _, m in ipairs(msg.log) do
+      if m.id == tostring(hash("drop_failed")) then seen[m.to] = m.data.position end
+   end
+   if not seen.go_a or not seen.go_b then
+      return false, "вернулась не вся стопка — часть карт осталась на курсоре"
+   end
+   if math.abs(seen.go_b.y - (20 - 30)) > 0.001 then
+      return false, "вторая карта стопки вернулась не на своё смещение: y="
+         .. tostring(seen.go_b.y)
+   end
+   return true
+end)
+
+-- N9b: auto_collect_dragons и auto_move_dragon — обработчики СООБЩЕНИЙ от main,
+-- а не ветки on_input, поэтому драг игрока в них может быть жив: держим дракона,
+-- с чужой колонки сама улетает последняя двойка, 27 номиналов -> begin_auto_collect.
+-- Найдено дельта-ревью (обе модели независимо), опровергло рассуждение автора
+-- «сюда попадают только из on_input, где A2 уже отработал».
+H.test("N9b авто-сбор драконов отдаёт карту из руки и не теряет pending_drop", function()
+   load_script("main/Scripts/cursor.script")
+   local self = dragging_cursor()
+   self.dragon_buttons = { dragon_button1 = { is_active = true, sprite = "red" } }
+   self.free_slots = { free_slot1 = { is_empty = true, dragon = nil, pos = vmath.vector3(0, 0, 0) } }
+   msg.clear()
+   on_message(self, hash("auto_collect_dragons"), {}, "main")
+   local returned, asked = false, false
+   for _, m in ipairs(msg.log) do
+      if m.to == "go_in_hand" and m.id == tostring(hash("drop_failed")) then returned = true end
+      if m.id == tostring(hash("get_dragon_cards")) then asked = true end
+   end
+   if not returned then
+      return false, "карта осталась в руке — после сбора первый же press выдернет её через A2"
+   end
+   if not asked then
+      return false, "сбор не заказан: get_dragon_cards не ушёл"
+   end
+   if not self.pending_drop then
+      return false, "pending_drop обнулён — abort_drag зовут ПОСЛЕ него, и гард "
+         .. "обработчика get_dragon_cards молча провалит сбор"
+   end
+   return true
+end)
+
+H.test("N9b сдвиг дракона отдаёт карту из руки", function()
+   load_script("main/Scripts/cursor.script")
+   local self = dragging_cursor()
+   self.tableau_slots = { tableau_slot3 = { pos = vmath.vector3(300, 200, 0) } }
+   self.flying_count = 0
+   msg.clear()
+   on_message(self, hash("auto_move_dragon"), {
+      slot_id = "tableau_slot3",
+      card = { id = "go_dragon", data = { value = "d", suit = "red" } },
+   }, "main")
+   local returned = false
+   for _, m in ipairs(msg.log) do
+      if m.to == "go_in_hand" and m.id == tostring(hash("drop_failed")) then returned = true end
+   end
+   if not returned then
+      return false, "карта осталась в руке на время сдвига дракона"
+   end
+   if not self.input_disabled then
+      return false, "ввод не заглушен — отмена драга не должна отменять сам сдвиг"
+   end
+   return true
+end)
+
+-- N9c: сдвигают РОВНО ту карту, что в руке. drop_failed уходит через msg.post,
+-- а fly_card_arc анимирует синхронно — возврат приехал бы позже дуги и отменил
+-- её по свойству position. Колбэк отменённой анимации Defold не зовёт, значит
+-- flying_count не вернулся бы к нулю НИКОГДА, а гард A3 глушит нажатия по
+-- flying_count > 0: ввод мёртв до рестарта. Найдено дельта-ревью, обе модели.
+H.test("N9c сдвигаемой карте возврат не шлём — иначе он отменит дугу", function()
+   load_script("main/Scripts/cursor.script")
+   local self = dragging_cursor()
+   self.tableau_slots = { tableau_slot3 = { pos = vmath.vector3(300, 200, 0) } }
+   self.flying_count = 0
+   msg.clear()
+   on_message(self, hash("auto_move_dragon"), {
+      slot_id = "tableau_slot3",
+      card = { id = "go_in_hand", data = { value = "d", suit = "red" } },
+   }, "main")
+   for _, m in ipairs(msg.log) do
+      if m.to == "go_in_hand" and m.id == tostring(hash("drop_failed")) then
+         return false, "возврат ушёл сдвигаемой карте — он отменит дугу, "
+            .. "flying_count утечёт и ввод останется глухим"
+      end
+   end
+   if self.is_dragging then
+      return false, "драг не сброшен, хотя карту у игрока забрали"
+   end
+   -- Дуга должна доиграть до конца: в её колбэке висит flying_count -= 1 и
+   -- drop_success. Именно этого не случилось бы, отмени её возврат.
+   stub.flush_anims(4)
+   if (self.flying_count or 0) ~= 0 then
+      return false, "flying_count не вернулся к нулю: " .. tostring(self.flying_count)
+         .. " — дуга не доиграла, ввод останется глухим"
+   end
+   local landed = false
+   for _, m in ipairs(msg.log) do
+      if m.to == "go_in_hand" and m.id == tostring(hash("drop_success")) then landed = true end
+   end
+   if not landed then
+      return false, "карта не села: drop_success из колбэка дуги не ушёл"
+   end
+   return true
+end)
+
+H.test("N9c из стопки возвращаются все, кроме сдвигаемой карты", function()
+   load_script("main/Scripts/cursor.script")
+   local self = dragging_cursor()
+   self.dragging_stack = true
+   self.selected_card = nil
+   self.stack_cards = {
+      { id = "go_other", relative_pos = vmath.vector3(0, 0, 0) },
+      { id = "go_in_hand", relative_pos = vmath.vector3(0, -30, 0) },
+   }
+   self.tableau_slots = { tableau_slot3 = { pos = vmath.vector3(300, 200, 0) } }
+   self.flying_count = 0
+   msg.clear()
+   on_message(self, hash("auto_move_dragon"), {
+      slot_id = "tableau_slot3",
+      card = { id = "go_in_hand", data = { value = "d", suit = "red" } },
+   }, "main")
+   local other, moved = false, false
+   for _, m in ipairs(msg.log) do
+      if m.id == tostring(hash("drop_failed")) then
+         if m.to == "go_other" then other = true end
+         if m.to == "go_in_hand" then moved = true end
+      end
+   end
+   if not other then
+      return false, "соседняя карта стопки осталась на курсоре"
+   end
+   if moved then
+      return false, "сдвигаемой карте всё-таки ушёл возврат"
+   end
+   return true
+end)
 
 return H

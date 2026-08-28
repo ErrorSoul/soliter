@@ -91,6 +91,22 @@ nodes {
   position {
     y: 60.0
   }
+  size {
+    x: 560.0
+    y: 104.0
+  }
+  color {
+    x: 0.12
+    y: 0.1
+    z: 0.2
+  }
+  type: TYPE_BOX
+  id: "victory_title_plate"
+  parent: "victory_overlay"
+  layer: "buttons"
+  inherit_alpha: false
+}
+nodes {
   scale {
     x: 1.8
     y: 1.8
@@ -108,8 +124,8 @@ nodes {
   text: "VICTORY!"
   font: "main_font"
   id: "text1"
-  parent: "victory_overlay"
-  inherit_alpha: false
+  parent: "victory_title_plate"
+  inherit_alpha: true
 }
 nodes {
   position {

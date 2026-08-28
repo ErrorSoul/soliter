@@ -185,7 +185,13 @@ function update(self, dt)
         -- когда игрок уйдёт в меню. Уровень под оверлеем ещё загружен.
         msg.post("/main#game_manager", "gameplay_over")
         local overlay = gui.get_node("victory_overlay")
-        local title = gui.get_node("text1")
+        -- Косметика (замечена на скриншоте сквозного прогона): заголовок жёлтым
+        -- по иллюстрации — звезда, короны, конфетти — читался плохо, буквы
+        -- тонули в арте. Теперь он лежит на тёмной плашке в цвет обводок
+        -- иллюстрации, а анимацию ведёт плашка: текст — её ребёнок и едет
+        -- вместе с ней. Отсюда и масштаб 1.0 вместо прежних 1.8 — свои 1.8
+        -- текст несёт сам (gui/ui.gui, нода text1).
+        local title = gui.get_node("victory_title_plate")
         local btn_play = gui.get_node("victory_restart")
         local btn_menu = gui.get_node("victory_menu_button")
 
@@ -211,8 +217,12 @@ function update(self, dt)
         -- Title: slide down + scale bounce
         gui.set_position(title, vmath.vector3(0, 160, 0))
         gui.set_scale(title, vmath.vector3(0.5, 0.5, 1))
+        gui.set_color(title, vmath.vector4(0.12, 0.1, 0.2, 0))
         gui.animate(title, "position.y", 60, gui.EASING_OUTBACK, 0.5, 0.3)
-        gui.animate(title, "scale", vmath.vector3(1.8, 1.8, 1), gui.EASING_OUTBACK, 0.4, 0.3)
+        gui.animate(title, "scale", vmath.vector3(1, 1, 1), gui.EASING_OUTBACK, 0.4, 0.3)
+        -- Не до непрозрачности: сквозь плашку должна просвечивать иллюстрация,
+        -- иначе она читается чёрной полосой поперёк картинки.
+        gui.animate(title, "color.w", 0.88, gui.EASING_OUTQUAD, 0.3, 0.3)
 
         -- Buttons: fade in with slide up
         gui.set_color(btn_play, vmath.vector4(0.55, 0.15, 0.1, 0))

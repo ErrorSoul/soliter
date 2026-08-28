@@ -91,18 +91,7 @@ function on_input(self, action_id, action)
          -- мобиле. Если приходит новый press, а прошлый drag так и не получил
          -- release — возвращаем зависшие карты на место и чистим состояние,
          -- затем продолжаем обработку нового нажатия (fall-through).
-         if self.is_dragging then
-            if self.dragging_stack and self.stack_cards then
-               for _, card in ipairs(self.stack_cards) do
-                  msg.post(card.id, "drop_failed", {
-                     position = self.original_position + card.relative_pos
-                  })
-               end
-            elseif self.selected_card then
-               msg.post(self.selected_card, 'drop_failed', {position = self.original_position})
-            end
-            clean_cursor(self)
-         end
+         abort_drag(self)
          self.was_pressed = true
          local btn_color = hit.check_dragon_buttons(self, ax, ay)
 
@@ -504,6 +493,13 @@ function on_message(self, message_id, message, sender)
          end
       end
       if btn_id then
+         -- N9: сюда приходят СООБЩЕНИЕМ от main, а не из on_input, так что ветка
+         -- A2 выше по on_input тут ни при чём и драг игрока может быть жив:
+         -- держим дракона -> с чужой колонки сама улетает последняя двойка ->
+         -- 27 номиналов -> begin_auto_collect. Карту надо отдать ДО pending_drop:
+         -- abort_drag зовёт clean_cursor, а тот обнуляет pending_drop, на котором
+         -- стоит гард обработчика get_dragon_cards.
+         abort_drag(self)
          -- Ввод глушим на время сбора: pending_drop общий с пальцем.
          -- Возвращает его main — end_auto_collect, который зовут и отказ
          -- (auto_collect_give_up), и declare_victory.
@@ -537,6 +533,13 @@ function on_message(self, message_id, message, sender)
          msg.post("/card_table#main", "auto_collect_none_final")
          return
       end
+      -- N9: как и в auto_collect_dragons — сообщение от main, драг игрока может
+      -- быть жив. Отдаём карту до того, как заглушим ввод.
+      -- N9c: КРОМЕ той карты, которую сдвигаем прямо сейчас. Ей возврат слать
+      -- нельзя — он приедет позже синхронной дуги и отменит её (см. abort_drag).
+      -- Сюда попадает и случай «дракона тащат в составе стопки»: остальные карты
+      -- стопки возвращаются, а эта улетает.
+      abort_drag(self, card.id)
       self.input_disabled = true
       local target = slot.pos
       self.flying_count = self.flying_count + 1  -- A3
@@ -604,6 +607,9 @@ function on_message(self, message_id, message, sender)
          self.flying_count = math.max(0, (self.flying_count or 0) - 1)
       end)
    elseif message_id == hash("disable_input") then
+      -- N9: сначала отдать карту, потом глушить ввод — иначе она останется
+      -- висеть на курсоре до следующего press (см. abort_drag).
+      abort_drag(self)
       self.input_disabled = true
    elseif message_id == hash("enable_input") then
       self.input_disabled = false
@@ -676,6 +682,41 @@ function on_message(self, message_id, message, sender)
 
 
    end
+end
+
+-- N9: вернуть в руках зависшие карты и обнулить драг. Вызывается из двух мест:
+-- A2 (новый press, а прошлый drag не получил release) и disable_input (игра
+-- забирает ввод себе). Второе — не косметика: пока input_disabled, on_input
+-- возвращается на первой же строке, release глотается и is_dragging остаётся
+-- взведённым. Карта при этом ЕЩЁ числится в своей ячейке/колонке (владельца
+-- освобождает card.script по drop_success, то есть только при посадке), поэтому
+-- авто-финиш имеет полное право её забрать — а потом первый же press игрока
+-- отрабатывал ветку A2 и слал drop_failed карте, уже лежащей в foundation,
+-- вытаскивая её обратно на original_position. Найдено ревью grok-4.5.
+--
+-- N9c. except_id — карта, которую звонящий прямо сейчас отправляет САМ; ей
+-- drop_failed слать нельзя, из руки она просто отпускается. Причина в порядке:
+-- drop_failed уходит через msg.post (очередь), а fly_card_arc зовёт go.animate
+-- СИНХРОННО, так что возврат приезжает ПОЗЖЕ дуги и отменяет её по тому же
+-- свойству position. Колбэк отменённой анимации Defold не зовёт — а в нём
+-- висят flying_count -= 1, drop_success и доклад auto_collect_moved. Утечка
+-- flying_count вешает ввод намертво: гард A3 глушит все нажатия. Мой
+-- первоначальный комментарий утверждал обратный порядок; перевёрнутым он
+-- оказался по итогам ревью (grok-4.6 и grok-4.5 независимо).
+function abort_drag(self, except_id)
+   if not self.is_dragging then return end
+   local function give_back(card_id, position)
+      if except_id and card_id == except_id then return end
+      msg.post(card_id, "drop_failed", { position = position })
+   end
+   if self.dragging_stack and self.stack_cards then
+      for _, card in ipairs(self.stack_cards) do
+         give_back(card.id, self.original_position + card.relative_pos)
+      end
+   elseif self.selected_card then
+      give_back(self.selected_card, self.original_position)
+   end
+   clean_cursor(self)
 end
 
 function clean_cursor(self)

@@ -580,28 +580,47 @@ function M.can_auto_finish(state)
       end
    end
 
-   -- Remaining tableau cards: no dragons/flower, and each value is safe
+   -- Remaining cards: no dragons/flower, and each value is safe
    -- (same predicate as main.script can_auto_finish: v <= min_other+1).
    local remaining = 0
+   local function check(card)
+      remaining = remaining + 1
+      if card.is_dragon or card.is_flower then
+         return false
+      end
+      local v = card.value
+      if type(v) == "number" then
+         local min_other = 10
+         for suit, val in pairs(state.foundation_top) do
+            if suit ~= card.suit then
+               min_other = math.min(min_other, val)
+            end
+         end
+         if v > min_other + 1 then
+            return false
+         end
+      end
+      return true
+   end
    for i = 1, 8 do
       local col = state.tableau[i]
       for _, card in ipairs(col) do
-         remaining = remaining + 1
-         if card.is_dragon or card.is_flower then
-            return false
-         end
-         local v = card.value
-         if type(v) == "number" then
-            local min_other = 10
-            for suit, val in pairs(state.foundation_top) do
-               if suit ~= card.suit then
-                  min_other = math.min(min_other, val)
-               end
-            end
-            if v > min_other + 1 then
-               return false
-            end
-         end
+         if not check(card) then return false end
+      end
+   end
+   -- L2 (паритет с игрой): авто-финиш игры теперь забирает и номинал,
+   -- припаркованный в живой ячейке, поэтому такие карты входят в тот же счёт и
+   -- ту же safe-проверку. Цветок и дракона сюда не кладём по той же причине,
+   -- что и в main.script: дракона отсекает проверка выше, а цветок в foundation
+   -- не играется вовсе и запретил бы разбор колонок.
+   --
+   -- ⚠ Паритет всё ещё НЕ полный, и это записано отдельно (блок L4): у игры
+   -- есть гард G3 «ход должен быть возможен прямо сейчас» (find_next_auto_card),
+   -- здесь его нет. Эта функция считает статистику run.lua и не участвует ни в
+   -- решении, ни в goldens.
+   for _, fc in ipairs(state.free_cells) do
+      if fc.card and not fc.is_blocked and type(fc.card.value) == "number" then
+         if not check(fc.card) then return false end
       end
    end
    if remaining == 0 then return false end
