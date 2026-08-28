@@ -2424,5 +2424,80 @@ H.test("L2 цветок в ячейке не запрещает авто-фин�
    return true
 end)
 
+-- N9: игра отнимает ввод (авто-финиш, реплей) ровно тогда, когда игрок может
+-- держать карту в руке. Пока input_disabled, on_input не работает — release
+-- глотается, драг остаётся взведённым, а карта всё ещё числится за своим
+-- слотом, так что авто-финиш её забирает. Первый же press после enable_input
+-- отрабатывал ветку A2 и слал drop_failed карте, уже лежащей в foundation.
+local function dragging_cursor()
+   return {
+      is_dragging = true,
+      selected_card = "go_in_hand",
+      original_position = vmath.vector3(10, 20, 0),
+      input_disabled = false,
+      base_slots = {}, free_slots = {}, dragon_buttons = {},
+   }
+end
+
+H.test("N9 disable_input возвращает карту из руки, а не оставляет её висеть", function()
+   load_script("main/Scripts/cursor.script")
+   local self = dragging_cursor()
+   msg.clear()
+   on_message(self, hash("disable_input"), {}, "main")
+   local returned = false
+   for _, m in ipairs(msg.log) do
+      if m.to == "go_in_hand" and m.id == tostring(hash("drop_failed")) then returned = true end
+   end
+   if not returned then
+      return false, "карта осталась на курсоре — авто-финиш уложит её в foundation, "
+         .. "а следующий press вытащит обратно через ветку A2"
+   end
+   if self.is_dragging then
+      return false, "драг не сброшен: is_dragging остался true при отнятом вводе"
+   end
+   if not self.input_disabled then
+      return false, "ввод не заглушен — отмена драга не должна отменять сам disable_input"
+   end
+   return true
+end)
+
+H.test("N9 disable_input без драга в руке ничего не рассылает", function()
+   load_script("main/Scripts/cursor.script")
+   local self = dragging_cursor()
+   self.is_dragging = false
+   self.selected_card = nil
+   msg.clear()
+   on_message(self, hash("disable_input"), {}, "main")
+   if #msg.log > 0 then
+      return false, "на пустой руке disable_input послал " .. tostring(#msg.log)
+         .. " сообщений — лишний drop_failed двигает чужие карты"
+   end
+   return true
+end)
+
+H.test("N9 стопка возвращается целиком, каждая карта на своё смещение", function()
+   load_script("main/Scripts/cursor.script")
+   local self = dragging_cursor()
+   self.dragging_stack = true
+   self.selected_card = nil
+   self.stack_cards = {
+      { id = "go_a", relative_pos = vmath.vector3(0, 0, 0) },
+      { id = "go_b", relative_pos = vmath.vector3(0, -30, 0) },
+   }
+   msg.clear()
+   on_message(self, hash("disable_input"), {}, "main")
+   local seen = {}
+   for _, m in ipairs(msg.log) do
+      if m.id == tostring(hash("drop_failed")) then seen[m.to] = m.data.position end
+   end
+   if not seen.go_a or not seen.go_b then
+      return false, "вернулась не вся стопка — часть карт осталась на курсоре"
+   end
+   if math.abs(seen.go_b.y - (20 - 30)) > 0.001 then
+      return false, "вторая карта стопки вернулась не на своё смещение: y="
+         .. tostring(seen.go_b.y)
+   end
+   return true
+end)
 
 return H

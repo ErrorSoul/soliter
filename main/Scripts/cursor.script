@@ -91,18 +91,7 @@ function on_input(self, action_id, action)
          -- мобиле. Если приходит новый press, а прошлый drag так и не получил
          -- release — возвращаем зависшие карты на место и чистим состояние,
          -- затем продолжаем обработку нового нажатия (fall-through).
-         if self.is_dragging then
-            if self.dragging_stack and self.stack_cards then
-               for _, card in ipairs(self.stack_cards) do
-                  msg.post(card.id, "drop_failed", {
-                     position = self.original_position + card.relative_pos
-                  })
-               end
-            elseif self.selected_card then
-               msg.post(self.selected_card, 'drop_failed', {position = self.original_position})
-            end
-            clean_cursor(self)
-         end
+         abort_drag(self)
          self.was_pressed = true
          local btn_color = hit.check_dragon_buttons(self, ax, ay)
 
@@ -604,6 +593,9 @@ function on_message(self, message_id, message, sender)
          self.flying_count = math.max(0, (self.flying_count or 0) - 1)
       end)
    elseif message_id == hash("disable_input") then
+      -- N9: сначала отдать карту, потом глушить ввод — иначе она останется
+      -- висеть на курсоре до следующего press (см. abort_drag).
+      abort_drag(self)
       self.input_disabled = true
    elseif message_id == hash("enable_input") then
       self.input_disabled = false
@@ -676,6 +668,29 @@ function on_message(self, message_id, message, sender)
 
 
    end
+end
+
+-- N9: вернуть в руках зависшие карты и обнулить драг. Вызывается из двух мест:
+-- A2 (новый press, а прошлый drag не получил release) и disable_input (игра
+-- забирает ввод себе). Второе — не косметика: пока input_disabled, on_input
+-- возвращается на первой же строке, release глотается и is_dragging остаётся
+-- взведённым. Карта при этом ЕЩЁ числится в своей ячейке/колонке (владельца
+-- освобождает card.script по drop_success, то есть только при посадке), поэтому
+-- авто-финиш имеет полное право её забрать — а потом первый же press игрока
+-- отрабатывал ветку A2 и слал drop_failed карте, уже лежащей в foundation,
+-- вытаскивая её обратно на original_position. Найдено ревью grok-4.5.
+function abort_drag(self)
+   if not self.is_dragging then return end
+   if self.dragging_stack and self.stack_cards then
+      for _, card in ipairs(self.stack_cards) do
+         msg.post(card.id, "drop_failed", {
+            position = self.original_position + card.relative_pos
+         })
+      end
+   elseif self.selected_card then
+      msg.post(self.selected_card, 'drop_failed', {position = self.original_position})
+   end
+   clean_cursor(self)
 end
 
 function clean_cursor(self)
