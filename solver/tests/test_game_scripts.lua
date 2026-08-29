@@ -2010,6 +2010,99 @@ H.test("O2 доска со скриншота: игра обязана запу�
    return true
 end)
 
+-- O2, главный тест доверия: предикат обещает «доска сметётся», а ходы выбирает
+-- ДРУГАЯ функция — find_next_auto_card. Если их правила разойдутся, худший исход
+-- не «авто-финиш промолчал», а «авто-финиш заглушил ввод, сделал несколько ходов
+-- и встал без победы». Поэтому здесь крутится сам игровой селектор — до тех пор,
+-- пока он что-то возвращает, — и проверяется, что стол реально пустеет.
+--
+-- Доска на стенде (o2sweep) этого не покрывает: там три независимых рана одной
+-- масти, каждый снимается подряд. У доски со скриншота ран второй колонки
+-- чередует масти и продвигается только за счёт карт из колонок 3/4/7/8 — то
+-- есть проверяется именно межколоночная итерация. Мутация «один проход вместо
+-- неподвижной точки» валит ровно эту доску и не валит стендовую.
+-- Крутит игровой селектор до упора, повторяя то, что делает auto_finish_step:
+-- карта уходит с поля, основание её масти встаёт на её номинал.
+-- Возвращает: число ходов, сколько карт осталось на столе, текст ошибки.
+local function drive_auto_finish(self, budget)
+   local moves = 0
+   while true do
+      local card, stack_index, cell_ord = find_next_auto_card(self)
+      if not card then break end
+      moves = moves + 1
+      if moves > (budget or 40) then
+         return moves, nil, "селектор зациклился"
+      end
+      self.foundation_top[card.data.suit] = card.data.value
+      if stack_index then
+         local cards = self.tableau_stacks[stack_index].cards
+         if cards[#cards].id ~= card.id then
+            return moves, nil, "селектор вернул карту, которая не является верхушкой колонки"
+         end
+         table.remove(cards)
+      elseif cell_ord then
+         self.free_cell_state[cell_ord] = {}
+      else
+         return moves, nil, "селектор не сказал, откуда карта"
+      end
+   end
+   local left = 0
+   for i = 1, 8 do left = left + #self.tableau_stacks[i].cards end
+   for _, fc in ipairs(self.free_cell_state) do
+      local data = fc.card and fc.card.data
+      if data and not fc.is_blocked and type(data.value) == "number" then left = left + 1 end
+   end
+   return moves, left, nil
+end
+
+H.test("O2 игровой селектор доигрывает доску со скриншота до пустого стола", function()
+   load_script("main/Scripts/main.script")
+   local self = o2_screenshot_self()
+   local moves, left, err = drive_auto_finish(self)
+   if err then return false, err end
+   if left > 0 then
+      return false, string.format("селектор встал на середине: сделал %d ходов, осталось %d карт "
+         .. "(основания r=%d g=%d b=%d). Предикат обещает сметание, а ходы выбираются по другому правилу",
+         moves, left, self.foundation_top.red, self.foundation_top.green, self.foundation_top.blue)
+   end
+   if moves ~= 22 then
+      return false, "стол пуст, но ходов " .. moves .. " вместо 22 — доска-фикстура разъехалась"
+   end
+   return true
+end)
+
+-- Доска, которая РАЗЛИЧАЕТ два правила. Доска со скриншота их не различает —
+-- замерено мутацией: safe-проверка, вставленная внутрь find_next_auto_card, её
+-- всё равно доигрывает, и тест выше остаётся зелёным. Здесь же 5_red при
+-- основаниях 4/1/1: по «номинал ровно следующий» она снимается и стол пустеет,
+-- по safe-проверке (5 > min_other + 1 = 2) селектор бы встал — а предикат уже
+-- пообещал сметание. Ровно это расхождение и означало бы глухой ввод без победы.
+H.test("O2 селектор не строже предиката: где обещано сметание, там ход находится", function()
+   load_script("main/Scripts/main.script")
+   local rules = require("solver.rules")
+   local self = {
+      tutorial_mode = false, auto_finishing = false, debug_replaying = false,
+      states = { PLAYING = "playing", WIN = "win" }, currentState = "playing",
+      foundation_top = { red = 4, green = 1, blue = 1 },
+      tableau_stacks = { { cards = { { id = "c5r", data = { value = 5, suit = "red" } } } } },
+      free_cell_state = { {}, {}, {} },
+   }
+   for i = 2, 8 do self.tableau_stacks[i] = { cards = {} } end
+   if not can_auto_finish(self, { free_cells = {} }) then
+      return false, "предикат не признал доску из одной снимаемой карты — фикстура не о том"
+   end
+   if not rules.auto_finish_sweeps({ { { value = 5, suit = "red" } } }, {}, self.foundation_top) then
+      return false, "солверная симуляция разошлась с игровым предикатом на той же доске"
+   end
+   local moves, left, err = drive_auto_finish(self)
+   if err then return false, err end
+   if left > 0 or moves ~= 1 then
+      return false, string.format("предикат обещал сметание, а селектор сделал %d ходов и оставил %d карт: "
+         .. "правила выбора карты разъехались — авто-финиш заглушит ввод и встанет без победы", moves, left)
+   end
+   return true
+end)
+
 H.test("O2 игровой предикат и солверный отвечают одинаково", function()
    load_script("main/Scripts/main.script")
    local rules = require("solver.rules")
