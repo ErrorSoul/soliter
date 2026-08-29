@@ -647,9 +647,16 @@ function M.auto_finish_sweeps(cols, cells, top)
 end
 
 function M.can_auto_finish(state)
-   -- Check no live (non-blocked) dragon in any free cell
+   -- Check no live (non-blocked) dragon in any free cell.
+   -- Дракона узнаём и по флагу, и по значению — ровно как игра. Раньше здесь
+   -- стоял только `is_dragon`, и state, собранный руками как {value="d"} без
+   -- флага, давал `true` там, где игра отвечает `false` (находка внешнего
+   -- ревью, grok-4.6). `rules.deal` и `bridge.card` флаг ставят, так что на
+   -- боевых данных разницы нет, — но копии предиката не должны расходиться по
+   -- форме входа: именно так и начинался L4.
    for _, fc in ipairs(state.free_cells) do
-      if fc.card and fc.card.is_dragon and not fc.is_blocked then
+      local card = fc.card
+      if card and not fc.is_blocked and (card.is_dragon or card.value == "d") then
          return false
       end
    end
