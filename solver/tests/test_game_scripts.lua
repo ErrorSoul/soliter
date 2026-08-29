@@ -2132,6 +2132,18 @@ H.test("O2 игровой предикат и солверный отвечаю�
       return { tableau = tableau, free_cells = cells, foundation_top = self.foundation_top }
    end
 
+   -- Payload курсора СТРОИМ ИЗ зеркала, а не подсовываем пустой: пустой payload
+   -- маскировал расхождение — игра резала живого дракона только по нему.
+   local function cursor_payload(self)
+      local cells = {}
+      for k, fc in ipairs(self.free_cell_state) do
+         local data = fc.card and fc.card.data
+         cells[k] = { slot_id = "free_slot" .. k, is_blocked = fc.is_blocked or false,
+                      dragon = data and data.value == "d" and data.suit or nil }
+      end
+      return { free_cells = cells }
+   end
+
    local boards = {}
    boards[1] = o2_screenshot_self()
    -- Та же доска, но верх второй колонки перевёрнут: сметание встанет.
@@ -2143,9 +2155,21 @@ H.test("O2 игровой предикат и солверный отвечаю�
    local empty = o2_screenshot_self()
    for i = 1, 8 do empty.tableau_stacks[i].cards = {} end
    boards[3] = empty
+   -- Живой дракон в ячейке при снимаемой колонке: вход, на котором игра и
+   -- солвер расходились (находка внешнего ревью, замерено — было true/false).
+   -- Payload здесь НАМЕРЕННО не несёт дракона: проверяем, что игра смотрит и в
+   -- своё зеркало тоже.
+   local live_dragon = o2_screenshot_self()
+   for i = 1, 8 do live_dragon.tableau_stacks[i].cards = {} end
+   live_dragon.tableau_stacks[1].cards = { { id = "c3r", data = { value = 3, suit = "red" } } }
+   live_dragon.foundation_top = { red = 2, green = 2, blue = 2 }
+   live_dragon.free_cell_state[1] = { card = { id = "dr", data = { value = "d", suit = "red" } },
+                                      is_blocked = false }
+   boards[4] = live_dragon
 
    for i, self in ipairs(boards) do
-      local game = can_auto_finish(self, { free_cells = {} })
+      local payload = (i == 4) and { free_cells = {} } or cursor_payload(self)
+      local game = can_auto_finish(self, payload)
       local solver = rules.can_auto_finish(solver_state(self))
       if game ~= solver then
          return false, string.format("доска %d: игра сказала %s, солвер %s",
