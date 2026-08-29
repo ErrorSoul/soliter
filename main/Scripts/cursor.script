@@ -36,6 +36,7 @@ end
 local function reset_drag_fx(self)
    self.prev_cursor_x = self.cursor_pos and self.cursor_pos.x or nil
    self.drag_speed_x = nil
+   self.probe_frame = 0   -- O1-зонд: нумерация кадров идёт от начала КАЖДОГО драга
 end
 
 function init(self)

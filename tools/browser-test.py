@@ -1490,32 +1490,55 @@ def scenario_dragz(s):
                 label="стопка из 8 карт, колонка 1 -> 6", steps=14)
     s.shot("after-drag")
 
+    # Вторая тропа драга: карта берётся ИЗ СВОБОДНОЙ ЯЧЕЙКИ (cursor.script,
+    # ветка slot_with_card). Там своя composition: смещение по x/y нулевое, а по
+    # z карта обязана нести собственную высоту — cursor_pos.z всегда 0. Ни один
+    # другой сценарий стенда карту из ячейки не поднимает (`freecell` только
+    # кладёт в неё), так что без этих двух драгов ветка живёт без движка.
+    s.drag_game(TABLEAU_X[2], TABLEAU_TOP_Y, FREE_CELL[1][0], FREE_CELL[1][1],
+                label="одиночная карта, колонка 2 -> ячейка 1", steps=8)
+    s.drag_game(FREE_CELL[1][0], FREE_CELL[1][1], TABLEAU_X[5], TABLEAU_TOP_Y,
+                label="она же обратно: ячейка 1 -> пустая колонка 5", steps=8)
+    s.shot("after-cell-drag")
+
+    # Зонд нумерует кадры от начала КАЖДОГО драга (cursor.reset_drag_fx), поэтому
+    # новый драг виден по откату счётчика. По времени делить нельзя — замерено:
+    # консольные строки приезжают из браузера пачками, и все три драга слиплись
+    # в один отрезок.
     rx = re.compile(r"\[DRAGZ\] f=(\d+) i=(\d+) z=(-?[\d.]+) y=(-?[\d.]+) "
                     r"sx=(-?[\d.]+) ez=(-?[\d.]+)")
-    frames = {}
+    runs, prev_f = [], None
     for e in s.log:
         m = rx.search(e["text"])
-        if m:
-            f, i = int(m.group(1)), int(m.group(2))
-            frames.setdefault(f, {})[i] = {"z": float(m.group(3)), "y": float(m.group(4)),
-                                           "sx": float(m.group(5)), "ez": float(m.group(6))}
+        if not m:
+            continue
+        f, i = int(m.group(1)), int(m.group(2))
+        if prev_f is None or f < prev_f:
+            runs.append([])          # начался новый драг
+        if not runs[-1] or f != prev_f:
+            runs[-1].append({})      # начался новый кадр этого драга
+        runs[-1][-1][i] = {"z": float(m.group(3)), "y": float(m.group(4)),
+                           "sx": float(m.group(5)), "ez": float(m.group(6))}
+        prev_f = f
 
-    if not s.expect(frames, "зонд [DRAGZ] не сказал ни слова — флаги в бандле не подняты "
-                            "или захват не попал в стопку"):
+    if not s.expect(runs, "зонд [DRAGZ] не сказал ни слова — флаги в бандле не подняты "
+                          "или захват не попал в стопку"):
         return
+    s.note("probe", "драгов в прогоне: " + ", ".join(f"{len(r)} кадров" for r in runs))
 
-    depth = max(len(v) for v in frames.values())
-    s.note("probe", f"кадров с зондом: {len(frames)}, карт в руке: {depth}")
+    # ── Драг 1: стопка. Здесь вердикт про ПОРЯДОК. ──────────────────────────
+    stack_run = runs[0]
+    depth = max(len(fr) for fr in stack_run)
+    s.note("probe", f"стопка: {len(stack_run)} кадров, карт в руке {depth}")
     s.expect(depth >= 4, f"в руке оказалось {depth} карт — целились мимо рана, "
                          f"мерить порядок отрисовки не на чем")
 
     bad = []
-    for f in sorted(frames):
-        cards = frames[f]
+    for n, cards in enumerate(stack_run, 1):
         zs = [cards[i]["z"] for i in sorted(cards)]
         for i in range(1, len(zs)):
             if zs[i] <= zs[i - 1]:
-                bad.append((f, i, zs[i - 1], zs[i]))
+                bad.append((n, i, zs[i - 1], zs[i]))
                 break
     if bad:
         first, last = bad[0], bad[-1]
@@ -1524,8 +1547,8 @@ def scenario_dragz(s):
                         f"последний f={last[0]}")
 
     # scale.x: дрожь против плавных качелей — цифра, а не глазомер.
-    for i in sorted(frames[max(frames)]):
-        seq = [frames[f][i]["sx"] for f in sorted(frames) if i in frames[f]]
+    for i in sorted(stack_run[-1]):
+        seq = [fr[i]["sx"] for fr in stack_run if i in fr]
         turns = sum(1 for k in range(1, len(seq) - 1)
                     if (seq[k] - seq[k - 1]) * (seq[k + 1] - seq[k]) < 0)
         s.note("probe", f"карта {i}: scale.x {min(seq):.3f}..{max(seq):.3f}, "
@@ -1533,6 +1556,18 @@ def scenario_dragz(s):
 
     s.expect(not bad, f"порядок отрисовки в руке переворачивается: {len(bad)} кадров "
                       f"с инверсией z (первый f={bad[0][0]})" if bad else "")
+
+    # ── Драг 3: подъём из ячейки. Обгонять некого, поэтому вердикт другой: ──
+    # z обязана СТОЯТЬ. Поедет — значит composition курсора и подъём в
+    # card.script разъехались, а та же трещина на стопке даёт инверсию.
+    if s.expect(len(runs) >= 3, f"ожидалось три драга, зонд насчитал {len(runs)} — "
+                                f"карта из ячейки не поднялась"):
+        zs = [fr[1]["z"] for fr in runs[-1] if 1 in fr]
+        spread = max(zs) - min(zs)
+        s.note("probe", f"драг из ячейки: {len(zs)} кадров, z {min(zs):.5f}..{max(zs):.5f}")
+        s.expect(spread < 1e-6,
+                 f"z карты, поднятой из ячейки, едет на {spread:.5f} за драг — "
+                 f"цель drag_update не совпадает с подъёмом в start_drag")
 
 
 SCENARIOS = {"boot": scenario_boot, "hittest": scenario_hittest,
