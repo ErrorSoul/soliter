@@ -1448,9 +1448,58 @@ def scenario_celldrain(s):
              "экран победы не поднялся — на месте стола по-прежнему фон")
 
 
+def scenario_o2sweep(s):
+    """O2: доска доигрывается ТОЛЬКО за счёт растущих оснований — стол обязан
+    опустеть сам, без единого хода игрока.
+
+    ⚠ ТРЕБУЕТ бандла с `DEBUG_O2_SWEEP = true` в main.script.
+
+    Раскладка (main.script, deal_o2_sweep_test): три колонки, в каждой
+    убывающий ран одной масти 5..2, двойка сверху. Двойки улетают сами,
+    основания встают на 2/2/2 — и в этот момент прежний предикат отвечал
+    «нельзя»: он требовал, чтобы каждая оставшаяся карта была безопасна по
+    основаниям НА МОМЕНТ ПРОВЕРКИ, а при min_other = 2 потолок равен 3.
+    Четвёрки и пятёрки его валили, авто-финиш молчал, и девять карт игрок
+    доносил руками — ровно то, что видно на скриншоте игрока 2026-08-29.
+
+    Сметание же снимает всё: 3/3/3, затем 4/4/4, затем 5/5/5, потому что
+    основание поднимается на каждом шаге. Этот сценарий — негативный контроль
+    к правке O2: на сборке без неё он обязан ПАДАТЬ по таймауту, а стол —
+    остаться с девятью картами.
+
+    Оракул двойной: строка лога о завершении авто-финиша (её пишет сама игра) и
+    пиксели — место первой колонки обязано стать пустым сукном. Ни одного
+    клика по столу сценарий не делает: вся суть в том, что доска доигрывается
+    БЕЗ игрока."""
+    s.boot()
+    s.press_play()
+    s.shot("dealt")
+    s.expect(s.logs_matching(r"I am MAIN SCRIPT"), "уровень не загрузился")
+
+    felt = s.brightness(*FREE_CELL[1])
+    # Колонка раздаётся на четыре карты; хотя бы одна обязана быть видна, иначе
+    # бандл собран без флага и проверять нечего.
+    d = s.exposed_depth(1, felt, max_depth=4)
+    if not s.expect(d is not None, "колонка 1 пуста — бандл собран без DEBUG_O2_SWEEP?"):
+        return
+
+    victory = None
+    for _ in range(200):
+        hits = s.logs_matching(r"\[MAIN\] auto-finish complete")
+        if hits:
+            victory = hits[-1]["text"]
+            break
+        s.page.wait_for_timeout(100)
+
+    s.expect(victory, "авто-финиш не забрал доску, которая доигрывается ростом оснований: "
+                      "предикат снова спрашивает «безопасна ли карта сейчас» вместо "
+                      "«доиграется ли доска повторными съёмами»")
+    s.shot("after")
+
+
 SCENARIOS = {"boot": scenario_boot, "hittest": scenario_hittest,
              "guilock": scenario_guilock, "dragonrestart": scenario_dragonrestart,
-             "celldrain": scenario_celldrain,
+             "celldrain": scenario_celldrain, "o2sweep": scenario_o2sweep,
              "stuck": scenario_stuck, "win": scenario_win,
              "freecell": scenario_freecell, "census": scenario_census,
              "focus": scenario_focus, "audiobg": scenario_audiobg,

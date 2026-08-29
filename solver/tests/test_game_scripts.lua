@@ -1962,6 +1962,106 @@ H.test("G3 та же колонка в правильном порядке ав�
    return true
 end)
 
+-- O2: доска-регрессия со скриншота игрока (2026-08-29). Драконы собраны,
+-- ячейки запечатаны, цветок в своём слоте, основания 2/2/4, на столе 22 карты.
+-- Партия сметается подчистую (замер: 22 хода, основания 10/10/10), а игра
+-- молчала: прежняя safe-проверка падала на первой же карте обхода — 10 синей
+-- при min_other = 2. Здесь проверяется ИГРОВОЙ предикат на живых структурах
+-- (tableau_stacks / free_cell_state), а не солверный слепок.
+local function o2_screenshot_self()
+   local function n(suit, v) return { id = suit .. v, data = { value = v, suit = suit } } end
+   local cols = {
+      { n("blue", 10) },
+      { n("red", 10), n("blue", 9), n("red", 8), n("green", 7), n("red", 6),
+        n("blue", 5), n("red", 4), n("green", 3) },
+      { n("green", 5) },
+      { n("red", 5), n("green", 4), n("red", 3) },
+      {}, {},
+      { n("green", 9), n("blue", 8), n("red", 7), n("blue", 6) },
+      { n("green", 10), n("red", 9), n("green", 8), n("blue", 7), n("green", 6) },
+   }
+   local stacks = {}
+   for i = 1, 8 do stacks[i] = { cards = cols[i] } end
+   return {
+      tutorial_mode = false, auto_finishing = false, debug_replaying = false,
+      states = { PLAYING = "playing", WIN = "win" }, currentState = "playing",
+      foundation_top = { red = 2, green = 2, blue = 4 },
+      tableau_stacks = stacks,
+      free_cell_state = {
+         { card = { id = "db", data = { value = "d", suit = "blue" } },  is_blocked = true },
+         { card = { id = "dg", data = { value = "d", suit = "green" } }, is_blocked = true },
+         { card = { id = "dr", data = { value = "d", suit = "red" } },   is_blocked = true },
+      },
+   }
+end
+
+H.test("O2 доска со скриншота: игра обязана запустить авто-завершение", function()
+   load_script("main/Scripts/main.script")
+   local self = o2_screenshot_self()
+   -- payload курсора отражает реальность: три запечатанные стопки драконов
+   local cells = {
+      { dragon = true, is_blocked = true },
+      { dragon = true, is_blocked = true },
+      { dragon = true, is_blocked = true },
+   }
+   if not can_auto_finish(self, { free_cells = cells }) then
+      return false, "фактически доигранная доска (22 карты, сметается подчистую) авто-финиш не запустила"
+   end
+   return true
+end)
+
+H.test("O2 игровой предикат и солверный отвечают одинаково", function()
+   load_script("main/Scripts/main.script")
+   local rules = require("solver.rules")
+   -- Одна и та же доска в двух формах: живые структуры игры и state солвера.
+   -- Копии предиката уже расходились однажды (L4) — держим их сведёнными.
+   local function solver_state(self)
+      local tableau = {}
+      for i = 1, 8 do
+         tableau[i] = {}
+         for j, card in ipairs(self.tableau_stacks[i].cards) do
+            tableau[i][j] = { value = card.data.value, suit = card.data.suit,
+                              is_dragon = card.data.value == "d",
+                              is_flower = card.data.value == "f" }
+         end
+      end
+      local cells = {}
+      for k, fc in ipairs(self.free_cell_state) do
+         if fc.card then
+            cells[k] = { card = { value = fc.card.data.value, suit = fc.card.data.suit,
+                                  is_dragon = fc.card.data.value == "d",
+                                  is_flower = fc.card.data.value == "f" },
+                         is_blocked = fc.is_blocked }
+         else
+            cells[k] = {}
+         end
+      end
+      return { tableau = tableau, free_cells = cells, foundation_top = self.foundation_top }
+   end
+
+   local boards = {}
+   boards[1] = o2_screenshot_self()
+   -- Та же доска, но верх второй колонки перевёрнут: сметание встанет.
+   local stuck = o2_screenshot_self()
+   local col = stuck.tableau_stacks[2].cards
+   col[#col], col[#col - 1] = col[#col - 1], col[#col]
+   boards[2] = stuck
+   -- Пустой стол.
+   local empty = o2_screenshot_self()
+   for i = 1, 8 do empty.tableau_stacks[i].cards = {} end
+   boards[3] = empty
+
+   for i, self in ipairs(boards) do
+      local game = can_auto_finish(self, { free_cells = {} })
+      local solver = rules.can_auto_finish(solver_state(self))
+      if game ~= solver then
+         return false, string.format("доска %d: игра сказала %s, солвер %s",
+            i, tostring(game), tostring(solver))
+      end
+   end
+   return true
+end)
+
 
 -- Победа и цветок (внешнее ревью 2026-08-23, подтверждено зондом на живых
 -- функциях main.script). Две дыры в правиле победы, разные по природе:
@@ -2352,18 +2452,23 @@ H.test("L2 запечатанную ячейку авто-финиш не тро
    return true
 end)
 
-H.test("L2 карта из ячейки проходит ту же safe-проверку, что и карты колонок", function()
+-- O2 (2026-08-29) сменил правило, по которому судится карта в ячейке: раньше
+-- это была safe-проверка v <= min_other + 1 (и 9_red при чужих мастях на 3
+-- давала false), теперь — «снимет ли её сметание». Намерение теста прежнее:
+-- карта из ячейки судится ТЕМ ЖЕ правилом, что и верхушка колонки. Разбор,
+-- почему старое правило было неверным, — в test_auto_finish_sweep.
+H.test("L2 карта из ячейки судится тем же правилом, что и верхушки колонок", function()
    load_script("main/Scripts/main.script")
-   -- 9_red при синем/зелёном фундаменте на 3: класть её рано — другая масть
-   -- отстаёт больше чем на единицу. То же правило, что и для верхушек колонок.
+   -- 9_red при красном фундаменте на 7: восьмёрки нет нигде, снять девятку
+   -- нечем — ровно так же отвергается и верхушка колонки (тест G3 выше).
    local self = drain_board(
       { { card = { id = "go_9r", data = { value = 9, suit = "red" } } }, {}, {} },
-      { red = 8, blue = 3, green = 3 })
+      { red = 7, blue = 8, green = 8 })
    self.auto_finishing = false
    if can_auto_finish(self, { free_cells = {} }) then
-      return false, "safe-проверка не применилась к карте из ячейки"
+      return false, "карту из ячейки, которую нечем снять, признали основанием для авто-финиша"
    end
-   -- Контроль: та же карта при подтянувшихся мастях доигрывается.
+   -- Контроль: та же карта, когда основание её ждёт, доигрывается.
    local ok = drain_board(
       { { card = { id = "go_9r", data = { value = 9, suit = "red" } } }, {}, {} },
       { red = 8, blue = 8, green = 8 })
