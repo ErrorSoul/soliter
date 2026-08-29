@@ -572,60 +572,115 @@ end
 -- 6. can_auto_finish (as implemented in main.script §5.1)
 -- ============================================================
 
+-- O2. Доигрывается ли доска ПОВТОРНЫМИ съёмами верхушек?
+--
+-- Единственная модель того, что делает авто-финиш; и игра, и солвер зовут
+-- отсюда, чтобы копии предиката больше не расходились (блок L4 — они уже
+-- расходились однажды).
+--
+-- Правило выбора карты — ровно то же, что у игры в find_next_auto_card: карта
+-- ОТКРЫТА (верхушка колонки или живая ячейка) и её номинал ровно следующий для
+-- своей масти. Safe-проверки «чужие масти не отстают больше чем на 1» здесь нет
+-- намеренно: она защищает карту, которая ещё нужна для стекинга, а после старта
+-- авто-финиша все карты едут в foundation и стековать уже нечего и некому.
+--
+-- Порядок обхода значения не имеет: съём карты только убирает её со стола и
+-- поднимает основание, то есть может открыть новые ходы и никогда не закрывает
+-- уже возможные. Множество снимаемых карт поэтому замкнуто, а не зависит от
+-- того, с какой колонки начать.
+--
+--   cols  — 8 массивов карт снизу вверх, карта = { value, suit }
+--   cells — живые НОМИНАЛЫ свободных ячеек (цветок и дракона сюда не кладут:
+--           их отсекают гарды вызывающей стороны)
+--   top   — { red=, green=, blue= }
+--
+-- true, если стол и переданные ячейки опустеют полностью.
+local function auto_playable(card, f)
+   if not card then return false end
+   if card.is_dragon or card.is_flower then return false end
+   local v = card.value
+   if type(v) ~= "number" then return false end
+   local t = f[card.suit]
+   return t ~= nil and v == t + 1
+end
+
+function M.auto_finish_sweeps(cols, cells, top)
+   local f = { red = top.red or 1, green = top.green or 1, blue = top.blue or 1 }
+
+   local left, total = {}, 0
+   for i = 1, 8 do
+      local col = cols[i]
+      left[i] = col and #col or 0
+      total = total + left[i]
+   end
+   local cell_left = {}
+   for _, card in ipairs(cells or {}) do
+      cell_left[#cell_left + 1] = card
+      total = total + 1
+   end
+
+   local moved = true
+   while moved do
+      moved = false
+      for i = 1, 8 do
+         local col = cols[i]
+         while left[i] > 0 and auto_playable(col[left[i]], f) do
+            local card = col[left[i]]
+            f[card.suit] = card.value
+            left[i] = left[i] - 1
+            total = total - 1
+            moved = true
+         end
+      end
+      for j = #cell_left, 1, -1 do
+         local card = cell_left[j]
+         if auto_playable(card, f) then
+            f[card.suit] = card.value
+            table.remove(cell_left, j)
+            total = total - 1
+            moved = true
+         end
+      end
+   end
+
+   return total == 0
+end
+
 function M.can_auto_finish(state)
-   -- Check no live (non-blocked) dragon in any free cell
+   -- Check no live (non-blocked) dragon in any free cell.
+   -- Дракона узнаём и по флагу, и по значению — ровно как игра. Раньше здесь
+   -- стоял только `is_dragon`, и state, собранный руками как {value="d"} без
+   -- флага, давал `true` там, где игра отвечает `false` (находка внешнего
+   -- ревью, grok-4.6). `rules.deal` и `bridge.card` флаг ставят, так что на
+   -- боевых данных разницы нет, — но копии предиката не должны расходиться по
+   -- форме входа: именно так и начинался L4.
    for _, fc in ipairs(state.free_cells) do
-      if fc.card and fc.card.is_dragon and not fc.is_blocked then
+      local card = fc.card
+      if card and not fc.is_blocked and (card.is_dragon or card.value == "d") then
          return false
       end
    end
 
-   -- Remaining cards: no dragons/flower, and each value is safe
-   -- (same predicate as main.script can_auto_finish: v <= min_other+1).
-   local remaining = 0
-   local function check(card)
-      remaining = remaining + 1
-      if card.is_dragon or card.is_flower then
-         return false
-      end
-      local v = card.value
-      if type(v) == "number" then
-         local min_other = 10
-         for suit, val in pairs(state.foundation_top) do
-            if suit ~= card.suit then
-               min_other = math.min(min_other, val)
-            end
-         end
-         if v > min_other + 1 then
-            return false
-         end
-      end
-      return true
-   end
+   local cols, cells, remaining = {}, {}, 0
    for i = 1, 8 do
-      local col = state.tableau[i]
-      for _, card in ipairs(col) do
-         if not check(card) then return false end
-      end
+      local col = state.tableau[i] or {}
+      cols[i] = col
+      remaining = remaining + #col
    end
-   -- L2 (паритет с игрой): авто-финиш игры теперь забирает и номинал,
-   -- припаркованный в живой ячейке, поэтому такие карты входят в тот же счёт и
-   -- ту же safe-проверку. Цветок и дракона сюда не кладём по той же причине,
-   -- что и в main.script: дракона отсекает проверка выше, а цветок в foundation
-   -- не играется вовсе и запретил бы разбор колонок.
-   --
-   -- ⚠ Паритет всё ещё НЕ полный, и это записано отдельно (блок L4): у игры
-   -- есть гард G3 «ход должен быть возможен прямо сейчас» (find_next_auto_card),
-   -- здесь его нет. Эта функция считает статистику run.lua и не участвует ни в
-   -- решении, ни в goldens.
+   -- L2: номинал, припаркованный в живой ячейке, — такой же кандидат, как
+   -- верхушка колонки, авто-финиш его забирает. Цветок сюда не кладём: он не
+   -- играется в foundation никогда и запретил бы разбор колонок целиком, хотя
+   -- разбор на такой доске честный (победы там не будет — её держит проверка
+   -- cell_occupied в игре). Дракона отсекает гард выше.
    for _, fc in ipairs(state.free_cells) do
       if fc.card and not fc.is_blocked and type(fc.card.value) == "number" then
-         if not check(fc.card) then return false end
+         cells[#cells + 1] = fc.card
+         remaining = remaining + 1
       end
    end
    if remaining == 0 then return false end
 
-   return true
+   return M.auto_finish_sweeps(cols, cells, state.foundation_top)
 end
 
 -- ============================================================

@@ -66,13 +66,24 @@ H.test("F10 victory blocks play input after show_victory is consumed", function(
    return true
 end)
 
--- F6: solver can_auto_finish must use the same safe-foundation predicate as the game
-H.test("F6 can_auto_finish false when a remaining card is unsafe (v > min_other+1)", function(rules)
+-- F6: solver can_auto_finish must answer the same question as the game.
+--
+-- O2 (2026-08-29) сменил сам вопрос, и вместе с ним — ожидание этого теста.
+-- Было: «каждая оставшаяся карта безопасна по ТЕКУЩИМ основаниям»
+-- (v <= min_other + 1), и одинокая 5_red при чужих мастях на 1 давала false.
+-- Стало: «доиграется ли доска повторными съёмами» — а одинокая пятёрка при
+-- красном основании на 4 снимается, стол пустеет, и запускать авто-финиш
+-- правильно: стековать эту карту всё равно уже некому и не для чего.
+-- Прежняя формулировка отвергала фактически доигранные партии (доска-скриншот
+-- в test_auto_finish_sweep). Здесь остаётся исходное намерение теста —
+-- «неиграбельная карта на столе запрещает старт» — на карте, которую съём
+-- действительно не берёт: под 5_red нет четвёрки.
+H.test("F6 can_auto_finish false when a remaining card can never be swept", function(rules)
    local s = empty_state()
    s.tableau[1] = { num("red", 5) }
-   s.foundation_top = { red = 4, blue = 1, green = 1 }
+   s.foundation_top = { red = 3, blue = 1, green = 1 }
    if rules.can_auto_finish(s) then
-      return false, "5_red with others at 1 is unsafe; can_auto_finish must be false"
+      return false, "5_red on a red foundation at 3 is unreachable; can_auto_finish must be false"
    end
    return true
 end)
