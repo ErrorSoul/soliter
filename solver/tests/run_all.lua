@@ -43,6 +43,7 @@ local test_modules = {
    "solver.tests.test_bridge",
    "solver.tests.test_replay",
    "solver.tests.test_review_bugs",
+   "solver.tests.test_auto_finish_sweep",
    "solver.tests.test_game_scripts",
    "solver.tests.test_layout",
    "solver.tests.test_yandex_sdk",

@@ -3,6 +3,7 @@ local DEBUG_AUTO_FINISH = false -- true = тестовая раздача для
 local DEBUG_DRAGONS = false -- true = тест сбора драконов подряд: red→blue→green
 local DEBUG_LONG_COLUMN = false -- true = G5: колонка из 12 карт, худший случай по высоте
 local DEBUG_CELL_DRAIN = false -- true = L2: доска, где последняя карта остаётся в свободной ячейке
+local DEBUG_O2_SWEEP = false -- true = O2: доска, которая доигрывается только с ростом оснований
 local tutorial_state = require("main.Scripts.tutorial_state")
 local sfx = require("main.Scripts.sfx")
 local config = require("main.Scripts.config")
@@ -57,6 +58,8 @@ function init(self)
       deal_long_column_test(self)
    elseif DEBUG_CELL_DRAIN then
       deal_cell_drain_test(self)
+   elseif DEBUG_O2_SWEEP then
+      deal_o2_sweep_test(self)
    else
       self.deck = create_deck(self)
       shuffle_deck(self)
@@ -83,7 +86,7 @@ function init(self)
    self.auto_collect_moves = 0
    -- C5: перепись карт в снапшоте имеет смысл только для настоящей раздачи —
    -- отладочные раскладки и туториал заведомо не 40 карт.
-   self.is_full_deal = not (self.tutorial_mode or DEBUG_DRAGONS or DEBUG_AUTO_FINISH or DEBUG_LONG_COLUMN or DEBUG_CELL_DRAIN)
+   self.is_full_deal = not (self.tutorial_mode or DEBUG_DRAGONS or DEBUG_AUTO_FINISH or DEBUG_LONG_COLUMN or DEBUG_CELL_DRAIN or DEBUG_O2_SWEEP)
    self.base_slots = get_base_slots()
    self.tableau_slots = get_tableau_slots(self.tutorial_mode)
    self.free_slots = get_free_slots()
@@ -445,6 +448,69 @@ function deal_cell_drain_test(self)
          {id="2_green", value=2, suit="green"},
       }},
    }
+
+   for i = 1, 8 do
+      local slot_id = "tableau_slot" .. i
+      self.tableau_stacks[i] = { slot_id = slot_id, cards = {}, animations_completed = 0 }
+   end
+
+   for _, stack_def in ipairs(layout) do
+      local stack_index = stack_def[1]
+      local cards = stack_def[2]
+      local stack_position = tableau_positions[stack_index]
+      local slot_id = "tableau_slot" .. stack_index
+      local cards_in_stack = #cards
+
+      for card_index, card_data in ipairs(cards) do
+         local card_offset = vmath.vector3(0, (card_index - 1) * config.stack_offset_y(cards_in_stack, stack_position.y), 0)
+         local target_position = stack_position + card_offset
+         local card = factory.create("#card_factory", vmath.vector3(480, 270, 0.2), vmath.quat(0, 0, 0, 1))
+         msg.post(card, "set_card", { data = card_data, slot_id = slot_id })
+         table.insert(self.tableau_stacks[stack_index].cards, { id = card, data = card_data, slot_id = slot_id })
+         table.insert(self.cards, card)
+         local delay = 0.04 * (stack_index + card_index)
+         go.set(card, "scale", vmath.vector3(0.5, 0.5, 1))
+         go.animate(card, "scale", go.PLAYBACK_ONCE_FORWARD,
+             vmath.vector3(1, 1, 1), go.EASING_OUTQUAD, 0.25, delay)
+         go.animate(card, "position", go.PLAYBACK_ONCE_FORWARD, target_position, go.EASING_OUTQUAD, 0.25, delay, function()
+            self.tableau_stacks[stack_index].animations_completed = self.tableau_stacks[stack_index].animations_completed + 1
+            if self.tableau_stacks[stack_index].animations_completed == cards_in_stack then
+               msg.post(slot_id, "update_stack", { cursor = self.cursor, index = stack_index, stack = self.tableau_stacks[stack_index].cards })
+            end
+         end)
+      end
+   end
+
+   for i = 1, 8 do
+      if #self.tableau_stacks[i].cards == 0 then
+         msg.post("tableau_slot" .. i, "update_stack", { cursor = self.cursor, index = i, stack = {} })
+      end
+   end
+end
+
+-- O2: раскладка под «доска доигрывается, но только с ростом оснований».
+-- Инструмент стенда (сценарий `o2sweep`), не игровой режим.
+--
+-- Три колонки, в каждой убывающий ран одной масти 5..2 (двойка сверху). Двойки
+-- улетают сами (авто-улёт), основания встают на 2/2/2, сверху остаются тройки.
+--
+-- Прежний предикат на этой доске молчал: он требовал безопасности КАЖДОЙ
+-- оставшейся карты по основаниям на момент проверки, а при min_other = 2
+-- потолок равен 3 — четвёрки и пятёрки его валили. Сметание же снимает всё:
+-- 3/3/3, потом 4/4/4, потом 5/5/5, потому что основание растёт по ходу дела.
+-- На стенде это видно как «стол пустеет сам, без единого хода игрока».
+function deal_o2_sweep_test(self)
+   local tableau_positions = get_tableau_positions(self)
+   self.tableau_stacks = {}
+
+   local layout = {}
+   for i, suit in ipairs({ "red", "blue", "green" }) do
+      local cards = {}
+      for v = 5, 2, -1 do   -- снизу пятёрка, сверху двойка
+         cards[#cards + 1] = { id = v .. "_" .. suit, value = v, suit = suit }
+      end
+      layout[i] = { i, cards }
+   end
 
    for i = 1, 8 do
       local slot_id = "tableau_slot" .. i
@@ -1094,63 +1160,77 @@ function can_auto_finish(self, message)
          end
       end
    end
-
-   -- Собираем все оставшиеся карты из tableau
-   local remaining = {}
-   for i = 1, 8 do
-      if self.tableau_stacks[i] then
-         for _, card in ipairs(self.tableau_stacks[i].cards) do
-            table.insert(remaining, card)
-         end
+   -- Тот же вопрос СВОЕМУ зеркалу (C4), а не только payload курсора. Находка
+   -- внешнего ревью (grok-4.5) и замер: на входе «в колонке 2_red, в ячейке
+   -- живой дракон, payload пустой» игра отвечала true, а солвер — false, потому
+   -- что дракон в ячейке в симуляцию не попадает (там только номиналы), а
+   -- перехватить его было некому. На ЖИВОЙ доске такой вход недостижим —
+   -- незапечатанный дракон в ячейке означает, что как минимум один дракон той
+   -- же масти лежит на столе (их четыре, ячеек три), а дракон на столе валит
+   -- симуляцию, — но зависеть здесь от чужого payload незачем: своё зеркало
+   -- свежее и полнее. Расхождение с солвером на этом закрывается.
+   for _, fc in ipairs(self.free_cell_state or {}) do
+      local data = fc.card and fc.card.data
+      if data and not fc.is_blocked and (data.is_dragon or data.value == "d") then
+         return false
       end
    end
-   -- L2: и карты из живых ячеек — раз авто-финиш их теперь забирает, они обязаны
-   -- пройти ту же safe-проверку, что и карты колонок. Заодно это чинит случай,
-   -- ради которого всё и затевалось: колонки пусты, в ячейке лежит последняя
-   -- карта — раньше здесь срабатывало «#remaining == 0 ⇒ false», и партия
-   -- дожималась руками.
+
+   -- O2. Раскладываем доску в форму солвера и спрашиваем ЕГО: доиграется ли
+   -- она повторными съёмами верхушек.
    --
-   -- Кладём только НОМИНАЛЫ. Дракона в живой ячейке отсекает гард выше (по
-   -- payload курсора), а цветок в ячейке сюда попадать не должен вовсе: он не
-   -- играется в foundation никогда, и, оказавшись в `remaining`, запретил бы
+   -- Раньше здесь стоял один проход по всем оставшимся картам с проверкой
+   -- v <= min_other + 1 по основаниям НА МОМЕНТ ПРОВЕРКИ. Но авто-финиш
+   -- забирает карты по одной и на каждом шаге поднимает основание, так что
+   -- вопрос «безопасна ли каждая карта сейчас» — не тот вопрос. Живая доска
+   -- (скриншот 2026-08-29, основания 2/2/4, 22 карты): сметается подчистую за
+   -- 22 хода, а предикат падал на первой же карте обхода — 10 синей, при
+   -- min_other = 2 потолок был 3. В прежнем виде условие выполнялось, только
+   -- когда вся доска уже в одном ранге от оснований, то есть почти никогда.
+   --
+   -- Симуляция живёт в solver/rules.lua одной копией на игру и на солвер: два
+   -- независимых текста одного предиката уже расходились однажды (L4).
+   local cols, remaining = {}, 0
+   for i = 1, 8 do
+      local cards = self.tableau_stacks[i] and self.tableau_stacks[i].cards or {}
+      local col = {}
+      for j, card in ipairs(cards) do
+         col[j] = card.data
+      end
+      cols[i] = col
+      remaining = remaining + #col
+   end
+   -- L2: и карты из живых ячеек — авто-финиш их забирает, значит они входят и в
+   -- счёт, и в симуляцию. Заодно это чинит случай, ради которого всё и
+   -- затевалось: колонки пусты, в ячейке лежит последняя карта — раньше здесь
+   -- срабатывало «#remaining == 0 ⇒ false», и партия дожималась руками.
+   --
+   -- Кладём только НОМИНАЛЫ. Дракона в живой ячейке отсекают гарды выше — и по
+   -- payload курсора, и по своему зеркалу, — а цветок в ячейке сюда попадать не должен вовсе: он не
+   -- играется в foundation никогда, и, попав в симуляцию, запретил бы
    -- авто-финиш целиком — вместе с разбором колонок, который он и на такой
    -- доске делает честно. Победы там всё равно не будет, её держит cell_occupied.
+   local cells = {}
    for _, fc in ipairs(self.free_cell_state or {}) do
       local data = fc.card and fc.card.data
       if data and not fc.is_blocked and type(data.value) == "number" then
-         table.insert(remaining, fc.card)
+         cells[#cells + 1] = data
+         remaining = remaining + 1
       end
    end
 
-   if #remaining == 0 then return false end
+   if remaining == 0 then return false end
 
-   for _, card in ipairs(remaining) do
-      if card.data.is_dragon or card.data.is_flower then
-         return false
-      end
-      local v = card.data.value
-      local s = card.data.suit
-      -- Safe check: другие масти не должны отставать более чем на 1
-      local min_other = 10
-      for suit, val in pairs(self.foundation_top) do
-         if suit ~= s then
-            min_other = math.min(min_other, val)
-         end
-      end
-      if v > min_other + 1 then
-         return false
-      end
+   if not solver_rules.auto_finish_sweeps(cols, cells, self.foundation_top) then
+      return false
    end
 
-   -- G3 (подтверждено обеими моделями ревью блока H). «Все карты безопасны» не
-   -- значит «жадный съём верхушек их вынесет»: safe-проверка выше смотрит на
-   -- ВСЕ карты колонок, а ход делает только find_next_auto_card — по верхушкам.
-   -- Колонка [9_red, 10_red] при чужих фундаментах на 9 проходит safe целиком,
-   -- но сверху лежит 10, а фундамент ждёт 9. Раньше это давало запуск
-   -- авто-финиша, disable_input, паузу 0.5 с — и выход на первом же шаге.
-   -- Требуем, чтобы ход был прямо сейчас: авто-финишу, которому нечего взять,
-   -- начинать нечего. Частичное доигрывание при этом сохраняется — условие
-   -- перепроверяется после каждого дропа.
+   -- G3 (подтверждено обеими моделями ревью блока H). Симуляция выше уже
+   -- требует, чтобы ход нашёлся (иначе стол не опустеет), но проверку оставляем
+   -- отдельно: она смотрит на ЖИВЫЕ структуры игры, а не на их слепок, и ловит
+   -- расхождение между ними. Авто-финишу, которому нечего взять, начинать
+   -- нечего: раньше такая доска давала disable_input, паузу 0.5 с — и выход на
+   -- первом же шаге.
    if not find_next_auto_card(self) then
       return false
    end
