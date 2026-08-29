@@ -8,6 +8,7 @@ function M.install()
    M.go_positions = {}
    M.go_self_pos = { x = 0, y = 0, z = 0 }
    M.anims = {}
+   M.anim_log = {}
    _G.hash = function(s) return tostring(s) end
 
    -- vector3 needs `+` because scripts add offsets to message.position.
@@ -42,15 +43,29 @@ function M.install()
          if id == nil then return M.go_self_pos end
          return M.go_positions[tostring(id)] or { x = 0, y = 0, z = 0 }
       end,
+      -- Без id — это САМ вызывающий GO (относительный URL "."), поэтому пишем
+      -- в go_self_pos, а не выбрасываем: card.script так поднимает свою z в
+      -- start_drag (O1), и молчаливая потеря записи сделала бы пин зелёным на
+      -- любом коде.
       set_position = function(pos, id)
-         if id ~= nil then M.go_positions[tostring(id)] = pos end
+         if id == nil then
+            M.go_self_pos = pos
+         else
+            M.go_positions[tostring(id)] = pos
+         end
       end,
       -- G7: анимации складываем в очередь и прокручиваем ВРУЧНУЮ (M.flush_anims).
       -- Автозапуск здесь недопустим: fly_card_arc вкладывает вторую анимацию в
       -- колбэк первой, и «мгновенная» анимация превратила бы полёт в
       -- синхронный вызов — тест перестал бы отличать «карта долетела» от
       -- «карту отправили лететь».
-      animate = function(_id, _prop, _pb, _to, _easing, _dur, _delay, cb)
+      -- Цель анимации ЗАПИСЫВАЕМ (M.anim_log). Иначе про анимацию можно узнать
+      -- только то, что у неё был колбэк, — а O1 весь про то, КУДА едет свойство:
+      -- анимируемая z и есть перевёрнутый порядок отрисовки.
+      animate = function(id, prop, _pb, to, _easing, dur, delay, cb)
+         M.anim_log[#M.anim_log + 1] = {
+            id = tostring(id), prop = tostring(prop), to = to, dur = dur, delay = delay,
+         }
          if cb then M.anims[#M.anims + 1] = cb end
       end,
       cancel_animations = function() end,
@@ -104,6 +119,16 @@ M.go_props = {}
 M.go_positions = {}
 M.go_self_pos = { x = 0, y = 0, z = 0 }
 M.anims = {}
+M.anim_log = {}
+
+-- Последняя анимация свойства prop (или nil). Свойство пишут кадр за кадром,
+-- смысл имеет именно последняя цель.
+function M.last_anim(prop)
+   for i = #M.anim_log, 1, -1 do
+      if M.anim_log[i].prop == tostring(prop) then return M.anim_log[i] end
+   end
+   return nil
+end
 
 -- Прокрутить очередь колбэков анимаций. rounds — сколько раз подряд: полёт по
 -- дуге (fly_card_arc) состоит из двух вложенных анимаций, значит нужно два.

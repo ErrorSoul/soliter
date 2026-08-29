@@ -76,6 +76,26 @@ function on_message(self, message_id, message, sender)
 
    if message_id == hash("start_drag") then
       self.is_dragging = true
+      -- O1. Карта поднимается над столом ОДНИМ присваиванием z, а не внутри
+      -- анимации position.
+      --
+      -- z — часть vector3 `position`, а `drag_update` анимирует position целиком
+      -- и с РАЗНОЙ длительностью на карту (ui_fx.drag_lag: 0.05 с у нижней карты
+      -- руки, 0.16 с у верхней). Соседей в колонке разделяет 0.002 по z, а подъём
+      -- равен 0.3 — то есть карта с коротким лагом обгоняет соседок по z на два
+      -- порядка раньше, чем они трогаются с места, и стопка какое-то время
+      -- рисуется вывернутой наизнанку. Замерено зондом на движке
+      -- (--scenario dragz, сборка до правки): на кадре 1 порядок 0.012…0.030,
+      -- на кадре 2 нижняя карта уже 0.1052 против 0.0806 у соседки — инверсия
+      -- держится 40 кадров, около 0.7 с. Это и есть «мерцание при подъёме».
+      --
+      -- Прибавка одинаковая для всех, поэтому порядок сохраняется точно. И она
+      -- ровно та, что `drag_update` кладёт в цель, — значит по z анимировать
+      -- больше нечего, интерполяция идёт по константе. Делить position на
+      -- position.x/y нельзя: остальные ветки (drop_success, drop_failed,
+      -- abort_drag) отменяют композит "position" и подсвойства бы не остановили.
+      local p = go.get_position()
+      go.set_position(vmath.vector3(p.x, p.y, p.z + config.Z_CARD_DRAGGING))
       reset_card_fx(false) -- новый драг начинается с ровной карты, а не с остатков прошлого
       sfx.card_pick()
       go.animate(".", "scale", go.PLAYBACK_ONCE_FORWARD,
@@ -84,7 +104,11 @@ function on_message(self, message_id, message, sender)
 
    elseif message_id == hash("drag_update") and self.is_dragging then
       go.cancel_animations(".", "position")
-      local target = message.position + vmath.vector3(0, 0, 0.3)
+      -- Та же константа, что подняла карту в start_drag: `message.position`
+      -- уже несёт СОБСТВЕННУЮ z карты (курсор складывает original_position и
+      -- relative_pos), поэтому цель по z равна текущей z. Разъедься эти два
+      -- места — z снова поедет анимацией, и вернётся O1.
+      local target = message.position + vmath.vector3(0, 0, config.Z_CARD_DRAGGING)
       -- lag: чем глубже карта в стопке, тем дольше доводка — стопка изгибается
       -- веером вместо того, чтобы ехать жёстким телом (ui_fx.drag_lag).
       go.animate(".", "position", go.PLAYBACK_ONCE_FORWARD,

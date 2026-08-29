@@ -2626,4 +2626,95 @@ H.test("N9c из стопки возвращаются все, кроме сдв
    return true
 end)
 
+-- ─── O1: порядок отрисовки стопки в руке ────────────────────────────────────
+--
+-- z — компонента vector3 `position`, а drag_update анимирует position ЦЕЛИКОМ
+-- и с разной длительностью на карту (ui_fx.drag_lag). Пока подъём на 0.3 ехал
+-- внутри этой анимации, карты обгоняли друг друга по z: соседей в колонке
+-- разделяет 0.002, то есть в полёте стопка рисуется вывернутой. Замерено на
+-- движке (tools/browser-test.py --scenario dragz): 40 кадров инверсии, ~0.7 с.
+--
+-- Инвариант, который здесь пришпилен: **z карты в руке — константа**. Её
+-- ставит start_drag одним присваиванием, и та же величина уже лежит в цели
+-- drag_update, поэтому по z анимировать нечего.
+local card_config = require("main.Scripts.config")
+
+-- Один драг одной карты в тех же терминах, в каких его собирает cursor.script:
+--   original_position — позиция СХВАЧЕННОЙ карты (hit_test.pos)
+--   relative_pos      — своя позиция минус позиция схваченной (hit_test:64)
+--   drag_offset       — original_position - cursor_pos (cursor.script:129)
+-- Возвращает z сразу после подъёма и последнюю анимацию position.
+local function o1_drag(own_z, base_z, lag)
+   load_script("main/Scripts/card.script")
+   stub.go_self_pos = vmath.vector3(100, 200, own_z)
+   stub.anim_log = {}
+   local self = { owner = "tableau_slot1" }
+   on_message(self, hash("start_drag"), {}, "cursor")
+   local picked_z = go.get_position().z
+
+   local cursor_pos = vmath.vector3(300, 250, 0)
+   local drag_offset = vmath.vector3(100, 200, base_z) - cursor_pos
+   local relative = vmath.vector3(0, 0, own_z - base_z)
+   on_message(self, hash("drag_update"), {
+      position = cursor_pos + drag_offset + relative,
+      lag = lag,
+   }, "cursor")
+   return picked_z, stub.last_anim("position")
+end
+
+H.test("O1 start_drag поднимает z одним присваиванием, ровно на Z_CARD_DRAGGING", function()
+   local picked = o1_drag(0.014, 0.012, 0.05)
+   local want = 0.014 + card_config.Z_CARD_DRAGGING
+   if math.abs(picked - want) > 1e-9 then
+      return false, ("после start_drag z = %.5f, ожидалась %.5f: подъём либо не " ..
+                     "случился (z поедет анимацией), либо не сохраняет порядок")
+                    :format(picked, want)
+   end
+   return true
+end)
+
+H.test("O1 цель drag_update по z равна текущей z — анимировать нечего", function()
+   for _, case in ipairs({ { 0.012, 0.012, 0.05 }, { 0.014, 0.012, 0.094 },
+                           { 0.030, 0.012, 0.16 } }) do
+      local picked, anim = o1_drag(case[1], case[2], case[3])
+      if not anim then
+         return false, "drag_update не тронул position — тест смотрит не туда"
+      end
+      if math.abs(anim.to.z - picked) > 1e-9 then
+         return false, ("own_z=%.3f: анимация ведёт z %.5f -> %.5f за %.3f с. " ..
+                        "Разные лаги на карту = разная скорость подъёма = инверсия порядка")
+                       :format(case[1], picked, anim.to.z, anim.dur or -1)
+      end
+   end
+   return true
+end)
+
+-- Тот самый порядок, ради которого всё затевалось: три карты одной руки с
+-- РАЗНЫМ лагом. Проверяем не «z не анимируется», а прямое следствие — взаимный
+-- порядок карт после подъёма тот же, что был в колонке.
+--
+-- Область действия честно: САМ ПО СЕБЕ этот тест правку не сторожит. Снимите
+-- подъём совсем — порядок в момент захвата всё равно верный (0.012 < 0.014 <
+-- 0.030), инверсия рождается ПОЗЖЕ, внутри анимации, а её стаб не крутит
+-- (проверено мутацией: M1 и M3 этот тест переживает). Он ловит другую поломку —
+-- подъём, потерявший различия между картами, — и служит формулировкой
+-- инварианта. Сторожевые здесь два теста выше; сама инверсия замерена на
+-- движке сценарием dragz.
+H.test("O1 после подъёма порядок z в руке тот же, что был в колонке", function()
+   local layout = { 0.012, 0.014, 0.030 }   -- tableau_script: шаг 0.002, верхушка 0.03
+   local lags = { 0.05, 0.072, 0.16 }       -- ui_fx.drag_lag(1), (2), (8)
+   local lifted = {}
+   for i, z in ipairs(layout) do
+      lifted[i] = o1_drag(z, layout[1], lags[i])
+   end
+   for i = 2, #lifted do
+      if lifted[i] <= lifted[i - 1] then
+         return false, ("карта %d поднялась на z=%.5f, а лежащая под ней — на %.5f: " ..
+                        "стопка в руке рисуется наизнанку")
+                       :format(i, lifted[i], lifted[i - 1])
+      end
+   end
+   return true
+end)
+
 return H

@@ -1448,7 +1448,95 @@ def scenario_celldrain(s):
              "экран победы не поднялся — на месте стола по-прежнему фон")
 
 
+def scenario_dragz(s):
+    """O1: пока стопку тащат, порядок отрисовки карт обязан остаться прежним.
+
+    ⚠ ТРЕБУЕТ бандла, собранного с ДВУМЯ поднятыми флагами:
+       main/Scripts/cursor.script:  DEBUG_DRAG_PROBE = true
+       main/Scripts/main.script:    DEBUG_LONG_COLUMN = true
+
+    Раскладка DEBUG_LONG_COLUMN (main.script, deal_long_column_test) даёт в
+    колонке 1 двенадцать карт, из которых верхние восемь (10b,9r,8g,7r,6g,5r,
+    4g,3r) — правильный убывающий ран разных мастей, то есть стопка, которую
+    можно взять целиком. Восемь карт — это ещё и весь диапазон ui_fx.drag_lag:
+    от 0.05 с у нижней до потолка 0.16 с у верхней.
+
+    Куда именно тыкать. Шаг колонки НЕ 35 px: config.stack_offset_y сжимает
+    длинную колонку, при 12 картах шаг ≈ 19.8 px. Своя, ничем не перекрытая
+    полоса у карты — верхние ~19.8 px её спрайта, поэтому целимся в
+    y(card) + 65 (карта 150 px, полувысота 75): точка лежит внутри нужной
+    карты и ВЫШЕ верхней кромки следующей. hit_test берёт самую верхнюю
+    карту, чей прямоугольник накрыл курсор.
+
+    Оракул — лог зонда [DRAGZ]: в каждом кадре z обязана строго расти с
+    индексом (i=1 — самая нижняя карта руки). Инверсия и есть тот самый
+    «перерендер»: карта, которая должна лежать под соседкой, оказывается над
+    ней. Замер на сборке ДО правки обязан показать инверсии; после — ноль.
+
+    Заодно печатаются scale.x и euler.z: они разделяют причины между собой
+    (дрожь scale.x — драка композита "scale" с "scale.x", плавные качели
+    периодом ~0.5 с — забытый pingpong подсветки), см. комментарий у флага
+    DEBUG_DRAG_PROBE в cursor.script.
+    """
+    s.boot()
+    s.press_play()
+    s.shot("dealt")
+
+    pitch = 218.0 / 11.0                       # config.stack_offset_y(12, 299)
+    grab_y = (TABLEAU_TOP_Y - 4 * pitch) + 65  # карта №5 снизу = низ видимого рана
+    s.note("aim", f"колонка 1, шаг {pitch:.2f}, точка захвата y={grab_y:.1f}")
+
+    s.drag_game(TABLEAU_X[1], grab_y, TABLEAU_X[6], TABLEAU_TOP_Y,
+                label="стопка из 8 карт, колонка 1 -> 6", steps=14)
+    s.shot("after-drag")
+
+    rx = re.compile(r"\[DRAGZ\] f=(\d+) i=(\d+) z=(-?[\d.]+) y=(-?[\d.]+) "
+                    r"sx=(-?[\d.]+) ez=(-?[\d.]+)")
+    frames = {}
+    for e in s.log:
+        m = rx.search(e["text"])
+        if m:
+            f, i = int(m.group(1)), int(m.group(2))
+            frames.setdefault(f, {})[i] = {"z": float(m.group(3)), "y": float(m.group(4)),
+                                           "sx": float(m.group(5)), "ez": float(m.group(6))}
+
+    if not s.expect(frames, "зонд [DRAGZ] не сказал ни слова — флаги в бандле не подняты "
+                            "или захват не попал в стопку"):
+        return
+
+    depth = max(len(v) for v in frames.values())
+    s.note("probe", f"кадров с зондом: {len(frames)}, карт в руке: {depth}")
+    s.expect(depth >= 4, f"в руке оказалось {depth} карт — целились мимо рана, "
+                         f"мерить порядок отрисовки не на чем")
+
+    bad = []
+    for f in sorted(frames):
+        cards = frames[f]
+        zs = [cards[i]["z"] for i in sorted(cards)]
+        for i in range(1, len(zs)):
+            if zs[i] <= zs[i - 1]:
+                bad.append((f, i, zs[i - 1], zs[i]))
+                break
+    if bad:
+        first, last = bad[0], bad[-1]
+        s.note("probe", f"инверсий z: {len(bad)} кадров, первый f={first[0]} "
+                        f"(z[{first[1]}]={first[3]:.5f} <= z[{first[1]-1}]={first[2]:.5f}), "
+                        f"последний f={last[0]}")
+
+    # scale.x: дрожь против плавных качелей — цифра, а не глазомер.
+    for i in sorted(frames[max(frames)]):
+        seq = [frames[f][i]["sx"] for f in sorted(frames) if i in frames[f]]
+        turns = sum(1 for k in range(1, len(seq) - 1)
+                    if (seq[k] - seq[k - 1]) * (seq[k + 1] - seq[k]) < 0)
+        s.note("probe", f"карта {i}: scale.x {min(seq):.3f}..{max(seq):.3f}, "
+                        f"смен направления {turns} за {len(seq)} кадров")
+
+    s.expect(not bad, f"порядок отрисовки в руке переворачивается: {len(bad)} кадров "
+                      f"с инверсией z (первый f={bad[0][0]})" if bad else "")
+
+
 SCENARIOS = {"boot": scenario_boot, "hittest": scenario_hittest,
+             "dragz": scenario_dragz,
              "guilock": scenario_guilock, "dragonrestart": scenario_dragonrestart,
              "celldrain": scenario_celldrain,
              "stuck": scenario_stuck, "win": scenario_win,

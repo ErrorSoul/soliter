@@ -9,6 +9,17 @@ local coords = require("main.Scripts.coords")
 local hit = require("main.Scripts.hit_test")
 local ui_fx = require("main.Scripts.ui_fx")
 
+-- O1-зонд. Печатает раз в кадр состояние КАЖДОЙ карты в руке: z (порядок
+-- отрисовки), scale.x и euler.z (эффекты драга) и y. Нужен, чтобы отличить
+-- четыре разные причины «стопка мерцает» друг от друга — по одному прогону:
+--   z скачет один раз в начале и застывает      → z едет внутри анимации position
+--   scale.x дрожит кадр к кадру и не сходится   → драка композита "scale" и "scale.x"
+--   scale.x плавно колеблется с периодом ~0.5 с → под драгом остался pingpong подсветки
+--   позиция на кадр прыгает в координаты колонки → колонку переложил update_visible_cards
+-- Сценарий стенда: tools/browser-test.py --scenario dragz (ТРЕБУЕТ бандла, где
+-- этот флаг и DEBUG_LONG_COLUMN в main.script выставлены в true).
+local DEBUG_DRAG_PROBE = false
+
 local function get_slot_target_type(slot_id)
    if string.sub(slot_id, 1, 9) == "base_slot" then return "base"
    elseif string.sub(slot_id, 1, 9) == "free_slot" then return "free"
@@ -750,6 +761,20 @@ function update(self, dt)
       local speed_x = self.drag_speed_x
       local tilt_deg = ui_fx.drag_tilt_deg(speed_x)
       local squash = ui_fx.drag_squash(speed_x)
+
+      if DEBUG_DRAG_PROBE then
+         self.probe_frame = (self.probe_frame or 0) + 1
+         local hand = self.stack_cards
+         if not (self.dragging_stack and hand) and self.selected_card then
+            hand = { { id = self.selected_card } }
+         end
+         for i, card in ipairs(hand or {}) do
+            local p = go.get_position(card.id)
+            print(string.format("[DRAGZ] f=%d i=%d z=%.5f y=%.2f sx=%.4f ez=%.3f",
+                                self.probe_frame, i, p.z, p.y,
+                                go.get(card.id, "scale.x"), go.get(card.id, "euler.z")))
+         end
+      end
 
       if self.dragging_stack and self.stack_cards then
          for i, card in ipairs(self.stack_cards) do
