@@ -571,7 +571,15 @@ function on_message(self, message_id, message, sender)
       self.is_dragging = true
       reset_drag_fx(self)
       self.original_position = self.pending_drop.slot_pos
-      self.drag_offset = vmath.vector3(0, 0, 0)
+      -- O1. По x/y карта из ячейки садится ровно на курсор (нулевое смещение),
+      -- а по z держит СВОЮ высоту. cursor_pos.z всегда 0, поэтому без этого
+      -- слагаемого цель drag_update по z равна голым 0.3 — а card.script в
+      -- start_drag поднял карту на own_z + 0.3, и разница снова уезжала
+      -- анимацией. На одиночной карте это не видно (обгонять некого), но
+      -- инвариант «z в руке — константа» один на все тропы драга: разъехавшись
+      -- здесь, он перестаёт быть правдой и там, где им объясняют поведение
+      -- стопки. Возврат карты (drop_failed) по-прежнему идёт в slot_pos.
+      self.drag_offset = vmath.vector3(0, 0, go.get_position(self.selected_card).z)
       msg.post(self.selected_card, "start_drag")
    elseif message_id == hash("send_to_flower_slot") then
       local fl_pos = self.flower_slot['flower_slot']

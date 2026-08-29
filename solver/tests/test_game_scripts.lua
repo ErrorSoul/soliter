@@ -2673,17 +2673,87 @@ H.test("O1 start_drag поднимает z одним присваиванием
    return true
 end)
 
-H.test("O1 цель drag_update по z равна текущей z — анимировать нечего", function()
-   for _, case in ipairs({ { 0.012, 0.012, 0.05 }, { 0.014, 0.012, 0.094 },
-                           { 0.030, 0.012, 0.16 } }) do
-      local picked, anim = o1_drag(case[1], case[2], case[3])
-      if not anim then
-         return false, "drag_update не тронул position — тест смотрит не туда"
+-- Половину composition делает НЕ card.script, а курсор: position в drag_update
+-- он складывает сам (cursor_pos + drag_offset + relative_pos). Проверять её
+-- арифметикой из теста нельзя — ровно так маскировалось расхождение в O2:
+-- тест, который сам подсовывает вход, не видит, что стороны разъехались.
+-- Поэтому payload здесь СНИМАЕТСЯ с настоящего cursor.script, а потом скармливается
+-- настоящему card.script.
+--
+-- Возвращает список { picked_z, target_z } по карте руки.
+local function o1_through_cursor(z_layout, from_free_cell)
+   load_script("main/Scripts/cursor.script")
+   -- Модуль общий на весь прогон, а соседние тесты оставляют после себя липкий
+   -- block_play_input (его ставит победа) — с ним on_input выходит первой же
+   -- строкой, и фикстура «не поймала захват» врёт про причину.
+   require("main.Scripts.tutorial_state").reset()
+   msg.clear()
+   local hand, positions = {}, {}
+   for i, z in ipairs(z_layout) do
+      local id = "o1_card" .. i
+      -- Убывающий ран разных мастей: 9_green, 8_red, 7_green… — иначе колонку
+      -- не взять стопкой, а верхушка не должна быть двойкой (та улетает сама).
+      hand[i] = { id = id, slot_id = "tableau_slot1",
+                  data = { value = 10 - i, suit = (i % 2 == 0) and "red" or "green" } }
+      positions[i] = vmath.vector3(65, 299 - (i - 1) * 20, z)
+      stub.go_positions[id] = positions[i]
+   end
+
+   local self = { tableau_stacks = { hand }, dragon_buttons = {}, free_slots = {},
+                  flying_count = 0, input_disabled = false, was_pressed = false }
+   if from_free_cell then
+      self.pending_drop = { slot_pos = vmath.vector3(65, 457, 0) }
+      self.cursor_pos = vmath.vector3(65, 457, 0)
+      on_message(self, hash("slot_with_card"), hand[1], "free_slot1")
+   else
+      -- Тычок в собственную полосу самой нижней карты руки: шаг 20 px, полувысота
+      -- карты 75 — точка y+65 лежит в ней и выше кромки следующей.
+      on_input(self, hash("touch"), { x = 65, y = 299 + 65, pressed = true })
+      if not self.dragging_stack then
+         error("пресс не поднял стопку — фикстура не воспроизводит захват")
       end
-      if math.abs(anim.to.z - picked) > 1e-9 then
-         return false, ("own_z=%.3f: анимация ведёт z %.5f -> %.5f за %.3f с. " ..
-                        "Разные лаги на карту = разная скорость подъёма = инверсия порядка")
-                       :format(case[1], picked, anim.to.z, anim.dur or -1)
+   end
+   update(self, 0.016)
+
+   local payloads = {}
+   for _, e in ipairs(msg.log) do
+      if e.id == "drag_update" then payloads[#payloads + 1] = e.data end
+   end
+
+   local out = {}
+   for i = 1, #payloads do
+      load_script("main/Scripts/card.script")
+      stub.go_self_pos = positions[i]
+      stub.anim_log = {}
+      local card_self = { owner = "tableau_slot1" }
+      on_message(card_self, hash("start_drag"), {}, "cursor")
+      local picked = go.get_position().z
+      on_message(card_self, hash("drag_update"), payloads[i], "cursor")
+      local anim = stub.last_anim("position")
+      out[i] = { picked = picked, target = anim and anim.to.z, lag = payloads[i].lag }
+   end
+   return out
+end
+
+H.test("O1 цель drag_update по z равна текущей z — анимировать нечего", function()
+   for _, case in ipairs({
+      { name = "стопка из колонки", z = { 0.012, 0.014, 0.016, 0.030 }, cell = false },
+      { name = "карта из ячейки",   z = { 0.001 },                      cell = true },
+   }) do
+      local got = o1_through_cursor(case.z, case.cell)
+      if #got ~= #case.z then
+         return false, case.name .. ": курсор прислал " .. #got .. " drag_update на " ..
+                       #case.z .. " карт — тест смотрит не туда"
+      end
+      for i, r in ipairs(got) do
+         if not r.target then
+            return false, case.name .. ": drag_update не тронул position"
+         end
+         if math.abs(r.target - r.picked) > 1e-9 then
+            return false, ("%s, карта %d (лаг %.3f с): анимация ведёт z %.5f -> %.5f. " ..
+                           "Разные лаги на карту = разная скорость подъёма = инверсия порядка")
+                          :format(case.name, i, r.lag or -1, r.picked, r.target)
+         end
       end
    end
    return true
