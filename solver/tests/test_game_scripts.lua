@@ -3009,4 +3009,232 @@ H.test("O1 после подъёма порядок z в руке тот же, �
    return true
 end)
 
+-- ─── O1b: перезахват без посадки не должен накапливать подъём ────────────────
+--
+-- Нашло ревью grok-4.5. Прибавка `p.z + Z_CARD_DRAGGING` относительная, а
+-- `hit_test` читает позицию карты живьём — значит при повторном захвате БЕЗ
+-- посадки курсор кладёт в original_position уже поднятую z. Два достижимых
+-- пути: ветка A2 в cursor.on_input (новый press, когда прошлый драг не получил
+-- release — HTML5 теряет mouseup за канвасом) и захват карты, ещё летящей
+-- назад после drop_failed. Дальше возврат в ту же колонку сажает её на
+-- заражённую высоту НАВСЕГДА: update_visible_cards на этом пути не зовётся.
+-- При far = 1 хватает трёх-четырёх повторов, чтобы карта ушла за плоскость
+-- отсечения — это и есть «на третий раз она пропадает» из отчёта игрока.
+--
+-- Прогон идёт через НАСТОЯЩИЙ cursor.script: именно он собирает
+-- original_position из hit_test, и подставлять её руками нельзя — тест
+-- перестал бы видеть само заражение.
+local function o1_a2_double_press(z_layout)
+   load_script("main/Scripts/cursor.script")
+   require("main.Scripts.tutorial_state").reset()
+   msg.clear()
+   local hand, pos = {}, {}
+   for i, z in ipairs(z_layout) do
+      local id = "a2_card" .. i
+      hand[i] = { id = id, slot_id = "tableau_slot1",
+                  data = { value = 10 - i, suit = (i % 2 == 0) and "red" or "green" } }
+      pos[i] = vmath.vector3(65, 299 - (i - 1) * 20, z)
+      stub.go_positions[id] = pos[i]
+   end
+   local cur = { tableau_stacks = { hand }, dragon_buttons = {}, free_slots = {},
+                 flying_count = 0, input_disabled = false, was_pressed = false }
+
+   -- у каждой карты свой экземпляр card.script со своим self
+   local cards = {}
+   for i = 1, #z_layout do
+      load_script("main/Scripts/card.script")
+      cards[i] = { self = { owner = "tableau_slot1" }, on_message = on_message, pos = pos[i] }
+   end
+   local function deliver()
+      for _, e in ipairs(msg.log) do
+         local i = tonumber(tostring(e.to):match("a2_card(%d+)$"))
+         if i and (e.id == "start_drag" or e.id == "drag_update" or e.id == "drop_failed") then
+            stub.go_self_pos = cards[i].pos
+            stub.anim_log = {}
+            cards[i].on_message(cards[i].self, hash(e.id), e.data or {}, "cursor")
+            -- Видимая позиция меняется только от go.set_position. Цель
+            -- АНИМАЦИИ сюда не подставляем, и это принципиально: на движке
+            -- возврат после drop_failed длится 0.3 с, а второй press в ветке
+            -- A2 приходит тем же кадром — hit_test читает карту ещё поднятой.
+            -- Подставь мы anim.to, заражение исчезло бы само, и тест зеленел
+            -- бы даже без правки (проверено мутацией: так и было).
+            cards[i].pos = go.get_position()
+            stub.go_positions["a2_card" .. i] = cards[i].pos
+         end
+      end
+      msg.clear()
+   end
+   local function press()
+      on_input(cur, hash("touch"), { x = 65, y = 299 + 65, pressed = true })
+      update(cur, 0.016)
+      deliver()
+   end
+   press()
+   local first = {}
+   for i = 1, #z_layout do first[i] = cards[i].pos.z end
+   press()                       -- release не пришёл: ветка A2
+   local second = {}
+   for i = 1, #z_layout do second[i] = cards[i].pos.z end
+   return first, second
+end
+
+H.test("O1b второй press без release не поднимает карту второй раз", function()
+   local layout = { 0.012, 0.014, 0.016, 0.030 }
+   local first, second = o1_a2_double_press(layout)
+   for i, z0 in ipairs(layout) do
+      local want = z0 + card_config.Z_CARD_DRAGGING
+      if math.abs(first[i] - want) > 1e-9 then
+         return false, ("карта %d после ПЕРВОГО захвата на z=%.5f, ожидалась %.5f")
+                       :format(i, first[i], want)
+      end
+      if math.abs(second[i] - want) > 1e-9 then
+         return false, ("карта %d после ВТОРОГО захвата на z=%.5f вместо %.5f " ..
+                        "(+%.2f сверх подъёма): прибавка накапливается, и возврат " ..
+                        "посадит карту на заражённую высоту — при far=1 она уходит " ..
+                        "за плоскость отсечения за три-четыре повтора")
+                       :format(i, second[i], want, second[i] - want)
+      end
+   end
+   return true
+end)
+
+H.test("O1b drop_failed возвращает карту на её собственную высоту", function()
+   load_script("main/Scripts/card.script")
+   local own = 0.014
+   stub.go_self_pos = vmath.vector3(100, 200, own)
+   stub.anim_log = {}
+   local self = { owner = "tableau_slot1" }
+   on_message(self, hash("start_drag"), {}, "cursor")
+   -- Курсор присылает ЗАРАЖЁННУЮ позицию: так и будет, если карту перехватили
+   -- в полёте или через A2 — hit_test снял её уже поднятой.
+   local infected = vmath.vector3(100, 200, own + card_config.Z_CARD_DRAGGING)
+   on_message(self, hash("drop_failed"), { position = infected }, "cursor")
+   local anim = stub.last_anim("position")
+   if not anim then
+      return false, "drop_failed не тронул position — возвращать карту нечем"
+   end
+   if math.abs(anim.to.z - own) > 1e-9 then
+      return false, ("возврат ведёт z на %.5f вместо %.5f: карта сядет выше своей " ..
+                     "колонки и останется там — update_visible_cards на этом пути " ..
+                     "не зовётся и высоту не лечит")
+                    :format(anim.to.z, own)
+   end
+   if math.abs(anim.to.x - infected.x) > 1e-9 or math.abs(anim.to.y - infected.y) > 1e-9 then
+      return false, "x/y обязаны прийти от курсора: своей у карты только высота"
+   end
+   return true
+end)
+
+-- Высоту карта чинит сама, а МЕСТО — только владелец: x/y курсор берёт из того
+-- же hit_test, и на перезахвате в полёте туда попадает точка полёта. Замерено
+-- на движке до этой правки: карта осела ниже своей колонки и осталась там.
+H.test("O1b доехавший возврат просит владельца переложить карты", function()
+   load_script("main/Scripts/card.script")
+   stub.go_self_pos = vmath.vector3(100, 200, 0.014)
+   stub.anim_log = {}
+   msg.clear()
+   local self = { owner = "tableau_slot3" }
+   on_message(self, hash("start_drag"), {}, "cursor")
+   on_message(self, hash("drop_failed"), { position = vmath.vector3(100, 200, 0.014) }, "cursor")
+   local before = #msg.log
+   stub.flush_anims(1)                    -- возврат доехал
+   local asked = false
+   for i = before + 1, #msg.log do
+      if msg.log[i].id == "relayout" and tostring(msg.log[i].to) == "tableau_slot3" then
+         asked = true
+      end
+   end
+   if not asked then
+      return false, "после возврата владельцу не пришёл relayout — раскладку колонки " ..
+                    "никто не пересчитает, и карта останется там, где её застали"
+   end
+   return true
+end)
+
+H.test("O1b колонка по relayout расставляет карты по своим местам", function()
+   load_script("main/Scripts/tableau_script.script")
+   msg.clear()
+   local ids = { "t1", "t2", "t3" }
+   for _, id in ipairs(ids) do
+      stub.go_positions[id] = vmath.vector3(999, -999, 0.9)   -- «уехавшие» карты
+   end
+   local self = {
+      index = 1, cursor = "cursor", is_empty = false,
+      stack = {
+         { id = "t1", data = { value = 9, suit = "red" } },
+         { id = "t2", data = { value = 8, suit = "green" } },
+         { id = "t3", data = { value = 7, suit = "red" } },
+      },
+   }
+   on_message(self, hash("relayout"), {}, "cursor")
+   for i, id in ipairs(ids) do
+      local p = stub.go_positions[id]
+      if not p or p.x == 999 or p.y == -999 then
+         return false, "карта " .. id .. " осталась там, куда уехала: relayout не переложил колонку"
+      end
+      if i < #ids and p.z >= stub.go_positions[ids[i + 1]].z then
+         return false, "после relayout порядок z в колонке не растёт снизу вверх"
+      end
+   end
+   return true
+end)
+
+-- Та же заражённая позиция, но в drag_update: пока карту ведут, цель по z
+-- обязана остаться «база + подъём». Возьми её из payload — и на перезахвате
+-- цель уехала бы на ВТОРОЙ Z_CARD_DRAGGING, то есть z поехала бы анимацией с
+-- разным лагом на карту, а это и есть исходное мерцание O1.
+H.test("O1b drag_update держит z на своей базе, что бы ни прислал курсор", function()
+   load_script("main/Scripts/card.script")
+   local own = 0.016
+   stub.go_self_pos = vmath.vector3(100, 200, own)
+   stub.anim_log = {}
+   local self = { owner = "tableau_slot1" }
+   on_message(self, hash("start_drag"), {}, "cursor")
+   local infected = vmath.vector3(140, 260, own + card_config.Z_CARD_DRAGGING)
+   on_message(self, hash("drag_update"), { position = infected, lag = 0.05 }, "cursor")
+   local anim = stub.last_anim("position")
+   local want = own + card_config.Z_CARD_DRAGGING
+   if not anim then
+      return false, "drag_update не тронул position"
+   end
+   if math.abs(anim.to.z - want) > 1e-9 then
+      return false, ("цель ведёт z на %.5f вместо %.5f: подъём посчитан от " ..
+                     "присланной курсором высоты, а она уже поднята")
+                    :format(anim.to.z, want)
+   end
+   if math.abs(anim.to.x - infected.x) > 1e-9 or math.abs(anim.to.y - infected.y) > 1e-9 then
+      return false, "по x/y карта обязана идти за курсором"
+   end
+   return true
+end)
+
+-- Обратная сторона: база обязана ГАСНУТЬ посадкой. Не погасить её — значит
+-- намертво привязать карту к высоте той колонки, где её схватили в первый раз:
+-- переехав в основание или в ячейку, она при следующем подъёме считалась бы от
+-- старого этажа и рисовалась не в своём слое.
+H.test("O1b посадка гасит базу — следующий подъём считается от новой высоты", function()
+   load_script("main/Scripts/card.script")
+   local self = { owner = "tableau_slot1" }
+   stub.go_self_pos = vmath.vector3(100, 200, 0.014)   -- лежала в колонке
+   stub.anim_log = {}
+   on_message(self, hash("start_drag"), {}, "cursor")
+   on_message(self, hash("drop_success"), {
+      position = vmath.vector3(300, 400, 0.5), slot_id = "base_slot1",
+      card = { id = "c" },
+   }, "cursor")
+
+   -- Слот посадил карту на свою высоту; поднимаем её оттуда заново.
+   local seated = 0.5
+   stub.go_self_pos = vmath.vector3(300, 400, seated)
+   on_message(self, hash("start_drag"), {}, "cursor")
+   local got = go.get_position().z
+   local want = seated + card_config.Z_CARD_DRAGGING
+   if math.abs(got - want) > 1e-9 then
+      return false, ("после посадки карта поднялась на z=%.5f вместо %.5f: база " ..
+                     "прошлой колонки пережила drop_success и тянет карту в чужой слой")
+                    :format(got, want)
+   end
+   return true
+end)
+
 return H

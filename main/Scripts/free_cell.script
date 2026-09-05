@@ -141,6 +141,14 @@ function on_message(self, message_id, message, sender)
       -- было red=4 blue=3 green=3 при двух реально свободных ячейках, стало
       -- red=3 blue=2 green=2 — как на порядке «сбор в пустую ячейку».
 
+   elseif message_id == hash("relayout") then
+      -- Та же роль, что у одноимённого обработчика колонки: после неудачного
+      -- драга место карте назначает СЛОТ, а не курсор. Карту, поднятую из
+      -- ячейки, курсор возвращает на `slot_pos`, но если её перехватили в
+      -- полёте, в original_position попадёт точка полёта.
+      if self.is_occupied and self.card_data then
+         go.set_position(go.get_position(), self.card_data.id)
+      end
    elseif message_id == hash("can_pick_card") then
       if self.is_occupied and not self.is_blocked then
         msg.post(sender, "slot_with_card", self.card_data) --id = self.current_card})

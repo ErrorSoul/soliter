@@ -88,6 +88,15 @@ function on_message(self, message_id, message, sender)
       })
       self.pending_top_check = true  -- A6: 2/flower/dragon just placed must auto-send
       update_visible_cards(self)
+   elseif message_id == hash("relayout") then
+      -- Неудачный драг закончился: колонка расставляет СВОИ карты заново.
+      -- Без этого возврат — единственный путь, на котором позицию назначает не
+      -- слот, а курсор, а он берёт её из hit_test, то есть с живой карты.
+      -- Схватишь карту, пока она летит назад, — и в original_position попадёт
+      -- точка полёта; карта осядет там, где её застали, и останется так
+      -- навсегда (ни одна ветка выше сюда не заглядывает). Видно на скриншоте
+      -- стенда: карта уезжает ниже колонки. Найдено ревью grok-4.6/4.5.
+      update_visible_cards(self)
    elseif message_id == hash("check_slot") then
       if self.is_empty then
          msg.post(sender, "slot_valid")

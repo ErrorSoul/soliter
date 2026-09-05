@@ -95,14 +95,26 @@ function on_message(self, message_id, message, sender)
       -- position.x/y нельзя: остальные ветки (drop_success, drop_failed,
       -- abort_drag) отменяют композит "position" и подсвойства бы не остановили.
       --
-      -- Область действия честно: инвариант «z в руке — константа» держится для
-      -- драга, начатого с ОСЕВШЕЙ доски. Схватить стопку, пока она ещё летит
-      -- назад после drop_failed, — и hit_test прочитает позиции в полёте, а
-      -- прибавка ляжет поверх недоехавшей z. Порядок там может поехать и сейчас;
-      -- это не регрессия (прежний код читал ровно те же летящие позиции) и не
-      -- замерено — отдельный случай, если всплывёт.
+      -- База подъёма запоминается ОДИН раз на серию и живёт до посадки.
+      -- Иначе прибавка накапливается, и это не теория: `hit_test` читает
+      -- позицию карты живьём, поэтому при перезахвате БЕЗ посадки курсор
+      -- забирает в original_position уже поднятую z. Два пути туда —
+      -- ветка A2 в cursor.on_input (новый press, когда прошлый драг не получил
+      -- release: HTML5 теряет mouseup за канвасом) и захват карты, ещё летящей
+      -- назад после drop_failed. Дальше void-дроп сажает карту на заражённую
+      -- z НАВСЕГДА: возврат в ту же колонку не зовёт update_visible_cards,
+      -- единственное место, где z пересчитывается авторитетно. Счёт при
+      -- far = 1 (render.render_script): 0.3 → 0.6 → 0.9 → карта за плоскостью
+      -- отсечения, то есть исчезает. Найдено ревью grok-4.5.
+      --
+      -- Поэтому z в руке считается от СВОЕЙ базы, а не от текущей позиции, и
+      -- на неё же карта возвращается в drop_failed. База гасится только
+      -- посадкой (drop_success — там позицию задаёт слот) или доехавшим
+      -- возвратом; отменённая анимация колбэк не зовёт, и база переживает
+      -- перезахват в полёте — ровно то, что нужно.
+      self.drag_base_z = self.drag_base_z or go.get_position().z
       local p = go.get_position()
-      go.set_position(vmath.vector3(p.x, p.y, p.z + config.Z_CARD_DRAGGING))
+      go.set_position(vmath.vector3(p.x, p.y, self.drag_base_z + config.Z_CARD_DRAGGING))
       reset_card_fx(false) -- новый драг начинается с ровной карты, а не с остатков прошлого
       sfx.card_pick()
       go.animate(".", "scale", go.PLAYBACK_ONCE_FORWARD,
@@ -111,11 +123,14 @@ function on_message(self, message_id, message, sender)
 
    elseif message_id == hash("drag_update") and self.is_dragging then
       go.cancel_animations(".", "position")
-      -- Та же константа, что подняла карту в start_drag: `message.position`
-      -- уже несёт СОБСТВЕННУЮ z карты (курсор складывает original_position и
-      -- relative_pos), поэтому цель по z равна текущей z. Разъедься эти два
-      -- места — z снова поедет анимацией, и вернётся O1.
-      local target = message.position + vmath.vector3(0, 0, config.Z_CARD_DRAGGING)
+      -- По x/y ведёт курсор, по z — СВОЯ база, та же, что подняла карту в
+      -- start_drag: цель по z равна текущей z, анимировать нечего. Брать z из
+      -- `message.position` нельзя, хотя курсор её и складывает
+      -- (original_position + relative_pos): при перезахвате без посадки эта
+      -- сумма несёт уже поднятую z, и цель уехала бы на второй Z_CARD_DRAGGING.
+      local target = vmath.vector3(message.position.x, message.position.y,
+                                   (self.drag_base_z or message.position.z)
+                                   + config.Z_CARD_DRAGGING)
       -- lag: чем глубже карта в стопке, тем дольше доводка — стопка изгибается
       -- веером вместо того, чтобы ехать жёстким телом (ui_fx.drag_lag).
       go.animate(".", "position", go.PLAYBACK_ONCE_FORWARD,
@@ -154,6 +169,7 @@ function on_message(self, message_id, message, sender)
           go.set("#sprite", "tint", vmath.vector4(1, 1, 1, 1))
       end
 
+      self.drag_base_z = nil   -- села: дальше высоту назначает слот
       local pos = message.position + vmath.vector3(0, 0, 0.001)
       msg.post(message.slot_id, "occupy_slot", {
                   card = message.card,
@@ -180,8 +196,24 @@ function on_message(self, message_id, message, sender)
       reset_card_fx(true)
       go.animate(".", "scale", go.PLAYBACK_ONCE_FORWARD,
           vmath.vector3(1, 1, 1), go.EASING_OUTQUAD, 0.15)
+      -- Возврат по z идёт на СВОЮ базу, а не на ту, что прислал курсор:
+      -- original_position он снимает с hit_test, и при перезахвате без посадки
+      -- она уже поднята. Сядь карта на неё — заражение стало бы постоянным
+      -- (возврат в ту же колонку update_visible_cards не зовёт).
+      local back = vmath.vector3(message.position.x, message.position.y,
+                                 self.drag_base_z or message.position.z)
       go.animate(".", "position", go.PLAYBACK_ONCE_FORWARD,
-                 message.position, go.EASING_OUTQUAD, 0.3, 0, function()
+                 back, go.EASING_OUTQUAD, 0.3, 0, function()
+                     -- База гасится только ДОЕХАВШИМ возвратом: перехватят
+                     -- карту в полёте — колбэк не позовётся, база уцелеет, и
+                     -- новый подъём снова отсчитается от осевшей высоты.
+                     self.drag_base_z = nil
+                     -- И место карте назначает её владелец, а не курсор:
+                     -- `message.position` он собрал из hit_test, то есть с
+                     -- живой карты, и на перезахвате в полёте туда попадает
+                     -- точка полёта. Слот знает раскладку и кладёт карту ровно
+                     -- туда, где ей место.
+                     msg.post(self.owner, "relayout")
                      local pos = go.get_position()
                      go.animate(".", "position.x", go.PLAYBACK_ONCE_FORWARD,
                          pos.x + 5, go.EASING_OUTSINE, 0.05, 0, function()
