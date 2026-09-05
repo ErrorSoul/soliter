@@ -15,7 +15,7 @@ function init(self)
    -- Сохраняем начальный цвет спрайта
    self.normal_tint = vmath.vector4(1, 1, 1, 1)
    self.highlight_tint = vmath.vector4(1.15, 1.15, 1.15, 1) -- Белое свечение
-   -- sprite.set_constant("#sprite", "tint", self.highlight_tint)
+   -- go.set("#sprite", "tint", self.highlight_tint)
    go.set_position(vmath.vector3(go.get_position().x,
                                  go.get_position().y,
                                  config.Z_CARD_DEFAULT))
@@ -107,7 +107,7 @@ function on_message(self, message_id, message, sender)
       sfx.card_pick()
       go.animate(".", "scale", go.PLAYBACK_ONCE_FORWARD,
           vmath.vector3(1.1, 1.1, 1), go.EASING_OUTQUAD, 0.1)
-      sprite.set_constant("#sprite", "tint", vmath.vector4(1.15, 1.15, 1.15, 1))
+      go.set("#sprite", "tint", vmath.vector4(1.15, 1.15, 1.15, 1))
 
    elseif message_id == hash("drag_update") and self.is_dragging then
       go.cancel_animations(".", "position")
@@ -146,12 +146,12 @@ function on_message(self, message_id, message, sender)
           vmath.vector3(1, 1, 1), go.EASING_OUTQUAD, 0.15)
       if message.animation then
           -- Auto-move flash: белая вспышка
-          sprite.set_constant("#sprite", "tint", vmath.vector4(1.3, 1.3, 1.3, 1))
+          go.set("#sprite", "tint", vmath.vector4(1.3, 1.3, 1.3, 1))
           timer.delay(0.35, false, function()
-              sprite.set_constant("#sprite", "tint", vmath.vector4(1, 1, 1, 1))
+              go.set("#sprite", "tint", vmath.vector4(1, 1, 1, 1))
           end)
       else
-          sprite.set_constant("#sprite", "tint", vmath.vector4(1, 1, 1, 1))
+          go.set("#sprite", "tint", vmath.vector4(1, 1, 1, 1))
       end
 
       local pos = message.position + vmath.vector3(0, 0, 0.001)
@@ -176,7 +176,7 @@ function on_message(self, message_id, message, sender)
    elseif message_id == hash("drop_failed") then
       self.is_dragging = false
       sfx.card_error()
-      sprite.set_constant("#sprite", "tint", vmath.vector4(1, 1, 1, 1))
+      go.set("#sprite", "tint", vmath.vector4(1, 1, 1, 1))
       reset_card_fx(true)
       go.animate(".", "scale", go.PLAYBACK_ONCE_FORWARD,
           vmath.vector3(1, 1, 1), go.EASING_OUTQUAD, 0.15)
@@ -212,13 +212,13 @@ function on_message(self, message_id, message, sender)
    if message_id == hash("highlight") then
       self.is_highlighted = true
       -- Pulsing glow: bright yellow-white tint
-      sprite.set_constant("#sprite", "tint", vmath.vector4(1.5, 1.4, 1.0, 1))
+      go.set("#sprite", "tint", vmath.vector4(1.5, 1.4, 1.0, 1))
       go.cancel_animations(".", "scale")
       go.animate(".", "scale", go.PLAYBACK_LOOP_PINGPONG,
           vmath.vector3(1.06, 1.06, 1), go.EASING_INSINE, 0.5)
    elseif message_id == hash("unhighlight") then
       self.is_highlighted = false
-      sprite.set_constant("#sprite", "tint", self.normal_tint)
+      go.set("#sprite", "tint", self.normal_tint)
       go.cancel_animations(".", "scale")
       go.set(".", "scale", vmath.vector3(1, 1, 1))
    end
