@@ -1691,6 +1691,39 @@ def scenario_regrab(s):
         s.expect_empty_at(VOID[0], VOID[1], felt, f"карта не зависла в пустоте, цикл {n}")
     s.shot("after")
 
+    # ── Тинт живой? ────────────────────────────────────────────────────────
+    # `sprite.set_constant` заменён на `go.set("#sprite", "tint", …)`, а такая
+    # замена может молча НИЧЕГО не делать: ошибки не будет, подсветка просто
+    # исчезнет. Позиционные оракулы выше этого не увидят — они и на мёртвом
+    # тинте зелёные. Поэтому смотрим наблюдаемый след: карта в руке поднимается
+    # тинтом 1.15, то есть обязана стать заметно светлее лежащей.
+    #
+    # Замер идёт с ЗАЖАТОЙ кнопкой и почти без сдвига курсора: карта едет к
+    # курсору, поэтому при сдвиге на пару пикселей она остаётся в своей точке.
+    sx, sy = s._map(TABLEAU_X[1], y)
+    rest = s.brightness(TABLEAU_X[1], y, 10)
+    s.page.mouse.move(sx, sy)
+    s.page.wait_for_timeout(FRAME_MS * 2)
+    s.page.mouse.down()
+    s.page.wait_for_timeout(HOLD_MS)
+    s.page.mouse.move(sx + 2, sy)
+    s.page.wait_for_timeout(FRAME_MS * 6)      # доводка drag_lag + анимация тинта
+    lifted = s.brightness(TABLEAU_X[1], y, 10)
+    s.page.mouse.up()
+    s.page.wait_for_timeout(FRAME_MS * 4)
+    gain = (lifted - rest) / rest if rest else 0
+    s.note("pixel", f"тинт: лежит {rest:.1f}, в руке {lifted:.1f}, прирост {gain * 100:+.1f}%")
+    # Порог ОТНОСИТЕЛЬНЫЙ: раздача случайна, и карта под курсором каждый раз
+    # своей яркости (замеряно 168 и 110 в двух прогонах), а прибавка тинта ей
+    # пропорциональна — абсолютная дельта между прогонами несравнима.
+    # Замерено: живой тинт +5.1 % на светлой карте и +16.0 % на тёмной, мутант
+    # «тинт 1.0 вместо 1.15» +1.9 % (остаток от scale 1.1, карта чуть наезжает
+    # на соседку). Порог 3 % лежит между ними; мутация проверку роняет.
+    s.expect(gain > 0.03,
+             f"карта в руке не светлеет ({rest:.1f} -> {lifted:.1f}, {gain * 100:+.1f}%): "
+             f"тинт 1.15 не доехал до спрайта — go.set('#sprite','tint') не работает "
+             f"как замена set_constant")
+
 
 SCENARIOS = {"boot": scenario_boot, "hittest": scenario_hittest,
              "dragz": scenario_dragz, "regrab": scenario_regrab,
