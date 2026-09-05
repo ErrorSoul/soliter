@@ -3137,27 +3137,39 @@ H.test("O1b доехавший возврат просит владельца п
    on_message(self, hash("start_drag"), {}, "cursor")
    on_message(self, hash("drop_failed"), { position = vmath.vector3(100, 200, 0.014) }, "cursor")
    local before = #msg.log
-   stub.flush_anims(1)                    -- возврат доехал
-   local asked = false
+   -- Возврат доехал, затем доигрывает покачивание (четыре вложенных колбэка) —
+   -- просьба уходит в самом конце, чтобы слот не переписал position посреди
+   -- анимации position.x.
+   stub.flush_anims(6)
+   local asked = nil
    for i = before + 1, #msg.log do
       if msg.log[i].id == "relayout" and tostring(msg.log[i].to) == "tableau_slot3" then
-         asked = true
+         asked = msg.log[i].data
       end
    end
    if not asked then
-      return false, "после возврата владельцу не пришёл relayout — раскладку колонки " ..
-                    "никто не пересчитает, и карта останется там, где её застали"
+      return false, "после возврата владельцу не пришёл relayout — место карте " ..
+                    "назначит курсор, а он берёт его из hit_test, то есть с живой карты"
+   end
+   if not asked.id then
+      return false, "relayout без id карты: слот переложит ВСЮ колонку и сорвёт " ..
+                    "чужой драг из неё же"
    end
    return true
 end)
 
-H.test("O1b колонка по relayout расставляет карты по своим местам", function()
+-- Колонка сажает на место ТОЛЬКО ту карту, что назвали. Соседей трогать нельзя:
+-- пока одна возвращается, игрок может уже тащить другую из этой же колонки, и
+-- полная перекладка (update_visible_cards) телепортировала бы её из руки.
+H.test("O1b relayout сажает названную карту и не трогает соседей", function()
    load_script("main/Scripts/tableau_script.script")
    msg.clear()
    local ids = { "t1", "t2", "t3" }
+   local away = vmath.vector3(999, -999, 0.9)
    for _, id in ipairs(ids) do
-      stub.go_positions[id] = vmath.vector3(999, -999, 0.9)   -- «уехавшие» карты
+      stub.go_positions[id] = away
    end
+   stub.go_self_pos = vmath.vector3(65, 299, 0)      -- позиция слота колонки
    local self = {
       index = 1, cursor = "cursor", is_empty = false,
       stack = {
@@ -3166,14 +3178,17 @@ H.test("O1b колонка по relayout расставляет карты по 
          { id = "t3", data = { value = 7, suit = "red" } },
       },
    }
-   on_message(self, hash("relayout"), {}, "cursor")
-   for i, id in ipairs(ids) do
+   on_message(self, hash("relayout"), { id = "t2" }, "cursor")
+
+   local moved = stub.go_positions["t2"]
+   if not moved or moved.x == 999 or moved.y == -999 then
+      return false, "названную карту relayout не посадил: она осталась там, где её застали"
+   end
+   for _, id in ipairs({ "t1", "t3" }) do
       local p = stub.go_positions[id]
-      if not p or p.x == 999 or p.y == -999 then
-         return false, "карта " .. id .. " осталась там, куда уехала: relayout не переложил колонку"
-      end
-      if i < #ids and p.z >= stub.go_positions[ids[i + 1]].z then
-         return false, "после relayout порядок z в колонке не растёт снизу вверх"
+      if p.x ~= 999 or p.y ~= -999 then
+         return false, "relayout сдвинул соседку " .. id .. " — если её сейчас тащат, " ..
+                       "она телепортируется из руки, а её собственный возврат оборвётся"
       end
    end
    return true

@@ -208,12 +208,6 @@ function on_message(self, message_id, message, sender)
                      -- карту в полёте — колбэк не позовётся, база уцелеет, и
                      -- новый подъём снова отсчитается от осевшей высоты.
                      self.drag_base_z = nil
-                     -- И место карте назначает её владелец, а не курсор:
-                     -- `message.position` он собрал из hit_test, то есть с
-                     -- живой карты, и на перезахвате в полёте туда попадает
-                     -- точка полёта. Слот знает раскладку и кладёт карту ровно
-                     -- туда, где ей место.
-                     msg.post(self.owner, "relayout")
                      local pos = go.get_position()
                      go.animate(".", "position.x", go.PLAYBACK_ONCE_FORWARD,
                          pos.x + 5, go.EASING_OUTSINE, 0.05, 0, function()
@@ -222,7 +216,23 @@ function on_message(self, message_id, message, sender)
                                      go.animate(".", "position.x", go.PLAYBACK_ONCE_FORWARD,
                                          pos.x + 3, go.EASING_OUTSINE, 0.05, 0, function()
                                              go.animate(".", "position.x", go.PLAYBACK_ONCE_FORWARD,
-                                                 pos.x, go.EASING_OUTSINE, 0.05)
+                                                 pos.x, go.EASING_OUTSINE, 0.05, 0, function()
+                                                     -- Место карте назначает её ВЛАДЕЛЕЦ, а не
+                                                     -- курсор: `message.position` он собрал из
+                                                     -- hit_test, то есть с живой карты, и на
+                                                     -- перезахвате в полёте туда попадает точка
+                                                     -- полёта. Слот знает раскладку.
+                                                     --
+                                                     -- Просьба идёт в САМОМ КОНЦЕ покачивания, а
+                                                     -- не сразу после возврата: слот пишет
+                                                     -- position целиком, и относительно
+                                                     -- анимации position.x порядок этих двух
+                                                     -- записей ничем не гарантирован. Так
+                                                     -- покачивание заведомо доигрывает своё.
+                                                     -- Найдено вторым кругом ревью grok-4.5.
+                                                     msg.post(self.owner, "relayout",
+                                                              { id = go.get_id() })
+                                                 end)
                                          end)
                                  end)
                          end)

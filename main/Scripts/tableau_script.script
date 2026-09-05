@@ -89,14 +89,24 @@ function on_message(self, message_id, message, sender)
       self.pending_top_check = true  -- A6: 2/flower/dragon just placed must auto-send
       update_visible_cards(self)
    elseif message_id == hash("relayout") then
-      -- Неудачный драг закончился: колонка расставляет СВОИ карты заново.
-      -- Без этого возврат — единственный путь, на котором позицию назначает не
-      -- слот, а курсор, а он берёт её из hit_test, то есть с живой карты.
-      -- Схватишь карту, пока она летит назад, — и в original_position попадёт
-      -- точка полёта; карта осядет там, где её застали, и останется так
-      -- навсегда (ни одна ветка выше сюда не заглядывает). Видно на скриншоте
-      -- стенда: карта уезжает ниже колонки. Найдено ревью grok-4.6/4.5.
-      update_visible_cards(self)
+      -- Неудачный драг закончился: колонка сажает вернувшуюся карту на её
+      -- место. Без этого возврат — единственный путь, где позицию назначает не
+      -- слот, а курсор, а он берёт её из hit_test, то есть с живой карты:
+      -- схватишь карту в полёте — и в original_position попадёт точка полёта,
+      -- карта осядет где застали и останется так навсегда. Видно на скриншоте
+      -- стенда: карта уезжает ниже колонки.
+      --
+      -- Кладём ТОЛЬКО её, а не зовём update_visible_cards: тот щёлкает
+      -- go.set_position по всей колонке и сорвал бы чужой драг — карту, что
+      -- игрок уже тащит из этой же колонки, и соседку, ещё летящую назад
+      -- (у неё бы вдобавок не сработал колбэк, гасящий базу подъёма).
+      -- Найдено вторым кругом ревью grok-4.5.
+      for i = 1, #self.stack do
+         if self.stack[i].id == message.id then
+            go.set_position(card_slot_position(self, i), self.stack[i].id)
+            break
+         end
+      end
    elseif message_id == hash("check_slot") then
       if self.is_empty then
          msg.post(sender, "slot_valid")
@@ -104,6 +114,17 @@ function on_message(self, message_id, message, sender)
          msg.post(sender, "slot_invalid")
       end
    end
+end
+
+-- Место i-й карты колонки. Вынесено из update_visible_cards, потому что этот
+-- же расчёт нужен точечно: возврат после неудачного драга обязан посадить ОДНУ
+-- карту, не трогая соседей (см. обработчик relayout).
+function card_slot_position(self, i)
+   local slot_pos = go.get_position()
+   local pitch = config.stack_offset_y(#self.stack, slot_pos.y)
+   local z_index = (i == #self.stack) and config.Z_CARD_LAST_IN_STACK
+                   or config.Z_CARD_STACK_BASE + i * config.Z_CARD_STACK_STEP
+   return vmath.vector3(slot_pos.x, slot_pos.y + (i - 1) * pitch, z_index)
 end
 
 function update_visible_cards(self)
@@ -126,12 +147,8 @@ function update_visible_cards(self)
    -- сюда приходит и раздача, и дроп, и перенос стопки, и всё пересчитывается
    -- целиком. Поэтому промежуточные цели анимаций (например -40 в cursor)
    -- допустимы: кадром позже карты садятся ровно сюда.
-   local slot_y = go.get_position().y
-   local pitch = config.stack_offset_y(#self.stack, slot_y)
-   for i, card in ipairs(self.stack) do
-      local z_index = (i == #self.stack) and config.Z_CARD_LAST_IN_STACK or config.Z_CARD_STACK_BASE + i * config.Z_CARD_STACK_STEP
-      local y = slot_y + (i-1) * pitch
-      go.set_position(vmath.vector3(go.get_position().x, y, z_index), card.id)
+   for i = 1, #self.stack do
+      go.set_position(card_slot_position(self, i), self.stack[i].id)
    end
 
    -- Сохраняем список видимых карт
