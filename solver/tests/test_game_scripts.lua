@@ -3137,16 +3137,27 @@ H.test("O1b доехавший возврат просит владельца п
    on_message(self, hash("start_drag"), {}, "cursor")
    on_message(self, hash("drop_failed"), { position = vmath.vector3(100, 200, 0.014) }, "cursor")
    local before = #msg.log
-   -- Возврат доехал, затем доигрывает покачивание (четыре вложенных колбэка) —
-   -- просьба уходит в самом конце, чтобы слот не переписал position посреди
-   -- анимации position.x.
-   stub.flush_anims(6)
-   local asked = nil
-   for i = before + 1, #msg.log do
-      if msg.log[i].id == "relayout" and tostring(msg.log[i].to) == "tableau_slot3" then
-         asked = msg.log[i].data
+   local function relayout_since(n)
+      for i = n + 1, #msg.log do
+         if msg.log[i].id == "relayout" and tostring(msg.log[i].to) == "tableau_slot3" then
+            return msg.log[i].data or {}
+         end
       end
    end
+
+   -- Порядок здесь и есть контракт, а не просто «просьба когда-нибудь ушла».
+   -- Слот пишет position ЦЕЛИКОМ, а покачивание после возврата анимирует
+   -- position.x; относительный порядок этих записей ничем не гарантирован,
+   -- поэтому просьба обязана уйти ПОСЛЕДНИМ колбэком, а не первым. Прошлая
+   -- редакция теста (flush_anims(6) и «нашлось где-нибудь») одинаково
+   -- принимала оба варианта — нашло ревью grok-4.6.
+   stub.flush_anims(1)                       -- возврат доехал, покачивание началось
+   if relayout_since(before) then
+      return false, "просьба ушла сразу после возврата, посреди покачивания: слот " ..
+                    "перепишет position, пока по нему идёт анимация position.x"
+   end
+   stub.flush_anims(5)                       -- четыре звена покачивания и его хвост
+   local asked = relayout_since(before)
    if not asked then
       return false, "после возврата владельцу не пришёл relayout — место карте " ..
                     "назначит курсор, а он берёт его из hit_test, то есть с живой карты"
@@ -3190,6 +3201,72 @@ H.test("O1b relayout сажает названную карту и не трог
          return false, "relayout сдвинул соседку " .. id .. " — если её сейчас тащат, " ..
                        "она телепортируется из руки, а её собственный возврат оборвётся"
       end
+   end
+   return true
+end)
+
+H.test("O1b ячейка по relayout сажает СВОЮ карту и молчит про чужую", function()
+   load_script("main/Scripts/free_cell.script")
+   msg.clear()
+   local away = vmath.vector3(500, 500, 0.9)
+   stub.go_positions["cell_card"] = away
+   stub.go_positions["stranger"] = away
+   stub.go_self_pos = vmath.vector3(65, 457, 0)          -- позиция ячейки
+   local self = { is_occupied = true, card_data = { id = "cell_card" },
+                  cursor = "cursor", slot_id = "free_slot1" }
+
+   -- Просят чужую — ячейка обязана промолчать, а не двинуть ту, что лежит в
+   -- ней сейчас: за 0.3 с возврата она могла принять другую карту (сбор
+   -- драконов сажает стопку именно на занятую ячейку).
+   on_message(self, hash("relayout"), { id = "stranger" }, "cursor")
+   if stub.go_positions["cell_card"] ~= away then
+      return false, "ячейка посадила свою карту по просьбе за ЧУЖУЮ: id не сверяется"
+   end
+   on_message(self, hash("relayout"), { id = "cell_card" }, "cursor")
+   local p = stub.go_positions["cell_card"]
+   if not p or p.x ~= 65 or p.y ~= 457 then
+      return false, "своя карта не села на ячейку: осталась там, где её застали"
+   end
+   return true
+end)
+
+-- Сквозная цепочка, а не её половинки: возврат летит в ЗАРАЖЁННУЮ точку (так и
+-- будет после перезахвата), потом доигрывает покачивание, потом слот сажает
+-- карту. Проверяем КОНЕЧНОЕ положение — оно обязано быть местом карты в
+-- колонке, а не тем, куда её вернул курсор. Нашло ревью grok-4.6: половинки
+-- проверялись, связка — нет.
+H.test("O1b возврат в заражённую точку заканчивается местом в колонке", function()
+   load_script("main/Scripts/card.script")
+   msg.clear()
+   local own = 0.014
+   stub.go_self_pos = vmath.vector3(65, 264, own)
+   stub.anim_log = {}
+   local card_self = { owner = "tableau_slot1" }
+   on_message(card_self, hash("start_drag"), {}, "cursor")
+   on_message(card_self, hash("drop_failed"), {
+      position = vmath.vector3(400, 40, own + card_config.Z_CARD_DRAGGING),
+   }, "cursor")
+   stub.flush_anims(6)
+
+   local asked
+   for _, e in ipairs(msg.log) do
+      if e.id == "relayout" then asked = e.data end
+   end
+   if not asked then return false, "цепочка не дошла до просьбы к владельцу" end
+
+   -- Дальше отвечает уже колонка, настоящая.
+   load_script("main/Scripts/tableau_script.script")
+   stub.go_positions[asked.id] = vmath.vector3(400, 40, own + card_config.Z_CARD_DRAGGING)
+   stub.go_self_pos = vmath.vector3(65, 299, 0)
+   local col = { index = 1, cursor = "cursor", is_empty = false,
+                 stack = { { id = asked.id, data = { value = 9, suit = "red" } } } }
+   on_message(col, hash("relayout"), { id = asked.id }, "card")
+
+   local p = stub.go_positions[asked.id]
+   if p.x ~= 65 or p.y ~= 299 then
+      return false, ("карта осталась в точке возврата (%.0f, %.0f) вместо места в " ..
+                     "колонке (65, 299): курсор вернул её туда, где застал")
+                    :format(p.x, p.y)
    end
    return true
 end)
