@@ -3151,20 +3151,32 @@ H.test("O1b доехавший возврат просит владельца п
    -- поэтому просьба обязана уйти ПОСЛЕДНИМ колбэком, а не первым. Прошлая
    -- редакция теста (flush_anims(6) и «нашлось где-нибудь») одинаково
    -- принимала оба варианта — нашло ревью grok-4.6.
-   stub.flush_anims(1)                       -- возврат доехал, покачивание началось
-   if relayout_since(before) then
-      return false, "просьба ушла сразу после возврата, посреди покачивания: слот " ..
-                    "перепишет position, пока по нему идёт анимация position.x"
+   -- Цепочка: возврат → четыре звена покачивания. Просьба обязана уйти из
+   -- ПОСЛЕДНЕГО, поэтому крутим по одному раунду и после каждого требуем
+   -- «ещё нет». Прошлая редакция (flush 1, затем сразу 5) запрещала только
+   -- самый ранний вариант: перенеси прод-код просьбу во второе или третье
+   -- звено — тест остался бы зелёным (нашло ревью grok-4.5).
+   for round = 1, 4 do
+      stub.flush_anims(1)
+      if relayout_since(before) then
+         return false, ("просьба ушла на %d-м звене из пяти, посреди покачивания: " ..
+                        "слот перепишет position, пока по нему идёт анимация " ..
+                        "position.x — порядок этих двух записей не гарантирован")
+                       :format(round)
+      end
    end
-   stub.flush_anims(5)                       -- четыре звена покачивания и его хвост
+   stub.flush_anims(1)                       -- последнее звено покачивания
    local asked = relayout_since(before)
    if not asked then
       return false, "после возврата владельцу не пришёл relayout — место карте " ..
                     "назначит курсор, а он берёт его из hit_test, то есть с живой карты"
    end
-   if not asked.id then
-      return false, "relayout без id карты: слот переложит ВСЮ колонку и сорвёт " ..
-                    "чужой драг из неё же"
+   -- id именно СВОЙ: любой правдоподобный ключ тест бы принял, а слот по чужому
+   -- id промолчит и карта останется в точке возврата (нашло ревью grok-4.6).
+   if asked.id ~= go.get_id() then
+      return false, ("relayout несёт id=%s вместо собственного %s: слот такую карту " ..
+                     "в стопке не найдёт и промолчит")
+                    :format(tostring(asked.id), tostring(go.get_id()))
    end
    return true
 end)
@@ -3191,9 +3203,24 @@ H.test("O1b relayout сажает названную карту и не трог
    }
    on_message(self, hash("relayout"), { id = "t2" }, "cursor")
 
+   -- Сверяем НЕ «сдвинулась с (999,-999)», а точное место второй карты в стопке
+   -- из трёх. Прежняя редакция принимала любой сдвиг, и мутация «сажать в начало
+   -- колонки» (как это делает ячейка — go.set_position(go.get_position(), id))
+   -- была зелёной: на движке средняя карта села бы на нижнюю. Нашли оба
+   -- ревьюера круга 3.
+   local pitch = card_config.stack_offset_y(3, 299)
+   local want = vmath.vector3(65, 299 + pitch,
+                              card_config.Z_CARD_STACK_BASE + 2 * card_config.Z_CARD_STACK_STEP)
    local moved = stub.go_positions["t2"]
-   if not moved or moved.x == 999 or moved.y == -999 then
+   if not moved then
       return false, "названную карту relayout не посадил: она осталась там, где её застали"
+   end
+   if math.abs(moved.x - want.x) > 1e-6 or math.abs(moved.y - want.y) > 1e-6
+      or math.abs(moved.z - want.z) > 1e-9 then
+      return false, ("названная карта села в (%.2f, %.2f, %.5f) вместо своего места " ..
+                     "в стопке (%.2f, %.2f, %.5f): relayout обязан считать место по " ..
+                     "индексу карты, а не сажать её в начало колонки")
+                    :format(moved.x, moved.y, moved.z, want.x, want.y, want.z)
    end
    for _, id in ipairs({ "t1", "t3" }) do
       local p = stub.go_positions[id]
