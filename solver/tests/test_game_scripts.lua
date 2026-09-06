@@ -3356,4 +3356,32 @@ H.test("O1b посадка гасит базу — следующий подъё
    return true
 end)
 
+-- Хвост покачивания не должен пережить новый захват. Ни один из двух ревьюеров
+-- круга 3 этот случай не разобрал: оба смотрели только на drop_success, который
+-- ЯВНО отменяет position. Перезахват идёт через start_drag, а он позицию
+-- ПРИСВАИВАЛ — по замеру Q2 присваивание живую анимацию не отменяет, значит
+-- последний колбэк покачивания послал бы владельцу relayout уже после подъёма,
+-- и колонка выдернула бы карту из руки. Отмена в start_drag закрывает окно.
+H.test("O1b перезахват гасит покачивание — relayout из руки не уходит", function()
+   load_script("main/Scripts/card.script")
+   msg.clear()
+   stub.anims = {}
+   stub.go_self_pos = vmath.vector3(100, 200, 0.014)
+   stub.anim_log = {}
+   local self = { owner = "tableau_slot1" }
+   on_message(self, hash("start_drag"), {}, "cursor")
+   on_message(self, hash("drop_failed"), { position = vmath.vector3(100, 200, 0.014) }, "cursor")
+   stub.flush_anims(2)                 -- возврат доехал, покачивание пошло
+   local before = #msg.log
+   on_message(self, hash("start_drag"), {}, "cursor")   -- перехватили в покачивании
+   stub.flush_anims(6)                 -- дать хвосту все шансы доиграть
+   for i = before + 1, #msg.log do
+      if msg.log[i].id == "relayout" then
+         return false, "после перезахвата хвост покачивания всё-таки послал relayout: " ..
+                       "владелец посадит карту в колонку, пока игрок держит её в руке"
+      end
+   end
+   return true
+end)
+
 return H
