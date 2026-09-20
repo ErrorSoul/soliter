@@ -48,6 +48,7 @@ local test_modules = {
    "solver.tests.test_layout",
    "solver.tests.test_tutorial_hint",
    "solver.tests.test_yandex_sdk",
+   "solver.tests.test_save",
 }
 
 local total_passed = 0

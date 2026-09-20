@@ -2,6 +2,26 @@ local sfx = require("main.Scripts.sfx")
 local debug_flags = require("main.Scripts.debug_flags")
 local yandex = require("main.Scripts.yandex")
 
+-- D3: те же три константы, что и в main.script (там же и формат файла) —
+-- продублированы намеренно. game_manager живёт ВНЕ level proxy, а main.script
+-- — внутри; Defold даёт каждому .script своё Lua-окружение, так что звать
+-- функции main.script отсюда напрямую нечем, только сообщениями. Здесь нужен
+-- ровно один вызов sys.save (стереть файл), тащить ради него общий модуль —
+-- лишняя связность при том, что путь к сохранению и так не должен меняться
+-- по отдельности в одном файле и не в другом.
+local SAVE_APP_ID = "shenzhen_solitaire"
+local SAVE_FILE = "progress"
+local SAVE_VERSION = 1
+
+-- Стирает сохранение партии. Единственный вызывающий — on_message на
+-- restart_level/switch_level, СТРОГО до show(): рестарт уровня не должен
+-- подсовывать следующему init() партию, которую игрок как раз бросает
+-- (см. main.script.load_saved_game). На start_game (первый PLAY) НЕ зовём —
+-- это единственный путь, которому положено найти и продолжить сохранение.
+function clear_save()
+   pcall(sys.save, sys.get_save_file(SAVE_APP_ID, SAVE_FILE), { v = SAVE_VERSION, data = "" })
+end
+
 local function show(self, proxy)
    if self.current_proxy then
       msg.post(self.current_proxy, "unload")
@@ -65,9 +85,14 @@ function on_message(self, message_id, message, sender)
       yandex.gameplay(true)
       show(self, "#level_proxy")
    elseif message_id == hash("restart_level") then
+      -- D3: до show() — новый init() ищет сохранение первым делом
+      -- (main.script.load_saved_game), и оно обязано быть уже пустым, иначе
+      -- рестарт вернул бы брошенную партию вместо новой.
+      clear_save()
       yandex.gameplay(true)
       show(self, "#level_proxy")
    elseif message_id == hash("switch_level") then
+      clear_save()
       yandex.gameplay(true)
       self.current_level = (self.current_level == "soliter") and "soliter1" or "soliter"
       show(self, self.current_level == "soliter" and "#level_proxy" or "#level_proxy1")
