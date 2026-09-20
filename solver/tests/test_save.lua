@@ -485,4 +485,89 @@ H.test("D3 start_game НЕ трогает существующее сохран�
    return true
 end)
 
+-- ─── Восстановление слотов: порядок и счёт occupy_slot ──────────────────────
+--
+-- Эти два теста закрывают ровно ту часть restore_cells_and_foundation, которую
+-- прогон на движке НЕ достал. Замерено по снимку сценария `saveload`: там
+-- восстановились цветок, живая ячейка и по ОДНОЙ двойке на каждой масти, то
+-- есть цикл `for value = 2, top` отработал по одной итерации, а запечатанной
+-- ячейки драконов на той доске не было вовсе. Между тем именно здесь «порядок
+-- значим»: base_slot.script копит счётчик и z ПО ЧИСЛУ вызовов occupy_slot,
+-- поэтому основание из четырёх карт обязано приехать четырьмя вызовами по
+-- возрастанию, а не одним с готовым номиналом.
+--
+-- factory.create стаб отражает честно — это живое API Defold, в отличие от
+-- удалённого sprite.set_constant, которого стаб НЕ объявляет.
+
+local function restore_self()
+   return { cards = {}, cursor = "cursor_go", auto_collecting = false, auto_finishing = false }
+end
+
+H.test("D3 восстановление основания: карты приезжают по возрастанию, по одной на вызов", function()
+   stub.install()
+   load_script("main/Scripts/main.script")
+   local self = restore_self()
+   msg.clear()
+
+   -- Красная масть добрана до пятёрки, синяя пуста, зелёная — одна двойка.
+   restore_cells_and_foundation(self, {
+      tableau = {}, free_cells = {},
+      foundation = { red = 5, blue = 1, green = 2 },
+      flower = false,
+   })
+
+   local red = {}
+   for _, m in ipairs(msg.log) do
+      if m.id == tostring(hash("occupy_slot")) and m.to == "base_slot1" then
+         red[#red + 1] = m.data.card.data.value
+      end
+   end
+   if #red ~= 4 then
+      return false, "красное основание восстановлено " .. #red .. " вызовами вместо 4 (2,3,4,5)"
+   end
+   for i, v in ipairs(red) do
+      if v ~= i + 1 then
+         return false, "порядок красных сломан: на месте " .. i .. " лежит " .. tostring(v)
+      end
+   end
+
+   local blue = 0
+   for _, m in ipairs(msg.log) do
+      if m.id == tostring(hash("occupy_slot")) and m.to == "base_slot2" then blue = blue + 1 end
+   end
+   if blue ~= 0 then return false, "пустое основание получило " .. blue .. " карт" end
+   return true
+end)
+
+H.test("D3 восстановление запечатанной ячейки драконов помечает её собранной", function()
+   stub.install()
+   load_script("main/Scripts/main.script")
+   local self = restore_self()
+   msg.clear()
+
+   restore_cells_and_foundation(self, {
+      tableau = {}, free_cells = {
+         [1] = { card_data = { id = "d_red", value = 'd', suit = "red", is_dragon = true }, blocked = true },
+         [2] = { card_data = { id = "5_blue", value = 5, suit = "blue" }, blocked = false },
+      },
+      foundation = { red = 1, blue = 1, green = 1 },
+      flower = false,
+   })
+
+   local sealed, live
+   for _, m in ipairs(msg.log) do
+      if m.id == tostring(hash("occupy_slot")) then
+         if m.to == "free_slot1" then sealed = m.data end
+         if m.to == "free_slot2" then live = m.data end
+      end
+   end
+   if not sealed then return false, "запечатанная ячейка не восстановлена вовсе" end
+   if not sealed.complete then
+      return false, "ячейка с собранными драконами восстановлена как обычная — она снова станет свободной"
+   end
+   if not live then return false, "живая ячейка не восстановлена" end
+   if live.complete then return false, "обычная карта в ячейке помечена как собранные драконы" end
+   return true
+end)
+
 return H
