@@ -192,9 +192,22 @@ class Session:
 
         Card faces are near-white (~200+); an empty slot is the dark felt
         (~50). That gap is what lets a scenario assert 'a card is here' without
-        a human looking at the screenshot."""
+        a human looking at the screenshot.
+
+        `half` задан в ИГРОВЫХ пикселях и масштабируется вместе с канвасом.
+        Замерено 2026-09-20, почему это важно: пока патч отмерялся в экранных
+        пикселях, на 1920x1080 (scale 2.0) он покрывал вдвое меньшую долю
+        карты и у карт с ТЁМНЫМ рисунком (драконы) попадал целиком в арт мимо
+        белых полей — `hittest` краснел 2 раза из 5 «nothing rendered there
+        (80 vs felt 35)», хотя на снимке карта лежала в ячейке. Отсюда и
+        интермиттентность: падало на тех раздачах, где в ячейку уезжал дракон.
+        На 960x540 (scale 1.0) тот же патч захватывал светлые поля и проходил,
+        поэтому дефект оракула годами читался как «нестабильность»."""
         from PIL import Image
         cx, cy = self._map(x, y)
+        if self.rect is None:
+            self.measure()
+        half = max(1.0, half * self.rect["scale"])
         clip = {"x": max(cx - half, 0), "y": max(cy - half, 0), "width": half * 2, "height": half * 2}
         buf = self.page.screenshot(clip=clip)
         img = Image.open(io.BytesIO(buf)).convert("L")
