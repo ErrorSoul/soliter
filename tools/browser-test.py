@@ -115,6 +115,7 @@ class Session:
         self.failures = []
         self.t0 = time.time()
         self.rect = None
+        self.is_mobile = False
 
     # ---------- observation ----------
     def note(self, kind, text):
@@ -854,6 +855,99 @@ def scenario_audiobg(s):
     s.expect(bool(hits), "сторож ни разу не отчитался о живом контексте — apply() при создании не сработал")
     bad = [h for h in hits if not all(x == "suspended" for x in re.search(r"states=([a-z,]+)", h).group(1).split(","))]
     s.expect(not bad, f"контекст создан без фокуса и остался звучать: {bad}")
+
+
+def scenario_fullscreen(s):
+    """Раздел 3 требований Я.Игр: «Полноэкранный режим при запуске и в игре».
+
+    Живой fullscreen headless Chromium всё равно не показывает (нет оконного
+    менеджера) -- судим о ФАКТЕ и МОМЕНТЕ вызова через перехваченный
+    Element.prototype.requestFullscreen, тем же приёмом, каким focus/audiobg
+    перехватывают AudioContext: подмена ставится до первого скрипта страницы
+    (add_init_script), значит движок и наш собственный fullscreen-guard видят
+    стаб, а не настоящий браузерный API.
+
+    Стаб ОТКЛОНЯЕТ промис (TypeError) -- это и есть путь "iframe без
+    allow=fullscreen", который требование называет отдельно ("отказ обязан
+    быть безобидным"). Один прогон проверяет разом: 0 вызовов до жеста, >=1
+    вызов на PLAY (мобильный ввод) или 0 (десктопный), и что отказ НЕ всплыл
+    в консоль необработанным отклонением -- без этого .catch(noop) в
+    fullscreen-guard был бы непроверенным кодом.
+
+    Мобильный/десктопный кейс переключается флагом `--mobile` харнесса
+    (has_touch=True) -- см. его help: это ровно то же самое, что поворачивает
+    matchMedia('(hover:none) and (pointer:coarse)'), от которой зависит
+    наша ветка в engine_template.html. Без флага контекст десктопный (мышь,
+    hover) -- и требование мобильное, поэтому вызова быть НЕ должно вообще.
+
+    PLAY здесь водится МЫШЬЮ (click_game) -- Chromium эмулирует pointerup и
+    для мышиного клика, так что "PLAY вызвал fullscreen" сам по себе не
+    отличает "сработал pointerup" от "сработал touchend". На мобильной ветке
+    сценарий отдельно перезагружает страницу и стреляет синтетическим
+    touchend раньше любого другого жеста, чтобы подключение именно этого
+    слушателя было измерено, а не предположено по капчур-фазе. Событие
+    untrusted, реальной активации requestFullscreen оно бы не дало -- но
+    здесь проверяется подключение слушателя, а не браузерная активация.
+    """
+    s.page.add_init_script("""
+        window.__fsCalls = [];
+        var stub = function () {
+            window.__fsCalls.push(performance.now());
+            return Promise.reject(new TypeError("Fullscreen API is not enabled in this document"));
+        };
+        Object.defineProperty(Element.prototype, 'requestFullscreen', {value: stub, configurable: true});
+        Object.defineProperty(document, 'fullscreenEnabled', {value: true, configurable: true});
+    """)
+    s.page.goto(s.url)
+    s.boot()
+
+    before = s.page.evaluate("() => window.__fsCalls.length")
+    s.expect(before == 0, f"requestFullscreen позван ДО жеста игрока: {before} раз")
+
+    s.press_play()
+    s.wait(1, "промис .catch() успел отработать")
+
+    calls = s.page.evaluate("() => window.__fsCalls.length")
+    s.note("fullscreen", f"is_mobile={s.is_mobile} вызовов requestFullscreen после PLAY: {calls}")
+    if s.is_mobile:
+        s.expect(calls >= 1, "мобильный вход: PLAY не вызвал requestFullscreen")
+    else:
+        s.expect(calls == 0, "десктопный вход: requestFullscreen позван, а не должен был -- требование мобильное")
+
+    # Отказ обязан быть безобидным: стаб выше отклоняет промис, и если
+    # fullscreen-guard не поймал бы его .catch()'ем, движок Chromium печатает
+    # в консоль необработанное отклонение -- эту строку и ищем. classify()
+    # такую строку не считает FATAL (паттерны заточены под ошибки движка),
+    # поэтому здесь отдельная явная проверка.
+    unhandled = s.logs_matching(r"[Uu]nhandled|Uncaught \(in promise\)")
+    s.expect(not unhandled, f"отказ requestFullscreen всплыл в консоль необработанным: {unhandled}")
+
+    # Игра не должна сломаться от отказа: раздача уже проверена press_play
+    # (ждёт "I am MAIN SCRIPT"), но убеждаемся, что стол реально нарисован.
+    felt = s.brightness(*FREE_CELL[1])
+    s.expect(s.exposed_depth(1, felt) is not None,
+             "после отказа fullscreen игра не доигралась до нормальной раздачи")
+
+    if s.is_mobile:
+        # calls>=1 выше НЕ доказывает, что слушатель touchend вообще подключён:
+        # click_game() водит МЫШЬЮ, а pointerup у Chromium эмулируется и для
+        # мышиного клика, так что тот же результат был бы и без единой строки
+        # touchend в guard'е. Перезагружаем страницу (add_init_script переживает
+        # goto, __fsCalls обнуляется) и стреляем touchend'ом раньше любого
+        # другого жеста -- это единственный способ отличить "сработал touchend"
+        # от "сработал pointerup". Событие untrusted (dispatchEvent из JS), для
+        # настоящей активации requestFullscreen в проде оно бы не считалось --
+        # но здесь проверяется не активация (стаб её не смотрит), а то, что
+        # guard действительно слушает touchend, а не только pointerup/click.
+        s.page.goto(s.url)
+        s.boot()
+        before2 = s.page.evaluate("() => window.__fsCalls.length")
+        s.expect(before2 == 0, f"после перезагрузки счётчик не обнулился: {before2}")
+        s.page.evaluate(
+            "() => document.dispatchEvent(new Event('touchend', {bubbles: true, cancelable: true}))")
+        after_touch = s.page.evaluate("() => window.__fsCalls.length")
+        s.expect(after_touch >= 1,
+                 "синтетический touchend не вызвал requestFullscreen -- слушатель touchend не подключён")
 
 
 def scenario_i18n(s):
@@ -2034,6 +2128,7 @@ SCENARIOS = {"boot": scenario_boot, "hittest": scenario_hittest,
              "stuck": scenario_stuck, "win": scenario_win,
              "freecell": scenario_freecell, "census": scenario_census,
              "focus": scenario_focus, "audiobg": scenario_audiobg,
+             "fullscreen": scenario_fullscreen,
              "debugkeys": scenario_debugkeys, "restartrace": scenario_restartrace,
              "i18n": scenario_i18n, "yasdk": scenario_yasdk,
              "resize": scenario_resize, "dealrng": scenario_dealrng,
@@ -2058,6 +2153,13 @@ def main():
     ap.add_argument("--headed", action="store_true")
     ap.add_argument("--query", default="",
                     help="query-строка к index.html, например lang=ru (H2: так язык задают Я.Игры)")
+    ap.add_argument("--mobile", action="store_true",
+                    help="эмулировать тач как основной ввод (has_touch=True). Только это, БЕЗ "
+                         "is_mobile: is_mobile ещё и включает мета-viewport width=device-width "
+                         "и меняет innerWidth (960->981 замерено), а has_touch один в один "
+                         "поворачивает matchMedia('(hover:none) and (pointer:coarse)'), от которого "
+                         "зависит fullscreen-guard в engine_template.html -- без побочных эффектов "
+                         "на канвас-рект. Нужен сценарию `fullscreen`.")
     args = ap.parse_args()
 
     if not os.path.isfile(os.path.join(args.bundle, "index.html")):
@@ -2079,10 +2181,13 @@ def main():
             args=["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader",
                   "--disable-gpu-sandbox", "--autoplay-policy=no-user-gesture-required"],
         )
-        page = browser.new_page(viewport={"width": vw, "height": vh},
-                                device_scale_factor=args.dpr)
+        page_kwargs = {"viewport": {"width": vw, "height": vh}, "device_scale_factor": args.dpr}
+        if args.mobile:
+            page_kwargs["has_touch"] = True
+        page = browser.new_page(**page_kwargs)
         s = Session(page, args.out)
         s.url = url
+        s.is_mobile = args.mobile
 
         def on_console(m):
             kind = classify(m.text)
