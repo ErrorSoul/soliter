@@ -658,6 +658,45 @@ def scenario_focus(s):
     s.expect(st and all(x == "running" for x in st),
              f"после быстрого ухода-возврата звук остался глухим: {last}")
 
+    # Вторая тропа сторожа — потеря ФОКУСА при ВИДИМОЙ вкладке. До 2026-09-20 её
+    # не трогал ни один сценарий: условие сторожа `document.hidden ||
+    # !document.hasFocus()`, а тесты дёргали только hidden, поэтому правая
+    # половина проверялась ровно никак. Замерено мутацией: вырезал
+    # `|| !document.hasFocus()` — все прежние проверки остались зелёными.
+    #
+    # Это НЕ побочный эффект, а решение (см. комментарий audio-focus-guard):
+    # клик в адресную строку или уход в другое окно вкладку не прячет
+    # (document.hidden остаётся false), и без этой половины игра продолжала бы
+    # звучать в фоне. Тропа спорная — на Я.Играх игра живёт в iframe, где
+    # hasFocus() ложен при любом клике по странице-хозяину, — поэтому она
+    # обязана быть ПОД ТЕСТОМ, чтобы смена решения была видна, а не молчалива.
+    # Курсор лога перед этой тропой надо сбросить ЯВНО. Блок быстрого разворота
+    # выше читает через logs_matching, а он, в отличие от wait_for_log, курсор
+    # НЕ двигает и оставляет после себя непрочитанные suspended/resumed. Первая
+    # же версия проверки ниже ловила именно их и была зелёной на бандле, из
+    # которого `|| !document.hasFocus()` вырезан целиком — то есть не проверяла
+    # ничего. Поймано мутацией, чинится маркером: wait_for_log на нём протаскивает
+    # курсор за весь хвост предыдущего блока.
+    s.page.evaluate("() => console.log('[MARK] focus-path')")
+    s.wait_for_log(r"\[MARK\] focus-path", 10, "курсор лога сброшен")
+
+    def focused(has):
+        s.page.evaluate(
+            "(f) => { document.hasFocus = () => f;"
+            " window.dispatchEvent(new Event(f ? 'focus' : 'blur')); }", has)
+
+    focused(False)
+    line = s.wait_for_log(r"\[AUDIO\] suspended ctx=[1-9][0-9]* states=", 10, "фокус потерян")
+    st = audio_states(line)
+    s.note("audio", f"вкладка видима, фокус потерян: {line}")
+    s.expect(st and all(x == "suspended" for x in st),
+             f"фокус потерян при видимой вкладке, а звук играет: {line}")
+
+    focused(True)
+    line = s.wait_for_log(r"\[AUDIO\] resumed ctx=[1-9][0-9]* states=", 10, "фокус вернулся")
+    st = audio_states(line)
+    s.expect(st and all(x == "running" for x in st),
+             f"фокус вернулся, а звук так и остался выключен: {line}")
 
 
 def scenario_restartrace(s):
