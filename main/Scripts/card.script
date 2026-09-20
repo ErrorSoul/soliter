@@ -15,7 +15,7 @@ function init(self)
    -- Сохраняем начальный цвет спрайта
    self.normal_tint = vmath.vector4(1, 1, 1, 1)
    self.highlight_tint = vmath.vector4(1.15, 1.15, 1.15, 1) -- Белое свечение
-   -- sprite.set_constant("#sprite", "tint", self.highlight_tint)
+   -- go.set("#sprite", "tint", self.highlight_tint)
    go.set_position(vmath.vector3(go.get_position().x,
                                  go.get_position().y,
                                  config.Z_CARD_DEFAULT))
@@ -76,15 +76,70 @@ function on_message(self, message_id, message, sender)
 
    if message_id == hash("start_drag") then
       self.is_dragging = true
+      -- Новый захват отменяет ВСЁ прежнее движение карты. Иначе перезахват
+      -- посреди покачивания (оно идёт по position.x после доехавшего возврата)
+      -- оставил бы цепочку живой: `go.set_position` анимацию не отменяет
+      -- (замер Q2 в architecture.md), и её последний колбэк послал бы владельцу
+      -- `relayout` уже ПОСЛЕ того, как карту снова подняли, — колонка выдернула
+      -- бы её из руки. `drag_update` этот хвост гасит, но приходит лишь
+      -- следующим кадром; здесь окно закрывается сразу.
+      go.cancel_animations(".", "position")
+      -- O1. Карта поднимается над столом ОДНИМ присваиванием z, а не внутри
+      -- анимации position.
+      --
+      -- z — часть vector3 `position`, а `drag_update` анимирует position целиком
+      -- и с РАЗНОЙ длительностью на карту (ui_fx.drag_lag: 0.05 с у нижней карты
+      -- руки, 0.16 с у верхней). Соседей в колонке разделяет 0.002 по z, а подъём
+      -- равен 0.3 — то есть карта с коротким лагом обгоняет соседок по z на два
+      -- порядка раньше, чем они трогаются с места, и стопка какое-то время
+      -- рисуется вывернутой наизнанку. Замерено зондом на движке
+      -- (--scenario dragz, сборка до правки): на кадре 1 порядок 0.012…0.030,
+      -- на кадре 2 нижняя карта уже 0.1052 против 0.0806 у соседки — инверсия
+      -- держится 40 кадров, около 0.7 с. Это и есть «мерцание при подъёме».
+      --
+      -- Прибавка одинаковая для всех, поэтому порядок сохраняется точно. И она
+      -- ровно та, что `drag_update` кладёт в цель, — значит по z анимировать
+      -- больше нечего, интерполяция идёт по константе. Делить position на
+      -- position.x/y незачем: составное и так гасит подсвойства (замер Q1/Q3 в
+      -- architecture.md). Прежняя формулировка этого комментария утверждала
+      -- обратное — «подсвойства бы не остановили» — и была неверной.
+      --
+      -- База подъёма запоминается ОДИН раз на серию и живёт до посадки.
+      -- Иначе прибавка накапливается, и это не теория: `hit_test` читает
+      -- позицию карты живьём, поэтому при перезахвате БЕЗ посадки курсор
+      -- забирает в original_position уже поднятую z. Два пути туда —
+      -- ветка A2 в cursor.on_input (новый press, когда прошлый драг не получил
+      -- release: HTML5 теряет mouseup за канвасом) и захват карты, ещё летящей
+      -- назад после drop_failed. Дальше void-дроп сажает карту на заражённую
+      -- z НАВСЕГДА: возврат в ту же колонку не зовёт update_visible_cards,
+      -- единственное место, где z пересчитывается авторитетно. Счёт при
+      -- far = 1 (render.render_script): 0.3 → 0.6 → 0.9 → карта за плоскостью
+      -- отсечения, то есть исчезает. Найдено ревью grok-4.5.
+      --
+      -- Поэтому z в руке считается от СВОЕЙ базы, а не от текущей позиции, и
+      -- на неё же карта возвращается в drop_failed. База гасится только
+      -- посадкой (drop_success — там позицию задаёт слот) или доехавшим
+      -- возвратом; отменённая анимация колбэк не зовёт, и база переживает
+      -- перезахват в полёте — ровно то, что нужно.
+      self.drag_base_z = self.drag_base_z or go.get_position().z
+      local p = go.get_position()
+      go.set_position(vmath.vector3(p.x, p.y, self.drag_base_z + config.Z_CARD_DRAGGING))
       reset_card_fx(false) -- новый драг начинается с ровной карты, а не с остатков прошлого
       sfx.card_pick()
       go.animate(".", "scale", go.PLAYBACK_ONCE_FORWARD,
           vmath.vector3(1.1, 1.1, 1), go.EASING_OUTQUAD, 0.1)
-      sprite.set_constant("#sprite", "tint", vmath.vector4(1.15, 1.15, 1.15, 1))
+      go.set("#sprite", "tint", vmath.vector4(1.15, 1.15, 1.15, 1))
 
    elseif message_id == hash("drag_update") and self.is_dragging then
       go.cancel_animations(".", "position")
-      local target = message.position + vmath.vector3(0, 0, 0.3)
+      -- По x/y ведёт курсор, по z — СВОЯ база, та же, что подняла карту в
+      -- start_drag: цель по z равна текущей z, анимировать нечего. Брать z из
+      -- `message.position` нельзя, хотя курсор её и складывает
+      -- (original_position + relative_pos): при перезахвате без посадки эта
+      -- сумма несёт уже поднятую z, и цель уехала бы на второй Z_CARD_DRAGGING.
+      local target = vmath.vector3(message.position.x, message.position.y,
+                                   (self.drag_base_z or message.position.z)
+                                   + config.Z_CARD_DRAGGING)
       -- lag: чем глубже карта в стопке, тем дольше доводка — стопка изгибается
       -- веером вместо того, чтобы ехать жёстким телом (ui_fx.drag_lag).
       go.animate(".", "position", go.PLAYBACK_ONCE_FORWARD,
@@ -115,14 +170,15 @@ function on_message(self, message_id, message, sender)
           vmath.vector3(1, 1, 1), go.EASING_OUTQUAD, 0.15)
       if message.animation then
           -- Auto-move flash: белая вспышка
-          sprite.set_constant("#sprite", "tint", vmath.vector4(1.3, 1.3, 1.3, 1))
+          go.set("#sprite", "tint", vmath.vector4(1.3, 1.3, 1.3, 1))
           timer.delay(0.35, false, function()
-              sprite.set_constant("#sprite", "tint", vmath.vector4(1, 1, 1, 1))
+              go.set("#sprite", "tint", vmath.vector4(1, 1, 1, 1))
           end)
       else
-          sprite.set_constant("#sprite", "tint", vmath.vector4(1, 1, 1, 1))
+          go.set("#sprite", "tint", vmath.vector4(1, 1, 1, 1))
       end
 
+      self.drag_base_z = nil   -- села: дальше высоту назначает слот
       local pos = message.position + vmath.vector3(0, 0, 0.001)
       msg.post(message.slot_id, "occupy_slot", {
                   card = message.card,
@@ -145,12 +201,22 @@ function on_message(self, message_id, message, sender)
    elseif message_id == hash("drop_failed") then
       self.is_dragging = false
       sfx.card_error()
-      sprite.set_constant("#sprite", "tint", vmath.vector4(1, 1, 1, 1))
+      go.set("#sprite", "tint", vmath.vector4(1, 1, 1, 1))
       reset_card_fx(true)
       go.animate(".", "scale", go.PLAYBACK_ONCE_FORWARD,
           vmath.vector3(1, 1, 1), go.EASING_OUTQUAD, 0.15)
+      -- Возврат по z идёт на СВОЮ базу, а не на ту, что прислал курсор:
+      -- original_position он снимает с hit_test, и при перезахвате без посадки
+      -- она уже поднята. Сядь карта на неё — заражение стало бы постоянным
+      -- (возврат в ту же колонку update_visible_cards не зовёт).
+      local back = vmath.vector3(message.position.x, message.position.y,
+                                 self.drag_base_z or message.position.z)
       go.animate(".", "position", go.PLAYBACK_ONCE_FORWARD,
-                 message.position, go.EASING_OUTQUAD, 0.3, 0, function()
+                 back, go.EASING_OUTQUAD, 0.3, 0, function()
+                     -- База гасится только ДОЕХАВШИМ возвратом: перехватят
+                     -- карту в полёте — колбэк не позовётся, база уцелеет, и
+                     -- новый подъём снова отсчитается от осевшей высоты.
+                     self.drag_base_z = nil
                      local pos = go.get_position()
                      go.animate(".", "position.x", go.PLAYBACK_ONCE_FORWARD,
                          pos.x + 5, go.EASING_OUTSINE, 0.05, 0, function()
@@ -159,7 +225,23 @@ function on_message(self, message_id, message, sender)
                                      go.animate(".", "position.x", go.PLAYBACK_ONCE_FORWARD,
                                          pos.x + 3, go.EASING_OUTSINE, 0.05, 0, function()
                                              go.animate(".", "position.x", go.PLAYBACK_ONCE_FORWARD,
-                                                 pos.x, go.EASING_OUTSINE, 0.05)
+                                                 pos.x, go.EASING_OUTSINE, 0.05, 0, function()
+                                                     -- Место карте назначает её ВЛАДЕЛЕЦ, а не
+                                                     -- курсор: `message.position` он собрал из
+                                                     -- hit_test, то есть с живой карты, и на
+                                                     -- перезахвате в полёте туда попадает точка
+                                                     -- полёта. Слот знает раскладку.
+                                                     --
+                                                     -- Просьба идёт в САМОМ КОНЦЕ покачивания, а
+                                                     -- не сразу после возврата: слот пишет
+                                                     -- position целиком, и относительно
+                                                     -- анимации position.x порядок этих двух
+                                                     -- записей ничем не гарантирован. Так
+                                                     -- покачивание заведомо доигрывает своё.
+                                                     -- Найдено вторым кругом ревью grok-4.5.
+                                                     msg.post(self.owner, "relayout",
+                                                              { id = go.get_id() })
+                                                 end)
                                          end)
                                  end)
                          end)
@@ -181,13 +263,13 @@ function on_message(self, message_id, message, sender)
    if message_id == hash("highlight") then
       self.is_highlighted = true
       -- Pulsing glow: bright yellow-white tint
-      sprite.set_constant("#sprite", "tint", vmath.vector4(1.5, 1.4, 1.0, 1))
+      go.set("#sprite", "tint", vmath.vector4(1.5, 1.4, 1.0, 1))
       go.cancel_animations(".", "scale")
       go.animate(".", "scale", go.PLAYBACK_LOOP_PINGPONG,
           vmath.vector3(1.06, 1.06, 1), go.EASING_INSINE, 0.5)
    elseif message_id == hash("unhighlight") then
       self.is_highlighted = false
-      sprite.set_constant("#sprite", "tint", self.normal_tint)
+      go.set("#sprite", "tint", self.normal_tint)
       go.cancel_animations(".", "scale")
       go.set(".", "scale", vmath.vector3(1, 1, 1))
    end

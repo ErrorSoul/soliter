@@ -9,6 +9,26 @@ local coords = require("main.Scripts.coords")
 local hit = require("main.Scripts.hit_test")
 local ui_fx = require("main.Scripts.ui_fx")
 
+-- O1-зонд. Печатает раз в кадр состояние КАЖДОЙ карты в руке: z (порядок
+-- отрисовки), scale.x и euler.z (эффекты драга) и y. Нужен, чтобы отличить
+-- четыре разные причины «стопка мерцает» друг от друга — по одному прогону:
+--   z скачет один раз в начале и застывает      → z едет внутри анимации position
+--   scale.x дрожит кадр к кадру и не сходится   → драка композита "scale" и "scale.x"
+--   scale.x плавно колеблется с периодом ~0.5 с → под драгом остался pingpong подсветки
+--   позиция на кадр прыгает в координаты колонки → колонку переложил update_visible_cards
+-- Сценарий стенда: tools/browser-test.py --scenario dragz (ТРЕБУЕТ бандла, где
+-- этот флаг и DEBUG_LONG_COLUMN в main.script выставлены в true).
+local DEBUG_DRAG_PROBE = false
+
+local function get_slot_target_type(slot_id)
+   if string.sub(slot_id, 1, 9) == "base_slot" then return "base"
+   elseif string.sub(slot_id, 1, 9) == "free_slot" then return "free"
+   elseif string.sub(slot_id, 1, 12) == "tableau_slot" then return "tableau_empty"
+   elseif slot_id == "flower_slot" then return "flower"
+   end
+   return "unknown"
+end
+
 -- Драг начинается «с нуля скорости». Без этого первый же кадр считал сдвиг от
 -- prev_cursor_x, оставшегося от прошлого драга (или от нуля после init), и
 -- карта стартовала с мгновенным предельным наклоном — замерено зондом в
@@ -16,6 +36,7 @@ local ui_fx = require("main.Scripts.ui_fx")
 local function reset_drag_fx(self)
    self.prev_cursor_x = self.cursor_pos and self.cursor_pos.x or nil
    self.drag_speed_x = nil
+   self.probe_frame = 0   -- O1-зонд: нумерация кадров идёт от начала КАЖДОГО драга
 end
 
 function init(self)
@@ -520,7 +541,17 @@ function on_message(self, message_id, message, sender)
       self.is_dragging = true
       reset_drag_fx(self)
       self.original_position = self.pending_drop.slot_pos
-      self.drag_offset = vmath.vector3(0, 0, 0)
+      -- По x/y карта из ячейки садится ровно на курсор (нулевое смещение), а по
+      -- z несёт свою высоту: cursor_pos.z всегда 0.
+      --
+      -- Честно про область действия: с тех пор как card.script считает подъём
+      -- от собственной drag_base_z, инвариант «z в руке — константа» держится и
+      -- БЕЗ этого слагаемого — проверено мутацией, обнуление z здесь ни одного
+      -- теста не роняет. Слагаемое оставлено, чтобы payload drag_update нёс
+      -- честную позицию карты, а не половину её; сторожем инварианта оно
+      -- больше не является. Возврат карты (drop_failed) по-прежнему идёт в
+      -- slot_pos.
+      self.drag_offset = vmath.vector3(0, 0, go.get_position(self.selected_card).z)
       msg.post(self.selected_card, "start_drag")
    elseif message_id == hash("send_to_flower_slot") then
       local fl_pos = self.flower_slot['flower_slot']
@@ -710,6 +741,20 @@ function update(self, dt)
       local speed_x = self.drag_speed_x
       local tilt_deg = ui_fx.drag_tilt_deg(speed_x)
       local squash = ui_fx.drag_squash(speed_x)
+
+      if DEBUG_DRAG_PROBE then
+         self.probe_frame = (self.probe_frame or 0) + 1
+         local hand = self.stack_cards
+         if not (self.dragging_stack and hand) and self.selected_card then
+            hand = { { id = self.selected_card } }
+         end
+         for i, card in ipairs(hand or {}) do
+            local p = go.get_position(card.id)
+            print(string.format("[DRAGZ] f=%d i=%d z=%.5f y=%.2f sx=%.4f ez=%.3f",
+                                self.probe_frame, i, p.z, p.y,
+                                go.get(card.id, "scale.x"), go.get(card.id, "euler.z")))
+         end
+      end
 
       if self.dragging_stack and self.stack_cards then
          for i, card in ipairs(self.stack_cards) do
