@@ -9,6 +9,8 @@ function M.install()
    M.go_self_pos = { x = 0, y = 0, z = 0 }
    M.anims = {}
    M.anim_log = {}
+   M.save_fs = {}   -- D3: сбрасываем фальшивую файловую систему между тестами
+   M.factory_created = {}
    _G.hash = function(s) return tostring(s) end
 
    -- vector3 needs `+` because scripts add offsets to message.position.
@@ -121,11 +123,41 @@ function M.install()
       get_size = function() return M.window_size[1], M.window_size[2] end,
    }
 
+   -- D3: sys.save/sys.load/sys.get_save_file — настоящее API Defold (не
+   -- выдумка), но в тестах ему некуда писать на диск. Храним в M.save_fs,
+   -- как go_positions/anims выше: ключ — путь, значение — та же таблица,
+   -- что положил sys.save (Defold сериализует таблицу целиком, не строку).
+   -- sys.load на отсутствующий файл возвращает {} — так у настоящего Defold,
+   -- и код должен уметь отличить «файла нет» от «файл повреждён» так же,
+   -- как в бою.
+   -- D3: factory.create — НАСТОЯЩЕЕ API Defold (не выдумка вроде удалённого
+   -- sprite.set_constant), поэтому стабу можно его отражать. Возвращает
+   -- уникальный id, как движок, и копит вызовы: восстановление партии только
+   -- через них и наблюдаемо — сколько карт создано и с какими координатами.
+   M.factory_created = {}
+   _G.factory = {
+      create = function(url, position, rotation, properties, scale)
+         local id = "card_go_" .. (#M.factory_created + 1)
+         M.factory_created[#M.factory_created + 1] = { url = tostring(url), position = position, id = id }
+         return id
+      end,
+   }
+
    _G.sys = {
       get_config_int = function(key, default)
          if key == "display.width" then return 960 end
          if key == "display.height" then return 540 end
          return default
+      end,
+      get_save_file = function(app_id, filename)
+         return tostring(app_id) .. "/" .. tostring(filename)
+      end,
+      save = function(path, t)
+         M.save_fs[path] = t
+         return true
+      end,
+      load = function(path)
+         return M.save_fs[path] or {}
       end,
    }
 end
@@ -137,6 +169,8 @@ M.go_positions = {}
 M.go_self_pos = { x = 0, y = 0, z = 0 }
 M.anims = {}
 M.anim_log = {}
+M.save_fs = {}
+M.factory_created = {}
 
 -- Последняя анимация свойства prop (или nil). Свойство пишут кадр за кадром,
 -- смысл имеет именно последняя цель.

@@ -1943,6 +1943,90 @@ def scenario_regrab(s):
         s.expect_empty_at(VOID[0], VOID[1], felt, f"карта не зависла в пустоте, цикл {n}")
     s.shot("after")
 
+def scenario_saveload(s):
+    """D3: партия переживает НАСТОЯЩУЮ перезагрузку страницы.
+
+    Юниты D3 гоняются под Defold-стабом, где `sys.save` кладёт таблицу в
+    обычный Lua-стол. В HTML5 это совсем другой путь: движок пишет в IDBFS и
+    синхронизирует его с IndexedDB браузера асинхронно, уже после возврата из
+    `sys.save`. Стаб такую задержку не воспроизводит по построению, поэтому
+    «сохранение работает» до этого сценария означало только «код вызван».
+
+    Оракул — вектор глубин восьми колонок (тот же приём, что в `resize`) плюс
+    занятая ячейка. Ограничение честно: по пикселям не видно, КАКИЕ карты
+    лежат, поэтому доска, случайно совпавшая по глубинам, прошла бы. Поэтому
+    сначала делается ХОД, ломающий вектор свежей раздачи: восстановленная
+    доска обязана совпасть с доской ПОСЛЕ хода, а не с любой раздачей.
+
+    Негативный контроль в конце обязателен: пересдача должна вектор сломать —
+    иначе оракул слеп и зеленел бы на потерянном прогрессе.
+    """
+    s.boot()
+    s.press_play()
+    s.wait(2.5, "раздача осела")
+    felt = s.brightness(*FREE_CELL[1])
+    s.note("pixel", f"эталон сукна (пустая ячейка 1) luminance={felt:.0f}")
+
+    def depths(label):
+        s.measure()
+        v = [s.exposed_depth(c, felt) for c in range(1, 9)]
+        s.note("depths", f"{label}: {v}")
+        return v
+
+    dealt = depths("сразу после раздачи")
+    if not s.expect(any(d is not None for d in dealt), "стол пуст — сравнивать нечего"):
+        return
+
+    # Ход, который ломает вектор свежей раздачи: открытая карта колонки 1 в
+    # ячейку 1. Он легален на любой раздаче — как в `hittest`.
+    depth = s.exposed_depth(1, felt)
+    if not s.expect(depth is not None, "колонка 1 пуста — нечего двигать"):
+        return
+    src = (TABLEAU_X[1], TABLEAU_TOP_Y - depth * CARD_PITCH)
+    s.drag_game(src[0], src[1], FREE_CELL[1][0], FREE_CELL[1][1], "карта -> свободная ячейка")
+    s.wait(1.5, "ход осел")
+    s.shot("01-after-move")
+
+    moved = depths("после хода")
+    s.expect(moved != dealt, "ход не изменил стол — дальше проверять нечего")
+    s.expect_card_at(*FREE_CELL[1], felt, "карта легла в ячейку 1")
+
+    # Запас на асинхронный сброс IDBFS -> IndexedDB. Это и есть то, чего стаб
+    # не воспроизводит: `sys.save` вернулся, а на диске ещё пусто.
+    s.wait(2.5, "сохранение доехало до IndexedDB")
+
+    # Факт перезагрузки проверяем ДВУМЯ независимыми маркерами: движок
+    # объявляет себя заново (новая загрузка страницы) и уровень грузится
+    # заново (новый init main.script). Без этого совпадение доски ниже
+    # доказывало бы только то, что мы смотрим на ту же живую страницу.
+    # ⚠ Порядок важен: "I am MAIN SCRIPT" печатает init уровня, а сразу после
+    # перезагрузки игра стоит на стартовом экране — считать его можно только
+    # ПОСЛЕ press_play.
+    engine_before = len(s.logs_matching(r"Defold Engine"))
+    deals_before = len(s.logs_matching(r"I am MAIN SCRIPT"))
+    s.page.goto(s.url)
+    s.boot()
+    s.expect(len(s.logs_matching(r"Defold Engine")) > engine_before,
+             "движок не перезапустился — страница не перезагружалась")
+    s.press_play()
+    s.expect(len(s.logs_matching(r"I am MAIN SCRIPT")) > deals_before,
+             "уровень не грузился заново — сценарий не проверил то, ради чего написан")
+    s.wait(3, "восстановленная доска осела")
+    s.shot("02-after-reload")
+
+    restored = depths("после перезагрузки")
+    s.expect(restored == moved,
+             f"после перезагрузки доска другая: было {moved}, стало {restored}")
+    s.expect_card_at(*FREE_CELL[1], felt, "карта в ячейке 1 пережила перезагрузку")
+
+    # Негативный контроль: без него проверка выше зеленела бы и на доске,
+    # которая просто похожа по глубинам.
+    s.key("Space", "пересдача")
+    s.wait(3, "новая раздача осела")
+    s.expect(depths("после пересдачи") != restored,
+             "вектор глубин не различает даже полную пересдачу — оракул слепой")
+
+
 SCENARIOS = {"boot": scenario_boot, "hittest": scenario_hittest,
              "dragz": scenario_dragz, "regrab": scenario_regrab,
              "guilock": scenario_guilock, "dragonrestart": scenario_dragonrestart,
@@ -1953,7 +2037,8 @@ SCENARIOS = {"boot": scenario_boot, "hittest": scenario_hittest,
              "debugkeys": scenario_debugkeys, "restartrace": scenario_restartrace,
              "i18n": scenario_i18n, "yasdk": scenario_yasdk,
              "resize": scenario_resize, "dealrng": scenario_dealrng,
-             "tutorialfree": scenario_tutorialfree}
+             "tutorialfree": scenario_tutorialfree,
+             "saveload": scenario_saveload}
 
 
 def main():

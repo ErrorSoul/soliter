@@ -65,9 +65,27 @@ function init(self)
    elseif DEBUG_O2_SWEEP then
       deal_o2_sweep_test(self)
    else
-      self.deck = create_deck(self)
-      shuffle_deck(self)
-      deal_cards(self)
+      -- D3: единственная точка входа для восстановления — здесь, а не в
+      -- game_manager. game_manager решает, СТОИТ ли вообще искать сохранение
+      -- (restart_level/switch_level стирают его первым делом, см.
+      -- game_manager.script), а что с ним делать — уже наша забота.
+      local saved = load_saved_game()
+      if saved then
+         self.restoring = true
+         msg.post(self.cursor, "disable_input")
+         local layout = snapshot_to_layout(saved)
+         restore_tableau_from_layout(self, layout)
+         -- Свободные ячейки/foundation/цветок ждут, пока cursor разошлёт
+         -- set_cursor по слотам (main -> cursor -> ячейка, см.
+         -- restore_cells_and_foundation) — раньше free_cell.script падает на
+         -- pairs(nil). Запас взят с большим отрывом от вероятного числа кадров
+         -- в этой цепочке.
+         self.pending_restore = { layout = layout, frames = 10 }
+      else
+         self.deck = create_deck(self)
+         shuffle_deck(self)
+         deal_cards(self)
+      end
    end
 
    self.currentState = self.states.PLAYING
@@ -114,6 +132,15 @@ function init(self)
    -- Кадрами это мерить нельзя: на 120 Гц их вдвое больше за то же время —
    -- ровно та ошибка, что уже ловилась в бюджете авто-сбора.
    if self.tutorial_mode then self.hint_delay = 1.5 end
+   -- D3: отпечаток свежей раздачи. Без этого reload ДО первого хода не находил
+   -- бы сохранения (request_save иначе взводится только событиями хода —
+   -- card_to_base/tableau_card_added/... — а на голой раздаче их не бывает,
+   -- см. should_save) и раздавал бы новую колоду вместо той, что уже увидел
+   -- игрок. Восстановленную партию здесь пересохранять незачем — на диске
+   -- уже лежит то же самое.
+   if self.is_full_deal and not self.restoring then
+      request_save(self, 3)
+   end
 end
 
 
@@ -683,6 +710,132 @@ function shuffle_deck(self)
    end
 end
 
+-- D3: восстановление раскладки колонок из сохранения. Тот же приём, что у
+-- deal_dragon_test/deal_cell_drain_test (фабрика + set_card + update_stack),
+-- но БЕЗ анимации разлёта — это не раздача, доска должна просто «оказаться»
+-- на месте при загрузке. update_stack сразу ставит tableau_script.stack, и её
+-- же update() отправит верхнюю карту дальше (auto-flying 2/цветок,
+-- send_counter_to_button для дракона) — ровно так же, как после обычной
+-- раздачи. Честному сохранению это не грозит: config.auto_flies_from_tableau
+-- уводит 2/цветок с верхушки БЕЗУСЛОВНО (вне туториала), значит сохранённая
+-- не-туториальная доска верхушкой такую карту никогда не держит.
+function restore_tableau_from_layout(self, layout)
+   local tableau_positions = get_tableau_positions(self)
+   self.tableau_stacks = {}
+   for i = 1, 8 do
+      self.tableau_stacks[i] = { slot_id = "tableau_slot" .. i, cards = {}, animations_completed = 0 }
+   end
+   for stack_index = 1, 8 do
+      local cards = layout.tableau[stack_index] or {}
+      local slot_id = "tableau_slot" .. stack_index
+      local stack_position = tableau_positions[stack_index]
+      local cards_in_stack = #cards
+      for card_index, card_data in ipairs(cards) do
+         local offset = vmath.vector3(0, (card_index - 1) * config.stack_offset_y(cards_in_stack, stack_position.y), 0)
+         local target_position = stack_position + offset
+         target_position.z = 0.2 + card_index * 0.001
+         local card = factory.create("#card_factory", target_position, vmath.quat(0, 0, 0, 1))
+         msg.post(card, "set_card", { data = card_data, slot_id = slot_id })
+         go.set(card, "scale", vmath.vector3(1, 1, 1))
+         table.insert(self.tableau_stacks[stack_index].cards, { id = card, data = card_data, slot_id = slot_id })
+         table.insert(self.cards, card)
+      end
+      msg.post(slot_id, "update_stack", { cursor = self.cursor, index = stack_index, stack = self.tableau_stacks[stack_index].cards })
+   end
+end
+
+-- D3: вторая половина восстановления — свободные ячейки, foundation, цветок.
+-- Всё проведено через ТЕ ЖЕ occupy_slot, которым пользуется живая игра
+-- (free_cell.script/base_slot.script/flower_slot.script), а не прямой
+-- записью self.foundation_top/self.free_cell_state — эти скрипты держат
+-- СВОЁ состояние (is_occupied/is_blocked/last_card/card_count), и запись
+-- в main мимо них оставила бы слот, который не помнит, что на нём лежит.
+-- occupy_slot на base_slot/free_cell шлёт main card_to_base/free_cell_changed
+-- — main.on_message сам поднимет foundation_top/suit_to_base/free_cell_state,
+-- тем же путём, что и обычный ход игрока. Исключение одно — счёт дракона в
+-- незапечатанной ячейке кнопкой его масти: живая игра делает его ещё на
+-- верхушке колонки, поэтому здесь он послан явно (см. цикл ячеек).
+--
+-- Отложено на несколько кадров ПОСЛЕ init: free_cell.script/base_slot.script
+-- получают self.cursor/dragon_button_trace через set_cursor, а его шлёт
+-- cursor.script в ответ на set_free_slots/set_base_slots — цепочку из двух
+-- сообщений main -> cursor -> ячейка. Дёрнуть occupy_slot до того, как она
+-- дойдёт, роняет free_cell.script на pairs(nil) (dragon_button_trace ещё не
+-- пришёл). Здесь нет способа узнать точный кадр развязки, поэтому запас
+-- взят с большим отрывом (см. init) — дороже одним кадром ожидания при
+-- загрузке, чем гонкой на живом движке.
+function restore_cells_and_foundation(self, layout)
+   for ord = 1, 3 do
+      local fc = layout.free_cells[ord]
+      if fc then
+         local slot_id = "free_slot" .. ord
+         local pos = go.get_position(slot_id)
+         local card = factory.create("#card_factory", pos, vmath.quat(0, 0, 0, 1))
+         msg.post(card, "set_card", { data = fc.card_data, slot_id = slot_id })
+         go.set(card, "scale", vmath.vector3(1, 1, 1))
+         table.insert(self.cards, card)
+         msg.post(slot_id, "occupy_slot", {
+            card = { id = card, data = fc.card_data },
+            position = pos,
+            complete = fc.blocked,
+         })
+         -- Единственный шаг живой игры, который occupy_slot НЕ повторяет:
+         -- кнопка масти считает дракона, когда он всплывает верхушкой колонки
+         -- (tableau_script.last_card_to_slot), и из ячейки её счёт не берётся —
+         -- free_cell.send_to_dragon_buttons свою масть пропускает. В живой игре
+         -- дракон попадает в ячейку только с верхушки, то есть уже засчитанным;
+         -- восстановление кладёт его сразу в ячейку, и без этого сообщения
+         -- кнопка масти недосчитывается — сбор после перезагрузки не загорится.
+         -- Запечатанную ячейку не считаем: эта масть уже собрана.
+         if not fc.blocked and fc.card_data.value == 'd' then
+            msg.post(config.DRAGON_BUTTON_TRACE[fc.card_data.suit], "send_counter_to_button",
+               { id = card, data = fc.card_data, slot_id = slot_id })
+         end
+      end
+   end
+
+   -- Порядок значим: base_slot.occupy_slot копит счётчик и z по числу вызовов,
+   -- поэтому ранги кладём строго по возрастанию — 2,3,4... — как если бы игрок
+   -- (или авто-финиш) выложил их по очереди. Какой из трёх base_slot достаётся
+   -- какой масти, игре не важно — оно определяется тем, кто пришёл первым
+   -- (main.on_message: suit_to_base ставится один раз), поэтому фиксированный
+   -- порядок red/blue/green безопасен.
+   local BASE_SLOT_FOR_SUIT = { red = "base_slot1", blue = "base_slot2", green = "base_slot3" }
+   for _, suit in ipairs({ "red", "blue", "green" }) do
+      local slot_id = BASE_SLOT_FOR_SUIT[suit]
+      local pos = go.get_position(slot_id)
+      local top = layout.foundation[suit] or 1
+      for value = 2, top do
+         local card_data = { id = value .. "_" .. suit, value = value, suit = suit }
+         local card = factory.create("#card_factory", pos, vmath.quat(0, 0, 0, 1))
+         msg.post(card, "set_card", { data = card_data, slot_id = slot_id })
+         go.set(card, "scale", vmath.vector3(1, 1, 1))
+         table.insert(self.cards, card)
+         msg.post(slot_id, "occupy_slot", { card = { id = card, data = card_data }, position = pos, animation = false })
+      end
+   end
+
+   if layout.flower then
+      local slot_id = "flower_slot"
+      local pos = go.get_position(slot_id)
+      local card_data = { id = "flower", value = 'f', suit = 'flower', is_flower = true }
+      local card = factory.create("#card_factory", pos, vmath.quat(0, 0, 0, 1))
+      msg.post(card, "set_card", { data = card_data, slot_id = slot_id })
+      go.set(card, "scale", vmath.vector3(1, 1, 1))
+      table.insert(self.cards, card)
+      msg.post(slot_id, "occupy_slot", { card = { id = card, data = card_data }, position = pos, animation = false })
+   end
+
+   self.restoring = false
+   -- Каскады, запущенные восстановлением (card_to_base -> begin_auto_collect
+   -- при foundation=27, например) сами держат свой disable_input/enable_input
+   -- через end_auto_collect. Возвращать ввод здесь можно только если ни один
+   -- такой каскад не взял замок на себя.
+   if not self.auto_collecting and not self.auto_finishing then
+      msg.post(self.cursor, "enable_input")
+   end
+end
+
 function on_input(self, action_id, action)
 end
 
@@ -887,6 +1040,303 @@ end
 function build_solver_snapshot(self)
    local snap, _, _, err = snapshot_and_go_map(self)
    return snap, err
+end
+
+-- Публичная обёртка над census_error (см. выше, локальна намеренно — она уже
+-- встроена в snapshot_and_go_map). Загрузчику сохранения нужна ровно та же
+-- перепись, но на СНАПШОТЕ ИЗ ФАЙЛА, а не с живой доски — вызвать
+-- snapshot_and_go_map тут нечем, self ещё не собран. census_error уже умеет
+-- принимать голый snap (тот же формат), так что переиспользуем её как есть.
+function snapshot_census_error(snap)
+   return census_error(snap)
+end
+
+-- ===================== D3: сохранение и восстановление партии =====================
+--
+-- Формат хранения — свой, не JSON. html5.run умеет вернуть в Lua только
+-- строку и передать в JS тоже только строку-литерал; JSON после encode
+-- содержит кавычки, которые пришлось бы экранировать при вставке в JS-код
+-- (см. yandex.lua). Собственный формат без кавычек и бэкслэшей снимает вопрос
+-- целиком, а заодно проще читается глазами в логе при разборе бага.
+--
+-- Раскладка: "V1;T:<колонка>|...(8)|<колонка>;C:<ячейка>|<ячейка>|<ячейка>;F:red,blue,green;L:0|1"
+-- Токен карты: "5R" (пятёрка красных), "DR" (дракон красный), "F" (цветок,
+-- масть не нужна — она всегда одна). Ячейка с заблокированной (собранной)
+-- мастью драконов помечена звёздочкой после токена: "DR*".
+local SAVE_APP_ID = "shenzhen_solitaire"
+local SAVE_FILE = "progress"
+local SAVE_VERSION = 1
+
+local SUIT_CHAR = { red = "R", blue = "B", green = "G" }
+local CHAR_SUIT = { R = "red", B = "blue", G = "green" }
+
+-- value/suit -> токен. nil,err на неизвестной масти/значении — сигнал вызывающему
+-- коду, что снапшот нечестный и сохранять/восстанавливать его нельзя.
+local function encode_card(c)
+   if type(c) ~= "table" then return nil, "не таблица" end
+   if c.value == 'f' then return "F" end
+   local sc = SUIT_CHAR[c.suit]
+   if not sc then return nil, "неизвестная масть " .. tostring(c.suit) end
+   if c.value == 'd' then return "D" .. sc end
+   if type(c.value) == "number" and c.value >= 2 and c.value <= 10 then
+      return tostring(c.value) .. sc
+   end
+   return nil, "неизвестное значение карты " .. tostring(c.value)
+end
+
+-- Обратное преобразование. Строгая проверка формы токена (не просто "распарсили
+-- что-то похожее") — чужое/битое сохранение обязано отвалиться здесь, а не
+-- отдать мусорную карту дальше по цепочке.
+local function decode_card(tok)
+   if tok == "F" then return { value = 'f', suit = 'flower' } end
+   if #tok < 2 then return nil, "короткий токен " .. tostring(tok) end
+   local suit = CHAR_SUIT[tok:sub(-1)]
+   if not suit then return nil, "неизвестная масть в токене " .. tostring(tok) end
+   local head = tok:sub(1, -2)
+   if head == "D" then return { value = 'd', suit = suit } end
+   local n = tonumber(head)
+   if not n or n < 2 or n > 10 or head ~= tostring(math.floor(n)) then
+      return nil, "битый токен " .. tostring(tok)
+   end
+   return { value = n, suit = suit }
+end
+
+-- snap (формат snapshot_and_go_map) -> компактная строка, либо nil, причина.
+function save_encode_snapshot(snap)
+   if type(snap) ~= "table" or type(snap.tableau) ~= "table"
+      or type(snap.free_cells) ~= "table" or type(snap.foundation) ~= "table" then
+      return nil, "битый снапшот"
+   end
+   local cols = {}
+   for col = 1, 8 do
+      local toks = {}
+      for i, c in ipairs(snap.tableau[col] or {}) do
+         local tok, err = encode_card(c)
+         if not tok then return nil, "колонка " .. col .. ": " .. err end
+         toks[i] = tok
+      end
+      cols[col] = table.concat(toks, ",")
+   end
+   local cells = {}
+   for ord = 1, 3 do
+      local fc = snap.free_cells[ord]
+      if fc and fc.card then
+         local tok, err = encode_card(fc.card)
+         if not tok then return nil, "ячейка " .. ord .. ": " .. err end
+         cells[ord] = tok .. (fc.blocked and "*" or "")
+      else
+         cells[ord] = ""
+      end
+   end
+   local f = snap.foundation
+   if type(f.red) ~= "number" or type(f.blue) ~= "number" or type(f.green) ~= "number" then
+      return nil, "битое foundation"
+   end
+   local parts = {
+      "V1",
+      "T:" .. table.concat(cols, "|"),
+      "C:" .. table.concat(cells, "|"),
+      "F:" .. f.red .. "," .. f.blue .. "," .. f.green,
+      "L:" .. (snap.flower and "1" or "0"),
+   }
+   return table.concat(parts, ";")
+end
+
+-- Строка -> snap, либо nil, причина. Разбор нарочно строгий (точное число
+-- колонок/ячеек, точная форма каждого поля) — задача этой функции ровно
+-- «отличить честное сохранение от чужого/битого», а не выжать из строки
+-- максимум смысла любой ценой.
+function save_decode_snapshot(str)
+   if type(str) ~= "string" or str == "" then return nil, "пусто" end
+   local segs = {}
+   for seg in str:gmatch("[^;]+") do segs[#segs + 1] = seg end
+   if segs[1] ~= "V1" then return nil, "неизвестная версия" end
+   local by_key = {}
+   for i = 2, #segs do
+      local k, v = segs[i]:match("^(%a):(.*)$")
+      if not k then return nil, "битый сегмент " .. tostring(segs[i]) end
+      by_key[k] = v
+   end
+   if not (by_key.T and by_key.C and by_key.F and by_key.L) then
+      return nil, "не хватает поля"
+   end
+
+   local tableau = {}
+   local col_strs = {}
+   for part in (by_key.T .. "|"):gmatch("([^|]*)|") do col_strs[#col_strs + 1] = part end
+   if #col_strs ~= 8 then return nil, "ожидалось 8 колонок, получено " .. #col_strs end
+   for col = 1, 8 do
+      tableau[col] = {}
+      local s = col_strs[col]
+      if s ~= "" then
+         for tok in (s .. ","):gmatch("([^,]*),") do
+            if tok ~= "" then
+               local card, err = decode_card(tok)
+               if not card then return nil, "колонка " .. col .. ": " .. err end
+               tableau[col][#tableau[col] + 1] = card
+            end
+         end
+      end
+   end
+
+   local free_cells = {}
+   local cell_strs = {}
+   for part in (by_key.C .. "|"):gmatch("([^|]*)|") do cell_strs[#cell_strs + 1] = part end
+   if #cell_strs ~= 3 then return nil, "ожидалось 3 ячейки, получено " .. #cell_strs end
+   for ord = 1, 3 do
+      local s = cell_strs[ord]
+      if s == "" then
+         free_cells[ord] = {}
+      else
+         local blocked = false
+         if s:sub(-1) == "*" then
+            blocked = true
+            s = s:sub(1, -2)
+         end
+         local card, err = decode_card(s)
+         if not card then return nil, "ячейка " .. ord .. ": " .. err end
+         free_cells[ord] = { card = card, blocked = blocked or nil }
+      end
+   end
+
+   local r, b, g = by_key.F:match("^(%d+),(%d+),(%d+)$")
+   if not r then return nil, "битое foundation" end
+   local foundation = { red = tonumber(r), blue = tonumber(b), green = tonumber(g) }
+
+   if by_key.L ~= "0" and by_key.L ~= "1" then return nil, "битый флаг цветка" end
+
+   return {
+      tableau = tableau,
+      free_cells = free_cells,
+      foundation = foundation,
+      flower = (by_key.L == "1"),
+   }
+end
+
+-- card {value,suit} -> card_data в форме create_deck (id/is_dragon/is_flower) —
+-- ровно то, что ждут set_card и остальной игровой код.
+local function card_data_from(c)
+   if c.value == 'f' then
+      return { id = "flower", value = 'f', suit = 'flower', is_flower = true }
+   elseif c.value == 'd' then
+      return { id = "d_" .. c.suit, value = 'd', suit = c.suit, is_dragon = true }
+   else
+      return { id = c.value .. "_" .. c.suit, value = c.value, suit = c.suit }
+   end
+end
+
+-- snap -> layout: та же информация, но с card_data вместо голых {value,suit} —
+-- восстановление гоняет фабрику картами именно в этой форме. Чистая функция,
+-- без Defold — тестируется напрямую.
+function snapshot_to_layout(snap)
+   local tableau = {}
+   for col = 1, 8 do
+      tableau[col] = {}
+      for i, c in ipairs(snap.tableau[col] or {}) do
+         tableau[col][i] = card_data_from(c)
+      end
+   end
+   local free_cells = {}
+   for ord = 1, 3 do
+      local fc = snap.free_cells[ord]
+      if fc and fc.card then
+         free_cells[ord] = { card_data = card_data_from(fc.card), blocked = fc.blocked or false }
+      end
+   end
+   return {
+      tableau = tableau,
+      free_cells = free_cells,
+      foundation = { red = snap.foundation.red, blue = snap.foundation.blue, green = snap.foundation.green },
+      flower = snap.flower or false,
+   }
+end
+
+-- Можно ли сохранять партию ПРЯМО СЕЙЧАС. Все условия — про то, что доска
+-- «между ходами», а не посреди каскада: авто-финиш/авто-сбор двигают карты
+-- через несколько timer.delay подряд, и снятый посреди снимок был бы
+-- согласован (census это не поймает — на каждом шаге зеркала честно осели),
+-- но не тем, что видит игрок в моменте паузы. self.restoring — свой каскад:
+-- восстановление само проводит карты через occupy_slot и не должно
+-- перезаписать ещё не дописанное восстановление собственным недосохранением.
+function should_save(self)
+   if self.tutorial_mode then return false end
+   if not self.is_full_deal then return false end
+   if self.restoring then return false end
+   if self.currentState ~= self.states.PLAYING then return false end
+   if self.auto_finishing then return false end
+   if self.auto_collecting then return false end
+   if self.debug_replaying then return false end
+   return true
+end
+
+-- Заказ на сохранение с задержкой в кадрах — тот же приём, что и
+-- request_tutorial_hint: каскад drop_success -> remove_card -> зеркало ещё в
+-- очереди сообщений, снимать снапшот раньше значит снимать доску ДО хода.
+function request_save(self, frames)
+   self.pending_save = frames or 3
+end
+
+-- Пишет партию на диск. sys.save/sys.load — всегда доступны (Defold, любая
+-- платформа), в отличие от ysdk.player.setData: тот асинхронный (Promise),
+-- а html5.run синхронный и Promise вернуть не может. Мост Яндекс.Игр эту
+-- партию сознательно не получил: писать в player.setData и никогда не
+-- читать обратно — исключительно вредная работа (жжём квоту SDK без
+-- всякой пользы), а честная асинхронная загрузка потребовала бы поллинга
+-- как у yandex.state()/lang() и не проверяется без песочницы. sys.save
+-- один закрывает критерий приёмки (перезагрузка страницы восстанавливает
+-- доску) и является обязательным фолбэком вне Я.Игр по условию задачи —
+-- на нём и остановились в этом заходе.
+function save_game(self)
+   if not should_save(self) then
+      if self.currentState ~= self.states.WIN then
+         self.pending_save = 20 -- доска ещё не осела — попробуем позже
+      end
+      return
+   end
+   local snap, _, _, err = snapshot_and_go_map(self)
+   if err then
+      self.pending_save = 20 -- зеркала разъехались на кадр — не пишем половину доски
+      return
+   end
+   local encoded, enc_err = save_encode_snapshot(snap)
+   if not encoded then
+      print("[SAVE] не смог закодировать доску: " .. tostring(enc_err))
+      return
+   end
+   local path = sys.get_save_file(SAVE_APP_ID, SAVE_FILE)
+   local ok = pcall(sys.save, path, { v = SAVE_VERSION, data = encoded })
+   if not ok then
+      print("[SAVE] sys.save упал — партия продолжается без сохранения")
+   end
+end
+
+-- Стирает сохранение (победа, либо game_manager перед рестартом/сменой
+-- уровня — см. game_manager.script). Пишем версию и пустые данные, а не
+-- пытаемся удалить файл: у sys нет прямого "delete", а load_saved_game уже
+-- трактует пустые data как "сохранения нет".
+function clear_save()
+   pcall(sys.save, sys.get_save_file(SAVE_APP_ID, SAVE_FILE), { v = SAVE_VERSION, data = "" })
+end
+
+-- Достаёт партию с диска. Любая нечестность — не та версия, не таблица,
+-- пустые данные, не парсится, не проходит перепись census_error — тихо
+-- возвращает nil, и вызывающий код (init) раздаёт новую партию. Игра не
+-- имеет права упасть на чужом/повреждённом сохранении.
+function load_saved_game()
+   local ok, t = pcall(sys.load, sys.get_save_file(SAVE_APP_ID, SAVE_FILE))
+   if not ok or type(t) ~= "table" or t.v ~= SAVE_VERSION then return nil end
+   if type(t.data) ~= "string" or t.data == "" then return nil end
+   local snap, err = save_decode_snapshot(t.data)
+   if not snap then
+      print("[SAVE] сохранение повреждено (" .. tostring(err) .. ") — новая партия")
+      return nil
+   end
+   local census_err = snapshot_census_error(snap)
+   if census_err then
+      print("[SAVE] сохранение не прошло перепись (" .. tostring(census_err) .. ") — новая партия")
+      return nil
+   end
+   return snap
 end
 
 -- ===================== туториал v3: подсказка от доски =====================
@@ -1809,6 +2259,7 @@ function on_message(self, message_id, message, sender)
       -- Основание поднялось — значит и подсказка другая. Отдельно от зеркала
       -- tableau: карта могла уехать наверх из ячейки, а не из колонки.
       request_tutorial_hint(self)
+      if self.is_full_deal then request_save(self, 4) end
       if not self.tutorial_mode and self.base_cards_count >= 27 then
          -- Все 27 номиналов разложены — но это ещё не пустой стол. Замер
          -- (reviews/probe_dragon_unblock.lua, сиды 1..300): в 99 решённых
@@ -1841,6 +2292,7 @@ function on_message(self, message_id, message, sender)
          table.insert(stack.cards, message.card)
       end
       request_tutorial_hint(self)
+      if self.is_full_deal then request_save(self, 4) end
    elseif message_id == hash("tableau_card_removed") then
       local stack = self.tableau_stacks[message.index]
       if stack then
@@ -1852,6 +2304,7 @@ function on_message(self, message_id, message, sender)
          end
       end
       request_tutorial_hint(self)
+      if self.is_full_deal then request_save(self, 4) end
    elseif message_id == hash("free_cell_changed") then
       -- C4: содержимое ячейки изменилось. message.card отсутствует => ячейка пуста
       -- (Defold не переносит nil-поля).
@@ -1862,6 +2315,7 @@ function on_message(self, message_id, message, sender)
          print("[SNAPSHOT] free_cell_changed от неизвестной ячейки: " .. tostring(message.slot_id))
       end
       request_tutorial_hint(self)
+      if self.is_full_deal then request_save(self, 4) end
    elseif message_id == hash("flower_collected") then
       -- C5: см. flower_slot.script. Флаг только взводится: обратно цветок из слота
       -- не достаётся, а новая партия перезагружает коллекцию (init сбрасывает).
@@ -1886,6 +2340,7 @@ function on_message(self, message_id, message, sender)
       if not self.tutorial_mode and board_cleared(self) then
          declare_victory(self)
       end
+      if self.is_full_deal then request_save(self, 4) end
    elseif message_id == hash("check_auto_finish") then
       -- B2: не оцениваем немедленно — каскад drop_success→remove_card→зеркало и
       -- card_to_base ещё в очереди сообщений. Откладываем на 2 кадра в update().
@@ -1931,6 +2386,7 @@ function on_message(self, message_id, message, sender)
          -- приходит ручной сбор, поэтому оба пути закрыты одним условием.
          declare_victory(self)
       else
+         if self.is_full_deal then request_save(self, 4) end
          -- После сбора драконов проверяем auto-finish
          msg.post(self.cursor, "send_auto_finish_check")
          -- Драконы могли собраться не все (ячейка освободилась только сейчас) —
@@ -2013,5 +2469,33 @@ function update(self, dt)
             msg.post(self.cursor, "auto_collect_dragons")
          end
       end
+   end
+   -- D3: вторая половина восстановления (ячейки/foundation/цветок) — см.
+   -- restore_cells_and_foundation и комментарий у init про запас в кадрах.
+   if self.pending_restore then
+      self.pending_restore.frames = self.pending_restore.frames - 1
+      if self.pending_restore.frames <= 0 then
+         local layout = self.pending_restore.layout
+         self.pending_restore = nil
+         restore_cells_and_foundation(self, layout)
+      end
+   end
+   -- D3: отложенное сохранение — см. request_save/should_save.
+   if self.pending_save then
+      self.pending_save = self.pending_save - 1
+      if self.pending_save <= 0 then
+         self.pending_save = nil
+         save_game(self)
+      end
+   end
+   -- D3: победа делает сохранение неактуальным — иначе следующий reload или
+   -- PLAY попытались бы восстановить уже выигранную доску. currentState
+   -- становится WIN в ШЕСТИ разных местах (architecture.md → «Победа»), и
+   -- единственное, что их объединяет, — этот флаг, а не какой-то один вызов
+   -- вроде declare_victory (auto_finish_step и туториальная ветка
+   -- dragons_collected ставят WIN напрямую, в обход него).
+   if self.currentState == self.states.WIN and self.is_full_deal and not self.save_cleared then
+      self.save_cleared = true
+      clear_save()
    end
 end
