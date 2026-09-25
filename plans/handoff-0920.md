@@ -166,10 +166,45 @@ API для произвольных элементов нет — там осо�
 ## Как воспроизвести проверки
 
 ```bash
-lua solver/tests/run_all.lua                      # ожидается 271/0
+lua solver/tests/run_all.lua                      # ожидается 273/0 (271 до фикса 2026-09-25)
 bash tools/defold-bundle.sh /tmp/b --variant debug # бандл (каталог вне build/)
 # ВАЖНО: playwright стоит только для этого python
 PY=/opt/homebrew/opt/python@3.13/bin/python3.13
 $PY tools/browser-test.py /tmp/b/ShenzenSolitare --scenario saveload   --out /tmp/o1
 $PY tools/browser-test.py /tmp/b/ShenzenSolitare --scenario fullscreen --mobile --out /tmp/o2
 ```
+
+## Дополнение 2026-09-25 — ruthless-review всей игры и фикс
+
+Ревью всего репозитория на `aca9c31` (субагент с чистым контекстом, отдельный
+worktree, бандлы собраны заново из этого коммита). Прошло: юниты 271/0, 22/22
+сценария на debug, `debugkeys`/`yasdk` на release, 5/5 на `--no-coi`; мутации
+восстановления (порядок оснований, `complete`, перепись) и сторожа звука
+(`audiobg` и `focus`) ловятся.
+
+**Блокер (починен).** Дракон, припаркованный в НЕзапечатанной ячейке, после
+перезагрузки не попадал в счётчик кнопки своей масти: живая игра считает его
+ещё верхушкой колонки (`tableau_script.last_card_to_slot`), ячейка свою масть
+не уведомляет, а восстановление кладёт дракона в ячейку сразу. Кнопка не
+загоралась, хотя сбор законен. Фикс — `restore_cells_and_foundation` сам шлёт
+`send_counter_to_button`. Поставлен туда, где появился дефект:
+`feat/save-progress` (`f3e8e68`, cherry-pick `768cfbe`), в `feat/fullscreen`
+поднят merge-коммитом. Тест — настоящие free_cell/dragon_button/tableau_script
+на шине сообщений, оракул `rules.legal_moves`, негативный контроль с закопанным
+драконом; до правки FAIL, две мутации FAIL. **Юниты: 273/0.** На движке сама
+правка НЕ проверена: ни один сценарий не паркует дракона перед перезагрузкой;
+`saveload`/`census`/`boot` после фикса — PASS как проверка на регрессию.
+
+Попутно исправлен INDEX.md: счёт 239 → 273, в списке появились `test_save` и
+`test_auto_finish_sweep`, а утверждение «`saveload` достаёт цветок и основание»
+снято — оракул сценария смотрит глубины колонок и ячейку 1.
+
+**Замечено, не чинилось:** `freecell` падает по таймауту на длинном решении
+(прогон 2026-09-25: 198 из 302 директив за окно 300 с, реплей шёл, не висел;
+два повтора на 68 и 74 директивах — PASS). Ниты ревью, оставленные ради
+прослеживаемости: мёртвая `cursor.get_slot_target_type`, «15 вызовов» sfx в
+PLAN.md (по grep 17), `.gitignore` не покрывает `reviews/*.txt` (ветка добавила
+8), ссылка на «требование Я.Игр» в `engine_template.html`, комментарий
+`main.script` про замок ввода после восстановления.
+
+Откат только фикса: `feat/save-progress` = `c130676`, `feat/fullscreen` = `aca9c31`.
