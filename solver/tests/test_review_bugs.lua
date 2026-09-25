@@ -27,13 +27,16 @@ end
 H.test("F5 tutorial_state.reset clears highlight_dirty", function()
    local T = require("main.Scripts.tutorial_state")
    T.highlight_dirty = true
-   T.step = 3
+   -- v3: номера шага больше нет, зато есть подсказка — и она обязана уходить
+   -- вместе с ним. Пережившая reset подсказка на новой раздаче подсветила бы
+   -- id карт из прошлой партии (коллекция перезагружается, id другие).
+   T.set_hint({ kind = "foundation", distance = 3, cards = { "go1" }, slots = {} }, "found")
    T.reset()
    if T.highlight_dirty then
       return false, "reset() left highlight_dirty=true"
    end
-   if T.step ~= 0 then
-      return false, "reset() should still zero step"
+   if T.hint ~= nil or T.hint_status ~= nil then
+      return false, "reset() оставил подсказку от прошлой партии"
    end
    return true
 end)

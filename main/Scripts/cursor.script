@@ -9,6 +9,17 @@ local coords = require("main.Scripts.coords")
 local hit = require("main.Scripts.hit_test")
 local ui_fx = require("main.Scripts.ui_fx")
 
+-- O1-зонд. Печатает раз в кадр состояние КАЖДОЙ карты в руке: z (порядок
+-- отрисовки), scale.x и euler.z (эффекты драга) и y. Нужен, чтобы отличить
+-- четыре разные причины «стопка мерцает» друг от друга — по одному прогону:
+--   z скачет один раз в начале и застывает      → z едет внутри анимации position
+--   scale.x дрожит кадр к кадру и не сходится   → драка композита "scale" и "scale.x"
+--   scale.x плавно колеблется с периодом ~0.5 с → под драгом остался pingpong подсветки
+--   позиция на кадр прыгает в координаты колонки → колонку переложил update_visible_cards
+-- Сценарий стенда: tools/browser-test.py --scenario dragz (ТРЕБУЕТ бандла, где
+-- этот флаг и DEBUG_LONG_COLUMN в main.script выставлены в true).
+local DEBUG_DRAG_PROBE = false
+
 local function get_slot_target_type(slot_id)
    if string.sub(slot_id, 1, 9) == "base_slot" then return "base"
    elseif string.sub(slot_id, 1, 9) == "free_slot" then return "free"
@@ -25,6 +36,7 @@ end
 local function reset_drag_fx(self)
    self.prev_cursor_x = self.cursor_pos and self.cursor_pos.x or nil
    self.drag_speed_x = nil
+   self.probe_frame = 0   -- O1-зонд: нумерация кадров идёт от начала КАЖДОГО драга
 end
 
 function init(self)
@@ -40,7 +52,6 @@ function init(self)
    self.stack_offset = {}  -- Сохраняем смещение каждой карты относительно первой
    self.input_disabled = false
    self.flying_count = 0  -- A3: сколько карт сейчас в авто-полёте (дуга)
-   self.tutorial_highlights_applied = false
    msg.post(".", "acquire_input_focus")
    -- Draw colored text on the screen
 end
@@ -246,26 +257,21 @@ local function set_cursor(slots, params)
    end
 end
 
--- Tutorial highlight: find card GO by data id (e.g. "2_red")
-local function find_card_by_data_id(self, data_id)
-    -- Search visible stacks (pairs — stacks may have gaps)
-    for _, stack in pairs(self.tableau_stacks) do
-        for _, card in ipairs(stack) do
-            if card.data and card.data.id == data_id then
-                return card.id
-            end
-        end
+-- Гасим ПОИМЁННО то, что сами зажгли. Обход ниже по колонкам и слотам карту,
+-- уехавшую в свободную ячейку или в основание, не находит: у курсора нет
+-- зеркала ячеек, а в `last_cards` лежат только верхушки колонок. Подсвеченная
+-- в ячейке карта так и пульсировала до конца партии (находка обеих внешних
+-- моделей). Обход при этом оставлен: он чистит и то, что подсветили не мы —
+-- например, карту, которую основание зажгло само через свой last_card.
+local function unlight_tracked(self)
+    for _, id in ipairs(self.tutorial_lit or {}) do
+        msg.post(id, "unhighlight")
     end
-    -- Search last cards (top of each stack)
-    for _, card in pairs(self.last_cards) do
-        if card and card.data and card.data.id == data_id then
-            return card.id
-        end
-    end
-    return nil
+    self.tutorial_lit = {}
 end
 
 local function clear_tutorial_highlights(self)
+    unlight_tracked(self)
     -- Unhighlight all cards in all stacks (pairs — stacks may have gaps)
     for _, stack in pairs(self.tableau_stacks) do
         for _, card in ipairs(stack) do
@@ -290,31 +296,21 @@ local function clear_tutorial_highlights(self)
     end
 end
 
+-- v3: подсвечиваем то, что назвала подсказка (tutorial_state.hint), а она уже
+-- содержит ГОТОВЫЕ id игровых объектов — main считает их из go_map рядом со
+-- снапшотом доски. Прежний вариант искал карту по data.id, и на туториальной
+-- раздаче это было прямо неверно: четыре дракона там носят ОДИН id "d_red",
+-- поиск возвращал первого попавшегося.
 local function apply_tutorial_highlights(self)
-    local highlights = tutorial_state.HIGHLIGHTS[tutorial_state.step]
-    if not highlights then return end
-
-    -- Highlight cards
-    for _, card_data_id in ipairs(highlights.cards) do
-        local card_go = find_card_by_data_id(self, card_data_id)
-        if card_go then
-            msg.post(card_go, "highlight")
-        end
+    local hint = tutorial_state.hint
+    if not hint then return end
+    self.tutorial_lit = {}
+    local function light(id)
+        msg.post(id, "highlight")
+        self.tutorial_lit[#self.tutorial_lit + 1] = id
     end
-
-    -- Highlight slots
-    for _, slot_id in ipairs(highlights.slots) do
-        msg.post(slot_id, "highlight")
-    end
-
-    -- Dynamic: highlight the base slot that already has a card (e.g. where 2_red landed)
-    if highlights.find_occupied_base then
-        for slot_id, slot in pairs(self.base_slots) do
-            if not slot.is_empty then
-                msg.post(slot_id, "highlight")
-            end
-        end
-    end
+    for _, card_go in ipairs(hint.cards or {}) do light(card_go) end
+    for _, slot_id in ipairs(hint.slots or {}) do light(slot_id) end
 end
 
 -- G4: куда сядут четыре дракона масти `color` — ячейка с уже припаркованным
@@ -366,11 +362,11 @@ function on_message(self, message_id, message, sender)
       self.tableau_stacks[message.index] = message.stack
       local empty_flag = (#message.stack == 0)
       self.tableau_slots['tableau_slot'..message.index].is_empty = empty_flag
-      -- Trigger initial tutorial highlights once main stack (1) is loaded
-      if tutorial_state.is_tutorial and message.index == 1 and not self.tutorial_highlights_applied then
-         self.tutorial_highlights_applied = true
-         tutorial_state.highlight_dirty = true
-      end
+      -- v3: первую подсветку курсор больше не заводит сам. Раньше он ждал
+      -- прихода первой стопки и поднимал highlight_dirty, потому что подсветка
+      -- бралась из таблицы по номеру шага и была известна заранее. Теперь её
+      -- содержимое считает main (ему одному видна вся доска), и он же взводит
+      -- флаг — второй источник правды тут означал бы гонку двух подсветок.
 
    elseif message_id == hash("set_last_cards") then
       self.last_cards[message.index] = message.card
@@ -387,15 +383,9 @@ function on_message(self, message_id, message, sender)
          msg.post(self.selected_card, 'drop_success', params)
       end
 
-      -- Tutorial: advance only when the move matches expected (no blocking)
-      if tutorial_state.is_tutorial and self.selected_card_data then
-         local card_id = self.selected_card_data.data.id
-         local target_type = get_slot_target_type(self.pending_drop.slot.slot_id)
-         if tutorial_state.check_move(card_id, target_type) then
-            tutorial_state.advance()  -- sets ui_dirty flag, UI polls it
-         end
-      end
-
+      -- v3: шаг туториала здесь больше не двигаем. Подсказку пересчитывает main
+      -- от осевшей доски (зеркала tableau/free_cell), а курсор в этот момент
+      -- знает только про свой ход — по нему и получалась привязка к сценарию.
       clean_cursor(self)
       if not tutorial_state.is_tutorial then
          local free_cell_cards = {}
@@ -443,15 +433,6 @@ function on_message(self, message_id, message, sender)
          move_stack_cards(self, 'drop_success', params)
       else
          msg.post(self.selected_card, 'drop_success', params)
-      end
-
-      -- Tutorial: advance only when the move matches expected (no blocking)
-      if tutorial_state.is_tutorial and self.selected_card_data then
-         local card_id = self.selected_card_data.data.id
-         local target_card_id = self.pending_drop.card.data_id
-         if tutorial_state.check_move(card_id, "tableau_card", target_card_id) then
-            tutorial_state.advance()  -- sets ui_dirty flag, UI polls it
-         end
       end
 
       clean_cursor(self)
@@ -560,7 +541,17 @@ function on_message(self, message_id, message, sender)
       self.is_dragging = true
       reset_drag_fx(self)
       self.original_position = self.pending_drop.slot_pos
-      self.drag_offset = vmath.vector3(0, 0, 0)
+      -- По x/y карта из ячейки садится ровно на курсор (нулевое смещение), а по
+      -- z несёт свою высоту: cursor_pos.z всегда 0.
+      --
+      -- Честно про область действия: с тех пор как card.script считает подъём
+      -- от собственной drag_base_z, инвариант «z в руке — константа» держится и
+      -- БЕЗ этого слагаемого — проверено мутацией, обнуление z здесь ни одного
+      -- теста не роняет. Слагаемое оставлено, чтобы payload drag_update нёс
+      -- честную позицию карты, а не половину её; сторожем инварианта оно
+      -- больше не является. Возврат карты (drop_failed) по-прежнему идёт в
+      -- slot_pos.
+      self.drag_offset = vmath.vector3(0, 0, go.get_position(self.selected_card).z)
       msg.post(self.selected_card, "start_drag")
    elseif message_id == hash("send_to_flower_slot") then
       local fl_pos = self.flower_slot['flower_slot']
@@ -750,6 +741,20 @@ function update(self, dt)
       local speed_x = self.drag_speed_x
       local tilt_deg = ui_fx.drag_tilt_deg(speed_x)
       local squash = ui_fx.drag_squash(speed_x)
+
+      if DEBUG_DRAG_PROBE then
+         self.probe_frame = (self.probe_frame or 0) + 1
+         local hand = self.stack_cards
+         if not (self.dragging_stack and hand) and self.selected_card then
+            hand = { { id = self.selected_card } }
+         end
+         for i, card in ipairs(hand or {}) do
+            local p = go.get_position(card.id)
+            print(string.format("[DRAGZ] f=%d i=%d z=%.5f y=%.2f sx=%.4f ez=%.3f",
+                                self.probe_frame, i, p.z, p.y,
+                                go.get(card.id, "scale.x"), go.get(card.id, "euler.z")))
+         end
+      end
 
       if self.dragging_stack and self.stack_cards then
          for i, card in ipairs(self.stack_cards) do

@@ -61,6 +61,8 @@ CARD_PITCH = 35             # only true while the column fits (config.stack_offs
 FLOWER_SLOT = (377, 457)    # G6: flower moved to column 4, dragon buttons to column 5
 PLAY_BUTTON = (480, 232)
 RESTART_BUTTON = (907, 56)   # G6: правый рельс, см. gui/ui.gui
+TUTORIAL_BUTTON = (907, 124)  # тот же рельс, кнопка под RESTART
+BASE_SLOT = {1: (585, 457), 2: (793, 457), 3: (689, 457)}  # порядок id, не слева направо
 
 BENIGN = (re.compile(r"^INFO:"), re.compile(r"Defold Engine \d"), re.compile(r"^Downloading"))
 FATAL = (
@@ -1448,6 +1450,326 @@ def scenario_celldrain(s):
              "экран победы не поднялся — на месте стола по-прежнему фон")
 
 
+def scenario_tutorialfree(s):
+    """Туториал v3: подсказка считается от ДОСКИ, а не от номера шага.
+
+    Негативный контроль к самой правке. На v2 этот сценарий обязан провалиться:
+    там подсказка привязана к шагу, и увод 5_green в свободную ячейку первым
+    ходом делает шаг «положи 4_blue на 5_green» невыполнимым навсегда — выход
+    только по SKIP. Здесь мы делаем ровно этот ход и требуем, чтобы игра
+    ПРОДОЛЖАЛА называть выполнимый ход.
+
+    Оракул — строки `[TUTOR] <статус> <тип хода> за N мс`, которые печатает
+    refresh_tutorial_hint. По ним же читается цена поиска на HTML5: считаем
+    синхронно в кадре, и если бы она была секундной, это было бы видно тут.
+
+    Раздача туториала глубже обычной: в первой колонке пять карт, верхняя
+    (2_red) лежит на depth 4. exposed_depth по умолчанию щупает как раз до 4,
+    но здесь мы координаты знаем точно и щупать не обязаны.
+    """
+    def tutor_line(label, timeout=20):
+        line = s.wait_for_log(r"\[TUTOR\] \w+ [\w-]+ за", timeout, label)
+        s.expect(line is not None, f"{label}: подсказка не посчиталась вовсе")
+        return line or ""
+
+    s.boot()
+    s.click_game(*PLAY_BUTTON, label="PLAY")
+    s.expect(s.wait_for_log(r"I am MAIN SCRIPT", 20, "обычная раздача"),
+             "PLAY не загрузил уровень")
+    s.wait(3, "обычная раздача осела")
+
+    s.click_game(*TUTORIAL_BUTTON, label="TUTORIAL")
+    s.expect(s.wait_for_log(r"I am MAIN SCRIPT", 20, "туториальная раздача"),
+             "TUTORIAL не перезагрузил уровень")
+    first = tutor_line("первая подсказка")
+    s.expect("found foundation" in first,
+             f"первая подсказка должна вести 2_red наверх, а это: {first}")
+    s.shot("tutorial-start")
+
+    # Подсветка. Ищем её ПУЛЬСОМ, а не цветом: card.script на "highlight" гоняет
+    # scale пингпонгом, значит два снимка одного пятачка с интервалом дают
+    # разные байты только у подсвеченной карты (тот же приём, что и с горящей
+    # кнопкой драконов). Текст подсказки без подсветки бесполезен — игрок не
+    # знает, о какой из десяти карт речь.
+    def pulses(x, y, half=18, gap=280):
+        a = s.patch(x, y, half, half)
+        s.page.wait_for_timeout(gap)
+        return a != s.patch(x, y, half, half)
+
+    s.expect(pulses(TABLEAU_X[1], TABLEAU_TOP_Y - 4 * CARD_PITCH),
+             "карта, о которой говорит подсказка (2_red), не подсвечена")
+    s.expect(not pulses(TABLEAU_X[2], TABLEAU_TOP_Y),
+             "подсвечена посторонняя карта (5_green) — подсветка бьёт мимо хода")
+
+    # --- тот самый ход, который ломал v2 -------------------------------------
+    # 5_green — единственная карта второй колонки, лежит на depth 0.
+    s.drag_game(TABLEAU_X[2], TABLEAU_TOP_Y, FREE_CELL[1][0], FREE_CELL[1][1],
+                "5_green -> свободная ячейка 1")
+    s.wait(1.5, "карта села, зеркала осели")
+    after = tutor_line("подсказка после «неправильного» хода")
+    s.expect("stuck" not in after,
+             f"после законного хода игрока туториал объявил тупик: {after}")
+    s.expect("found" in after,
+             f"подсказка перестала находить ход: {after}")
+    s.shot("tutorial-after-deviation")
+
+    felt = s.brightness(*FREE_CELL[3])
+    s.expect_card_at(FREE_CELL[1][0], FREE_CELL[1][1], felt, "5_green в ячейке 1")
+
+    # --- и доигрываем ПО ПОДСКАЗКЕ до победы ---------------------------------
+    # Линия посчитана заранее на той же доске (solver/hint.lua, ветка после
+    # увода 5_green): основание, основание, ячейка, ПУСТАЯ КОЛОНКА, драконы.
+    # Она отличается от сценарной линии v2 ровно тем, что и должна: 4_blue
+    # больше некуда стекать — 5_green лежит в ячейке, — и подсказка сама
+    # переводит игрока на пустую колонку. Проверяем каждый ярлык по очереди:
+    # это и есть утверждение «подсказка следует за доской».
+    steps = [
+        (TABLEAU_X[1], TABLEAU_TOP_Y - 4 * CARD_PITCH, BASE_SLOT[1][0], BASE_SLOT[1][1],
+         "2_red -> основание", "found foundation"),
+        (TABLEAU_X[1], TABLEAU_TOP_Y - 3 * CARD_PITCH, BASE_SLOT[1][0], BASE_SLOT[1][1],
+         "3_red -> то же основание", "found free_cell"),
+        (TABLEAU_X[1], TABLEAU_TOP_Y - 2 * CARD_PITCH, FREE_CELL[2][0], FREE_CELL[2][1],
+         "7_green -> ячейка 2", "found empty_column"),
+        (TABLEAU_X[1], TABLEAU_TOP_Y - 1 * CARD_PITCH, TABLEAU_X[2], TABLEAU_TOP_Y,
+         "4_blue -> пустая колонка 2", "found dragon"),
+    ]
+    for x1, y1, x2, y2, label, want in steps:
+        s.drag_game(x1, y1, x2, y2, label)
+        s.wait(1.5, "ход осел")
+        line = tutor_line(f"подсказка после «{label}»")
+        s.expect(want in line, f"после «{label}» ждали «{want}», а подсказка: {line}")
+        if want == "found empty_column":
+            # У tableau_slot обработчика highlight не было вовсе, и Defold молча
+            # глотал сообщение: текст про пустую колонку появлялся, а колонка не
+            # загоралась. Юнит на это слеп по построению — он видит список целей,
+            # а не экран. Пустых колонок к этому моменту четыре (2, 6, 7, 8),
+            # какую выберет солвер — его дело; требуем, чтобы горела хоть одна.
+            lit = [c for c in (2, 6, 7, 8) if pulses(TABLEAU_X[c], TABLEAU_TOP_Y)]
+            s.expect(lit, "подсказка зовёт в пустую колонку, а ни одна не подсвечена")
+            s.note("highlight", f"подсвечены пустые колонки: {lit}")
+    s.shot("tutorial-before-dragons")
+
+    # Гашение подсветки. Курсор чистит её обходом tableau/last_cards и слотов —
+    # а подсвеченная карта к этому моменту уже уехала в ячейку или в основание.
+    # Проверено мутацией «unhighlight ничего не делает»: пятачок основания её
+    # ловит (там светится карта, которую подсветил САМ слот через свой
+    # last_card), пятачок ячейки — нет, и это не слепота пробы, а свойство
+    # игры: карту в ячейку утащил игрок, а start_drag/drop_success в card.script
+    # сбрасывают эффекты сами. То есть проба ячейки сегодня сторожит будущее —
+    # путь, на котором карту двигает не рука, а сама игра.
+    s.expect(not pulses(*FREE_CELL[2]),
+             "карта, уехавшая в ячейку, продолжает светиться — подсветку не сняли")
+    s.expect(not pulses(*BASE_SLOT[1]),
+             "карта, уехавшая в основание, продолжает светиться — подсветку не сняли")
+
+    # Кнопка драконов — последний ход, он же победа туториала.
+    before = s.patch(480, 270, 120, 60)
+    s.click_game(*DRAGON_BUTTON[1], label="кнопка красных драконов")
+    s.wait(4, "драконы улетают, приезжает экран победы")
+    s.expect(s.patch(480, 270, 120, 60) != before,
+             "после сбора драконов центр экрана не изменился — победы не случилось")
+    s.shot("tutorial-victory")
+
+    # Ни на одном шаге туториал не имел права сказать «ходов не осталось»: у
+    # этой раздачи тупиков нет вовсе (полный обход — 415 состояний,
+    # solver/tests/test_tutorial_hint.lua). Первый прогон этого сценария поймал
+    # тут ровно одну такую строку — в окне между посадкой дракона и объявлением
+    # победы; она и заставила завести отдельный статус "won".
+    stuck = s.logs_matching(r"\[TUTOR\] stuck")
+    s.expect(not stuck,
+             f"туториал объявлял тупик {len(stuck)} раз(а): "
+             + "; ".join(e["text"].strip()[:60] for e in stuck[:3]))
+
+    ms = [float(m) for m in
+          (re.search(r"за (\d+) мс", e["text"]).group(1)
+           for e in s.logs_matching(r"\[TUTOR\] ")
+           if re.search(r"за (\d+) мс", e["text"]))]
+    if ms:
+        s.note("perf", f"подсказка: max {max(ms):.0f} мс, всего замеров {len(ms)}")
+
+
+def _dragz_runs(s):
+    """Разбор лога зонда [DRAGZ] в список драгов, каждый — список кадров.
+
+    Зонд нумерует кадры от начала КАЖДОГО драга (cursor.reset_drag_fx), поэтому
+    новый драг виден по откату счётчика. По времени делить нельзя — замерено:
+    консольные строки приезжают из браузера пачками, и три драга слипались в
+    один отрезок."""
+    rx = re.compile(r"\[DRAGZ\] f=(\d+) i=(\d+) z=(-?[\d.]+) y=(-?[\d.]+) "
+                    r"sx=(-?[\d.]+) ez=(-?[\d.]+)")
+    runs, prev_f = [], None
+    for e in s.log:
+        m = rx.search(e["text"])
+        if not m:
+            continue
+        f, i = int(m.group(1)), int(m.group(2))
+        if prev_f is None or f < prev_f:
+            runs.append([])          # начался новый драг
+        if not runs[-1] or f != prev_f:
+            runs[-1].append({})      # начался новый кадр этого драга
+        runs[-1][-1][i] = {"z": float(m.group(3)), "y": float(m.group(4)),
+                           "sx": float(m.group(5)), "ez": float(m.group(6))}
+        prev_f = f
+    return runs
+
+
+def scenario_dragz(s):
+    """O1: пока стопку тащат, порядок отрисовки карт обязан остаться прежним.
+
+    ⚠ ТРЕБУЕТ бандла, собранного с ДВУМЯ поднятыми флагами:
+       main/Scripts/cursor.script:  DEBUG_DRAG_PROBE = true
+       main/Scripts/main.script:    DEBUG_LONG_COLUMN = true
+
+    Раскладка DEBUG_LONG_COLUMN (main.script, deal_long_column_test) даёт в
+    колонке 1 двенадцать карт, из которых верхние восемь (10b,9r,8g,7r,6g,5r,
+    4g,3r) — правильный убывающий ран разных мастей, то есть стопка, которую
+    можно взять целиком. Восемь карт — это ещё и весь диапазон ui_fx.drag_lag:
+    от 0.05 с у нижней до потолка 0.16 с у верхней.
+
+    Куда именно тыкать. Шаг колонки НЕ 35 px: config.stack_offset_y сжимает
+    длинную колонку, при 12 картах шаг ≈ 19.8 px. Своя, ничем не перекрытая
+    полоса у карты — верхние ~19.8 px её спрайта, поэтому целимся в
+    y(card) + 65 (карта 150 px, полувысота 75): точка лежит внутри нужной
+    карты и ВЫШЕ верхней кромки следующей. hit_test берёт самую верхнюю
+    карту, чей прямоугольник накрыл курсор.
+
+    Оракул — лог зонда [DRAGZ]: в каждом кадре z обязана строго расти с
+    индексом (i=1 — самая нижняя карта руки). Инверсия и есть тот самый
+    «перерендер»: карта, которая должна лежать под соседкой, оказывается над
+    ней. Замер на сборке ДО правки обязан показать инверсии; после — ноль.
+
+    Заодно печатаются scale.x и euler.z: они разделяют причины между собой
+    (дрожь scale.x — драка композита "scale" с "scale.x", плавные качели
+    периодом ~0.5 с — забытый pingpong подсветки), см. комментарий у флага
+    DEBUG_DRAG_PROBE в cursor.script.
+    """
+    s.boot()
+    s.press_play()
+    s.shot("dealt")
+
+    pitch = 218.0 / 11.0                       # config.stack_offset_y(12, 299)
+    grab_y = (TABLEAU_TOP_Y - 4 * pitch) + 65  # карта №5 снизу = низ видимого рана
+    s.note("aim", f"колонка 1, шаг {pitch:.2f}, точка захвата y={grab_y:.1f}")
+
+    s.drag_game(TABLEAU_X[1], grab_y, TABLEAU_X[6], TABLEAU_TOP_Y,
+                label="стопка из 8 карт, колонка 1 -> 6", steps=14)
+    s.shot("after-drag")
+
+    # Вторая тропа драга: карта берётся ИЗ СВОБОДНОЙ ЯЧЕЙКИ (cursor.script,
+    # ветка slot_with_card). Там своя composition: смещение по x/y нулевое, а по
+    # z карта обязана нести собственную высоту — cursor_pos.z всегда 0. Ни один
+    # другой сценарий стенда карту из ячейки не поднимает (`freecell` только
+    # кладёт в неё), так что без этих двух драгов ветка живёт без движка.
+    s.drag_game(TABLEAU_X[2], TABLEAU_TOP_Y, FREE_CELL[1][0], FREE_CELL[1][1],
+                label="одиночная карта, колонка 2 -> ячейка 1", steps=8)
+    s.drag_game(FREE_CELL[1][0], FREE_CELL[1][1], TABLEAU_X[5], TABLEAU_TOP_Y,
+                label="она же обратно: ячейка 1 -> пустая колонка 5", steps=8)
+    s.shot("after-cell-drag")
+
+    # Зонд нумерует кадры от начала КАЖДОГО драга (cursor.reset_drag_fx), поэтому
+    # новый драг виден по откату счётчика. По времени делить нельзя — замерено:
+    # консольные строки приезжают из браузера пачками, и все три драга слиплись
+    # в один отрезок.
+    runs = _dragz_runs(s)
+    if not s.expect(runs, "зонд [DRAGZ] не сказал ни слова — флаги в бандле не подняты "
+                          "или захват не попал в стопку"):
+        return
+    s.note("probe", "драгов в прогоне: " + ", ".join(f"{len(r)} кадров" for r in runs))
+
+    # ── Драг 1: стопка. Здесь вердикт про ПОРЯДОК. ──────────────────────────
+    stack_run = runs[0]
+    depth = max(len(fr) for fr in stack_run)
+    s.note("probe", f"стопка: {len(stack_run)} кадров, карт в руке {depth}")
+    s.expect(depth >= 4, f"в руке оказалось {depth} карт — целились мимо рана, "
+                         f"мерить порядок отрисовки не на чем")
+
+    bad = []
+    for n, cards in enumerate(stack_run, 1):
+        zs = [cards[i]["z"] for i in sorted(cards)]
+        for i in range(1, len(zs)):
+            if zs[i] <= zs[i - 1]:
+                bad.append((n, i, zs[i - 1], zs[i]))
+                break
+    if bad:
+        first, last = bad[0], bad[-1]
+        s.note("probe", f"инверсий z: {len(bad)} кадров, первый f={first[0]} "
+                        f"(z[{first[1]}]={first[3]:.5f} <= z[{first[1]-1}]={first[2]:.5f}), "
+                        f"последний f={last[0]}")
+
+    # scale.x: дрожь против плавных качелей — цифра, а не глазомер.
+    for i in sorted(stack_run[-1]):
+        seq = [fr[i]["sx"] for fr in stack_run if i in fr]
+        turns = sum(1 for k in range(1, len(seq) - 1)
+                    if (seq[k] - seq[k - 1]) * (seq[k + 1] - seq[k]) < 0)
+        s.note("probe", f"карта {i}: scale.x {min(seq):.3f}..{max(seq):.3f}, "
+                        f"смен направления {turns} за {len(seq)} кадров")
+
+    s.expect(not bad, f"порядок отрисовки в руке переворачивается: {len(bad)} кадров "
+                      f"с инверсией z (первый f={bad[0][0]})" if bad else "")
+
+    # ── Драг 3: подъём из ячейки. Обгонять некого, поэтому вердикт другой: ──
+    # z обязана СТОЯТЬ. Поедет — значит composition курсора и подъём в
+    # card.script разъехались, а та же трещина на стопке даёт инверсию.
+    if s.expect(len(runs) >= 3, f"ожидалось три драга, зонд насчитал {len(runs)} — "
+                                f"карта из ячейки не поднялась"):
+        zs = [fr[1]["z"] for fr in runs[-1] if 1 in fr]
+        spread = max(zs) - min(zs)
+        s.note("probe", f"драг из ячейки: {len(zs)} кадров, z {min(zs):.5f}..{max(zs):.5f}")
+        s.expect(spread < 1e-6,
+                 f"z карты, поднятой из ячейки, едет на {spread:.5f} за драг — "
+                 f"цель drag_update не совпадает с подъёмом в start_drag")
+
+    # ── Драг 4+: ПЕРЕЗАХВАТ В ПОЛЁТЕ — подъём не должен накапливаться ───────
+    # Прибавка относительная (`p.z + Z_CARD_DRAGGING`), а hit_test читает
+    # позицию карты живьём. Схвати её, пока она летит назад после drop_failed,
+    # — и курсор положит в original_position уже поднятую z. Дальше возврат
+    # сажает карту на заражённую высоту НАВСЕГДА: update_visible_cards на этом
+    # пути не зовётся. При far = 1 (render.render_script) четырёх повторов
+    # хватает, чтобы карта ушла за плоскость отсечения.
+    #
+    # Пикселями это не проверить: в `regrab` попытки перезахвата ловились через
+    # раз (карта успевала улететь из-под курсора), и «негативный контроль»
+    # зеленел на обеих сборках. Зонд же говорит прямо — какая z у карты в руке
+    # в каждом драге. Оракул двойной: перезахват обязан СОСТОЯТЬСЯ (иначе
+    # сценарий молча меряет не то) и z начала драга обязана не расти.
+    # Раскладка DEBUG_LONG_COLUMN держит карты ТОЛЬКО в колонке 1 (12 штук,
+    # шаг 218/11), остальные слоты пусты — целиться в них бессмысленно, и это
+    # видно на снимке 03: перезахват не ловился ни разу. Берём верхнюю карту
+    # колонки 1: она одиночная и лежит на y = TABLEAU_TOP_Y - 11*pitch.
+    grab_x, grab_y2 = TABLEAU_X[1], TABLEAU_TOP_Y - 11 * pitch
+    near = (TABLEAU_X[1], 20)                  # пустое сукно под своей колонкой
+    px, py = s._map(grab_x, grab_y2)
+    nx, ny = s._map(*near)
+    base_runs = len(runs)
+    for n in range(1, 5):
+        sx, sy = (px, py) if n == 1 else (nx, ny)
+        s.page.mouse.move(sx, sy)
+        s.page.wait_for_timeout(FRAME_MS * 2)
+        s.page.mouse.down()
+        s.page.wait_for_timeout(HOLD_MS)
+        for i in range(1, 6):
+            s.page.mouse.move(sx + (nx - sx) * i / 5, sy + (ny - sy) * i / 5)
+            s.page.wait_for_timeout(FRAME_MS * 2)
+        s.page.mouse.up()
+        s.page.wait_for_timeout(FRAME_MS * 3)  # ~50 мс: карта ещё в полёте
+    s.page.wait_for_timeout(1200)
+
+    runs2 = _dragz_runs(s)
+    caught = len(runs2) - base_runs
+    s.note("probe", f"перезахватов в полёте поймано: {caught} из 4")
+    if s.expect(caught >= 3, f"перезахват в полёте не состоялся ({caught} драгов из 4) — "
+                             f"накопление z этим прогоном НЕ проверено"):
+        firsts = [r[0][1]["z"] for r in runs2[base_runs:] if r and 1 in r[0]]
+        s.note("probe", "z в начале каждого драга: " +
+                        ", ".join(f"{z:.5f}" for z in firsts))
+        drift = max(firsts) - min(firsts)
+        s.expect(drift < 1e-6,
+                 f"z карты в руке выросла на {drift:.5f} за серию перезахватов "
+                 f"({firsts[0]:.5f} -> {firsts[-1]:.5f}): подъём накапливается, и "
+                 f"карта осядет выше своей колонки, а через пару повторов уйдёт "
+                 f"за плоскость отсечения")
+
+
 def scenario_o2sweep(s):
     """O2: доска доигрывается ТОЛЬКО за счёт растущих оснований — стол обязан
     опустеть сам, без единого хода игрока.
@@ -1509,7 +1831,120 @@ def scenario_o2sweep(s):
     s.shot("after")
 
 
+def scenario_regrab(s):
+    """Жалоба игрока 2026-09-05: «карта не встаёт, где стояла; на третий раз пропадает».
+
+    Воспроизводит ровно её: одну и ту же карту трижды поднимают и отпускают в
+    пустоту, где дроп невалиден, — то есть каждый раз она обязана вернуться на
+    своё место. Смотрим не на лог, а на ПИКСЕЛИ исходной точки после каждого
+    цикла: «карта не вернулась» и «карта пропала» — один и тот же вердикт.
+
+    Что здесь ломалось (замерено, а не предположено). Defold 1.13.1 удалил
+    `sprite.set_constant`, а вызовы стояли во ВСЕХ ветках драга — и в
+    `drop_success` перед `msg.post(slot_id, "occupy_slot")`, и в `drop_failed`
+    перед анимацией возврата, и в `start_drag`. ERROR:SCRIPT обрывал
+    обработчик на первом же таком вызове: карта не садилась и не возвращалась,
+    а зависала там, где её отпустили. Этот сценарий бьёт в НЕВАЛИДНЫЙ дроп,
+    то есть роняет `drop_failed` (замер на до-фиксовой сборке: три
+    ERROR:SCRIPT — `:110` из start_drag, `:149` из авто-финиша, `:179` из
+    drop_failed). Ветку `drop_success` проверяет `hittest` — там карта едет в
+    свободную ячейку.
+
+    Три цикла, а не один: пока посадки нет, `start_drag` каждый раз добавляет
+    карте ещё +Z_CARD_DRAGGING (0.3 → 0.6 → 0.9), и на третьем она уходит за
+    far-plane (render.render_script: far = 1). Это ловится ЗДЕСЬ только как
+    следствие обрыва; само накопление z достижимо и без ERROR:SCRIPT — через
+    ветку A2 в `cursor.on_input` и перезахват карты в полёте, и вот их этот
+    сценарий НЕ исполняет.
+
+    Негативный контроль замерен на сборке до правки: FAIL на первом же цикле —
+    три ERROR:SCRIPT (`card.script:110`, `:149`, `:179`) плюс пиксельный
+    вердикт ниже.
+
+    ⚠ Две разные точки для двух разных вопросов — обе выбраны замером, обе
+    первые редакции были неправильными.
+
+    «Карта на месте» спрашивается на СОБСТВЕННОЙ полосе карты (y − 56), как в
+    `stuck`: центр бесполезен, потому что под открытой картой лежит такая же
+    белая, и «ушла» выглядит почти как «на месте». Проверка та же, что у
+    `col_intact`: полоса ярче сукна = карта тут. Промежуточная редакция
+    сравнивала яркость с исходной — и упёрлась в насыщение (255 против 255 при
+    уехавшей карте).
+
+    «Тинт живой» спрашивается в ЦЕНТРЕ: полоса у этих спрайтов белая, упирается
+    в 255, и прирост там неразличим (замерено: +0.0 %).
+
+    Точку падения карты проверять можно только на сукне: в правом нижнем углу
+    её накрывают кнопки TUTORIAL/RESTART, и «пусто» проходило само собой.
+    """
+    s.boot()
+    s.press_play()
+    s.shot("dealt")
+
+    felt = s.brightness(*FREE_CELL[1])
+    d = s.exposed_depth(1, felt)
+    if not s.expect(d is not None, "в колонке 1 нет открытой карты — тащить нечего"):
+        return
+    y = TABLEAU_TOP_Y - d * CARD_PITCH
+    s.note("aim", f"колонка 1, открытая карта на глубине {d}, y={y}")
+    # Мерим СВОЮ полосу карты (y - 56), а не центр. Центр открытой карты
+    # бесполезен как улика: под ней такая же белая карта, и «карта ушла»
+    # выглядит там почти так же, как «карта на месте» — эту ловушку сценарий
+    # `stuck` уже знает (browser-test.py, col_intact). Пара «255 против 174»,
+    # на которой строилась прошлая редакция, была одним замером мелкой
+    # колонки, а не инвариантом. Нашло ревью grok-4.6.
+    PROBE_DY = 56
+    def card_home(label):
+        return s.expect_card_at(TABLEAU_X[1], y - PROBE_DY, felt, label, patch=10)
+    if not card_home("карта на месте до серии"):
+        return
+
+    # ── Тинт живой? ────────────────────────────────────────────────────────
+    # `sprite.set_constant` заменён на `go.set("#sprite", "tint", …)`, а такая
+    # замена может молча НИЧЕГО не делать: ошибки не будет, подсветка просто
+    # исчезнет. Позиционные оракулы выше этого не увидят — они и на мёртвом
+    # тинте зелёные. Поэтому смотрим наблюдаемый след: карта в руке поднимается
+    # тинтом 1.15, то есть обязана стать заметно светлее лежащей.
+    #
+    # Замер идёт с ЗАЖАТОЙ кнопкой и почти без сдвига курсора: карта едет к
+    # курсору, поэтому при сдвиге на пару пикселей она остаётся в своей точке.
+    sx, sy = s._map(TABLEAU_X[1], y)
+    rest = s.brightness(TABLEAU_X[1], y, 10)
+    s.page.mouse.move(sx, sy)
+    s.page.wait_for_timeout(FRAME_MS * 2)
+    s.page.mouse.down()
+    s.page.wait_for_timeout(HOLD_MS)
+    s.page.mouse.move(sx + 2, sy)
+    s.page.wait_for_timeout(FRAME_MS * 6)      # доводка drag_lag + анимация тинта
+    lifted = s.brightness(TABLEAU_X[1], y, 10)
+    s.page.mouse.up()
+    s.page.wait_for_timeout(FRAME_MS * 4)
+    gain = (lifted - rest) / rest if rest else 0
+    s.note("pixel", f"тинт: лежит {rest:.1f}, в руке {lifted:.1f}, прирост {gain * 100:+.1f}%")
+    # Порог ОТНОСИТЕЛЬНЫЙ: раздача случайна, и карта под курсором каждый раз
+    # своей яркости (замеряно 168 и 110 в двух прогонах), а прибавка тинта ей
+    # пропорциональна — абсолютная дельта между прогонами несравнима.
+    # Замерено: живой тинт +5.1 % на светлой карте и +16.0 % на тёмной, мутант
+    # «тинт 1.0 вместо 1.15» +1.9 % (остаток от scale 1.1, карта чуть наезжает
+    # на соседку). Порог 3 % лежит между ними; мутация проверку роняет.
+    s.expect(gain > 0.03,
+             f"карта в руке не светлеет ({rest:.1f} -> {lifted:.1f}, {gain * 100:+.1f}%): "
+             f"тинт 1.15 не доехал до спрайта — go.set('#sprite','tint') не работает "
+             f"как замена set_constant")
+
+    # Низ стола под колонкой 5: слотов там нет, кнопок тоже — дроп невалиден,
+    # карта обязана вернуться, а зависшая осталась бы видна на сукне.
+    VOID = (480, 25)
+    for n in (1, 2, 3):
+        s.drag_game(TABLEAU_X[1], y, VOID[0], VOID[1],
+                    label=f"подъём {n}: карта -> пустота (дроп невалиден)")
+        s.page.wait_for_timeout(700)          # возврат: 0.3 с полёт + wiggle
+        card_home(f"карта вернулась в колонку, цикл {n}")
+        s.expect_empty_at(VOID[0], VOID[1], felt, f"карта не зависла в пустоте, цикл {n}")
+    s.shot("after")
+
 SCENARIOS = {"boot": scenario_boot, "hittest": scenario_hittest,
+             "dragz": scenario_dragz, "regrab": scenario_regrab,
              "guilock": scenario_guilock, "dragonrestart": scenario_dragonrestart,
              "celldrain": scenario_celldrain, "o2sweep": scenario_o2sweep,
              "stuck": scenario_stuck, "win": scenario_win,
@@ -1517,7 +1952,8 @@ SCENARIOS = {"boot": scenario_boot, "hittest": scenario_hittest,
              "focus": scenario_focus, "audiobg": scenario_audiobg,
              "debugkeys": scenario_debugkeys, "restartrace": scenario_restartrace,
              "i18n": scenario_i18n, "yasdk": scenario_yasdk,
-             "resize": scenario_resize, "dealrng": scenario_dealrng}
+             "resize": scenario_resize, "dealrng": scenario_dealrng,
+             "tutorialfree": scenario_tutorialfree}
 
 
 def main():

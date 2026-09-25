@@ -6,13 +6,26 @@ local function restart_level()
    msg.post("/main#game_manager", "restart_level", { level = {} })
 end
 
-local function update_tutorial_hint(step)
-    step = step or 0
-    local key = "tutorial_hint_" .. step
-    local hint = i18n.t(key)
-    if hint == key then hint = i18n.t("tutorial_done") end
-    gui.set_text(gui.get_node("tutorial_text"), hint)
-    gui.set_text(gui.get_node("tutorial_step_text"), string.format(i18n.t("tutorial_step"), step + 1))
+-- v3: строка подсказки — это ТИП хода, который солвер нашёл на текущей доске
+-- (tutorial_state.hint.kind), а не номер шага сценария. Пока подсказки нет
+-- (первые кадры после раздачи, окно рассинхрона зеркал) показываем цель партии:
+-- она верна всегда, а пустая строка читалась бы как «туториал сломался».
+-- Счётчик под текстом раньше был «шаг N из 5» — число, которое врало при любом
+-- ходе игрока мимо сценария. Теперь это расстояние до победы: сколько ходов
+-- осталось, если играть по подсказке.
+local function update_tutorial_hint()
+    local hint = tutorial_state.hint
+    local text
+    if tutorial_state.hint_status == "stuck" then
+        text = i18n.t("tutorial_stuck")
+    elseif hint then
+        text = i18n.t("tutorial_hint_" .. hint.kind)
+    else
+        text = i18n.t("tutorial_goal")
+    end
+    gui.set_text(gui.get_node("tutorial_text"), text)
+    gui.set_text(gui.get_node("tutorial_step_text"),
+        hint and string.format(i18n.t("tutorial_moves_left"), hint.distance) or "")
 end
 
 -- H3: статические подписи живут в ui.gui как английский хардкод. Проставляем их
@@ -50,7 +63,7 @@ local function apply_language()
     -- Динамические подписи тоже перекрашиваем: язык от SDK приезжает асинхронно
     -- и может застать открытым туториал или экран победы. Ноды могут быть
     -- выключены — gui.set_text это не мешает.
-    update_tutorial_hint(tutorial_state.step)
+    update_tutorial_hint()
     apply_victory_texts()
     print("[I18N] язык: " .. tostring(i18n.lang))
 end
@@ -166,7 +179,7 @@ function on_input(self, action_id, action)
             gui.set_enabled(gui.get_node("hud_rail"), false)
             gui.set_enabled(tutorial_button, false)
             gui.set_enabled(restart_button, false)
-            update_tutorial_hint(0)
+            update_tutorial_hint()
             restart_level()
             return true
         end
@@ -177,7 +190,7 @@ function update(self, dt)
     -- Poll shared state (cross-collection workaround: msg.post can't reach UI from proxied collection)
     if tutorial_state.ui_dirty then
         tutorial_state.ui_dirty = false
-        update_tutorial_hint(tutorial_state.step)
+        update_tutorial_hint()
     end
     if tutorial_state.show_victory then
         tutorial_state.show_victory = false

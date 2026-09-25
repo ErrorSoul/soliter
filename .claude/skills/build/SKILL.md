@@ -1,9 +1,9 @@
 ---
 name: build
-description: Headless HTML5 build of the ShenzenSolitare project (Defold, js-web) via bob.jar, plus a runnable browser bundle and the headless play-test harness. Use when you need to compile, bundle, or actually RUN the game from the command line without the Defold Editor.
+description: Headless HTML5 build of the ShenzenSolitare project (Defold, wasm_pthread-web) via bob.jar, plus a runnable browser bundle and the headless play-test harness. Use when you need to compile, bundle, or actually RUN the game from the command line without the Defold Editor.
 ---
 
-# build — headless HTML5 build (Defold / js-web)
+# build — headless HTML5 build (Defold / wasm_pthread-web)
 
 Two different things, do not confuse them:
 
@@ -28,9 +28,14 @@ The script resolves both tools itself, so nothing is hardcoded at the call site:
 ```
 JAVA=$(ls -d /Applications/Defold.app/Contents/Resources/packages/jdk-*/bin/java | sort -V | tail -1)
 JAR=$(ls /Applications/Defold.app/Contents/Resources/packages/defold-*.jar | head -1)
-"$JAVA" -cp "$JAR" com.dynamo.bob.Bob --root . --platform js-web --archive \
-        --variant debug --bundle-output <DIR> build bundle
+bash tools/defold-bundle.sh <DIR> --variant debug
 ```
+
+⚠ **Платформа сменилась.** До Defold 1.13 здесь стоял `--platform js-web`; в
+1.13.1 (обновление 2026-08-31) этот id удалён и bob падает с
+`Platform js-web not supported`. Живые id: `wasm-web` и `wasm_pthread-web`.
+Берём второй — он даёт `ShenzenSolitare_pthread.wasm`, который ждёт харнесс.
+`tools/defold-bundle.sh` уже знает это; переопределяется `DEFOLD_PLATFORM`.
 
 ⚠ `<DIR>` must be **outside** `build/` — bob refuses to bundle into it
 ("this folder is reserved for Defold build system"). Use the scratchpad.

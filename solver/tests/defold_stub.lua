@@ -8,6 +8,7 @@ function M.install()
    M.go_positions = {}
    M.go_self_pos = { x = 0, y = 0, z = 0 }
    M.anims = {}
+   M.anim_log = {}
    _G.hash = function(s) return tostring(s) end
 
    -- vector3 needs `+` because scripts add offsets to message.position.
@@ -42,18 +43,44 @@ function M.install()
          if id == nil then return M.go_self_pos end
          return M.go_positions[tostring(id)] or { x = 0, y = 0, z = 0 }
       end,
+      -- Без id — это САМ вызывающий GO (относительный URL "."), поэтому пишем
+      -- в go_self_pos, а не выбрасываем: card.script так поднимает свою z в
+      -- start_drag (O1), и молчаливая потеря записи сделала бы пин зелёным на
+      -- любом коде.
       set_position = function(pos, id)
-         if id ~= nil then M.go_positions[tostring(id)] = pos end
+         if id == nil then
+            M.go_self_pos = pos
+         else
+            M.go_positions[tostring(id)] = pos
+         end
       end,
       -- G7: анимации складываем в очередь и прокручиваем ВРУЧНУЮ (M.flush_anims).
       -- Автозапуск здесь недопустим: fly_card_arc вкладывает вторую анимацию в
       -- колбэк первой, и «мгновенная» анимация превратила бы полёт в
       -- синхронный вызов — тест перестал бы отличать «карта долетела» от
       -- «карту отправили лететь».
-      animate = function(_id, _prop, _pb, _to, _easing, _dur, _delay, cb)
-         if cb then M.anims[#M.anims + 1] = cb end
+      -- Цель анимации ЗАПИСЫВАЕМ (M.anim_log). Иначе про анимацию можно узнать
+      -- только то, что у неё был колбэк, — а O1 весь про то, КУДА едет свойство:
+      -- анимируемая z и есть перевёрнутый порядок отрисовки.
+      -- Отмена смоделирована по ЗАМЕРУ на движке (зонд [ANIMQ], Defold 1.13.1,
+      -- см. architecture.md): составное свойство и его подсвойства — одна
+      -- дорожка. Раньше `cancel_animations` была пустышкой, и тест не отличал
+      -- «покачивание погашено» от «покачивание доиграет и пошлёт relayout».
+      --   Q1: старт составной анимации гасит живое подсвойство и его колбэк;
+      --   Q3: cancel_animations(составное) гасит подсвойство и его колбэк.
+      -- Отменённый колбэк Defold не зовёт — именно на этом стоит вся логика
+      -- «база гасится только доехавшим возвратом».
+      animate = function(id, prop, _pb, to, _easing, dur, delay, cb)
+         local key, p = tostring(id), tostring(prop)
+         M.anim_log[#M.anim_log + 1] = {
+            id = key, prop = p, to = to, dur = dur, delay = delay,
+         }
+         if not p:find("%.") then M.cancel_anims(key, p) end   -- Q1
+         if cb then M.anims[#M.anims + 1] = { id = key, prop = p, cb = cb } end
       end,
-      cancel_animations = function() end,
+      cancel_animations = function(id, prop)
+         M.cancel_anims(tostring(id), prop and tostring(prop) or nil)
+      end,
       -- go.set/go.get держат общий стор свойств: скрипты читают то, что писали
       -- (card.script читает euler.z, чтобы доводить поворот маятником).
       set = function(_url, prop, value)
@@ -66,7 +93,12 @@ function M.install()
       end,
    }
 
-   _G.sprite = { set_constant = function() end }
+   -- `sprite` НАРОЧНО не объявлен. Стаб, выдумывающий отсутствующий в движке
+   -- API, делает тесты слепыми: `sprite.set_constant` жил здесь заглушкой,
+   -- юниты были зелёными, а Defold 1.13.1 эту функцию удалил — игра валилась
+   -- ERROR:SCRIPT на первом же драге. Тинт теперь ставится через
+   -- go.set("#sprite", "tint", …); вернётся вызов sprite.* — тест обязан
+   -- упасть здесь, а не в браузере.
    _G.sound = { play = function() end }
 
    -- Задержку ЗАПОМИНАЕМ, а не выбрасываем: ревью блока M (grok-4.6) заметило,
@@ -104,14 +136,37 @@ M.go_props = {}
 M.go_positions = {}
 M.go_self_pos = { x = 0, y = 0, z = 0 }
 M.anims = {}
+M.anim_log = {}
+
+-- Последняя анимация свойства prop (или nil). Свойство пишут кадр за кадром,
+-- смысл имеет именно последняя цель.
+function M.last_anim(prop)
+   for i = #M.anim_log, 1, -1 do
+      if M.anim_log[i].prop == tostring(prop) then return M.anim_log[i] end
+   end
+   return nil
+end
 
 -- Прокрутить очередь колбэков анимаций. rounds — сколько раз подряд: полёт по
 -- дуге (fly_card_arc) состоит из двух вложенных анимаций, значит нужно два.
+-- Снять из очереди колбэки анимаций свойства `prop` (и его подсвойств) у `id`.
+-- prop == nil — снять все у этого id.
+function M.cancel_anims(id, prop)
+   local kept = {}
+   for _, a in ipairs(M.anims) do
+      local same_target = (a.id == id)
+      local same_prop = prop == nil or a.prop == prop
+                        or a.prop:sub(1, #prop + 1) == prop .. "."
+      if not (same_target and same_prop) then kept[#kept + 1] = a end
+   end
+   M.anims = kept
+end
+
 function M.flush_anims(rounds)
    for _ = 1, (rounds or 1) do
       local q = M.anims
       M.anims = {}
-      for i = 1, #q do q[i]() end
+      for i = 1, #q do q[i].cb() end
    end
 end
 

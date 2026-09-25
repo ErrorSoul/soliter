@@ -263,6 +263,10 @@ H.test("D1 поздний язык перекрашивает и экран по
          .. tostring(gui.texts["text1"])
    end
 
+   -- Подсказка v3 считается от доски: чтобы проверить перекраску, кладём
+   -- готовую подсказку в общий модуль — ровно так её кладёт main.
+   tutorial_state.set_hint({ kind = "free_cell", distance = 3, cards = {}, slots = {} }, "found")
+
    -- SDK ответил позже, чем нарисовали подписи.
    bridge.state, bridge.lang = "ready", "ru"
    on_message(self, hash("language_ready"), {}, "game_manager")
@@ -275,11 +279,45 @@ H.test("D1 поздний язык перекрашивает и экран по
    if title ~= i18n.strings.ru.victory then
       return false, "заголовок победы остался на старом языке: " .. tostring(title)
    end
-   if hint ~= i18n.strings.ru.tutorial_hint_0 then
+   if hint ~= i18n.strings.ru.tutorial_hint_free_cell then
       return false, "хинт туториала остался на старом языке: " .. tostring(hint)
    end
-   if not step_text then
-      return false, "счётчик шагов туториала при перекраске не тронули"
+   if step_text ~= string.format(i18n.strings.ru.tutorial_moves_left, 3) then
+      return false, "счётчик ходов до победы не перекрасился: " .. tostring(step_text)
+   end
+   return true
+end)
+
+-- Ветка «подсказки ещё нет» — та, что живёт первые кадры туториала, пока main
+-- не досчитал первую. Именно в это окно и может приехать поздний язык от SDK,
+-- поэтому проверять надо её отдельно: тест выше кладёт готовую подсказку и
+-- ветку с целью партии не трогает вовсе.
+H.test("D1 поздний язык перекрашивает и строку цели, когда подсказки ещё нет", function()
+   local tutorial_state = require("main.Scripts.tutorial_state")
+   local i18n = require("main.Scripts.i18n")
+   local bridge = new_bridge({ state = "pending", lang = "", search = "?lang=en" })
+   _G.html5 = fake_html5(bridge)
+   _G.gui = fake_gui()
+   load_script("gui/ui.gui_script")
+   local self = {}
+   tutorial_state.reset()          -- подсказки нет: показывается цель туториала
+   init(self)
+   local before = gui.texts["tutorial_text"]
+
+   bridge.state, bridge.lang = "ready", "ru"
+   on_message(self, hash("language_ready"), {}, "game_manager")
+   local after, counter = gui.texts["tutorial_text"], gui.texts["tutorial_step_text"]
+   _G.gui = nil
+   _G.html5 = nil
+
+   if before ~= i18n.strings.en.tutorial_goal then
+      return false, "до ответа SDK ждали английскую цель, а там: " .. tostring(before)
+   end
+   if after ~= i18n.strings.ru.tutorial_goal then
+      return false, "цель туториала осталась на старом языке: " .. tostring(after)
+   end
+   if counter ~= "" then
+      return false, "без подсказки счётчик ходов обязан быть пустым, а он: " .. tostring(counter)
    end
    return true
 end)

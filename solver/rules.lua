@@ -787,6 +787,12 @@ local function state_hash(state)
    return table.concat(parts, "")
 end
 
+-- Канонический ключ нужен не только DFS ниже: solver/hint.lua ведёт СВОЙ обход
+-- (цель у подсказки другая — собранные драконы, а не пустой стол) и обязан
+-- дедуплицировать состояния тем же ключом. Своя копия хэша разошлась бы молча
+-- при первом же новом поле состояния, а разошедшийся ключ ломает visited-набор.
+M.state_hash = state_hash
+
 -- Version that tracks moves applied (returns new state + move list)
 local function apply_mandatory_tracked(state)
    local moves_applied = {}
