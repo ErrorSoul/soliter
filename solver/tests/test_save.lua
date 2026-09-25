@@ -9,13 +9,13 @@
 --      стирающие сохранение ДО show() (иначе рестарт вернул бы брошенную
 --      партию — см. main.script.load_saved_game).
 --
+-- Восстановление (restore_tableau_from_layout/restore_cells_and_foundation)
+-- проверяется в конце файла двумя способами: по сообщениям, которые шлёт main
+-- (порядок оснований, запечатанная ячейка), и по ИТОГОВОМУ состоянию кнопок
+-- драконов — настоящие free_cell/dragon_button/tableau_script на шине
+-- сообщений, оракул — rules.legal_moves. factory.create стаб объявляет.
+--
 -- НЕ проверяется здесь (и не может быть проверено без песочницы/движка):
---   - restore_tableau_from_layout/restore_cells_and_foundation — они гоняют
---     factory.create, которого нет в defold_stub (сознательно: стаб не должен
---     выдумывать поведение движка, которого не проверял никто). Эти функции
---     собраны из ТЕХ ЖЕ примитивов (factory+set_card+update_stack/occupy_slot),
---     что уже используют deal_dragon_test и не проверяются юнитами вовсе —
---     тот же класс риска, что и у остальной раздачи.
 --   - ysdk.player.setData/getData — сознательно не подключены в этом заходе
 --     (см. main.script.save_game): писать в SDK и никогда не читать обратно
 --     бесполезнее, чем не писать вовсе, а честная асинхронная загрузка
@@ -31,6 +31,10 @@ local H = new_harness()
 -- этот файл обязан быть зелёным и при запуске в одиночку. Тесты с диском
 -- дополнительно зовут stub.install() сами — им нужен чистый save_fs.
 stub.install()
+
+local config = require("main.Scripts.config")
+local rules = require("solver.rules")
+local bridge = require("solver.bridge")
 
 local function load_script(rel)
    local chunk, err = loadfile(rel)
@@ -567,6 +571,158 @@ H.test("D3 восстановление запечатанной ячейки д
    end
    if not live then return false, "живая ячейка не восстановлена" end
    if live.complete then return false, "обычная карта в ячейке помечена как собранные драконы" end
+   return true
+end)
+
+-- ─── Восстановление и кнопки драконов: итоговое состояние, а не payload ─────
+--
+-- Тесты выше смотрят только на сообщения, которые шлёт main, и дефект мимо них
+-- прошёл: дракон, припаркованный в НЕзапечатанной ячейке, после перезагрузки
+-- не попадал в счётчик кнопки своей масти — у живой игры он засчитан ещё
+-- верхушкой колонки, а восстановление кладёт его в ячейку сразу. Кнопка не
+-- загоралась, хотя сбор масти законен.
+--
+-- Поэтому здесь НАСТОЯЩИЕ free_cell/dragon_button/tableau_script гоняются на
+-- маленькой шине сообщений, а оракул — правила солвера, а не код кнопки:
+-- для каждой масти «кнопка сказала курсору is_active» обязано совпадать с
+-- «rules.legal_moves предлагает dragon_collect». Сохранение проходит через
+-- encode/decode и перепись, то есть фикстура — честная доска из 40 карт.
+
+local function restore_on_bus(snap)
+   stub.install()
+   local queue, current = {}, "main"
+   function _G.msg.post(to, id, data)
+      queue[#queue + 1] = { to = tostring(to), id = tostring(id), data = data, from = current }
+   end
+   -- Каждый скрипт в своём окружении: глобальные init/on_message разных
+   -- скриптов не должны затирать друг друга (и _G других тестов).
+   local function load_env(path)
+      local env = setmetatable({}, { __index = _G })
+      assert(loadfile(path, "t", env))()
+      return env
+   end
+   local inst = {}
+   local function add(id, path)
+      local env = load_env(path)
+      local self = {}
+      current = id
+      -- rawget: окружение смотрит в _G, а там может лежать init/update
+      -- main.script, загруженного предыдущими тестами через load_script.
+      if rawget(env, "init") then env.init(self) end
+      inst[id] = { env = env, self = self }
+   end
+   for i = 1, 3 do add("free_slot" .. i, "main/Scripts/free_cell.script") end
+   for i = 1, 3 do add("dragon_button" .. i, "main/Scripts/dragon_button.script") end
+   for i = 1, 8 do add("tableau_slot" .. i, "main/Scripts/tableau_script.script") end
+   local main = load_env("main/Scripts/main.script")
+
+   -- Что кнопки в итоге сказали курсору — ровно по этому флагу hit_test
+   -- решает, можно ли по кнопке кликнуть.
+   local button_active = {}
+   local function pump()
+      for _ = 1, 50 do
+         local q = queue
+         queue = {}
+         for _, m in ipairs(q) do
+            if m.to == "cursor" and m.id == hash("set_button_state") then
+               button_active[m.data.slot_id] = m.data.is_active
+            end
+            local t = inst[m.to]
+            if t then
+               current = m.to
+               t.env.on_message(t.self, hash(m.id), m.data or {}, m.from)
+            end
+         end
+         for id, t in pairs(inst) do
+            if rawget(t.env, "update") then current = id; t.env.update(t.self, 1 / 60) end
+         end
+         if #queue == 0 then return end
+      end
+      error("шина не успокоилась за 50 кадров")
+   end
+
+   -- Проводка, которую на старте уровня делают cursor и main.
+   current = "cursor"
+   for i = 1, 3 do
+      msg.post("free_slot" .. i, "set_cursor", { slot_id = "free_slot" .. i, params = config.DRAGON_BUTTON_TRACE })
+   end
+   for i, suit in ipairs({ "red", "blue", "green" }) do
+      msg.post("dragon_button" .. i, "set_button", { data = { sprite = suit, is_active = false },
+         cursor = "cursor", slot_id = "dragon_button" .. i })
+   end
+   pump()
+
+   local dec = assert(main.save_decode_snapshot(assert(main.save_encode_snapshot(snap))))
+   local census = main.snapshot_census_error(dec)
+   if census then error("фикстура теста нечестная по переписи: " .. tostring(census)) end
+   local layout = main.snapshot_to_layout(dec)
+   local mself = { cursor = "cursor", cards = {}, auto_collecting = false, auto_finishing = false }
+   current = "main"
+   main.restore_tableau_from_layout(mself, layout)
+   pump()
+   current = "main"
+   main.restore_cells_and_foundation(mself, layout)
+   pump()
+   return button_active, dec
+end
+
+-- Честная доска: всё, кроме красных драконов, разложено по кругу; четыре
+-- красных дракона расставляет `place_red(tableau, free_cells)`.
+local function board_with_red_dragons(place_red)
+   local snap = { tableau = {}, free_cells = { {}, {}, {} },
+      foundation = { red = 1, blue = 1, green = 1 }, flower = false }
+   for c = 1, 8 do snap.tableau[c] = {} end
+   local rest = {}
+   for _, s in ipairs({ "red", "blue", "green" }) do
+      for v = 3, 10 do rest[#rest + 1] = { value = v, suit = s } end
+      rest[#rest + 1] = { value = 2, suit = s }
+   end
+   for _ = 1, 4 do rest[#rest + 1] = { value = 'd', suit = "blue" } end
+   for _ = 1, 4 do rest[#rest + 1] = { value = 'd', suit = "green" } end
+   rest[#rest + 1] = { value = 'f', suit = "flower" }
+   -- Первая розданная в колонку карта оказывается верхушкой: 3R..10R.
+   for i, c in ipairs(rest) do table.insert(snap.tableau[((i - 1) % 8) + 1], 1, c) end
+   place_red(snap.tableau, snap.free_cells)
+   return snap
+end
+
+local function buttons_match_rules(button_active, dec)
+   local legal = {}
+   for _, mv in ipairs(rules.legal_moves(bridge.from_game(dec))) do
+      if mv.type == "dragon_collect" then legal[mv.suit] = true end
+   end
+   for suit, btn in pairs(config.DRAGON_BUTTON_TRACE) do
+      local lit = button_active[btn] == true
+      if lit ~= (legal[suit] == true) then
+         return false, string.format("масть %s: кнопка %s, а правила сбор %s", suit,
+            lit and "горит" or "не горит", legal[suit] and "разрешают" or "не разрешают")
+      end
+   end
+   return true, legal
+end
+
+H.test("D3 восстановление: дракон в незапечатанной ячейке засчитан кнопкой своей масти", function()
+   local active, dec = restore_on_bus(board_with_red_dragons(function(tableau, cells)
+      for c = 1, 3 do table.insert(tableau[c], { value = 'd', suit = "red" }) end
+      cells[1] = { card = { value = 'd', suit = "red" } }
+   end))
+   local ok, legal = buttons_match_rules(active, dec)
+   if not ok then return false, legal end
+   if not legal.red then return false, "фикстура сломана: правила не предлагают сбор красных" end
+   return true
+end)
+
+-- Негативный контроль: тот же дракон в ячейке, но один красный закопан под
+-- картой. Правило «засчитать всех драконов раскладки» зажгло бы кнопку здесь.
+H.test("D3 восстановление: закопанный дракон кнопкой не засчитан", function()
+   local active, dec = restore_on_bus(board_with_red_dragons(function(tableau, cells)
+      for c = 1, 2 do table.insert(tableau[c], { value = 'd', suit = "red" }) end
+      table.insert(tableau[3], #tableau[3], { value = 'd', suit = "red" })  -- под верхушкой
+      cells[1] = { card = { value = 'd', suit = "red" } }
+   end))
+   local ok, legal = buttons_match_rules(active, dec)
+   if not ok then return false, legal end
+   if legal.red then return false, "фикстура сломана: закопанный дракон не закопан" end
    return true
 end)
 

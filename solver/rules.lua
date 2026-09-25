@@ -193,6 +193,10 @@ end
 -- (tableau_script.can_stack_cards rejects is_dragon on both sides), so it can
 -- never be buried again. Therefore "counted by the game" == "on a tableau top
 -- OR parked in a free cell".
+-- D3 restore is the one other way into a cell: main.restore_cells_and_foundation
+-- puts a saved dragon straight into its cell, skipping the tableau top, so it
+-- sends that dragon's "send_counter_to_button" itself — keeping the equality
+-- above true after a reload (pinned by test_save, real scripts on a bus).
 -- A BLOCKED cell holds an already-collected pile: dragons_collected[suit] gates
 -- that case, and the pile is not a loose dragon — do not count it.
 local function compute_dragon_counter(state)

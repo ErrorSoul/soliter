@@ -752,7 +752,9 @@ end
 -- в main мимо них оставила бы слот, который не помнит, что на нём лежит.
 -- occupy_slot на base_slot/free_cell шлёт main card_to_base/free_cell_changed
 -- — main.on_message сам поднимет foundation_top/suit_to_base/free_cell_state,
--- тем же путём, что и обычный ход игрока.
+-- тем же путём, что и обычный ход игрока. Исключение одно — счёт дракона в
+-- незапечатанной ячейке кнопкой его масти: живая игра делает его ещё на
+-- верхушке колонки, поэтому здесь он послан явно (см. цикл ячеек).
 --
 -- Отложено на несколько кадров ПОСЛЕ init: free_cell.script/base_slot.script
 -- получают self.cursor/dragon_button_trace через set_cursor, а его шлёт
@@ -777,6 +779,18 @@ function restore_cells_and_foundation(self, layout)
             position = pos,
             complete = fc.blocked,
          })
+         -- Единственный шаг живой игры, который occupy_slot НЕ повторяет:
+         -- кнопка масти считает дракона, когда он всплывает верхушкой колонки
+         -- (tableau_script.last_card_to_slot), и из ячейки её счёт не берётся —
+         -- free_cell.send_to_dragon_buttons свою масть пропускает. В живой игре
+         -- дракон попадает в ячейку только с верхушки, то есть уже засчитанным;
+         -- восстановление кладёт его сразу в ячейку, и без этого сообщения
+         -- кнопка масти недосчитывается — сбор после перезагрузки не загорится.
+         -- Запечатанную ячейку не считаем: эта масть уже собрана.
+         if not fc.blocked and fc.card_data.value == 'd' then
+            msg.post(config.DRAGON_BUTTON_TRACE[fc.card_data.suit], "send_counter_to_button",
+               { id = card, data = fc.card_data, slot_id = slot_id })
+         end
       end
    end
 
