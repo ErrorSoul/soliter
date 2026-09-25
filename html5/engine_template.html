@@ -209,6 +209,109 @@
 		document.addEventListener("contextmenu", function (e) { e.preventDefault(); }, { passive: false });
 	</script>
 
+	<script id='fullscreen-guard' type='text/javascript'>
+		// Раздел 3 требований Я.Игр (docs/yandex-requirements.md): «Полноэкранный
+		// режим при запуске и в игре». Открытый долг по D2 (plans/launch-global.md).
+		//
+		// requestFullscreen() браузер принимает ТОЛЬКО синхронно внутри настоящего
+		// пользовательского жеста — вызов из кода загрузки браузер молча отклонит.
+		// Ловим самый первый жест нативным DOM-обработчиком на document, а не через
+		// Lua/GUI: на свежей странице это и есть тап по PLAY (нажимать больше не на
+		// что), но решение не привязано к устройству стартового экрана и не требует
+		// трогать main.script/cursor.script.
+		//
+		// pointerup/touchend/click, а не pointerdown/touchstart/mousedown: down-жест
+		// тоже даёт активацию в части браузеров, но up-событие — общий знаменатель,
+		// который спека признаёт активирующим везде. Слушаем на document в фазе
+		// CAPTURE — событие долетает до нас раньше, чем до обработчиков канваса, так
+		// что даже если движок внутри вызовет preventDefault(), нашего слушателя это
+		// уже не касается.
+		//
+		// Требование мобильное («жестовое управление», «не промахнуться пальцем») —
+		// принудительный fullscreen на десктопе неуместен, там пользователь сам решает
+		// про окно/вкладку. Различаем не по User-Agent (спуфится и ничего не
+		// гарантирует), а по фактическому вводу: (hover: none) and (pointer: coarse) —
+		// грубый указатель БЕЗ курсора с hover, то есть тач как ОСНОВНОЙ способ ввода.
+		// Ноутбук с сенсорным экраном и мышью сюда не попадёт (у мыши есть hover), а
+		// телефон и планшет — попадут. Замерено: в headless Chromium именно
+		// has_touch (не is_mobile) поворачивает этот matchMedia — сценарий `fullscreen`
+		// эмулирует мобильный ввод флагом `--mobile` харнесса ровно через has_touch.
+		(function () {
+			function isMobile() {
+				try {
+					if (window.matchMedia &&
+						window.matchMedia("(hover: none) and (pointer: coarse)").matches) {
+						return true;
+					}
+				} catch (e) {}
+				// Резерв на случай браузера без поддержки медиа-фич hover/pointer.
+				return /Android|iPhone|iPad|iPod|Mobile|Silk/i.test(navigator.userAgent || "");
+			}
+			if (!isMobile()) {
+				return;
+			}
+
+			// el/request разрешаются лениво, внутри обработчика, а не здесь: так
+			// порядок этого блока относительно #app-container в разметке не важен.
+			function requestFn() {
+				var el = document.getElementById("app-container");
+				return el && (el.requestFullscreen || el.webkitRequestFullscreen ||
+					el.mozRequestFullScreen || el.msRequestFullscreen) && el;
+			}
+
+			// iOS Safari (и WebView на его движке) не даёт Fullscreen API для
+			// произвольных элементов вообще — ни один из вариантов выше там не
+			// определён. Осмысленный фолбэк — просто ничего не звать: страница и так
+			// растянута на весь вьюпорт (.canvas-app-container 100%/100%, body
+			// position:fixed) — это весь "fullscreen", который платформа может дать
+			// здесь, без сломанного вызова и мусора в консоли.
+			if (!requestFn()) {
+				return;
+			}
+
+			// "И в игре": один успешный вход держится сам, пока игрок не выйдет сам
+			// (Esc/жест ОС) — повторный автовход после РУЧНОГО выхода сознательно не
+			// делаем: это отдельная незамеренная логика (fullscreenchange, повторное
+			// вооружение слушателей), которую здесь нечем проверить, а непроверенный
+			// путь в релиз не едет (тот же принцип, что и у audio-focus-guard выше).
+			function tryFullscreen() {
+				document.removeEventListener("pointerup", tryFullscreen, true);
+				document.removeEventListener("touchend", tryFullscreen, true);
+				document.removeEventListener("click", tryFullscreen, true);
+
+				var el = requestFn();
+				if (!el) {
+					return;
+				}
+				// В iframe Я.Игр без allow="fullscreen" запрос ОТКЛОНЯЕТСЯ — ожидаемый,
+				// безобидный исход, а не ошибка: игра продолжает работать в обычном
+				// режиме. fullscreenEnabled — та же проверка заранее, чтобы не дёргать
+				// API там, где он гарантированно откажет; сам вызов всё равно обёрнут в
+				// try/catch и .catch(), потому что часть браузеров вместо этого просто
+				// отклоняет промис без синхронного исключения.
+				var enabled = document.fullscreenEnabled;
+				if (enabled === undefined) { enabled = document.webkitFullscreenEnabled; }
+				if (enabled === false) {
+					return;
+				}
+				var request = el.requestFullscreen || el.webkitRequestFullscreen ||
+					el.mozRequestFullScreen || el.msRequestFullscreen;
+				try {
+					var result = request.call(el);
+					if (result && typeof result.catch === "function") {
+						result.catch(function () {});
+					}
+				} catch (e) {
+					// безобидно: остаёмся в обычном режиме, ничего не ломаем
+				}
+			}
+
+			document.addEventListener("pointerup", tryFullscreen, true);
+			document.addEventListener("touchend", tryFullscreen, true);
+			document.addEventListener("click", tryFullscreen, true);
+		})();
+	</script>
+
 	<!-- D1: SDK Яндекс.Игр. Путь /sdk.js — от корня хоста-обёртки, так в требованиях
 	     платформы. Вне iframe Я.Игр это 404: тег молча не грузится, YaGames не
 	     появляется, мост уходит в состояние "absent" и игра работает как обычно. -->
