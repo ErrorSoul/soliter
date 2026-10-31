@@ -570,7 +570,7 @@
         "matched_expected_outcome": true
       }
     ],
-    "selfcheck_log_sha256": "584a7620c58aab56f7f2a52d2e0f2b835bd137cad2bb5a9b86bef377d683868e",
+    "selfcheck_log_sha256": "cdc11bed4247703a0ff0f19191bc9adfa30875ad4b49e107f005be4be22b53ab",
     "selected_source_sha256": {
       "main/Scripts/card.script": "797938119ee32f73c6638e746ecd186fc150bd4a6e750909afdd8bce4708cfac",
       "main/Scripts/cursor.script": "9d2cb5f485947a47f531b290713a8829414aa459cce53113fef3f8e45229e8d8",
