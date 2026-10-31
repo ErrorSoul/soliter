@@ -1,0 +1,10 @@
+[DEBUG] dev-клавиши: off
+
+=== TEST RESULTS ===
+  PASS  Review: tutorial round trip preserves the normal saved game
+  PASS  Review: clearing a hint does not flatten a card held in the hand
+  PASS  Review: completed flower flight lands immediately
+  PASS  Review: simultaneous foundation arrivals have distinct final heights
+  PASS  Review: victory particles clean up on expiry, hide and final without consuming deal randomness
+
+5 passed / 0 failed

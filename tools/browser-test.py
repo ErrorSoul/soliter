@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Headless browser play-test for the js-web bundle.
+"""Headless browser play-test for the wasm_pthread-web bundle.
 
 Boots the real Defold HTML5 build in headless Chromium (SwiftShader WebGL),
 drives it with real mouse/key events and captures everything the engine prints
@@ -10,7 +10,7 @@ drives it with real mouse/key events and captures everything the engine prints
 <bundle-dir> holds index.html, e.g. <bundle-output>/ShenzenSolitare.
 Build it with:
 
-    bob --platform js-web --archive --variant debug \
+    bob --platform wasm_pthread-web --archive --variant debug \
         --bundle-output <dir-OUTSIDE-build/> build bundle
 
 Two engine facts this harness exists to respect:
@@ -35,6 +35,7 @@ Two engine facts this harness exists to respect:
 Exit code 0 = scenario finished with no engine error and every expectation met.
 """
 import argparse
+import faulthandler
 import functools
 import http.server
 import io
@@ -116,6 +117,7 @@ class Session:
         self.t0 = time.time()
         self.rect = None
         self.is_mobile = False
+        self.is_release = False
 
     # ---------- observation ----------
     def note(self, kind, text):
@@ -282,13 +284,25 @@ class Session:
                 self.rect["oy"] + (GAME_H - y) * self.rect["scale"])
 
     # ---------- input ----------
+    def touch(self, kind, x=0, y=0):
+        if not hasattr(self, "cdp"):
+            self.cdp = self.page.context.new_cdp_session(self.page)
+        self.cdp.send("Input.dispatchTouchEvent", {"type": kind,
+            "touchPoints": [] if kind == "touchEnd" else [{"x": x, "y": y, "id": 1}]})
+
     def click_game(self, x, y, label="", hold=HOLD_MS):
         cx, cy = self._map(x, y)
-        self.page.mouse.move(cx, cy)
-        self.page.wait_for_timeout(FRAME_MS * 2)
-        self.page.mouse.down()
+        if self.is_mobile:
+            self.touch("touchStart", cx, cy)
+        else:
+            self.page.mouse.move(cx, cy)
+            self.page.wait_for_timeout(FRAME_MS * 2)
+            self.page.mouse.down()
         self.page.wait_for_timeout(hold)
-        self.page.mouse.up()
+        if self.is_mobile:
+            self.touch("touchEnd")
+        else:
+            self.page.mouse.up()
         self.page.wait_for_timeout(FRAME_MS * 2)
         self.note("click", f"game({x},{y}) css({cx:.0f},{cy:.0f}) {label}")
 
@@ -300,15 +314,25 @@ class Session:
         single teleport and never as a drag."""
         sx, sy = self._map(x1, y1)
         ex, ey = self._map(x2, y2)
-        self.page.mouse.move(sx, sy)
-        self.page.wait_for_timeout(FRAME_MS * 2)
-        self.page.mouse.down()
+        if self.is_mobile:
+            self.touch("touchStart", sx, sy)
+        else:
+            self.page.mouse.move(sx, sy)
+            self.page.wait_for_timeout(FRAME_MS * 2)
+            self.page.mouse.down()
         self.page.wait_for_timeout(HOLD_MS)
         for i in range(1, steps + 1):
-            self.page.mouse.move(sx + (ex - sx) * i / steps, sy + (ey - sy) * i / steps)
+            x, y = sx + (ex - sx) * i / steps, sy + (ey - sy) * i / steps
+            if self.is_mobile:
+                self.touch("touchMove", x, y)
+            else:
+                self.page.mouse.move(x, y)
             self.page.wait_for_timeout(FRAME_MS * 2)
         self.page.wait_for_timeout(HOLD_MS)
-        self.page.mouse.up()
+        if self.is_mobile:
+            self.touch("touchEnd")
+        else:
+            self.page.mouse.up()
         self.page.wait_for_timeout(FRAME_MS * 4)
         self.note("drag", f"({x1},{y1})->({x2},{y2}) {label}")
 
@@ -321,9 +345,12 @@ class Session:
 
     # ---------- game helpers ----------
     def boot(self):
-        self.wait(5, "engine boot")
+        self.page.wait_for_function("""() => typeof Module !== 'undefined' &&
+            Module._isEngineLoaded && !document.getElementById('defold-progress')""", timeout=30000)
+        self.wait(1, "first game frames")
         self.measure()
-        self.expect(self.logs_matching(r"Defold Engine"), "engine never announced itself")
+        if not self.is_release:
+            self.expect(self.logs_matching(r"Defold Engine"), "engine never announced itself")
 
     def wait(self, seconds, label=""):
         self.page.wait_for_timeout(int(seconds * 1000))
@@ -332,9 +359,13 @@ class Session:
 
     def press_play(self):
         self.click_game(*PLAY_BUTTON, label="PLAY")
-        got = self.wait_for_log(r"I am MAIN SCRIPT", 20, "level proxy load")
-        self.expect(got, "PLAY did not load the level (no main.script init)")
+        if not self.is_release:
+            got = self.wait_for_log(r"I am MAIN SCRIPT", 20, "level proxy load")
+            self.expect(got, "PLAY did not load the level (no main.script init)")
         self.wait(2.5, "deal settles")
+        if self.is_release:
+            felt = self.brightness(*FREE_CELL[1])
+            self.expect(self.exposed_depth(1, felt) is not None, "PLAY did not render a dealt board")
 
 
 # ================= scenarios =================
@@ -1639,8 +1670,13 @@ def scenario_tutorialfree(s):
     # знает, о какой из десяти карт речь.
     def pulses(x, y, half=18, gap=280):
         a = s.patch(x, y, half, half)
-        s.page.wait_for_timeout(gap)
-        return a != s.patch(x, y, half, half)
+        # One pair can sample symmetric phases of the ping-pong, especially
+        # when ReadPixels is slow. Use unequal gaps to avoid that alias.
+        for interval in (gap, 170, 110):
+            s.page.wait_for_timeout(interval)
+            if a != s.patch(x, y, half, half):
+                return True
+        return False
 
     s.expect(pulses(TABLEAU_X[1], TABLEAU_TOP_Y - 4 * CARD_PITCH),
              "карта, о которой говорит подсказка (2_red), не подсвечена")
@@ -2173,6 +2209,96 @@ def scenario_saveload(s):
              "вектор глубин не различает даже полную пересдачу — оракул слепой")
 
 
+def scenario_pickupfx(s):
+    """Observe the actual shadow, flight pose and complete cleanup in pixels."""
+    s.boot()
+    s.press_play()
+    s.click_game(*TUTORIAL_BUTTON, label="deterministic effects board")
+    s.wait(3, "tutorial settled")
+    home = s.patch(169, 299, 30, 45)  # green 5 is not the hinted card
+    ground = s.brightness(654, 140, 2)
+    sx, sy = s._map(169, 299)
+    ex, ey = s._map(600, 150)
+    s.page.mouse.move(sx, sy)
+    s.page.mouse.down()
+    s.wait(0.2, "pickup")
+    for i in range(1, 13):
+        s.page.mouse.move(sx + (ex - sx) * i / 12, sy + (ey - sy) * i / 12)
+        s.page.wait_for_timeout(FRAME_MS * 2)
+    s.shot("moving-card")
+    s.wait(0.8, "card stops tilting")
+    shadow = s.brightness(654, 140, 2)
+    s.note("shadow", f"felt={ground:.1f}, under raised card={shadow:.1f}")
+    s.expect(shadow < ground - 4, "raised card has no visible shadow")
+    s.shot("raised-card-shadow")
+    s.page.mouse.up()  # invalid drop in the empty space below the columns
+    s.wait(1.2, "return and recoil finish")
+    s.expect(s.patch(169, 299, 30, 45) == home, "card did not return to its resting pose")
+    s.expect(abs(s.brightness(654, 140, 2) - ground) < 2, "shadow was left on the table")
+    s.shot("effects-cleared")
+
+
+def scenario_tutorialsave(s):
+    """A practice board must not destroy or replace an unfinished normal game."""
+    s.boot()
+    s.press_play()
+    s.wait(2, "deal settled")
+    felt = s.brightness(*FREE_CELL[1])
+    depth = s.exposed_depth(1, felt)
+    if not s.expect(depth is not None, "no exposed card to park"):
+        return
+    s.drag_game(TABLEAU_X[1], TABLEAU_TOP_Y - depth * CARD_PITCH,
+                *FREE_CELL[1], "park a card before practice")
+    s.wait(3, "save flushed")
+    expected = [s.exposed_depth(c, felt) for c in range(1, 9)]
+    card = s.patch(*FREE_CELL[1], 28, 45)
+    s.expect_card_at(*FREE_CELL[1], felt, "parked card")
+
+    def same_board(label):
+        s.wait(3, label)
+        actual = [s.exposed_depth(c, felt) for c in range(1, 9)]
+        s.expect(actual == expected, f"{label}: changed columns {expected} -> {actual}")
+        s.expect(s.patch(*FREE_CELL[1], 28, 45) == card,
+                 f"{label}: parked card changed or disappeared")
+        s.shot(label)
+
+    s.click_game(*TUTORIAL_BUTTON, label="practice")
+    s.wait(3, "tutorial loaded")
+    if not s.is_release:
+        s.expect(s.logs_matching(r"\[TUTOR\] found"), "tutorial never loaded")
+    s.expect_card_at(169, 299, felt, "practice card rendered")
+    s.click_game(110, 50, label="skip tutorial")
+    same_board("after-skip")
+
+    # Completing practice must also resume this exact board.
+    s.click_game(*TUTORIAL_BUTTON, label="practice again")
+    s.wait(3, "tutorial loaded again")
+    for x1, y1, x2, y2 in [
+        (65, 159, 585, 457), (65, 194, 585, 457),
+        (65, 229, 65, 457), (65, 264, 169, 299),
+    ]:
+        s.drag_game(x1, y1, x2, y2, "tutorial move")
+        s.wait(1, "move settled")
+    s.click_game(*DRAGON_BUTTON[1], label="collect dragons")
+    s.wait(2.2, "victory and confetti")
+    s.shot("victory-confetti")
+    burst = s.patch(150, 300, 125, 180)
+    s.wait(0.4, "confetti moves")
+    s.expect(s.patch(150, 300, 125, 180) != burst, "victory burst is not animated")
+    s.shot("victory-confetti-later")
+    s.wait(3, "confetti expires")
+    settled = s.patch(150, 300, 125, 180)
+    s.wait(0.4, "no permanent particle loop")
+    s.expect(s.patch(150, 300, 125, 180) == settled, "victory effect never settles")
+    s.click_game(480, 230, label="return from tutorial victory")
+    same_board("after-practice-win")
+
+    s.page.goto(s.url)
+    s.boot()
+    s.press_play()
+    same_board("after-page-reload")
+
+
 SCENARIOS = {"boot": scenario_boot, "hittest": scenario_hittest,
              "dragz": scenario_dragz, "regrab": scenario_regrab,
              "guilock": scenario_guilock, "dragonrestart": scenario_dragonrestart,
@@ -2185,7 +2311,34 @@ SCENARIOS = {"boot": scenario_boot, "hittest": scenario_hittest,
              "i18n": scenario_i18n, "yasdk": scenario_yasdk,
              "resize": scenario_resize, "dealrng": scenario_dealrng,
              "tutorialfree": scenario_tutorialfree,
-             "saveload": scenario_saveload}
+             "saveload": scenario_saveload, "tutorialsave": scenario_tutorialsave,
+             "pickupfx": scenario_pickupfx}
+
+# Capability restrictions live next to the registry. A new ordinary scenario
+# automatically joins the debug batch; release support must be explicit.
+FIXTURE_SCENARIOS = frozenset({"dragz", "dragonrestart", "celldrain", "o2sweep"})
+RELEASE_SCENARIOS = frozenset({"boot", "hittest", "fullscreen", "debugkeys",
+                               "yasdk", "tutorialsave", "pickupfx"})
+
+
+def batch_scenarios(release=False):
+    return [name for name in SCENARIOS if
+            (name in RELEASE_SCENARIOS if release else name not in FIXTURE_SCENARIOS)]
+
+
+def close_browser(s, browser):
+    """Best-effort navigation must not prevent closing or change a verdict."""
+    s.note("cleanup", "unloading game and closing browser")
+    faulthandler.dump_traceback_later(30)
+    try:
+        try:
+            s.page.goto("about:blank", wait_until="commit", timeout=10000)
+        except Exception as exc:
+            s.note("cleanup-warning", f"could not unload page: {type(exc).__name__}: {exc}")
+        finally:
+            browser.close()
+    finally:
+        faulthandler.cancel_dump_traceback_later()
 
 
 def main():
@@ -2203,10 +2356,14 @@ def main():
                     help="serve WITHOUT cross-origin isolation (no SharedArrayBuffer), "
                          "which is what a host that omits COOP/COEP gives you")
     ap.add_argument("--headed", action="store_true")
+    ap.add_argument("--browser-channel", default=None,
+                    help="installed browser channel, e.g. chrome; default is Playwright Chromium")
+    ap.add_argument("--release", action="store_true",
+                    help="verify startup through pixels; release engines strip Lua logs")
     ap.add_argument("--query", default="",
                     help="query-строка к index.html, например lang=ru (H2: так язык задают Я.Игры)")
     ap.add_argument("--mobile", action="store_true",
-                    help="эмулировать тач как основной ввод (has_touch=True). Только это, БЕЗ "
+                    help="CDP touch-ввод в click_game/drag_game и has_touch=True, БЕЗ "
                          "is_mobile: is_mobile ещё и включает мета-viewport width=device-width "
                          "и меняет innerWidth (960->981 замерено), а has_touch один в один "
                          "поворачивает matchMedia('(hover:none) and (pointer:coarse)'), от которого "
@@ -2230,6 +2387,7 @@ def main():
     with sync_playwright() as pw:
         browser = pw.chromium.launch(
             headless=not args.headed,
+            channel=args.browser_channel,
             args=["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader",
                   "--disable-gpu-sandbox", "--autoplay-policy=no-user-gesture-required"],
         )
@@ -2240,6 +2398,7 @@ def main():
         s = Session(page, args.out)
         s.url = url
         s.is_mobile = args.mobile
+        s.is_release = args.release
 
         def on_console(m):
             kind = classify(m.text)
@@ -2264,14 +2423,18 @@ def main():
         finally:
             report = {
                 "scenario": args.scenario, "viewport": [vw, vh],
+                "release": args.release, "mobile": args.mobile, "dpr": args.dpr,
                 "cross_origin_isolated": not args.no_coi,
                 "binaries": binaries, "fatal": fatal,
                 "failures": s.failures, "log": s.log,
             }
-            with open(os.path.join(args.out, "report.json"), "w") as f:
-                json.dump(report, f, indent=1)
-            browser.close()
-    httpd.shutdown()
+            try:
+                close_browser(s, browser)
+            finally:
+                with open(os.path.join(args.out, "report.json"), "w") as f:
+                    json.dump(report, f, indent=1)
+                httpd.shutdown()
+                httpd.server_close()
 
     print(f"\n=== scenario={args.scenario} viewport={vw}x{vh} coi={not args.no_coi} ===")
     print(f"binaries served: {', '.join(sorted(set(binaries))) or '(none)'}")

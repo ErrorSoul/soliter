@@ -14,6 +14,7 @@ function init(self)
    self.is_highlighted = false
    -- Сохраняем начальный цвет спрайта
    self.normal_tint = vmath.vector4(1, 1, 1, 1)
+   go.set("#shadow", "tint", vmath.vector4(0, 0, 0, 0))
    self.highlight_tint = vmath.vector4(1.15, 1.15, 1.15, 1) -- Белое свечение
    -- go.set("#sprite", "tint", self.highlight_tint)
    go.set_position(vmath.vector3(go.get_position().x,
@@ -56,7 +57,8 @@ end
 -- иначе карта остаётся повёрнутой/сжатой навсегда (сообщение drop_* может и не
 -- прийти — см. F10: драг, начатый в окне 1.5с до dragons_collected).
 function reset_card_fx(settle)
-   go.cancel_animations(".", "scale.x")
+   go.cancel_animations(".", "scale")
+   go.cancel_animations("#sprite", "tint")
    go.cancel_animations(".", "euler.z")
    if settle then
       -- маятник: карта доворачивается через лёгкий перелёт, а не щелчком
@@ -129,6 +131,8 @@ function on_message(self, message_id, message, sender)
       go.animate(".", "scale", go.PLAYBACK_ONCE_FORWARD,
           vmath.vector3(1.1, 1.1, 1), go.EASING_OUTQUAD, 0.1)
       go.set("#sprite", "tint", vmath.vector4(1.15, 1.15, 1.15, 1))
+      go.animate("#shadow", "tint.w", go.PLAYBACK_ONCE_FORWARD,
+          0.28, go.EASING_OUTQUAD, 0.12)
 
    elseif message_id == hash("drag_update") and self.is_dragging then
       go.cancel_animations(".", "position")
@@ -166,14 +170,13 @@ function on_message(self, message_id, message, sender)
       end
       go.cancel_animations(".", "position")
       reset_card_fx(true)
-      go.animate(".", "scale", go.PLAYBACK_ONCE_FORWARD,
-          vmath.vector3(1, 1, 1), go.EASING_OUTQUAD, 0.15)
+      go.animate("#shadow", "tint.w", go.PLAYBACK_ONCE_FORWARD,
+          0, go.EASING_OUTQUAD, 0.12)
       if message.animation then
-          -- Auto-move flash: белая вспышка
-          go.set("#sprite", "tint", vmath.vector4(1.3, 1.3, 1.3, 1))
-          timer.delay(0.35, false, function()
-              go.set("#sprite", "tint", vmath.vector4(1, 1, 1, 1))
-          end)
+          -- A cancellable warm glint; no timer can repaint a later drag.
+          go.set("#sprite", "tint", vmath.vector4(1.18, 1.12, 0.88, 1))
+          go.animate("#sprite", "tint", go.PLAYBACK_ONCE_FORWARD,
+              self.normal_tint, go.EASING_OUTQUAD, 0.32)
       else
           go.set("#sprite", "tint", vmath.vector4(1, 1, 1, 1))
       end
@@ -194,15 +197,17 @@ function on_message(self, message_id, message, sender)
       self.owner = message.slot_id
 
       go.animate(".", "scale", go.PLAYBACK_ONCE_FORWARD,
-          vmath.vector3(1.08, 1.08, 1), go.EASING_OUTQUAD, 0.1, 0.15, function()
+          vmath.vector3(1.035, 0.975, 1), go.EASING_OUTQUAD, 0.10, 0, function()
               go.animate(".", "scale", go.PLAYBACK_ONCE_FORWARD,
-                  vmath.vector3(1, 1, 1), go.EASING_INQUAD, 0.1)
+                  vmath.vector3(1, 1, 1), go.EASING_OUTSINE, 0.16)
           end)
    elseif message_id == hash("drop_failed") then
       self.is_dragging = false
       sfx.card_error()
       go.set("#sprite", "tint", vmath.vector4(1, 1, 1, 1))
       reset_card_fx(true)
+      go.animate("#shadow", "tint.w", go.PLAYBACK_ONCE_FORWARD,
+          0, go.EASING_OUTQUAD, 0.18)
       go.animate(".", "scale", go.PLAYBACK_ONCE_FORWARD,
           vmath.vector3(1, 1, 1), go.EASING_OUTQUAD, 0.15)
       -- Возврат по z идёт на СВОЮ базу, а не на ту, что прислал курсор:
@@ -262,6 +267,8 @@ function on_message(self, message_id, message, sender)
 
    if message_id == hash("highlight") then
       self.is_highlighted = true
+      if self.is_dragging then return end
+      go.cancel_animations("#sprite", "tint")
       -- Pulsing glow: bright yellow-white tint
       go.set("#sprite", "tint", vmath.vector4(1.5, 1.4, 1.0, 1))
       go.cancel_animations(".", "scale")
@@ -269,6 +276,8 @@ function on_message(self, message_id, message, sender)
           vmath.vector3(1.06, 1.06, 1), go.EASING_INSINE, 0.5)
    elseif message_id == hash("unhighlight") then
       self.is_highlighted = false
+      if self.is_dragging then return end
+      go.cancel_animations("#sprite", "tint")
       go.set("#sprite", "tint", self.normal_tint)
       go.cancel_animations(".", "scale")
       go.set(".", "scale", vmath.vector3(1, 1, 1))

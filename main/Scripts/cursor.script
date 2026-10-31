@@ -328,17 +328,19 @@ end
 
 local function fly_card_arc(card_id, target_pos, delay, callback)
     local start_pos = go.get_position(card_id)
-    local fly_z = 0.5
-    local mid = vmath.vector3(
-        (start_pos.x + target_pos.x) / 2,
-        math.max(start_pos.y, target_pos.y) + 80,
-        fly_z
-    )
-    local land = vmath.vector3(target_pos.x, target_pos.y, fly_z)
-    go.animate(card_id, "position", go.PLAYBACK_ONCE_FORWARD,
-        mid, go.EASING_OUTQUAD, 0.35, delay, function()
-            go.animate(card_id, "position", go.PLAYBACK_ONCE_FORWARD,
-                land, go.EASING_INQUAD, 0.35, 0, callback)
+    go.cancel_animations(card_id, "position")
+    -- Keep the card inside the table, with a distinct layer per dragon.
+    -- X moves continuously; only Y eases at the apex, avoiding a full stop
+    -- halfway through the old two-segment flight.
+    local peak = math.min(math.max(start_pos.y, target_pos.y) + 65,
+        config.DISPLAY_HEIGHT - config.CARD_HALF_SIZE.y - 6)
+    go.set_position(vmath.vector3(start_pos.x, start_pos.y, 0.5 + delay * 0.01), card_id)
+    go.animate(card_id, "position.x", go.PLAYBACK_ONCE_FORWARD,
+        target_pos.x, go.EASING_INOUTSINE, 0.7, delay)
+    go.animate(card_id, "position.y", go.PLAYBACK_ONCE_FORWARD,
+        peak, go.EASING_OUTQUAD, 0.35, delay, function()
+            go.animate(card_id, "position.y", go.PLAYBACK_ONCE_FORWARD,
+                target_pos.y, go.EASING_INQUAD, 0.35, 0, callback)
         end)
 end
 

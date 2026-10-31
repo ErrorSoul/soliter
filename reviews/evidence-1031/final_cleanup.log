@@ -1,0 +1,10 @@
+[DEBUG] dev-клавиши: off
+
+=== TEST RESULTS ===
+  PASS  Review: tutorial round trip preserves the normal saved game
+  PASS  Review: clearing a hint does not flatten a card held in the hand
+  PASS  Review: completed flower flight lands immediately
+  PASS  Review: simultaneous foundation arrivals have distinct final heights
+  FAIL  Review: victory particles clean up on expiry, hide and final without consuming deal randomness  -- EXCEPTION: ./solver/tests/test_effects_review.lua:100: ./solver/tests/test_effects_review.lua:96: particles leaked in GUI final
+
+4 passed / 1 failed

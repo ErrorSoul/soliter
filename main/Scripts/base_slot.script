@@ -31,14 +31,17 @@ function on_message(self, message_id, message, sender)
          value = message.card.data.value,
          slot_id = self.slot_id
       })
+      -- Capture this card's layer now: another arrival may increment the
+      -- counter before the animation callback runs.
+      local landed = go.get_position() + vmath.vector3(0, 0, self.z_index + self.card_count * self.z_index)
       if message.animation then
          go.animate(message.card.id, "position", go.PLAYBACK_ONCE_FORWARD, go.get_position() + vmath.vector3(0, 0, 0.2), go.EASING_OUTQUAD, 0.4, 0.1, function ()
                        -- чтобы летела сверху, а потом не перекрывала следующие карты
-                       go.set_position(go.get_position() + vmath.vector3(0, 0, self.z_index + self.card_count * self.z_index ), message.card.id)
+                       go.set_position(landed, message.card.id)
          end)
 
       else
-         go.set_position(go.get_position() + vmath.vector3(0, 0, self.z_index + self.card_count * self.z_index ), message.card.id)
+         go.set_position(landed, message.card.id)
       end
    elseif message_id == hash("set_cursor") then
       self.cursor = sender

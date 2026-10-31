@@ -1,0 +1,586 @@
+{
+  "branch": "fix/gameplay-effects-review-1031",
+  "base_commit": "98a444a97fd390f01d596ccd7f5b5087100bc536",
+  "scope": "Uncommitted work. Historical matrix used multiple harness revisions; source hashes below apply only to this follow-up, not the old matrix. Raw historical logs/screenshots and ZIP remain local under ignored build/.",
+  "historical_runs": [
+    {
+      "scenario": "boot",
+      "report": "build/review-1031/debug/boot/report.json",
+      "viewport": [
+        960,
+        540
+      ],
+      "release": false,
+      "dpr": 1,
+      "coi": true,
+      "passed": true,
+      "report_sha256": "475945e1bb875196ac16d1da83937eb72c47b58e8a940c40cde106ce1e497597",
+      "fatal": [],
+      "failures": []
+    },
+    {
+      "scenario": "hittest",
+      "report": "build/review-1031/debug/hittest/report.json",
+      "viewport": [
+        960,
+        540
+      ],
+      "release": false,
+      "dpr": 1,
+      "coi": true,
+      "passed": true,
+      "report_sha256": "2fd9bf941c2c11a1c9754b642800d059b9db5dd0afc7f39b351bb26caeccf029",
+      "fatal": [],
+      "failures": []
+    },
+    {
+      "scenario": "regrab",
+      "report": "build/review-1031/debug/regrab/report.json",
+      "viewport": [
+        960,
+        540
+      ],
+      "release": false,
+      "dpr": 1,
+      "coi": true,
+      "passed": true,
+      "report_sha256": "56af94b6a08690df46e70533aa381bdb5a1c326106f4fcf921c1186a6ed4fc23",
+      "fatal": [],
+      "failures": []
+    },
+    {
+      "scenario": "stuck",
+      "report": "build/review-1031/debug/stuck/report.json",
+      "viewport": [
+        960,
+        540
+      ],
+      "release": false,
+      "dpr": 1,
+      "coi": true,
+      "passed": true,
+      "report_sha256": "2d0159bcf776deeb757044b10873e567cba4dfbb7b8dff3e89d3f1b0e5deeb31",
+      "fatal": [],
+      "failures": []
+    },
+    {
+      "scenario": "win",
+      "report": "build/review-1031/debug/win/report.json",
+      "viewport": [
+        960,
+        540
+      ],
+      "release": false,
+      "dpr": 1,
+      "coi": true,
+      "passed": true,
+      "report_sha256": "1a4fc30769e1a1dedaa8e7d0d5efc2731dd94031d8f127df92d3fbdc9fd3250b",
+      "fatal": [],
+      "failures": []
+    },
+    {
+      "scenario": "freecell",
+      "report": "build/review-1031/debug/freecell/report.json",
+      "viewport": [
+        960,
+        540
+      ],
+      "release": false,
+      "dpr": 1,
+      "coi": true,
+      "passed": true,
+      "report_sha256": "d866f2d9e4a83c40dbac4aacc66a80c3d02b41106ec9da3bcd84ddf0130b695a",
+      "fatal": [],
+      "failures": []
+    },
+    {
+      "scenario": "census",
+      "report": "build/review-1031/chromium-debug/census/report.json",
+      "viewport": [
+        960,
+        540
+      ],
+      "release": false,
+      "dpr": 1.0,
+      "coi": true,
+      "passed": true,
+      "report_sha256": "d876556a411c81b67dbfe8f7bc4d414bc0d2046b510f916c784527aa4d3ce236",
+      "fatal": [],
+      "failures": []
+    },
+    {
+      "scenario": "focus",
+      "report": "build/review-1031/debug/focus/report.json",
+      "viewport": [
+        960,
+        540
+      ],
+      "release": false,
+      "dpr": 1,
+      "coi": true,
+      "passed": true,
+      "report_sha256": "165fb0bebb0a3b3341d964aae34441c2059255c5d0fffb7bb1a3b8975b275209",
+      "fatal": [],
+      "failures": []
+    },
+    {
+      "scenario": "audiobg",
+      "report": "build/review-1031/debug/audiobg/report.json",
+      "viewport": [
+        960,
+        540
+      ],
+      "release": false,
+      "dpr": 1,
+      "coi": true,
+      "passed": true,
+      "report_sha256": "cf3aa7e4b360a2a94171c70e8cb1ebee46b91bc5b9ab724f6e48dc1d0cf022f2",
+      "fatal": [],
+      "failures": []
+    },
+    {
+      "scenario": "fullscreen",
+      "report": "build/review-1031/debug/fullscreen/report.json",
+      "viewport": [
+        960,
+        540
+      ],
+      "release": false,
+      "dpr": 1,
+      "coi": true,
+      "passed": true,
+      "report_sha256": "daf9815ccbebcc0606ecc9715a6c200f3bb2824e0b547b74b09551192cb0d593",
+      "fatal": [],
+      "failures": []
+    },
+    {
+      "scenario": "debugkeys",
+      "report": "build/review-1031/debug/debugkeys/report.json",
+      "viewport": [
+        960,
+        540
+      ],
+      "release": false,
+      "dpr": 1,
+      "coi": true,
+      "passed": true,
+      "report_sha256": "dd4086c770afbabd96fca91ad0869c28d633b8e972fb9a29ec60737bf9118bb2",
+      "fatal": [],
+      "failures": []
+    },
+    {
+      "scenario": "restartrace",
+      "report": "build/review-1031/debug/restartrace/report.json",
+      "viewport": [
+        960,
+        540
+      ],
+      "release": false,
+      "dpr": 1,
+      "coi": true,
+      "passed": true,
+      "report_sha256": "8ff2bac6d356719f2a52f44476945de6893ee5ee63b16dd9736999809ddbb3af",
+      "fatal": [],
+      "failures": []
+    },
+    {
+      "scenario": "i18n",
+      "report": "build/review-1031/chromium-debug/i18n/report.json",
+      "viewport": [
+        960,
+        540
+      ],
+      "release": false,
+      "dpr": 1.0,
+      "coi": true,
+      "passed": true,
+      "report_sha256": "355e76c723dcb93f9e73970bf53df5b86fb1b1ce1fc0cbf66869270de015cbfe",
+      "fatal": [],
+      "failures": []
+    },
+    {
+      "scenario": "yasdk",
+      "report": "build/review-1031/chromium-debug/yasdk/report.json",
+      "viewport": [
+        960,
+        540
+      ],
+      "release": false,
+      "dpr": 1.0,
+      "coi": true,
+      "passed": true,
+      "report_sha256": "dd12e9e38517ceca4f679b4d403d5e646c0bc0be9715b9b7d43ff8637a668515",
+      "fatal": [],
+      "failures": []
+    },
+    {
+      "scenario": "resize",
+      "report": "build/review-1031/chromium-debug/resize/report.json",
+      "viewport": [
+        960,
+        540
+      ],
+      "release": false,
+      "dpr": 1.0,
+      "coi": true,
+      "passed": true,
+      "report_sha256": "bde2499a5d87ceafebb9bea2cdc563f22abd38626e27b5caf8d62cd861e054da",
+      "fatal": [],
+      "failures": []
+    },
+    {
+      "scenario": "dealrng",
+      "report": "build/review-1031/chromium-debug/dealrng/report.json",
+      "viewport": [
+        960,
+        540
+      ],
+      "release": false,
+      "dpr": 1.0,
+      "coi": true,
+      "passed": true,
+      "report_sha256": "f6918489771b3c3e8ae0960ddded9742256588cf41d04bfa106241e94bb5676d",
+      "fatal": [],
+      "failures": []
+    },
+    {
+      "scenario": "guilock",
+      "report": "build/review-1031/chromium-debug/guilock/report.json",
+      "viewport": [
+        960,
+        540
+      ],
+      "release": false,
+      "dpr": 1.0,
+      "coi": true,
+      "passed": true,
+      "report_sha256": "5c448d1895828750f66a5e011b5cc3e88e52a36a8f268801ecd1a5296038eb0e",
+      "fatal": [],
+      "failures": []
+    },
+    {
+      "scenario": "tutorialfree",
+      "report": "build/review-1031/chromium-debug/tutorialfree/report.json",
+      "viewport": [
+        960,
+        540
+      ],
+      "release": false,
+      "dpr": 1.0,
+      "coi": true,
+      "passed": true,
+      "report_sha256": "9c1514b0dae5bb93fb7f43a3387438afff0273d2705e8060aedfbbe73bd5f665",
+      "fatal": [],
+      "failures": []
+    },
+    {
+      "scenario": "saveload",
+      "report": "build/review-1031/chromium-debug/saveload/report.json",
+      "viewport": [
+        960,
+        540
+      ],
+      "release": false,
+      "dpr": 1.0,
+      "coi": true,
+      "passed": true,
+      "report_sha256": "8fbdd5374d60aa5e7e08e0c3eed91f8a9d62009236ff28e5895b0d276fe9f54f",
+      "fatal": [],
+      "failures": []
+    },
+    {
+      "scenario": "tutorialsave",
+      "report": "build/review-1031/chromium-debug/tutorialsave/report.json",
+      "viewport": [
+        960,
+        540
+      ],
+      "release": false,
+      "dpr": 1.0,
+      "coi": true,
+      "passed": true,
+      "report_sha256": "6d1c7397e216e750c43bcf29d299f20ae7435e8d3eef25e30a32fccf2230f713",
+      "fatal": [],
+      "failures": []
+    },
+    {
+      "scenario": "pickupfx",
+      "report": "build/review-1031/chromium-debug/pickupfx/report.json",
+      "viewport": [
+        960,
+        540
+      ],
+      "release": false,
+      "dpr": 1.0,
+      "coi": true,
+      "passed": true,
+      "report_sha256": "6e7fac5e6a76e838d9ce905ed911903c9482a158a830909aa78138a7eb348985",
+      "fatal": [],
+      "failures": []
+    },
+    {
+      "scenario": "dragonrestart",
+      "report": "build/review-1031/dragonrestart/report.json",
+      "viewport": [
+        960,
+        540
+      ],
+      "release": false,
+      "dpr": 1,
+      "coi": true,
+      "passed": true,
+      "report_sha256": "9f6708d245ff1fd4a7b55d60ce12f017b37477269c20a702a9fab6e432eda219",
+      "fatal": [],
+      "failures": []
+    },
+    {
+      "scenario": "dragz",
+      "report": "build/review-1031/dragz/report.json",
+      "viewport": [
+        960,
+        540
+      ],
+      "release": false,
+      "dpr": 1,
+      "coi": true,
+      "passed": true,
+      "report_sha256": "d1aa0053d749bfdec4f73e22c575c3e0108af66879b0d64d61339539b59aa5cb",
+      "fatal": [],
+      "failures": []
+    },
+    {
+      "scenario": "celldrain",
+      "report": "build/review-1031/celldrain/report.json",
+      "viewport": [
+        960,
+        540
+      ],
+      "release": false,
+      "dpr": 1,
+      "coi": true,
+      "passed": true,
+      "report_sha256": "71edc3fb0bbd5073049b8f6fa09a216cc192114d4989ce4efd14e0ebcfb1def8",
+      "fatal": [],
+      "failures": []
+    },
+    {
+      "scenario": "o2sweep",
+      "report": "build/review-1031/chromium-o2/report.json",
+      "viewport": [
+        960,
+        540
+      ],
+      "release": false,
+      "dpr": 1.0,
+      "coi": true,
+      "passed": true,
+      "report_sha256": "ef641996a7d6fa269b36258d6a3e26357c8180f986c5a02b4524de16c62c3c6e",
+      "fatal": [],
+      "failures": []
+    },
+    {
+      "scenario": "debugkeys",
+      "report": "build/review-1031/release/debugkeys/report.json",
+      "viewport": [
+        960,
+        540
+      ],
+      "release": true,
+      "dpr": 1,
+      "coi": true,
+      "passed": true,
+      "report_sha256": "1ff753212b5937b7586aa61387617b84d6057265c5869c8dc2e56741b7b83c0e",
+      "fatal": [],
+      "failures": []
+    },
+    {
+      "scenario": "yasdk",
+      "report": "build/review-1031/release/yasdk/report.json",
+      "viewport": [
+        960,
+        540
+      ],
+      "release": true,
+      "dpr": 1,
+      "coi": true,
+      "passed": true,
+      "report_sha256": "e3962b9492e38ab69d5a32e58aaacef4bd14adae9d12495b0a24438d79bc1c14",
+      "fatal": [],
+      "failures": []
+    },
+    {
+      "scenario": "tutorialsave",
+      "report": "build/review-1031/chromium-release/tutorialsave/report.json",
+      "viewport": [
+        960,
+        540
+      ],
+      "release": true,
+      "dpr": 1.0,
+      "coi": true,
+      "passed": true,
+      "report_sha256": "abe69d001f7ae23b2339e6b69f697b9e16444ac769ae1be0b0b1855db8c4b3cf",
+      "fatal": [],
+      "failures": []
+    },
+    {
+      "scenario": "pickupfx",
+      "report": "build/review-1031/chromium-release/pickupfx/report.json",
+      "viewport": [
+        960,
+        540
+      ],
+      "release": true,
+      "dpr": 1.0,
+      "coi": true,
+      "passed": true,
+      "report_sha256": "0ecc8b35f143ecae10306075bc4636c537c00278015bd3a8bec110f529b07831",
+      "fatal": [],
+      "failures": []
+    },
+    {
+      "scenario": "hittest",
+      "report": "build/review-1031/chromium-release/hittest/report.json",
+      "viewport": [
+        960,
+        540
+      ],
+      "release": true,
+      "dpr": 1.0,
+      "coi": true,
+      "passed": true,
+      "report_sha256": "cbc16abe3e68e03c949707968ce8fec8718b4012580241ddb81aa8216a10f82b",
+      "fatal": [],
+      "failures": []
+    },
+    {
+      "scenario": "hittest",
+      "report": "build/review-1031/mobile/hittest/report.json",
+      "viewport": [
+        844,
+        390
+      ],
+      "release": true,
+      "dpr": 3.0,
+      "coi": true,
+      "passed": true,
+      "report_sha256": "e798628debb5748f2fd0b2a73e0146d231716bb94d02a986fe9b13a645433d22",
+      "fatal": [],
+      "failures": []
+    },
+    {
+      "scenario": "fullscreen",
+      "report": "build/review-1031/mobile/fullscreen/report.json",
+      "viewport": [
+        844,
+        390
+      ],
+      "release": true,
+      "dpr": 3.0,
+      "coi": true,
+      "passed": true,
+      "report_sha256": "62b3512ba585324317e1b9f4005114484a80e5bb625848cfb39062fc5150e8ac",
+      "fatal": [],
+      "failures": []
+    },
+    {
+      "scenario": "hittest",
+      "report": "build/review-1031/no-coi/hittest/report.json",
+      "viewport": [
+        800,
+        600
+      ],
+      "release": true,
+      "dpr": 2.0,
+      "coi": false,
+      "passed": true,
+      "report_sha256": "c0890861b2011dd47b53c2e5ed4d0c8ee82bd0c6c398c1f78e24bdc5deae704c",
+      "fatal": [],
+      "failures": []
+    },
+    {
+      "scenario": "tutorialsave",
+      "report": "build/review-1031/no-coi/tutorialsave/report.json",
+      "viewport": [
+        800,
+        600
+      ],
+      "release": true,
+      "dpr": 2.0,
+      "coi": false,
+      "passed": true,
+      "report_sha256": "9917d2d89b3b723ba5971eab370465124cccc57a301c7264ac75b1a5a3791ac2",
+      "fatal": [],
+      "failures": []
+    }
+  ],
+  "followup": {
+    "lua": {
+      "passed": 278,
+      "failed": 0,
+      "log_sha256": "39b6a1e07963af81dfcc3686a87e8ef4eeaf442933cce1d376176335984fb564"
+    },
+    "browser_runs": [
+      {
+        "scenario": "pickupfx",
+        "report_sha256": "69fe412bec5d81d4f1f6682c4e6ee350d898d85a7202aa3040538f904cb44e4e",
+        "fatal": [],
+        "failures": [],
+        "viewport": [
+          960,
+          540
+        ],
+        "release": false,
+        "mobile": false,
+        "coi": true,
+        "cleanup_warnings": []
+      },
+      {
+        "scenario": "tutorialsave",
+        "report_sha256": "bd7ccad825686e9b1e37bfccb52ba6b78e88e0dd617fe03bda546e137c34eb1d",
+        "fatal": [],
+        "failures": [],
+        "viewport": [
+          960,
+          540
+        ],
+        "release": false,
+        "mobile": false,
+        "coi": true,
+        "cleanup_warnings": []
+      }
+    ],
+    "scratch_mutations": [
+      {
+        "case": "control",
+        "exit_code": 0,
+        "expected_failure": false,
+        "matched_expected_outcome": true
+      },
+      {
+        "case": "hide_cleanup",
+        "exit_code": 1,
+        "expected_failure": true,
+        "matched_expected_outcome": true
+      },
+      {
+        "case": "final_cleanup",
+        "exit_code": 1,
+        "expected_failure": true,
+        "matched_expected_outcome": true
+      }
+    ],
+    "selfcheck_log_sha256": "584a7620c58aab56f7f2a52d2e0f2b835bd137cad2bb5a9b86bef377d683868e",
+    "selected_source_sha256": {
+      "main/Scripts/card.script": "797938119ee32f73c6638e746ecd186fc150bd4a6e750909afdd8bce4708cfac",
+      "main/Scripts/cursor.script": "9d2cb5f485947a47f531b290713a8829414aa459cce53113fef3f8e45229e8d8",
+      "main/Scripts/game_manager.script": "ba5260c84abaeb4d9c4fcce29e9ff0d514c53c606c7e084561655894d9a2274d",
+      "main/Scripts/celebration.lua": "4b0c3c189a9cc2e47cc1d301252e91aff97f75fad85534cf516f411d6de3ee6a",
+      "gui/ui.gui_script": "6f5b1145d476c9e74196279d69885a7bc4faf2923a3fd42de3b527c1ba0f7e36",
+      "solver/tests/test_effects_review.lua": "a27e0bd8491b96cd253f437f6c117484c18e0e63222d4695bc8368ee775e5779",
+      "tools/browser-test.py": "8059b49aa69c9ac7bd4c65e379074dc873bd4ea0bae7fef2dad41c2a3f0e6d74",
+      "tools/browser-review.py": "89a4d080fe6a9dd6cdf6206192be28b83bd18b560840a6ed8fda7488d965bed4",
+      "tools/browser-test-selfcheck.py": "ee90aaf43e2552e16f5b04b8a7e7bdc1e53fd4471e7cb1bb52207a257c61ec26"
+    }
+  }
+}
