@@ -9,7 +9,7 @@ local function script(path)
    return self
 end
 
-H.test("Review: tutorial round trip preserves the normal saved game", function()
+H.test("Review: game_manager keeps the save when restart_level carries preserve_save", function()
    local self = script("main/Scripts/game_manager.script")
    local path = sys.get_save_file("shenzhen_solitaire", "progress")
    sys.save(path, {v = 1, data = "saved-board"})
@@ -19,6 +19,57 @@ H.test("Review: tutorial round trip preserves the normal saved game", function()
    end
    on_message(self, hash("restart_level"), {}, "ui")
    assert(sys.load(path).data == "", "explicit restart must still redeal")
+   return true
+end)
+
+-- The flag above is only half of the fix: the UI must send it. Real ui.gui_script,
+-- real enabled-state of nodes; a tap "hits" exactly the named node.
+H.test("Review: TUTORIAL, SKIP and PLAY NOW keep the save; RESTART redeals", function()
+   stub.install()
+   local tutorial_state = require("main.Scripts.tutorial_state")
+   local enabled = {}
+   _G.gui = setmetatable({
+      EASING_OUTQUAD = 0, EASING_OUTBACK = 1,
+      get_node = function(name) return name end,
+      set_enabled = function(node, on) enabled[node] = on end,
+      is_enabled = function(node) return enabled[node] ~= false end,
+      new_box_node = function() return {} end,
+   }, {__index = function() return function() end end})
+   _G.html5 = nil
+   assert(loadfile("gui/ui.gui_script"))()
+   local self = {}
+   init(self)
+   local function tap(node)
+      msg.clear()
+      gui.pick_node = function(n) return n == node end
+      on_input(self, hash("touch"), {pressed = true, x = 0, y = 0})
+      local sent = {}
+      for _, e in ipairs(msg.log) do
+         if e.id == "restart_level" then sent[#sent + 1] = e.data.preserve_save end
+      end
+      if #sent ~= 1 then return tostring(#sent) .. " restart_level" end
+      return sent[1]
+   end
+   local function win(tutorial)
+      tutorial_state.is_tutorial = tutorial
+      tutorial_state.show_victory = true
+      update(self, 0.016)
+   end
+   local ok, err = pcall(function()
+      assert(tap("play_button") == "0 restart_level", "PLAY must not redeal")
+      assert(tap("tutorial_button") == true, "TUTORIAL erased the saved game")
+      assert(tap("tutorial_skip_btn") == true, "SKIP erased the saved game")
+      assert(tap("tutorial_button") == true, "second TUTORIAL erased the saved game")
+      win(true)
+      assert(tap("victory_restart") == true, "PLAY NOW after the tutorial erased the saved game")
+      assert(tap("restart_button") == false, "RESTART must redeal")
+      win(false)
+      assert(tap("victory_restart") == false, "PLAY AGAIN after a real win must redeal")
+   end)
+   tutorial_state.reset()
+   tutorial_state.is_tutorial = false
+   _G.gui = nil
+   assert(ok, err)
    return true
 end)
 

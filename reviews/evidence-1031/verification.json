@@ -1,7 +1,7 @@
 {
   "branch": "fix/gameplay-effects-review-1031",
   "base_commit": "98a444a97fd390f01d596ccd7f5b5087100bc536",
-  "scope": "Uncommitted work. Historical matrix used multiple harness revisions; source hashes below apply only to this follow-up, not the old matrix. Raw historical logs/screenshots and ZIP remain local under ignored build/.",
+  "scope": "Captured before the work was committed (06b9dba). Historical matrix used multiple harness revisions; source hashes below apply only to this follow-up, not the old matrix. Raw historical logs/screenshots and ZIP remain local under ignored build/.",
   "historical_runs": [
     {
       "scenario": "boot",

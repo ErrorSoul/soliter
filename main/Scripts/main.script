@@ -67,8 +67,8 @@ function init(self)
    else
       -- D3: единственная точка входа для восстановления — здесь, а не в
       -- game_manager. game_manager решает, СТОИТ ли вообще искать сохранение
-      -- (restart_level/switch_level стирают его первым делом, см.
-      -- game_manager.script), а что с ним делать — уже наша забота.
+      -- (restart_level без preserve_save и switch_level стирают его первым
+      -- делом, см. game_manager.script), а что с ним делать — уже наша забота.
       local saved = load_saved_game()
       if saved then
          self.restoring = true
