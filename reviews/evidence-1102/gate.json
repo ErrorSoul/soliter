@@ -1,0 +1,45 @@
+{
+  "recorded_on": "2026-11-02",
+  "reviewed_head": "e7fff781f55ad494c0153780146837ff332f170f",
+  "base": "5cb671dc73f328de1a09265f72f2f7ea9a6fd5d2",
+  "grok": {
+    "verdict": "APPROVE",
+    "original_review_head": "ea7eff1547dfd721830f5ae664b8ca4a6b32e640",
+    "existing_run_verified": true,
+    "new_run_launched": false,
+    "artifact": "grok.json"
+  },
+  "advisor": {
+    "verdict": "APPROVE",
+    "implementation": "Independent Codex subagent /root/advisor, not a separate advisor CLI",
+    "artifact": "advisor.txt",
+    "lua_tests": {
+      "passed": 279,
+      "failed": 0
+    },
+    "selfcheck": "PASS",
+    "diff_check": "PASS",
+    "mutation_checks": {
+      "negative_variants_detected": 14,
+      "negative_variants_total": 14,
+      "control_passed": 6,
+      "scope": "real test_effects_review with engine stubs, isolated temporary copy; reported by advisor"
+    }
+  },
+  "carry_forward_checks": {
+    "ea7eff1_to_reviewed_head": "Only INDEX.md, review report and fullscreen docstring changed; executable Python AST equality checked independently by root and advisor.",
+    "06b9dba_to_reviewed_head_game_runtime": "Only two comment lines in main/Scripts/main.script; no other main/gui/html5/assets/render/input/game.project changes.",
+    "archival_commit": "Adds only the contents of reviews/evidence-1102; advisor explicitly retains approval for this evidence-only addition."
+  },
+  "limitations": [
+    "No new Grok call: the completed 2026-11-01 review was verified from its original JSON/stderr.",
+    "Advisor did not repeat browser runs; 11 release/mobile/no-COI runs from the preceding turn are in reviews/evidence-1101.json.",
+    "Remaining nonblocking issues and verification boundaries are listed in advisor.txt."
+  ],
+  "merge_approved_by_user": false,
+  "merged": false,
+  "artifact_sha256": {
+    "advisor.txt": "d629d467deddfaf4c8d4c23ad398d93b929c462af38678bafe4e3cfde3e6e79d",
+    "grok.json": "f3e4dc4f661c545ea2c4a5d4236e1203393941a16ea690dd1279cf3ccfbe4842"
+  }
+}
