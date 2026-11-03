@@ -1,0 +1,19 @@
+{
+  "generator": "Built-in image_gen",
+  "transparent_background": true,
+  "selected": [
+    {
+      "name": "dragon_green",
+      "prompt": "Use case: stylized-concept. Production game sprite, a SINGLE flat ink emblem on a genuinely TRANSPARENT background. Jade and Porcelain solitaire art direction: elegant East Asian paper-cut print, bold smooth curved silhouette, very restrained interior negative-space details, crisply readable at 64 pixels. No card, no rectangle, no backing disk, no scene, no text, no lettering, no numbers, no shadow, no glows, no textures outside the emblem. Entire emblem is centered and fully visible within 12% transparent margins. Not a painting, not a photograph, not a 3D render. A friendly dignified jade GREEN dragon head in profile facing right, flowing curved neck, two small antler-like horns, ivory eye and a restrained antique-gold accent on the horns. Mostly dark jade #17634D with restrained emerald accents. Simple print illustration, not a serpent body. Avoid black heavy outlines."
+    },
+    {
+      "name": "dragon_red",
+      "prompt": "Use case: stylized-concept. Production game sprite, a SINGLE flat ink emblem on a genuinely TRANSPARENT background. Jade and Porcelain solitaire art direction: elegant East Asian paper-cut print, bold smooth curved silhouette, very restrained interior negative-space details, crisply readable at 64 pixels. No card, no rectangle, no backing disk, no scene, no text, no lettering, no numbers, no shadow, no glows, no textures outside the emblem. Entire emblem is centered and fully visible within 12% transparent margins. Not a painting, not a photograph, not a 3D render. A friendly dignified vermilion RED dragon head in profile facing right, flowing curved neck, swept-back flame-shaped mane, two small swept horns, ivory eye and a restrained antique-gold accent on the horns. Mostly deep red #9E3329 with restrained terracotta accents. Simple print illustration, not a serpent body. Avoid black heavy outlines."
+    },
+    {
+      "name": "dragon_blue",
+      "prompt": "Use case: stylized-concept. Production game sprite, a SINGLE flat ink emblem on a genuinely TRANSPARENT background. Jade and Porcelain solitaire art direction: elegant East Asian paper-cut print, bold smooth curved silhouette, very restrained interior negative-space details, crisply readable at 64 pixels. No card, no rectangle, no backing disk, no scene, no text, no lettering, no numbers, no shadow, no glows, no textures outside the emblem. Entire emblem is centered and fully visible within 12% transparent margins. Not a painting, not a photograph, not a 3D render. A friendly dignified sapphire BLUE dragon head in profile facing right, flowing curved neck, smooth curling cloud-shaped mane, two short rounded horns, ivory eye and a restrained antique-gold accent on the horns. Mostly dark blue #284D82 with restrained azure accents. Simple print illustration, not a serpent body. Avoid black heavy outlines."
+    }
+  ],
+  "notes": "Lotus is a deterministic native SVG motif in tools/build-jade.py; the generated lotus candidate was rejected."
+}
