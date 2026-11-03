@@ -2,6 +2,12 @@ local tutorial_state = require("main.Scripts.tutorial_state")
 local i18n = require("main.Scripts.i18n")
 local sfx = require("main.Scripts.sfx")
 local celebration = require("main.Scripts.celebration")
+local theme = require("main.Scripts.theme")
+
+local function theme_color(name, alpha)
+    local c = theme[name]
+    return vmath.vector4(c[1], c[2], c[3], alpha or 1)
+end
 
 local function restart_level(preserve_save)
    msg.post("/main#game_manager", "restart_level", { preserve_save = preserve_save == true })
@@ -39,6 +45,11 @@ local STATIC_LABELS = {
     play_text          = "play",
     victory_menu_text  = "menu",
     tutorial_skip_text = "skip",
+    start_tutorial_text = "tutorial",
+    start_eyebrow      = "menu_eyebrow",
+    start_caption     = "menu_caption",
+    start_footer      = "menu_footer",
+    victory_footer    = "victory_footer",
 }
 
 -- Тексты экрана победы зависят от режима (туториал / обычная партия), поэтому
@@ -50,9 +61,11 @@ local function apply_victory_texts()
     if tutorial_state.is_tutorial then
         gui.set_text(gui.get_node("text1"), i18n.t("well_done"))
         gui.set_text(gui.get_node("text"), i18n.t("play_now"))
+        gui.set_text(gui.get_node("victory_caption"), i18n.t("practice_complete"))
     else
         gui.set_text(gui.get_node("text1"), i18n.t("victory"))
         gui.set_text(gui.get_node("text"), i18n.t("play_again"))
+        gui.set_text(gui.get_node("victory_caption"), i18n.t("board_complete"))
     end
 end
 
@@ -72,6 +85,7 @@ end
 function init(self)
     msg.post(".", "acquire_input_focus")
     apply_language()
+    msg.post("@render:", "clear_color", {color = theme_color("background")})
     -- Скрыть игровые кнопки до начала игры
     gui.set_enabled(gui.get_node("hud_rail"), false)
     gui.set_enabled(gui.get_node("restart_button"), false)
@@ -97,12 +111,22 @@ function on_input(self, action_id, action)
                 gui.set_enabled(gui.get_node("tutorial_button"), true)
                 msg.post("/main#game_manager", "start_game")
                 self.game_started = true
+            elseif gui.pick_node(gui.get_node("start_tutorial_button"), action.x, action.y) then
+                sfx.button_click()
+                tutorial_state.is_tutorial = true
+                tutorial_state.reset()
+                gui.set_enabled(gui.get_node("start_screen"), false)
+                gui.set_enabled(gui.get_node("tutorial_overlay"), true)
+                update_tutorial_hint()
+                -- start_game loads the tutorial without erasing the normal save.
+                msg.post("/main#game_manager", "start_game")
+                self.game_started = true
             end
             return true
         end
 
         -- SKIP во время туториала
-        if tutorial_state.is_tutorial then
+        if tutorial_state.is_tutorial and gui.is_enabled(gui.get_node("tutorial_overlay")) then
             if gui.pick_node(gui.get_node("tutorial_skip_btn"), action.x, action.y) then
                 sfx.button_click()
                 tutorial_state.is_tutorial = false
@@ -200,12 +224,7 @@ function update(self, dt)
         -- когда игрок уйдёт в меню. Уровень под оверлеем ещё загружен.
         msg.post("/main#game_manager", "gameplay_over")
         local overlay = gui.get_node("victory_overlay")
-        -- Косметика (замечена на скриншоте сквозного прогона): заголовок жёлтым
-        -- по иллюстрации — звезда, короны, конфетти — читался плохо, буквы
-        -- тонули в арте. Теперь он лежит на тёмной плашке в цвет обводок
-        -- иллюстрации, а анимацию ведёт плашка: текст — её ребёнок и едет
-        -- вместе с ней. Отсюда и масштаб 1.0 вместо прежних 1.8 — свои 1.8
-        -- текст несёт сам (gui/ui.gui, нода text1).
+        -- Animate the panel and its title together; each theme owns its palette.
         local title = gui.get_node("victory_title_plate")
         local btn_play = gui.get_node("victory_restart")
         local btn_menu = gui.get_node("victory_menu_button")
@@ -226,27 +245,25 @@ function update(self, dt)
         gui.set_enabled(overlay, true)
         celebration.start(self)
 
-        -- Full-screen fade-in (white tint for image texture)
-        gui.set_color(overlay, vmath.vector4(1, 1, 1, 0))
+        -- Solid full-screen background also covers the letterboxed area.
+        gui.set_color(overlay, theme_color("background", 0))
         gui.animate(overlay, "color.w", 1.0, gui.EASING_OUTQUAD, 0.5)
 
         -- Title: slide down + scale bounce
         gui.set_position(title, vmath.vector3(0, 160, 0))
         gui.set_scale(title, vmath.vector3(0.5, 0.5, 1))
-        gui.set_color(title, vmath.vector4(0.12, 0.1, 0.2, 0))
+        gui.set_color(title, theme_color("panel", 0))
         gui.animate(title, "position.y", 60, gui.EASING_OUTBACK, 0.5, 0.3)
         gui.animate(title, "scale", vmath.vector3(1, 1, 1), gui.EASING_OUTBACK, 0.4, 0.3)
-        -- Не до непрозрачности: сквозь плашку должна просвечивать иллюстрация,
-        -- иначе она читается чёрной полосой поперёк картинки.
-        gui.animate(title, "color.w", 0.88, gui.EASING_OUTQUAD, 0.3, 0.3)
+        gui.animate(title, "color.w", 1.0, gui.EASING_OUTQUAD, 0.3, 0.3)
 
         -- Buttons: fade in with slide up
-        gui.set_color(btn_play, vmath.vector4(0.55, 0.15, 0.1, 0))
+        gui.set_color(btn_play, theme_color("primary", 0))
         gui.set_position(btn_play, vmath.vector3(0, -70, 0))
         gui.animate(btn_play, "color.w", 1.0, gui.EASING_OUTQUAD, 0.3, 0.6)
         gui.animate(btn_play, "position.y", -40, gui.EASING_OUTQUAD, 0.3, 0.6)
 
-        gui.set_color(btn_menu, vmath.vector4(0.15, 0.3, 0.15, 0))
+        gui.set_color(btn_menu, theme_color("secondary", 0))
         gui.set_position(btn_menu, vmath.vector3(0, -150, 0))
         gui.animate(btn_menu, "color.w", 1.0, gui.EASING_OUTQUAD, 0.3, 0.75)
         gui.animate(btn_menu, "position.y", -120, gui.EASING_OUTQUAD, 0.3, 0.75)

@@ -42,3 +42,13 @@ embedded_components {
     y: -1.0
   }
 }
+embedded_components {
+  id: "outline"
+  type: "sprite"
+  data: "default_animation: \"card_outline\"\n"
+  "material: \"/builtins/materials/sprite.material\"\n"
+  "size { x: 90.0 y: 150.0 }\n"
+  "size_mode: SIZE_MODE_MANUAL\n"
+  "textures { sampler: \"texture_sampler\" texture: \"/gui/theme.atlas\" }\n"
+  position { x: 1.0 y: -1.0 z: 0.0002 }
+}

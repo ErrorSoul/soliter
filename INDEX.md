@@ -6,6 +6,14 @@
 
 ## Раскладка
 
+- **Оформление экранов:** `tools/build-theme.py --theme classic|jade` генерирует
+  `gui/ui.gui`, `gui/theme.atlas`, `assets/ui/` и палитру `main/Scripts/theme.lua`.
+  `ui.gui_script` сохраняет обработку переходов и локализацию; кнопка обучения
+  на старте грузит учебную партию через `start_game` без очистки сохранения.
+  `card.go` рисует отдельный контур на z=0.0002 относительно карты; лимит
+  `sprite.max_count=256` включает 40 троек «лицо/тень/контур» и слоты.
+  Браузерный сценарий `menus` проходит старт → обучение → победа → меню → игру.
+
 - `main/` — игровой рантайм (логика, слоты, ввод). `gui/` — UI. `solver/` — pure-Lua солвер + тесты.
 - Точка входа: `main/main.collection` → `game_manager.script` → грузит level proxy (`soliter.collection`).
 - `soliter.collection` / `soliter1.collection` — идентичны; содержат слоты + `card_table` (в нём `main.script`, фабрики `card_factory`, `cursor_factory`). **Это единственный источник координат слотов** — скрипты читают их в рантайме через `go.get_position(slot_id)`, хардкода нет. Сетка (G6, по дизайну): центры колонок 65, 169, 273, 377, 481, 585, 689, 793; служебный ряд y=457 — свободные ячейки 1–3, цветок 4, кнопки драконов 5, foundation red/green/blue 6–8; правее x=868 идёт GUI-рельс с кнопками, туда поле заходить не должно (пин — `solver/tests/test_layout.lua`).

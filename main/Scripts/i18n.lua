@@ -28,6 +28,12 @@ M.strings = {
         play_again = "PLAY AGAIN",
         play_now = "PLAY NOW",
         menu = "MENU",
+        menu_eyebrow = "A MOMENT OF FOCUS",
+        menu_caption = "Three suits. Four dragons. One clear table.",
+        menu_footer = "Your game is saved automatically",
+        board_complete = "Every card in its place. Beautifully done.",
+        practice_complete = "You know the moves. Your game is waiting.",
+        victory_footer = "Take a breath. Then try another deal.",
     },
     ru = {
         tutorial_goal = "Собери четырёх драконов",
@@ -48,6 +54,12 @@ M.strings = {
         play_again = "ЕЩЁ РАЗ",
         play_now = "ИГРАТЬ",
         menu = "МЕНЮ",
+        menu_eyebrow = "ВРЕМЯ СОСРЕДОТОЧИТЬСЯ",
+        menu_caption = "Три масти. Четыре дракона. Чистый стол.",
+        menu_footer = "Партия сохраняется автоматически",
+        board_complete = "Каждая карта на своём месте. Красиво!",
+        practice_complete = "Правила освоены. Ваша партия ждёт.",
+        victory_footer = "Немного выдохнуть — и новая раздача.",
     },
     tr = {
         tutorial_goal = "Dort ejderhayi topla",
@@ -68,6 +80,12 @@ M.strings = {
         play_again = "TEKRAR OYNA",
         play_now = "SIMDI OYNA",
         menu = "MENU",
+        menu_eyebrow = "ODAKLANMA ZAMANI",
+        menu_caption = "Uc renk. Dort ejderha. Tertemiz bir masa.",
+        menu_footer = "Oyununuz otomatik kaydedilir",
+        board_complete = "Her kart yerinde. Harika oynadiniz.",
+        practice_complete = "Artik hazirsiniz. Oyununuz sizi bekliyor.",
+        victory_footer = "Bir nefes alin. Sonra yeniden deneyin.",
     },
 }
 

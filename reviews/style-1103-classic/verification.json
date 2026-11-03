@@ -1,0 +1,42 @@
+{
+  "lua": {
+    "passed": 279,
+    "failed": 0
+  },
+  "desktop": [
+    {
+      "scenario": "hittest",
+      "exit_code": 0
+    },
+    {
+      "scenario": "menus",
+      "exit_code": 0
+    },
+    {
+      "scenario": "tutorialsave",
+      "exit_code": 0
+    },
+    {
+      "scenario": "i18n",
+      "exit_code": 0
+    },
+    {
+      "scenario": "pickupfx",
+      "exit_code": 0
+    },
+    {
+      "scenario": "win",
+      "exit_code": 0
+    }
+  ],
+  "mobile_release": [
+    {
+      "scenario": "hittest",
+      "exit_code": 0
+    },
+    {
+      "scenario": "tutorialsave",
+      "exit_code": 0
+    }
+  ]
+}

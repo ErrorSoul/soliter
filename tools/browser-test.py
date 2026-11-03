@@ -67,7 +67,7 @@ BASE_SLOT = {1: (585, 457), 2: (793, 457), 3: (689, 457)}  # порядок id, 
 
 BENIGN = (re.compile(r"^INFO:"), re.compile(r"Defold Engine \d"), re.compile(r"^Downloading"))
 FATAL = (
-    re.compile(r"ERROR:(SCRIPT|GAMEOBJECT|RESOURCE|GUI|RENDER|SOUND)"),
+    re.compile(r"ERROR:(SCRIPT|GAMEOBJECT|GAMESYS|RESOURCE|GUI|RENDER|SOUND)"),
     re.compile(r"attempt to (index|call|compare|perform)"),
     re.compile(r"stack traceback"),
     re.compile(r"Assertion failed"),
@@ -2299,7 +2299,40 @@ def scenario_tutorialsave(s):
     same_board("after-page-reload")
 
 
-SCENARIOS = {"boot": scenario_boot, "hittest": scenario_hittest,
+def scenario_menus(s):
+    """Real input: menu -> practice -> victory -> menu -> ordinary game.
+
+    Captures all new screens; the existing tutorialsave scenario independently
+    checks that practice does not replace the normal saved board.
+    """
+    s.boot()
+    s.shot("start")
+    s.click_game(480, 155, label="tutorial directly from the menu")
+    s.wait(3, "practice loaded")
+    s.expect(s.logs_matching(r"\[TUTOR\] found"), "menu tutorial did not load practice")
+    s.shot("practice")
+    for move in [(65, 159, 585, 457), (65, 194, 585, 457),
+                 (65, 229, 65, 457), (65, 264, 169, 299)]:
+        s.drag_game(*move, label="practice move")
+        s.wait(1, "move settles")
+    before = s.patch(480, 330, 220, 30)
+    s.click_game(*DRAGON_BUTTON[1], label="collect practice dragons")
+    s.wait(5, "victory settles")
+    s.expect(s.patch(480, 330, 220, 30) != before, "practice did not reach victory")
+    s.shot("victory")
+    s.click_game(480, 150, label="victory menu button")
+    s.wait(1, "back to menu")
+    s.shot("returned-to-menu")
+    levels = len(s.logs_matching(r"I am MAIN SCRIPT"))
+    s.press_play()
+    s.expect(len(s.logs_matching(r"I am MAIN SCRIPT")) > levels, "menu did not start a new level")
+    felt = s.brightness(*FREE_CELL[3])
+    s.expect(sum(s.exposed_depth(c, felt) is not None for c in range(1, 9)) >= 6,
+             "PLAY after tutorial MENU still loaded the practice board")
+    s.shot("ordinary-game")
+
+
+SCENARIOS = {"boot": scenario_boot, "hittest": scenario_hittest, "menus": scenario_menus,
              "dragz": scenario_dragz, "regrab": scenario_regrab,
              "guilock": scenario_guilock, "dragonrestart": scenario_dragonrestart,
              "celldrain": scenario_celldrain, "o2sweep": scenario_o2sweep,

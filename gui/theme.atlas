@@ -1,0 +1,17 @@
+images {
+  image: "/assets/ui/rounded.png"
+  sprite_trim_mode: SPRITE_TRIM_MODE_OFF
+}
+images {
+  image: "/assets/ui/outlined.png"
+  sprite_trim_mode: SPRITE_TRIM_MODE_OFF
+}
+images {
+  image: "/assets/ui/card_outline.png"
+  sprite_trim_mode: SPRITE_TRIM_MODE_OFF
+}
+images {
+  image: "/assets/ui/screen_art.png"
+  sprite_trim_mode: SPRITE_TRIM_MODE_OFF
+}
+extrude_borders: 2
