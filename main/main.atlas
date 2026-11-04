@@ -35,7 +35,7 @@ images {
   sprite_trim_mode: SPRITE_TRIM_MODE_4
 }
 images {
-  image: "/assets/vivid/cards/back.png"
+  image: "/assets/cards/back.png"
   sprite_trim_mode: SPRITE_TRIM_MODE_4
 }
 images {
@@ -105,31 +105,31 @@ images {
   image: "/assets/vivid/cards/d_green.png"
 }
 images {
-  image: "/assets/vivid/buttons/button_red.png"
+  image: "/assets/buttons/button_red.png"
   sprite_trim_mode: SPRITE_TRIM_MODE_5
 }
 images {
-  image: "/assets/vivid/buttons/button_blue.png"
+  image: "/assets/buttons/button_blue.png"
   sprite_trim_mode: SPRITE_TRIM_MODE_5
 }
 images {
-  image: "/assets/vivid/buttons/button_green.png"
+  image: "/assets/buttons/button_green.png"
   sprite_trim_mode: SPRITE_TRIM_MODE_5
 }
 images {
-  image: "/assets/vivid/buttons/button_grey.png"
+  image: "/assets/buttons/button_grey.png"
   sprite_trim_mode: SPRITE_TRIM_MODE_5
 }
 images {
-  image: "/assets/vivid/buttons/button_red_grey.png"
+  image: "/assets/buttons/button_red_grey.png"
   sprite_trim_mode: SPRITE_TRIM_MODE_5
 }
 images {
-  image: "/assets/vivid/buttons/button_green_grey.png"
+  image: "/assets/buttons/button_green_grey.png"
   sprite_trim_mode: SPRITE_TRIM_MODE_5
 }
 images {
-  image: "/assets/vivid/buttons/button_blue_grey.png"
+  image: "/assets/buttons/button_blue_grey.png"
   sprite_trim_mode: SPRITE_TRIM_MODE_5
 }
 images {

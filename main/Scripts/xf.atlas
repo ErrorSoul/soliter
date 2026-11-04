@@ -1,5 +1,5 @@
 images {
-  image: "/assets/vivid/table.png"
+  image: "/assets/background/table.jpg"
   sprite_trim_mode: SPRITE_TRIM_MODE_OFF
 }
 animations {

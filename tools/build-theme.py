@@ -160,7 +160,7 @@ def main():
     out += 'material: "/builtins/materials/gui.material"\nadjust_reference: ADJUST_REFERENCE_PARENT\n'
     (ROOT / 'gui/ui.gui').write_text(out)
     (ROOT / 'main/Scripts/theme.lua').write_text(
-        '-- Generated palette: tools/build-theme.py --theme ' + args.theme + '\nreturn {\n    wildlife = ' + str(args.theme == 'vivid').lower() + ',\n' +
+        '-- Generated palette: tools/build-theme.py --theme ' + args.theme + '\nreturn {\n    wildlife = false,\n' +
         ''.join(f'    {k} = {{{", ".join(str(round(v,6)) for v in rgb(c))}}},\n' for k,c in
                 [('background',bg),('panel',panel),('primary',primary),('secondary',secondary)]) + '}\n')
     print('Built', args.theme, 'UI and slot assets')

@@ -1,0 +1,357 @@
+=== Shenzhen Solitaire Solver — TDD Test Suite ===
+Interpreter: Lua 5.4
+Package path: ./?.lua;./?/init.lua;/opt/homebrew/share/lua/5.4/?.lua;/opt/homebrew/share/lua/5.4/?/init.lua;/opt/homebrew/lib/lua/5.4/?.lua;/opt/homebrew/lib/lua/5.4/?/init.lua;./?.lua;./?/init.lua
+
+--- solver.tests.test_deal ---
+  PASS  deal: returns valid state table with 8 columns of 5 cards each
+  PASS  deal: deck composition — 27 numeric (2-10 × 3 suits), 12 dragon, 1 flower
+  PASS  deal: determinism — same seed produces identical deal
+  PASS  deal: different seeds produce different deals
+  PASS  deal: initial state has empty foundations, free cells, and flower slot
+
+--- solver.tests.test_win ---
+  PASS  is_win: all-foundation (3×10) + flower occupied = WIN
+  PASS  is_win: 27 numeric on foundation but dragons on tableau = NOT WIN [test-c]
+  PASS  is_win: all numeric + dragons collected but flower slot empty = NOT WIN [test-c]
+  PASS  is_win: partial foundation (red=10,blue=10,green=8) = NOT WIN
+  PASS  is_win: empty starting state = NOT WIN
+  PASS  is_win: foundation nearly complete (one suit at 9) = NOT WIN
+
+--- solver.tests.test_moves ---
+  PASS  moves B1: single-card stacking — different suits allowed, same suit blocked
+  PASS  moves B2: dragon collect available iff all 4 exposed + free slot exists
+  PASS  moves B2b: dragon collect blocked when no free slots available
+  PASS  moves B3: multi-card run — correct targets permitted, wrong targets blocked
+  PASS  moves B4: foundation placement — correct value/suit required, wrong ones rejected
+  PASS  moves B5: free cell accepts any card type; blocked slot inaccessible
+  PASS  moves B6: dragon already collected — no collect move generated
+  PASS  moves B7: multi-card grab across a sequence break must NOT be enumerated
+  PASS  moves B8: dragon_collect apply removes 4 dragons, blocks one cell, sets flag
+  PASS  moves C2: collect with 2 parked dragons frees the non-host cell
+  PASS  moves C2: collect onto a parked dragon's own cell keeps the other cells free
+
+--- solver.tests.test_solvable ---
+  PASS  solvable A: known solvable deal (deal_auto_finish_test) returns a solution
+  PASS  solvable A: deal_auto_finish_test starting state has correct card layout
+  PASS  solvable A: solution moves all 6 cards to foundation (3 suits × 2 values)
+
+--- solver.tests.test_fixes ---
+  PASS  fix#1 deal matches game algorithm bit-for-bit (oracle, seeds 1/42/12345)
+  PASS  C1 dragon counter: 3 tops + 1 in free cell => dragon_collect IS legal
+  PASS  C1 dragon counter: 3 tops + 1 buried => still NO dragon_collect
+  PASS  C1 collect is legal with 2 parked reds and the last cell taken by a stranger
+  PASS  fix#2 dragon counter: 4 tops + free slot => dragon_collect present
+
+--- solver.tests.test_watch ---
+  PASS  watch.card_str: numeric / dragon / flower / empty
+  PASS  watch.render: shows foundations, free cells, and 8 columns
+  PASS  watch.render: blocked free cell renders as collected, not as a card
+  PASS  watch.render: color=false emits no ANSI escape codes (even empty tableau)
+
+--- solver.tests.test_bridge ---
+  PASS  bridge.from_game: maps numeric, dragon, flower cards (derives flags)
+  PASS  bridge.from_game: collected dragons set is_blocked AND dragons_collected[suit]
+  PASS  bridge.from_game: foundation tops, flower occupancy, empty defaults
+  PASS  bridge.from_game: derived counters present; state usable by solver
+  PASS  bridge.from_game: round-trips a full deal back to an equivalent state
+
+--- solver.tests.test_replay ---
+  PASS  replay.plan: solves seed without desync, one directive per move
+  PASS  replay.plan: no source GO is reused after it leaves play
+  PASS  replay.plan: free-cell ordinals never double-booked
+  PASS  replay.plan: directive identities match the underlying card
+  PASS  replay.plan: auto flag == game's own auto-fly moves only
+  PASS  replay.plan: terminal go_map is a win (tableau empty, cells blocked)
+  PASS  replay.plan: dragon_collect emits 4 GOs and blocks one cell
+  PASS  replay.plan: dragon_collect takes parked GOs and clears their cells
+
+--- solver.tests.test_review_bugs ---
+  PASS  F5 tutorial_state.reset clears highlight_dirty
+  PASS  F10 victory blocks play input after show_victory is consumed
+  PASS  F6 can_auto_finish false when a remaining card can never be swept
+  PASS  F6 can_auto_finish true when every remaining card is safe
+  PASS  C3 forced_moves does not collect dragons (legal_moves still does)
+  PASS  C3 forced_moves still auto-flies a tableau-top 2
+  PASS  F3 screen_to_world is identity at 16:9 and letterbox-aware elsewhere
+  PASS  F4 sfx.clear drops a queued pending sound
+  PASS  F7 watch.RESET is a real ANSI reset
+
+--- solver.tests.test_auto_finish_sweep ---
+  PASS  O2 доска со скриншота: авто-завершение обязано запуститься
+  PASS  O2 сметание, которое застревает на середине, запускать нельзя
+  PASS  O2 те же карты в снимаемом порядке — запускается
+  PASS  O2 длинный ран одной масти снимается за счёт роста основания
+  PASS  O2 карта, закопанная под своей же старшей, не считается снимаемой
+  PASS  O2 номинал в живой ячейке досматривается до конца
+  PASS  O2 несыгрываемый номинал в живой ячейке блокирует запуск
+  PASS  O2 цветок в живой ячейке не запрещает разбор колонок
+  PASS  O2 живой дракон в ячейке по-прежнему запрещает авто-финиш
+  PASS  O2 дракон в ячейке без флага is_dragon тоже запрещает авто-финиш
+  PASS  O2 дракон на столе запрещает авто-финиш
+  PASS  O2 пустой стол авто-финиш не запускает
+
+--- solver.tests.test_game_scripts ---
+[DRAGON] сбор отменён: нет ячейки под масть red
+[MAIN] auto-finish complete — victory!
+[DRAGON] сдвиг отменён: нет слота tableau_slot5
+[MAIN] auto-finish complete — victory!
+[MAIN] auto-finish complete — victory!
+[TUTOR] found foundation за 46 мс
+[TUTOR] found foundation за 38 мс
+[TUTOR] found dragon за 0 мс
+[TUTOR] found free_cell за 13 мс
+[TUTOR] found free_cell за 6 мс
+[TUTOR] won - за 0 мс
+  PASS  F1 foundation rejects is_dragon even when value == last+1
+  PASS  F2 collect occupy on parked card does not re-decrement the counters
+  PASS  F2 collect occupy on empty cell still notifies once
+  PASS  F9 get_dragon_cards is a no-op when is_enable is false
+  PASS  A6 send_counter_to_button ignores a dragon it already counted
+  PASS  A6 dedup keys on the GO id, so 4 distinct dragons still reach counter 4
+  PASS  F4 level load keeps the queued click, unload drops it
+  PASS  A6 occupy_slot sets pending_top_check
+  PASS  A3 send_to_base_slot increments flying_count until the flight ends
+  PASS  F3 screen_to_world is identity at the authored 16:9 resolution
+  PASS  F3 screen_to_world undoes the horizontal letterbox (20:9 canvas)
+  PASS  F3 screen_to_world undoes the vertical letterbox (4:3 canvas)
+  PASS  C2 drop_success releases the card's previous owner
+  PASS  C2 a SECOND remove_card on the same cell crashes — do not send one
+  PASS  C4 free_cell mirrors a parked card and its release to main
+  PASS  C4 mirror fires on a collect landing onto an already occupied cell
+  PASS  C4 snapshot_and_go_map reports the real free cells
+  PASS  C4 the mirror message main receives becomes the snapshot it produces
+  PASS  C11 a stale 'parked dragon' entry disables auto-finish for the rest of the game
+  PASS  C4 a flower parked in a cell makes the snapshot refuse
+  PASS  C4 snapshot refuses mid-collect: suit blocked while its dragons are still out
+  PASS  C5 census catches a card the mirrors lost
+  PASS  C5 census counts a collected pile as four dragons, not one
+  PASS  C5 census counts cards already played to the foundation
+  PASS  C5 census catches a duplicated card
+  PASS  C5 census is off when the deal is not a real 40-card one
+  PASS  C5 a landed flower stays in the snapshot
+  PASS  C10 a blocked cell credits nothing back to the dragon buttons
+  PASS  C10 an ordinary cell still credits the buttons back
+  PASS  C11 cursor learns the cell became blocked even when it was occupied
+  PASS  C11 with the corrected entry that same board auto-finishes
+  PASS  C6 collect_done puts the button in the same state a real click leaves
+  PASS  C6 replay's dragon_collect tells the matching button
+  PASS  M1 replay's dragon_collect also tells main the suit is collected
+  PASS  C5 flower_slot tells main the flower landed
+  PASS  BUG auto-finish объявляет победу, пока числовая карта лежит в free cell
+  PASS  WIN27 драконы на столе: победы нет, уходит команда авто-сбора
+  PASS  WIN27 во время реплея солвера авто-сбор не влезает
+  PASS  WIN27 курсор жмёт горящую кнопку и молчит про пустой доклад
+  PASS  G4 две горящие кнопки при одной ячейке: нажата ровно одна
+  PASS  G4 кнопка горит, но ячейки нет: не жмём и докладываем main
+  PASS  G4 ячейка с драконом СВОЕЙ масти считается пригодной
+  PASS  G4 get_dragon_cards без свободной ячейки не летит в nil
+  PASS  G4 dragons_left видит дракона в ячейке в БОЕВОЙ форме зеркала
+  PASS  G4 отказ авто-сбора возвращает игроку ввод
+  PASS  WIN27 курсор докладывает main, когда ни одна кнопка не горит
+  PASS  WIN27 ни собрать, ни сдвинуть — победа всё равно объявляется
+  PASS  WIN27 доклад «собирать нечем» до раскладки номиналов победы не даёт
+  PASS  WIN27 стол реально пуст: победа объявляется сразу
+  PASS  WIN27 победа приходит после того, как авто-сбор доиграл драконов
+  PASS  WIN27 дракон в ячейке НЕ запечатан — это не победа
+  PASS  BUG честная победа проходит: в ячейках только собранные драконы
+  PASS  FX drag_speed нормирует сдвиг по времени кадра
+  PASS  FX drag_speed не делит на ноль на первом кадре
+  PASS  FX drag_tilt_deg: знак противоположен движению и упёрт в предел
+  PASS  FX drag_squash остаётся в читаемых пределах
+  PASS  FX smooth_speed держит наклон в кадре без события мыши
+  PASS  FX drag_lag растёт вглубь стопки и упирается в потолок
+  PASS  G5 короткая колонка сохраняет привычный шаг 35 px
+  PASS  G5 колонка любой достижимой длины помещается в экран
+  PASS  G5 сжатый корешок всё ещё показывает ранг карты
+  PASS  G5 tableau_script реально раскладывает 12 карт в пределах экрана
+  PASS  G5 порядок карт в колонке сверху вниз сохранён
+  PASS  G7 есть пустая колонка — вместо победы уходит команда сдвинуть дракона
+  PASS  G7 одинокого дракона не двигают — иначе цепочка зациклится
+  PASS  G7 двигают верхушку САМОЙ высокой колонки
+  PASS  G7 бюджет сдвигов не даёт цепочке крутиться вечно
+  PASS  G7 в туториале дракона не двигают
+  PASS  G7 после сдвига цепочка возобновляется, но не в тот же кадр
+  PASS  G7 сдвиг после отмены авто-сбора не возобновляет цепочку
+  PASS  G7 курсор действительно двигает карту: полёт → drop_success → доклад
+  PASS  G7 курсор не летит в исчезнувший слот
+  PASS  G7 победа снимает замок авто-сбора на любом пути
+  PASS  уступка ждёт дольше, чем длится полёт цветка
+  PASS  ожидание цветка не зависит от частоты кадров
+  PASS  уступка не ждёт вечно: закопанный цветок не держит партию
+  PASS  сдвиг дракона тоже обнуляет таймер простоя
+  PASS  после посадки цветка кнопке дают зажечься
+  PASS  G3 закопанная под своей же старшей картой девятка не запускает авто-финиш
+  PASS  G3 та же колонка в правильном порядке авто-финиш запускает
+  PASS  O2 доска со скриншота: игра обязана запустить авто-завершение
+  PASS  O2 игровой селектор доигрывает доску со скриншота до пустого стола
+  PASS  O2 селектор не строже предиката: где обещано сметание, там ход находится
+  PASS  O2 игровой предикат и солверный отвечают одинаково
+  PASS  победа: цветок ещё в колонке — стол НЕ чист
+  PASS  победа: уступка не засчитывает партию при живой карте в ячейке
+  PASS  победа: запасной выход G2a остаётся — драконы на столе партию засчитывают
+  PASS  победа: доска L6 (цветок под драконом, нет пустых колонок) — принятый G2a
+  PASS  победа: flower_collected — единственный источник флага, и он живой
+  PASS  M2 посадка цветка на пустом столе объявляет победу
+  PASS  M2 посадка цветка при живых драконах победой НЕ является
+  PASS  H6 за верхушку, которую игра забирает сама, взяться нельзя
+  PASS  H6 захват группы под улетающей верхушкой тоже запрещён
+  PASS  H6 в туториале двойку брать МОЖНО — это учебный ход игрока
+  PASS  H6 запрет захвата и авто-отправка описывают одни и те же карты
+  PASS  L2 авто-финиш забирает последнюю карту из свободной ячейки
+  PASS  L2 разгребание ячейки доводит партию до победы
+  PASS  L2 запечатанную ячейку авто-финиш не трогает
+  PASS  L2 карта из ячейки судится тем же правилом, что и верхушки колонок
+  PASS  L2 колонка обслуживается раньше ячейки
+  PASS  L2 при 27 номиналах авто-финишу в ячейках брать нечего
+  PASS  L2 цветок в ячейке не запрещает авто-финиш колонок
+  PASS  N9 disable_input возвращает карту из руки, а не оставляет её висеть
+  PASS  N9 disable_input без драга в руке ничего не рассылает
+  PASS  N9 стопка возвращается целиком, каждая карта на своё смещение
+  PASS  N9b авто-сбор драконов отдаёт карту из руки и не теряет pending_drop
+  PASS  N9b сдвиг дракона отдаёт карту из руки
+  PASS  N9c сдвигаемой карте возврат не шлём — иначе он отменит дугу
+  PASS  N9c из стопки возвращаются все, кроме сдвигаемой карты
+  PASS  V3 первая подсказка — верхняя карта первой колонки наверх
+  PASS  V3 после «неправильного» хода игрока подсказка остаётся живой
+  PASS  V3 все драконы открыты — подсказка светит кнопку своей масти
+  PASS  V3 ход на карту подсвечивает и то, что тащить, и то, куда класть
+  PASS  V3 ход в пустую колонку подсвечивает слот колонки
+  PASS  V3 карта из ячейки наверх: светим её и УЖЕ занятое основание масти
+  PASS  V3 группу карт берут за нижнюю карту группы
+  PASS  V3 недостоверный снапшот сохраняет прежнюю подсказку и заказывает пересчёт
+  PASS  V3 попытки пересчёта не бесконечны
+  PASS  V3 ход игрока считает подсказку не в тот же кадр, а через пару кадров
+  PASS  V3 вне туториала подсказку не считают вовсе
+  PASS  V3 победа снимает подсказку и подсветку
+  PASS  V3 слот пустой колонки умеет светиться и гаснуть
+  PASS  V3 подсветка гаснет у карты, которой уже нет в колонке
+  PASS  V3 отказ снапшота не выключает подсказку до конца партии
+  PASS  V3 собранная масть снимает подсказку, а не объявляет тупик
+  PASS  V3 выигранная доска подсказку больше не считает
+  PASS  O1 start_drag поднимает z одним присваиванием, ровно на Z_CARD_DRAGGING
+  PASS  O1 цель drag_update по z равна текущей z — анимировать нечего
+  PASS  O1 после подъёма порядок z в руке тот же, что был в колонке
+  PASS  O1b второй press без release не поднимает карту второй раз
+  PASS  O1b drop_failed возвращает карту на её собственную высоту
+  PASS  O1b доехавший возврат просит владельца переложить карты
+  PASS  O1b relayout сажает названную карту и не трогает соседей
+  PASS  O1b ячейка по relayout сажает СВОЮ карту и молчит про чужую
+  PASS  O1b возврат в заражённую точку заканчивается местом в колонке
+  PASS  O1b drag_update держит z на своей базе, что бы ни прислал курсор
+  PASS  O1b посадка гасит базу — следующий подъём считается от новой высоты
+  PASS  O1b перезахват гасит покачивание — relayout из руки не уходит
+
+--- solver.tests.test_layout ---
+  PASS  G6 ни одна кнопка интерфейса не перекрывает карту
+  PASS  G6 обе коллекции раскладывают слоты одинаково
+  PASS  G6 поле не залезает в рельс, а рельс не залезает в поле
+  PASS  G6 колонка на 12 карт целиком помещается по вертикали
+  PASS  G6 элементы поля не наезжают друг на друга
+  PASS  G6 клик по игровой кнопке не проваливается в игру
+
+--- solver.tests.test_tutorial_hint ---
+  PASS  hint: rules.solve на туториальной доске НЕразрешима — отсюда отдельный поиск
+  PASS  hint: на старте подсказка — 2_red из первой колонки в основание
+  PASS  hint: линия подсказок учит всем механикам и приводит к сбору драконов
+  PASS  hint: расстояние до победы убывает на каждом ходу линии
+  PASS  hint: 5_green уведён в ячейку — подсказка НЕ ломается и меняет линию
+  PASS  hint: все три ячейки заняты — находится ЗАКОННЫЙ ход
+  PASS  hint: полный обход раздачи — 415 состояний, ни одного тупика
+  PASS  hint: мёртвая доска даёт stuck, а не пустую подсказку
+  PASS  hint: нехватка бюджета даёт timeout, а не stuck
+  PASS  hint: собранная масть — это won, а не stuck
+  PASS  hint: бюджета по умолчанию хватает на стартовую доску
+  PASS  hint.kind: стопка и пустая колонка различаются
+  PASS  hint.kind: остальные типы ходов
+  PASS  rules.state_hash: экспортирован и канонизирует перестановку колонок
+
+--- solver.tests.test_yandex_sdk ---
+[DEBUG] dev-клавиши: off
+[YA] state=absent
+[DEBUG] dev-клавиши: off
+[YA] state=absent
+[DEBUG] dev-клавиши: off
+[DEBUG] dev-клавиши: off
+[YA] state=ready
+[DEBUG] dev-клавиши: off
+[YA] state=failed
+[DEBUG] dev-клавиши: off
+[YA] state=ready
+[DEBUG] dev-клавиши: off
+[YA] state=ready
+[I18N] язык: en
+[I18N] язык: en
+[I18N] язык: ru
+[I18N] язык: en
+[I18N] язык: ru
+  PASS  D1 без html5 игра вообще не трогает мост
+  PASS  D1 мост не найден (старый шаблон) — состояние absent, ready не уходит
+  PASS  D1 пока промис SDK не разрешился, LoadingAPI.ready не зовут
+  PASS  D1 SDK ответил — ready ровно один раз, дальше опрос прекращается
+  PASS  D1 SDK упал — ready не зовём и подписи не трогаем
+  PASS  D1 GameplayAPI: старт партии, конец партии, выгрузка уровня
+  PASS  D1 меню не считается геймплеем: до start_game старта нет
+  PASS  D1 победа сообщает платформе, что партия кончилась
+  PASS  D1 поздний язык перекрашивает и экран победы, и хинт туториала
+  PASS  D1 поздний язык перекрашивает и строку цели, когда подсказки ещё нет
+  PASS  D1 язык из SDK бьёт ?lang= в адресе
+  PASS  D1 SDK ещё молчит — работает прежний порядок (?lang=)
+  PASS  D1 незнакомый язык платформы не ломает игру, а падает вниз по списку
+
+--- solver.tests.test_save ---
+[SAVE] сохранение не прошло перепись (перепись не сошлась: карт 2_red на доске 0 вместо 1 — зеркала потеряли или задвоили карту) — новая партия
+[SAVE] сохранение повреждено (неизвестная версия) — новая партия
+[DEBUG] dev-клавиши: off
+[DEBUG] dev-клавиши: off
+[DEBUG] dev-клавиши: off
+  PASS  D3 round-trip: snapshot_and_go_map -> encode -> decode воспроизводит исходную доску
+  PASS  D3 round-trip чувствителен к содержимому доски (не просто эхо константы)
+  PASS  D3 decode отвергает неизвестную версию
+  PASS  D3 decode отвергает недостающую колонку (7 вместо 8)
+  PASS  D3 decode отвергает битый токен карты
+  PASS  D3 decode отвергает нечисловое foundation
+  PASS  D3 decode отвергает битый флаг цветка
+  PASS  D3 decode отвергает строку без поля foundation
+  PASS  D3 decode не падает на мусоре и пустой строке
+  PASS  D3 load отвергает структурно honest, но нечестную по переписи доску
+  PASS  D3 load_saved_game отвергает структурно честное, но нечестное по переписи сохранение
+  PASS  D3 should_save: честная осевшая доска — можно
+  PASS  D3 should_save: нельзя сохранять, когда туториал
+  PASS  D3 should_save: нельзя сохранять, когда не полная раздача (debug/тутор)
+  PASS  D3 should_save: нельзя сохранять, когда идёт восстановление
+  PASS  D3 should_save: нельзя сохранять, когда идёт авто-финиш
+  PASS  D3 should_save: нельзя сохранять, когда идёт авто-сбор драконов
+  PASS  D3 should_save: нельзя сохранять, когда идёт реплей солвера
+  PASS  D3 should_save: нельзя сохранять после победы
+  PASS  D3 save_game -> load_saved_game восстанавливает ту же доску
+  PASS  D3 save_game отказывается писать, пока should_save запрещает
+  PASS  D3 clear_save стирает сохранение
+  PASS  D3 load_saved_game не падает на файле без сохранения вовсе
+  PASS  D3 load_saved_game отвергает сохранение чужой версии
+  PASS  D3 load_saved_game отвергает сохранение с испорченными данными
+  PASS  D3 update() стирает сохранение, как только currentState стал WIN
+  PASS  D3 update() не трогает сохранение debug/тутор-раскладок на WIN
+  PASS  D3 restart_level стирает сохранение ДО show()
+  PASS  D3 switch_level тоже стирает сохранение
+  PASS  D3 start_game НЕ трогает существующее сохранение
+  PASS  D3 восстановление основания: карты приезжают по возрастанию, по одной на вызов
+  PASS  D3 восстановление запечатанной ячейки драконов помечает её собранной
+  PASS  D3 восстановление: дракон в незапечатанной ячейке засчитан кнопкой своей масти
+  PASS  D3 восстановление: закопанный дракон кнопкой не засчитан
+
+--- solver.tests.test_effects_review ---
+[DEBUG] dev-клавиши: off
+[I18N] язык: en
+  PASS  Review: game_manager keeps the save when restart_level carries preserve_save
+  PASS  Review: TUTORIAL, SKIP and PLAY NOW keep the save; RESTART redeals
+  PASS  Review: clearing a hint does not flatten a card held in the hand
+  PASS  Review: completed flower flight lands immediately
+  PASS  Review: simultaneous foundation arrivals have distinct final heights
+  PASS  Review: victory particles clean up on expiry, hide and final without consuming deal randomness
+
+--- solver.tests.test_music ---
+  PASS  Music: one persistent voice, pause/resume without stacking, final stops it
+
+=== SUMMARY ===
+Total: 280 passed / 0 failed
+All tests passed!
