@@ -1,135 +1,135 @@
 images {
-  image: "/assets/jade/cards/2_red.png"
+  image: "/assets/vivid/cards/2_red.png"
   sprite_trim_mode: SPRITE_TRIM_MODE_8
 }
 images {
-  image: "/assets/jade/cards/3_red.png"
+  image: "/assets/vivid/cards/3_red.png"
   sprite_trim_mode: SPRITE_TRIM_MODE_4
 }
 images {
-  image: "/assets/jade/cards/4_red.png"
+  image: "/assets/vivid/cards/4_red.png"
   sprite_trim_mode: SPRITE_TRIM_MODE_4
 }
 images {
-  image: "/assets/jade/cards/5_red.png"
+  image: "/assets/vivid/cards/5_red.png"
   sprite_trim_mode: SPRITE_TRIM_MODE_4
 }
 images {
-  image: "/assets/jade/cards/6_red.png"
+  image: "/assets/vivid/cards/6_red.png"
   sprite_trim_mode: SPRITE_TRIM_MODE_4
 }
 images {
-  image: "/assets/jade/cards/7_red.png"
+  image: "/assets/vivid/cards/7_red.png"
   sprite_trim_mode: SPRITE_TRIM_MODE_4
 }
 images {
-  image: "/assets/jade/cards/8_red.png"
+  image: "/assets/vivid/cards/8_red.png"
   sprite_trim_mode: SPRITE_TRIM_MODE_4
 }
 images {
-  image: "/assets/jade/cards/9_red.png"
+  image: "/assets/vivid/cards/9_red.png"
   sprite_trim_mode: SPRITE_TRIM_MODE_4
 }
 images {
-  image: "/assets/jade/cards/10_red.png"
+  image: "/assets/vivid/cards/10_red.png"
   sprite_trim_mode: SPRITE_TRIM_MODE_4
 }
 images {
-  image: "/assets/jade/cards/back.png"
+  image: "/assets/vivid/cards/back.png"
   sprite_trim_mode: SPRITE_TRIM_MODE_4
 }
 images {
-  image: "/assets/jade/cards/2_blue.png"
+  image: "/assets/vivid/cards/2_blue.png"
 }
 images {
-  image: "/assets/jade/cards/3_blue.png"
+  image: "/assets/vivid/cards/3_blue.png"
 }
 images {
-  image: "/assets/jade/cards/5_blue.png"
+  image: "/assets/vivid/cards/5_blue.png"
 }
 images {
-  image: "/assets/jade/cards/6_blue.png"
+  image: "/assets/vivid/cards/6_blue.png"
 }
 images {
-  image: "/assets/jade/cards/7_blue.png"
+  image: "/assets/vivid/cards/7_blue.png"
 }
 images {
-  image: "/assets/jade/cards/8_blue.png"
+  image: "/assets/vivid/cards/8_blue.png"
 }
 images {
-  image: "/assets/jade/cards/9_blue.png"
+  image: "/assets/vivid/cards/9_blue.png"
 }
 images {
-  image: "/assets/jade/cards/10_blue.png"
+  image: "/assets/vivid/cards/10_blue.png"
 }
 images {
-  image: "/assets/jade/cards/2_green.png"
+  image: "/assets/vivid/cards/2_green.png"
 }
 images {
-  image: "/assets/jade/cards/3_green.png"
+  image: "/assets/vivid/cards/3_green.png"
 }
 images {
-  image: "/assets/jade/cards/4_green.png"
+  image: "/assets/vivid/cards/4_green.png"
 }
 images {
-  image: "/assets/jade/cards/5_green.png"
+  image: "/assets/vivid/cards/5_green.png"
 }
 images {
-  image: "/assets/jade/cards/6_green.png"
+  image: "/assets/vivid/cards/6_green.png"
 }
 images {
-  image: "/assets/jade/cards/7_green.png"
+  image: "/assets/vivid/cards/7_green.png"
 }
 images {
-  image: "/assets/jade/cards/8_green.png"
+  image: "/assets/vivid/cards/8_green.png"
 }
 images {
-  image: "/assets/jade/cards/9_green.png"
+  image: "/assets/vivid/cards/9_green.png"
 }
 images {
-  image: "/assets/jade/cards/10_green.png"
+  image: "/assets/vivid/cards/10_green.png"
 }
 images {
-  image: "/assets/jade/cards/4_blue.png"
+  image: "/assets/vivid/cards/4_blue.png"
 }
 images {
-  image: "/assets/jade/cards/f_flower.png"
+  image: "/assets/vivid/cards/f_flower.png"
 }
 images {
-  image: "/assets/jade/cards/d_red.png"
+  image: "/assets/vivid/cards/d_red.png"
 }
 images {
-  image: "/assets/jade/cards/d_blue.png"
+  image: "/assets/vivid/cards/d_blue.png"
 }
 images {
-  image: "/assets/jade/cards/d_green.png"
+  image: "/assets/vivid/cards/d_green.png"
 }
 images {
-  image: "/assets/jade/buttons/button_red.png"
+  image: "/assets/vivid/buttons/button_red.png"
   sprite_trim_mode: SPRITE_TRIM_MODE_5
 }
 images {
-  image: "/assets/jade/buttons/button_blue.png"
+  image: "/assets/vivid/buttons/button_blue.png"
   sprite_trim_mode: SPRITE_TRIM_MODE_5
 }
 images {
-  image: "/assets/jade/buttons/button_green.png"
+  image: "/assets/vivid/buttons/button_green.png"
   sprite_trim_mode: SPRITE_TRIM_MODE_5
 }
 images {
-  image: "/assets/jade/buttons/button_grey.png"
+  image: "/assets/vivid/buttons/button_grey.png"
   sprite_trim_mode: SPRITE_TRIM_MODE_5
 }
 images {
-  image: "/assets/jade/buttons/button_red_grey.png"
+  image: "/assets/vivid/buttons/button_red_grey.png"
   sprite_trim_mode: SPRITE_TRIM_MODE_5
 }
 images {
-  image: "/assets/jade/buttons/button_green_grey.png"
+  image: "/assets/vivid/buttons/button_green_grey.png"
   sprite_trim_mode: SPRITE_TRIM_MODE_5
 }
 images {
-  image: "/assets/jade/buttons/button_blue_grey.png"
+  image: "/assets/vivid/buttons/button_blue_grey.png"
   sprite_trim_mode: SPRITE_TRIM_MODE_5
 }
 images {
@@ -162,31 +162,31 @@ images {
 animations {
   id: "New Animation"
   images {
-    image: "/assets/jade/cards/2_green.png"
+    image: "/assets/vivid/cards/2_green.png"
   }
   images {
-    image: "/assets/jade/cards/3_green.png"
+    image: "/assets/vivid/cards/3_green.png"
   }
   images {
-    image: "/assets/jade/cards/4_green.png"
+    image: "/assets/vivid/cards/4_green.png"
   }
   images {
-    image: "/assets/jade/cards/5_green.png"
+    image: "/assets/vivid/cards/5_green.png"
   }
   images {
-    image: "/assets/jade/cards/6_green.png"
+    image: "/assets/vivid/cards/6_green.png"
   }
   images {
-    image: "/assets/jade/cards/7_green.png"
+    image: "/assets/vivid/cards/7_green.png"
   }
   images {
-    image: "/assets/jade/cards/8_green.png"
+    image: "/assets/vivid/cards/8_green.png"
   }
   images {
-    image: "/assets/jade/cards/9_green.png"
+    image: "/assets/vivid/cards/9_green.png"
   }
   images {
-    image: "/assets/jade/cards/10_green.png"
+    image: "/assets/vivid/cards/10_green.png"
   }
   playback: PLAYBACK_LOOP_FORWARD
 }

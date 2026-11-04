@@ -6,6 +6,8 @@ M.lang = "en"
 
 M.strings = {
     en = {
+        music_on = "MUSIC ON",
+        music_off = "MUSIC OFF",
         -- v3: подсказка считается от доски, поэтому ключ — ТИП хода, а не номер
         -- шага. Текст обязан быть верным для любой карты этого типа: называть
         -- конкретную карту («перетащи КРАСНУЮ 2») больше нельзя — подсветка
@@ -36,6 +38,8 @@ M.strings = {
         victory_footer = "Take a breath. Then try another deal.",
     },
     ru = {
+        music_on = "МУЗ. ВКЛ",
+        music_off = "МУЗ. ВЫКЛ",
         tutorial_goal = "Собери четырёх драконов",
         tutorial_hint_foundation = "Эта карта уходит наверх, в основание",
         tutorial_hint_free_cell = "Некуда положить? Ячейка держит одну карту",
@@ -62,6 +66,8 @@ M.strings = {
         victory_footer = "Немного выдохнуть — и новая раздача.",
     },
     tr = {
+        music_on = "MUZIK ACIK",
+        music_off = "MUZIK KAPALI",
         tutorial_goal = "Dort ejderhayi topla",
         tutorial_hint_foundation = "Bu kart temele gider",
         tutorial_hint_free_cell = "Yer yok mu? Bos hucre bir kart tutar",
@@ -88,6 +94,18 @@ M.strings = {
         victory_footer = "Bir nefes alin. Sonra yeniden deneyin.",
     },
 }
+
+local wildlife_strings = {
+    en = {tutorial_goal = "Collect four crowned guardians", tutorial_hint_dragon = "Four crowned guardians are out - press their button", menu_caption = "Three suits. Four guardians. One clear table."},
+    ru = {tutorial_goal = "Собери четырёх стражей с коронами", tutorial_hint_dragon = "Четыре стража с коронами на виду — жми кнопку", menu_caption = "Три масти. Четыре стража. Чистый стол."},
+    tr = {tutorial_goal = "Dort tacli muhafizi topla", tutorial_hint_dragon = "Dort tacli muhafiz acikta - dugmeye bas", menu_caption = "Uc renk. Dort muhafiz. Tertemiz bir masa."},
+}
+
+if require("main.Scripts.theme").wildlife then
+    for lang, strings in pairs(wildlife_strings) do
+        for key, value in pairs(strings) do M.strings[lang][key] = value end
+    end
+end
 
 function M.t(key)
     local lang_strings = M.strings[M.lang]

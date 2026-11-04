@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build deterministic vector UI assets. Requires rsvg-convert; no image downloads.
 
-Usage: python3 tools/build-theme.py --theme classic|jade
+Usage: python3 tools/build-theme.py --theme classic|jade|vivid
 The generated GUI keeps the board geometry and action node IDs unchanged.
 """
 import argparse
@@ -53,31 +53,41 @@ def node(name, x=0, y=0, w=0, h=0, color='#FFFFFF', parent=None,
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument('--theme', choices=['classic', 'jade'], default='classic')
+    ap.add_argument('--theme', choices=['classic', 'jade', 'vivid'], default='classic')
     args = ap.parse_args()
     jade = args.theme == 'jade'
-    bg = '#103D3B' if jade else '#182D26'
-    panel = '#164B46' if jade else '#213D32'
-    gold = '#D6B774' if jade else '#ECC474'
+    bg = '#103D3B' if jade else '#063D35'
+    panel = '#164B46' if jade else '#087D59'
+    gold = '#D6B774' if jade else '#FFE56A'
     cream = '#F5EFDF'
-    primary = '#CBB077' if jade else '#E7B65D'
-    secondary = '#285950' if jade else '#345A43'
+    primary = '#CBB077' if jade else '#FFD23E'
+    secondary = '#285950' if jade else '#07865F'
 
     svg_asset('assets/ui/rounded.png', 64, 64,
         '<rect x="1" y="1" width="62" height="62" rx="13" fill="white"/>')
     svg_asset('assets/ui/outlined.png', 64, 64,
         '<rect x="1" y="1" width="62" height="62" rx="13" fill="white"/>'
-        '<rect x="2" y="2" width="60" height="60" rx="12" fill="none" stroke="#D6B774" stroke-width="2"/>')
+        f'<rect x="2" y="2" width="60" height="60" rx="12" fill="none" stroke="{gold if jade else "#FFFFFF"}" stroke-width="2"/>')
     svg_asset('assets/ui/card_outline.png', 180, 300,
         '<rect x="1.5" y="1.5" width="177" height="297" rx="8" fill="none" stroke="#4E5649" stroke-width="3"/>')
     svg_asset('assets/ui/screen_art.png', 960, 540,
         f'<defs><radialGradient id="g"><stop stop-color="{panel}"/><stop offset="1" stop-color="{bg}"/></radialGradient></defs>'
         '<rect width="960" height="540" fill="url(#g)"/>'
-        f'<g fill="none" stroke="{gold}" stroke-opacity=".22" stroke-width="1.5">'
+        f'<g fill="none" stroke="{gold}" stroke-opacity="{.22 if jade else .5}" stroke-width="1.5">'
         '<path d="M-50 440Q140 210 280 155T350 -30M-20 460Q120 240 265 180T330 -30"/>'
         '<path d="M1010 440Q820 210 680 155T610 -30M980 460Q840 240 695 180T630 -30"/></g>'
-        f'<g fill="{gold}" opacity=".12"><path d="M95 325Q30 220 22 290Q20 335 95 325M115 296Q110 195 156 213Q180 239 115 296"/>'
+        f'<g fill="{gold}" opacity="{.12 if jade else .24}"><path d="M95 325Q30 220 22 290Q20 335 95 325M115 296Q110 195 156 213Q180 239 115 296"/>'
         '<path d="M865 325Q930 220 938 290Q940 335 865 325M845 296Q850 195 804 213Q780 239 845 296"/></g>')
+    if not jade:
+        source = ROOT / 'assets/ui/screen_art.svg'
+        rays = ''
+        for x, y, c in [(110,260,'#28F2B0'), (850,260,'#35CBFF')]:
+            for angle in range(0,360,30):
+                rays += f'<path transform="translate({x} {y}) rotate({angle})" d="M0-36L9-80L0-110L-9-80Z" fill="{c}" opacity=".16"/>'
+        for x,y in [(80,70),(170,440),(810,80),(895,420),(230,290),(745,300)]:
+            rays += f'<path d="M{x} {y-6}L{x+2} {y-2}L{x+6} {y}L{x+2} {y+2}L{x} {y+6}L{x-2} {y+2}L{x-6} {y}L{x-2} {y-2}Z" fill="{gold}" opacity=".65"/>'
+        source.write_text(source.read_text().replace('</svg>', rays+'</svg>'))
+        subprocess.run(['rsvg-convert',str(source),'-o',str(source.with_suffix('.png'))],check=True)
     # Strong empty-slot boundaries, rendered at 2x to keep rounded edges clean.
     for name in ['tableau', 'free', 'flower', 'foundation', 'foundation_red', 'foundation_green', 'foundation_blue']:
         color = {'foundation_red': '#D3977C', 'foundation_green': '#8FC6A0', 'foundation_blue': '#96BAD6', 'flower': '#D5A4C0'}.get(name, '#A7B89E')
@@ -110,6 +120,9 @@ def main():
     # Oversized solid roots cover letterboxing without distorting child art/text.
     add('victory_overlay',480,270,4000,4000,bg,enabled=False)
     add('victory_art',w=960,h=540,parent='victory_overlay',texture='ui/screen_art')
+    if not jade:
+        add('victory_left_card',-177,143,64,107,parent='victory_overlay',texture='main/d_red',rotation=15)
+        add('victory_right_card',177,143,64,107,parent='victory_overlay',texture='main/d_blue',rotation=-15)
     add('victory_medallion',0,163,106,106,parent='victory_overlay',texture='main/button_green')
     add('victory_title_plate',0,60,570,86,panel,'victory_overlay','ui/outlined',rounded=True)
     add('text1',w=550,h=74,color=cream,parent='victory_title_plate',text='Victory!',scale=1.25)
@@ -141,12 +154,13 @@ def main():
     # The transparent overlay must not make its controls invisible.
     out = out.replace('id: "tutorial_skip_btn"\nlayer: "buttons"\nparent: "tutorial_overlay"\ntexture: "ui/outlined"\nalpha: 1\ninherit_alpha: true',
                       'id: "tutorial_skip_btn"\nlayer: "buttons"\nparent: "tutorial_overlay"\ntexture: "ui/outlined"\nalpha: 1\ninherit_alpha: false')
+    button('music_button','music_text',907,235,78,44,layer='layer',label='MUSIC ON',textscale=.26)
     for layer in ['background','cards','buttons','layer']:
         out += f'layers {{\n name: "{layer}"\n}}\n'
     out += 'material: "/builtins/materials/gui.material"\nadjust_reference: ADJUST_REFERENCE_PARENT\n'
     (ROOT / 'gui/ui.gui').write_text(out)
     (ROOT / 'main/Scripts/theme.lua').write_text(
-        '-- Generated palette: tools/build-theme.py --theme ' + args.theme + '\nreturn {\n' +
+        '-- Generated palette: tools/build-theme.py --theme ' + args.theme + '\nreturn {\n    wildlife = ' + str(args.theme == 'vivid').lower() + ',\n' +
         ''.join(f'    {k} = {{{", ".join(str(round(v,6)) for v in rgb(c))}}},\n' for k,c in
                 [('background',bg),('panel',panel),('primary',primary),('secondary',secondary)]) + '}\n')
     print('Built', args.theme, 'UI and slot assets')

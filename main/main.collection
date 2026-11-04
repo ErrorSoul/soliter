@@ -20,3 +20,7 @@ embedded_instances {
   "}\n"
   ""
 }
+instances {
+  id: "music"
+  prototype: "/main/Game Objects/music.go"
+}

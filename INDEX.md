@@ -6,7 +6,7 @@
 
 ## Раскладка
 
-- **Оформление экранов:** `tools/build-theme.py --theme classic|jade` генерирует
+- **Оформление экранов:** `tools/build-theme.py --theme classic|jade|vivid` генерирует
   `gui/ui.gui`, `gui/theme.atlas`, `assets/ui/` и палитру `main/Scripts/theme.lua`.
   `ui.gui_script` сохраняет обработку переходов и локализацию; кнопка обучения
   на старте грузит учебную партию через `start_game` без очистки сохранения.
@@ -18,6 +18,18 @@
   кнопки в `assets/jade/buttons/`, исходные драконы в `assets/jade/emblems/`.
   Числа и символы мастей набраны векторно и целиком входят в верхние 35 px
   карты; имена atlas-анимаций и размеры 90×150 сохраняются.
+
+- **Яркие звери:** `tools/build-theme.py --theme vivid` + `tools/build-vivid.py`.
+  Тигр / панда / сова в `assets/vivid/`; верхние 35 px — только цифра и масть.
+  Особые D-стражи имеют цветную шапку и корону. `theme.wildlife` переключает
+  терминологию обучения на стражей, правила и формат сохранений прежние.
+- **Музыка:** `tools/compose-garden.py` → `assets/music/quiet-garden.ogg` + `score.json`.
+  `main/Game Objects/music.go` в корневой коллекции → `music.script`: одна
+  зацикленная дорожка, плавный вход/выход, пауза без потери позиции.
+  `ui.gui_script` отправляет `music_state` после жеста, хранит выбор в отдельном
+  файле `audio`; кнопка доступна на всех экранах. Browser `music` измеряет PCM
+  через Web Audio, проверяет mute, reload, resume, restart; `test_music.lua`
+  проверяет отсутствие дублированных голосов и реверс затухания.
 
 - `main/` — игровой рантайм (логика, слоты, ввод). `gui/` — UI. `solver/` — pure-Lua солвер + тесты.
 - Точка входа: `main/main.collection` → `game_manager.script` → грузит level proxy (`soliter.collection`).

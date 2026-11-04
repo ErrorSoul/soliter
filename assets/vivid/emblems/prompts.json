@@ -1,0 +1,18 @@
+{
+  "tool": "built-in image_gen",
+  "transparent_background": true,
+  "prompts": [
+    {
+      "suit": "red",
+      "prompt": "Use case: stylized-concept. Production game card emblem, a SINGLE Bengal tiger head, vivid orange fur, cream muzzle, dark navy stripes, amber eyes, friendly confident expression. Bold angular cel-shaded vector-like illustration, thick crisp midnight-indigo outlines, saturated jewel colors and strong white highlights, premium vibrant casual solitaire game art. Front facing symmetrical head only, compact silhouette centered, entire head and ears visible, occupies 85% square canvas. Transparent background. No text, no numbers, no card, no frame, no crown, no scenery, no floating ornaments. Readable at 65 pixels wide."
+    },
+    {
+      "suit": "green",
+      "prompt": "Use case: stylized-concept. Production game card emblem, a SINGLE red panda head, vivid mint and emerald stylized fur, ivory cheeks and inner ears, dark navy mask, friendly calm expression, unmistakable rounded red-panda ears. Bold angular cel-shaded vector-like illustration, thick crisp midnight-indigo outlines, saturated jewel colors and strong white highlights, premium vibrant casual solitaire game art. Front facing symmetrical head only, compact silhouette centered, entire head and ears visible, occupies 85% square canvas. Transparent background. No text, no numbers, no card, no frame, no crown, no scenery, no floating ornaments. Readable at 65 pixels wide."
+    },
+    {
+      "suit": "blue",
+      "prompt": "Use case: stylized-concept. Production game card emblem, a SINGLE eagle owl head, vivid electric blue and turquoise feathers, ivory facial disk, golden eyes, distinct feather ear tufts, friendly wise expression. Bold angular cel-shaded vector-like illustration, thick crisp midnight-indigo outlines, saturated jewel colors and strong white highlights, premium vibrant casual solitaire game art. Front facing symmetrical head only, compact silhouette centered, entire head and ears visible, occupies 85% square canvas. Transparent background. No text, no numbers, no card, no frame, no crown, no scenery, no floating ornaments. Readable at 65 pixels wide."
+    }
+  ]
+}

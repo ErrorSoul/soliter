@@ -50,6 +50,7 @@ local test_modules = {
    "solver.tests.test_yandex_sdk",
    "solver.tests.test_save",
    "solver.tests.test_effects_review",
+   "solver.tests.test_music",
 }
 
 local total_passed = 0

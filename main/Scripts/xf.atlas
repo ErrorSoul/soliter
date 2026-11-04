@@ -1,5 +1,5 @@
 images {
-  image: "/assets/jade/table.png"
+  image: "/assets/vivid/table.png"
   sprite_trim_mode: SPRITE_TRIM_MODE_OFF
 }
 animations {

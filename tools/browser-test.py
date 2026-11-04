@@ -2332,7 +2332,81 @@ def scenario_menus(s):
     s.shot("ordinary-game")
 
 
-SCENARIOS = {"boot": scenario_boot, "hittest": scenario_hittest, "menus": scenario_menus,
+
+def scenario_music(s):
+    """Measure actual mixer PCM, not just the controller's log messages."""
+    s.boot()  # finish the initial load before installing the probe and reloading
+    s.page.add_init_script("""(() => {
+      window.__musicMeters = [];
+      const meters = new WeakMap();
+      const observed = new WeakSet();
+      const connect = AudioNode.prototype.connect;
+      AudioNode.prototype.connect = function(destination, ...args) {
+        const result = connect.call(this, destination, ...args);
+        if (destination === this.context.destination && !observed.has(this)) {
+          let meter = meters.get(this.context);
+          if (!meter) {
+            meter = this.context.createAnalyser(); meter.fftSize = 2048;
+            meters.set(this.context, meter);
+            window.__musicMeters.push(meter);
+          }
+          connect.call(this, meter);
+          observed.add(this);
+        }
+        return result;
+      };
+      window.__musicRms = async () => {
+        let sum=0, n=0;
+        for(let j=0;j<20;j++) {
+          for(const meter of window.__musicMeters) {
+            const pcm=new Float32Array(meter.fftSize);
+            meter.getFloatTimeDomainData(pcm);
+            for(const v of pcm) {sum+=v*v; n++;}
+          }
+          await new Promise(r=>setTimeout(r,25));
+        }
+        // No destination connection exists until Defold first plays a sound.
+        return n ? Math.sqrt(sum/n) : 0;
+      };
+    })();""")
+    s.page.goto(s.url)
+    s.boot()
+    def rms(label):
+        value=s.page.evaluate("window.__musicRms()")
+        s.note("music-rms", f"{label}: {value:.7f}; meters={s.page.evaluate("window.__musicMeters.length")}")
+        return value
+    s.expect(0 <= rms("before gesture") < .00001, "music played before interaction or mixer probe missing")
+    s.click_game(480,30,label="start music with a real gesture on empty menu space")
+    s.wait(3)
+    s.expect(rms("playing") > .0001, "no audible PCM after gesture")
+    s.click_game(907,235,label="mute music")
+    s.wait(1)
+    s.expect(0 <= rms("muted") < .00001, "music mute left an audible signal")
+    s.page.reload()
+    s.boot()
+    s.click_game(480,30,label="saved mute after reload")
+    s.wait(2)
+    s.expect(0 <= rms("saved mute") < .00001, "mute preference did not survive reload")
+    s.click_game(907,235,label="enable music")
+    s.wait(2)
+    s.expect(rms("enabled again") > .0001, "enable did not restore PCM")
+    # Do not count the previous page's voice; this page has exactly one start.
+    starts=len(s.logs_matching(r"^DEBUG:SCRIPT: \[MUSIC\] started$"))
+    if not s.is_release:  # release strips Lua print calls
+        s.expect(starts == 2, f"expected one voice on each of two page loads, got {starts}")
+    s.press_play()
+    s.click_game(907,56,label="restart while music plays")
+    s.wait(4)
+    if not s.is_release:
+        s.expect(len(s.logs_matching(r"^DEBUG:SCRIPT: \[MUSIC\] started$")) == starts,
+                 "level transitions started additional music voices")
+    s.expect(rms("after restart") > .0001, "restart killed persistent music")
+    s.click_game(907,235,label="mute during game")
+    s.wait(2)
+    s.expect(0 <= rms("game muted") < .00001, "game music button failed")
+    s.shot("music-muted")
+
+SCENARIOS = {"music": scenario_music, "boot": scenario_boot, "hittest": scenario_hittest, "menus": scenario_menus,
              "dragz": scenario_dragz, "regrab": scenario_regrab,
              "guilock": scenario_guilock, "dragonrestart": scenario_dragonrestart,
              "celldrain": scenario_celldrain, "o2sweep": scenario_o2sweep,
@@ -2350,7 +2424,7 @@ SCENARIOS = {"boot": scenario_boot, "hittest": scenario_hittest, "menus": scenar
 # Capability restrictions live next to the registry. A new ordinary scenario
 # automatically joins the debug batch; release support must be explicit.
 FIXTURE_SCENARIOS = frozenset({"dragz", "dragonrestart", "celldrain", "o2sweep"})
-RELEASE_SCENARIOS = frozenset({"boot", "hittest", "fullscreen", "debugkeys",
+RELEASE_SCENARIOS = frozenset({"music", "boot", "hittest", "fullscreen", "debugkeys",
                                "yasdk", "tutorialsave", "pickupfx"})
 
 
