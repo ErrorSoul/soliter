@@ -1,0 +1,163 @@
+{
+ "scenario": "pickupfx",
+ "viewport": [
+  960,
+  540
+ ],
+ "release": true,
+ "mobile": false,
+ "dpr": 1.0,
+ "cross_origin_isolated": true,
+ "binaries": [
+  "sdk.js",
+  "dmloader.js",
+  "ShenzenSolitare_pthread_wasm.js",
+  "ShenzenSolitare_pthread_wasm.js",
+  "ShenzenSolitare_pthread.wasm",
+  "ShenzenSolitare_pthread_wasm.js"
+ ],
+ "fatal": [],
+ "failures": [],
+ "log": [
+  {
+   "t": 0.04,
+   "kind": "req",
+   "text": "sdk.js"
+  },
+  {
+   "t": 0.04,
+   "kind": "req",
+   "text": "dmloader.js"
+  },
+  {
+   "t": 0.05,
+   "kind": "log",
+   "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+  },
+  {
+   "t": 0.05,
+   "kind": "net-fail",
+   "text": "http://127.0.0.1:42687/sdk.js net::ERR_ABORTED"
+  },
+  {
+   "t": 0.06,
+   "kind": "log",
+   "text": "[YA] absent"
+  },
+  {
+   "t": 0.07,
+   "kind": "req",
+   "text": "ShenzenSolitare_pthread_wasm.js"
+  },
+  {
+   "t": 0.07,
+   "kind": "req",
+   "text": "ShenzenSolitare_pthread_wasm.js"
+  },
+  {
+   "t": 0.11,
+   "kind": "req",
+   "text": "ShenzenSolitare_pthread.wasm"
+  },
+  {
+   "t": 0.21,
+   "kind": "log",
+   "text": "Running..."
+  },
+  {
+   "t": 0.23,
+   "kind": "log",
+   "text": ""
+  },
+  {
+   "t": 0.24,
+   "kind": "log",
+   "text": "%c    %c    Made with Defold    %c    %c    https://www.defold.com background: #fd6623; padding:5px 0; border: 5px; background: #272c31; color: #fafafa; padding:5px 0; background: #39a3e4; padding:5px 0; background: #ffffff; color: #000000; padding:5px 0;"
+  },
+  {
+   "t": 0.35,
+   "kind": "req",
+   "text": "ShenzenSolitare_pthread_wasm.js"
+  },
+  {
+   "t": 0.52,
+   "kind": "log",
+   "text": "[AUDIO] resumed ctx=1 states=running"
+  },
+  {
+   "t": 1.23,
+   "kind": "wait",
+   "text": "1s first game frames"
+  },
+  {
+   "t": 1.24,
+   "kind": "canvas",
+   "text": "960x540 scale=1.000 letterbox=(0,0)"
+  },
+  {
+   "t": 1.61,
+   "kind": "click",
+   "text": "game(480,232) css(480,308) PLAY"
+  },
+  {
+   "t": 4.12,
+   "kind": "wait",
+   "text": "2.5s deal settles"
+  },
+  {
+   "t": 6.08,
+   "kind": "probe",
+   "text": "column 1 exposed card at depth 4"
+  },
+  {
+   "t": 6.42,
+   "kind": "click",
+   "text": "game(907,124) css(907,416) deterministic effects board"
+  },
+  {
+   "t": 9.43,
+   "kind": "wait",
+   "text": "3s tutorial settled"
+  },
+  {
+   "t": 10.06,
+   "kind": "wait",
+   "text": "0.2s pickup"
+  },
+  {
+   "t": 11.22,
+   "kind": "shot",
+   "text": "01-moving-card.png"
+  },
+  {
+   "t": 12.03,
+   "kind": "wait",
+   "text": "0.8s card stops tilting"
+  },
+  {
+   "t": 12.25,
+   "kind": "shadow",
+   "text": "felt=61.4, under raised card=44.5"
+  },
+  {
+   "t": 12.65,
+   "kind": "shot",
+   "text": "02-raised-card-shadow.png"
+  },
+  {
+   "t": 13.87,
+   "kind": "wait",
+   "text": "1.2s return and recoil finish"
+  },
+  {
+   "t": 14.68,
+   "kind": "shot",
+   "text": "03-effects-cleared.png"
+  },
+  {
+   "t": 14.68,
+   "kind": "cleanup",
+   "text": "unloading game and closing browser"
+  }
+ ]
+}

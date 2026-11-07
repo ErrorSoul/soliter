@@ -1,0 +1,332 @@
+{
+ "scenario": "music",
+ "viewport": [
+  960,
+  540
+ ],
+ "release": true,
+ "mobile": false,
+ "dpr": 1.0,
+ "cross_origin_isolated": false,
+ "binaries": [
+  "sdk.js",
+  "dmloader.js",
+  "ShenzenSolitare_wasm.js",
+  "ShenzenSolitare_wasm.js",
+  "ShenzenSolitare.wasm",
+  "sdk.js",
+  "dmloader.js",
+  "ShenzenSolitare_wasm.js",
+  "ShenzenSolitare_wasm.js",
+  "ShenzenSolitare.wasm",
+  "sdk.js",
+  "dmloader.js",
+  "ShenzenSolitare_wasm.js",
+  "ShenzenSolitare_wasm.js",
+  "ShenzenSolitare.wasm"
+ ],
+ "fatal": [],
+ "failures": [],
+ "log": [
+  {
+   "t": 0.02,
+   "kind": "req",
+   "text": "sdk.js"
+  },
+  {
+   "t": 0.02,
+   "kind": "req",
+   "text": "dmloader.js"
+  },
+  {
+   "t": 0.03,
+   "kind": "log",
+   "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+  },
+  {
+   "t": 0.03,
+   "kind": "net-fail",
+   "text": "http://127.0.0.1:37405/sdk.js net::ERR_ABORTED"
+  },
+  {
+   "t": 0.03,
+   "kind": "log",
+   "text": "[YA] absent"
+  },
+  {
+   "t": 0.05,
+   "kind": "req",
+   "text": "ShenzenSolitare_wasm.js"
+  },
+  {
+   "t": 0.06,
+   "kind": "req",
+   "text": "ShenzenSolitare_wasm.js"
+  },
+  {
+   "t": 0.11,
+   "kind": "req",
+   "text": "ShenzenSolitare.wasm"
+  },
+  {
+   "t": 0.19,
+   "kind": "log",
+   "text": "Running..."
+  },
+  {
+   "t": 0.21,
+   "kind": "log",
+   "text": "%c    %c    Made with Defold    %c    %c    https://www.defold.com background: #fd6623; padding:5px 0; border: 5px; background: #272c31; color: #fafafa; padding:5px 0; background: #39a3e4; padding:5px 0; background: #ffffff; color: #000000; padding:5px 0;"
+  },
+  {
+   "t": 0.5,
+   "kind": "log",
+   "text": "[AUDIO] resumed ctx=1 states=running"
+  },
+  {
+   "t": 0.51,
+   "kind": "log",
+   "text": ""
+  },
+  {
+   "t": 1.21,
+   "kind": "wait",
+   "text": "1s first game frames"
+  },
+  {
+   "t": 1.22,
+   "kind": "canvas",
+   "text": "960x540 scale=1.000 letterbox=(0,0)"
+  },
+  {
+   "t": 1.35,
+   "kind": "req",
+   "text": "sdk.js"
+  },
+  {
+   "t": 1.35,
+   "kind": "req",
+   "text": "dmloader.js"
+  },
+  {
+   "t": 1.35,
+   "kind": "log",
+   "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+  },
+  {
+   "t": 1.35,
+   "kind": "net-fail",
+   "text": "http://127.0.0.1:37405/sdk.js net::ERR_ABORTED"
+  },
+  {
+   "t": 1.35,
+   "kind": "log",
+   "text": "[YA] absent"
+  },
+  {
+   "t": 1.36,
+   "kind": "req",
+   "text": "ShenzenSolitare_wasm.js"
+  },
+  {
+   "t": 1.39,
+   "kind": "req",
+   "text": "ShenzenSolitare_wasm.js"
+  },
+  {
+   "t": 1.41,
+   "kind": "req",
+   "text": "ShenzenSolitare.wasm"
+  },
+  {
+   "t": 1.49,
+   "kind": "log",
+   "text": "Running..."
+  },
+  {
+   "t": 1.5,
+   "kind": "log",
+   "text": "%c    %c    Made with Defold    %c    %c    https://www.defold.com background: #fd6623; padding:5px 0; border: 5px; background: #272c31; color: #fafafa; padding:5px 0; background: #39a3e4; padding:5px 0; background: #ffffff; color: #000000; padding:5px 0;"
+  },
+  {
+   "t": 1.64,
+   "kind": "log",
+   "text": "[AUDIO] resumed ctx=1 states=running"
+  },
+  {
+   "t": 1.65,
+   "kind": "log",
+   "text": ""
+  },
+  {
+   "t": 2.65,
+   "kind": "wait",
+   "text": "1s first game frames"
+  },
+  {
+   "t": 2.65,
+   "kind": "canvas",
+   "text": "960x540 scale=1.000 letterbox=(0,0)"
+  },
+  {
+   "t": 3.18,
+   "kind": "music-rms",
+   "text": "before gesture: 0.0000000; meters=0"
+  },
+  {
+   "t": 3.53,
+   "kind": "click",
+   "text": "game(480,30) css(480,510) start music with a real gesture on empty menu space"
+  },
+  {
+   "t": 7.08,
+   "kind": "music-rms",
+   "text": "playing: 0.0223286; meters=1"
+  },
+  {
+   "t": 7.45,
+   "kind": "click",
+   "text": "game(907,235) css(907,305) mute music"
+  },
+  {
+   "t": 8.99,
+   "kind": "music-rms",
+   "text": "muted: 0.0000000; meters=1"
+  },
+  {
+   "t": 9.55,
+   "kind": "req",
+   "text": "sdk.js"
+  },
+  {
+   "t": 9.55,
+   "kind": "req",
+   "text": "dmloader.js"
+  },
+  {
+   "t": 9.55,
+   "kind": "log",
+   "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+  },
+  {
+   "t": 9.55,
+   "kind": "net-fail",
+   "text": "http://127.0.0.1:37405/sdk.js net::ERR_ABORTED"
+  },
+  {
+   "t": 9.55,
+   "kind": "log",
+   "text": "[YA] absent"
+  },
+  {
+   "t": 9.56,
+   "kind": "req",
+   "text": "ShenzenSolitare_wasm.js"
+  },
+  {
+   "t": 9.56,
+   "kind": "req",
+   "text": "ShenzenSolitare_wasm.js"
+  },
+  {
+   "t": 9.59,
+   "kind": "req",
+   "text": "ShenzenSolitare.wasm"
+  },
+  {
+   "t": 9.67,
+   "kind": "log",
+   "text": "Running..."
+  },
+  {
+   "t": 9.69,
+   "kind": "log",
+   "text": "%c    %c    Made with Defold    %c    %c    https://www.defold.com background: #fd6623; padding:5px 0; border: 5px; background: #272c31; color: #fafafa; padding:5px 0; background: #39a3e4; padding:5px 0; background: #ffffff; color: #000000; padding:5px 0;"
+  },
+  {
+   "t": 9.84,
+   "kind": "log",
+   "text": "[AUDIO] resumed ctx=1 states=running"
+  },
+  {
+   "t": 9.84,
+   "kind": "log",
+   "text": ""
+  },
+  {
+   "t": 10.84,
+   "kind": "wait",
+   "text": "1s first game frames"
+  },
+  {
+   "t": 10.85,
+   "kind": "canvas",
+   "text": "960x540 scale=1.000 letterbox=(0,0)"
+  },
+  {
+   "t": 11.2,
+   "kind": "click",
+   "text": "game(480,30) css(480,510) saved mute after reload"
+  },
+  {
+   "t": 13.75,
+   "kind": "music-rms",
+   "text": "saved mute: 0.0000000; meters=0"
+  },
+  {
+   "t": 14.09,
+   "kind": "click",
+   "text": "game(907,235) css(907,305) enable music"
+  },
+  {
+   "t": 16.64,
+   "kind": "music-rms",
+   "text": "enabled again: 0.0177328; meters=1"
+  },
+  {
+   "t": 16.98,
+   "kind": "click",
+   "text": "game(480,232) css(480,308) PLAY"
+  },
+  {
+   "t": 19.48,
+   "kind": "wait",
+   "text": "2.5s deal settles"
+  },
+  {
+   "t": 21.45,
+   "kind": "probe",
+   "text": "column 1 exposed card at depth 4"
+  },
+  {
+   "t": 21.83,
+   "kind": "click",
+   "text": "game(907,56) css(907,484) restart while music plays"
+  },
+  {
+   "t": 26.38,
+   "kind": "music-rms",
+   "text": "after restart: 0.0208612; meters=1"
+  },
+  {
+   "t": 26.74,
+   "kind": "click",
+   "text": "game(907,235) css(907,305) mute during game"
+  },
+  {
+   "t": 29.26,
+   "kind": "music-rms",
+   "text": "game muted: 0.0000000; meters=1"
+  },
+  {
+   "t": 30.48,
+   "kind": "shot",
+   "text": "01-music-muted.png"
+  },
+  {
+   "t": 30.48,
+   "kind": "cleanup",
+   "text": "unloading game and closing browser"
+  }
+ ]
+}

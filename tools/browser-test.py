@@ -834,7 +834,7 @@ def scenario_debugkeys(s):
     s.wait(6, "движок грузится")
     s.measure()
     variant = s.wait_for_log(r"\[DEBUG\] dev-клавиши: (on|off)", 5, "вариант сборки")
-    dev = bool(variant and variant.strip().endswith("on"))
+    dev = not s.is_release and bool(variant and variant.strip().endswith("on"))
     s.note("variant", f"логи: {'есть' if variant else 'молчат (release)'} → режим {'debug' if dev else 'release'}")
 
     if dev:
@@ -861,7 +861,12 @@ def scenario_debugkeys(s):
         return
 
     # ---- release: судим по столу, а не по логам ----
-    board = (480, 300, 380, 200)   # весь игровой стол целиком
+    # The first tableau row's top strip contains fixed indices and frames.
+    # Portraits below it now move at idle: comparing the full board falsely
+    # reports a redeal when a random animal animation starts. A real Space
+    # redeal changes this row. --release can also enforce this oracle on a
+    # debug bundle as a negative control (live Space must fail).
+    board = (480, 360, 380, 12)
     before_play = s.patch(*board)
     s.click_game(*PLAY_BUTTON, label="PLAY")
     s.wait(4, "раздача осела")
@@ -899,7 +904,7 @@ def scenario_debugkeys(s):
     s.wait(4, "пересдача успела бы случиться")
     after_space = s.patch(*board)
     s.expect(after_space == idle, "release: пробел всё ещё перезапускает партию")
-    s.note("keys", "release: S/R/Space стол не тронули")
+    s.note("keys", "release: проверены неподвижные индексы после S/R/Space; итог — в failures")
 
 
 def scenario_audiobg(s):

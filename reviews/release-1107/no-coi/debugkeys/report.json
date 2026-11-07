@@ -1,0 +1,157 @@
+{
+ "scenario": "debugkeys",
+ "viewport": [
+  960,
+  540
+ ],
+ "release": true,
+ "mobile": false,
+ "dpr": 1.0,
+ "cross_origin_isolated": false,
+ "binaries": [
+  "sdk.js",
+  "dmloader.js",
+  "ShenzenSolitare_wasm.js",
+  "ShenzenSolitare_wasm.js",
+  "ShenzenSolitare.wasm"
+ ],
+ "fatal": [],
+ "failures": [],
+ "log": [
+  {
+   "t": 0.02,
+   "kind": "req",
+   "text": "sdk.js"
+  },
+  {
+   "t": 0.02,
+   "kind": "req",
+   "text": "dmloader.js"
+  },
+  {
+   "t": 0.03,
+   "kind": "log",
+   "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+  },
+  {
+   "t": 0.03,
+   "kind": "net-fail",
+   "text": "http://127.0.0.1:44941/sdk.js net::ERR_ABORTED"
+  },
+  {
+   "t": 0.03,
+   "kind": "log",
+   "text": "[YA] absent"
+  },
+  {
+   "t": 0.04,
+   "kind": "req",
+   "text": "ShenzenSolitare_wasm.js"
+  },
+  {
+   "t": 0.05,
+   "kind": "req",
+   "text": "ShenzenSolitare_wasm.js"
+  },
+  {
+   "t": 0.08,
+   "kind": "req",
+   "text": "ShenzenSolitare.wasm"
+  },
+  {
+   "t": 0.16,
+   "kind": "log",
+   "text": "Running..."
+  },
+  {
+   "t": 0.18,
+   "kind": "log",
+   "text": "%c    %c    Made with Defold    %c    %c    https://www.defold.com background: #fd6623; padding:5px 0; border: 5px; background: #272c31; color: #fafafa; padding:5px 0; background: #39a3e4; padding:5px 0; background: #ffffff; color: #000000; padding:5px 0;"
+  },
+  {
+   "t": 0.45,
+   "kind": "log",
+   "text": "[AUDIO] resumed ctx=1 states=running"
+  },
+  {
+   "t": 0.47,
+   "kind": "log",
+   "text": ""
+  },
+  {
+   "t": 6.04,
+   "kind": "wait",
+   "text": "6s \u0434\u0432\u0438\u0436\u043e\u043a \u0433\u0440\u0443\u0437\u0438\u0442\u0441\u044f"
+  },
+  {
+   "t": 6.05,
+   "kind": "canvas",
+   "text": "960x540 scale=1.000 letterbox=(0,0)"
+  },
+  {
+   "t": 11.15,
+   "kind": "timeout",
+   "text": "no line matched \\[DEBUG\\] dev-\u043a\u043b\u0430\u0432\u0438\u0448\u0438: (on|off) in 5s \u0432\u0430\u0440\u0438\u0430\u043d\u0442 \u0441\u0431\u043e\u0440\u043a\u0438"
+  },
+  {
+   "t": 11.15,
+   "kind": "variant",
+   "text": "\u043b\u043e\u0433\u0438: \u043c\u043e\u043b\u0447\u0430\u0442 (release) \u2192 \u0440\u0435\u0436\u0438\u043c release"
+  },
+  {
+   "t": 11.64,
+   "kind": "click",
+   "text": "game(480,232) css(480,308) PLAY"
+  },
+  {
+   "t": 15.64,
+   "kind": "wait",
+   "text": "4s \u0440\u0430\u0437\u0434\u0430\u0447\u0430 \u043e\u0441\u0435\u043b\u0430"
+  },
+  {
+   "t": 19.49,
+   "kind": "wait",
+   "text": "3s \u0441\u0442\u043e\u043b \u0441\u0442\u043e\u0438\u0442 \u0431\u0435\u0437 \u0432\u0432\u043e\u0434\u0430"
+  },
+  {
+   "t": 20.69,
+   "kind": "key",
+   "text": "s solver"
+  },
+  {
+   "t": 23.7,
+   "kind": "wait",
+   "text": "3s \u0441\u043e\u043b\u0432\u0435\u0440 \u0443\u0441\u043f\u0435\u043b \u0431\u044b \u043e\u0442\u044b\u0433\u0440\u0430\u0442\u044c"
+  },
+  {
+   "t": 24.9,
+   "kind": "key",
+   "text": "r replay"
+  },
+  {
+   "t": 28.91,
+   "kind": "wait",
+   "text": "4s \u0440\u0435\u043f\u043b\u0435\u0439 \u0443\u0441\u043f\u0435\u043b \u0431\u044b \u043f\u043e\u0432\u0435\u0441\u0442\u0438 \u043a\u0430\u0440\u0442\u044b"
+  },
+  {
+   "t": 30.08,
+   "kind": "key",
+   "text": "Space restart"
+  },
+  {
+   "t": 34.08,
+   "kind": "wait",
+   "text": "4s \u043f\u0435\u0440\u0435\u0441\u0434\u0430\u0447\u0430 \u0443\u0441\u043f\u0435\u043b\u0430 \u0431\u044b \u0441\u043b\u0443\u0447\u0438\u0442\u044c\u0441\u044f"
+  },
+  {
+   "t": 35.01,
+   "kind": "keys",
+   "text": "release: \u043f\u0440\u043e\u0432\u0435\u0440\u0435\u043d\u044b \u043d\u0435\u043f\u043e\u0434\u0432\u0438\u0436\u043d\u044b\u0435 \u0438\u043d\u0434\u0435\u043a\u0441\u044b \u043f\u043e\u0441\u043b\u0435 S/R/Space; \u0438\u0442\u043e\u0433 \u2014 \u0432 failures"
+  },
+  {
+   "t": 35.01,
+   "kind": "cleanup",
+   "text": "unloading game and closing browser"
+  }
+ ]
+}

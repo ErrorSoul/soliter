@@ -1,0 +1,34 @@
+[
+  {
+    "scenario": "music",
+    "exit_code": 0
+  },
+  {
+    "scenario": "boot",
+    "exit_code": 0
+  },
+  {
+    "scenario": "hittest",
+    "exit_code": 0
+  },
+  {
+    "scenario": "fullscreen",
+    "exit_code": 0
+  },
+  {
+    "scenario": "debugkeys",
+    "exit_code": 1
+  },
+  {
+    "scenario": "yasdk",
+    "exit_code": 0
+  },
+  {
+    "scenario": "tutorialsave",
+    "exit_code": 0
+  },
+  {
+    "scenario": "pickupfx",
+    "exit_code": 0
+  }
+]

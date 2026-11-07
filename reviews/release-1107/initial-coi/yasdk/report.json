@@ -1,0 +1,429 @@
+{
+ "scenario": "yasdk",
+ "viewport": [
+  960,
+  540
+ ],
+ "release": true,
+ "mobile": false,
+ "dpr": 1.0,
+ "cross_origin_isolated": true,
+ "binaries": [
+  "sdk.js",
+  "dmloader.js",
+  "ShenzenSolitare_pthread_wasm.js",
+  "ShenzenSolitare_pthread_wasm.js",
+  "sdk.js",
+  "dmloader.js",
+  "ShenzenSolitare_pthread_wasm.js",
+  "ShenzenSolitare_pthread_wasm.js",
+  "ShenzenSolitare_pthread.wasm",
+  "ShenzenSolitare_pthread_wasm.js",
+  "sdk.js",
+  "dmloader.js",
+  "ShenzenSolitare_pthread_wasm.js",
+  "ShenzenSolitare_pthread_wasm.js",
+  "ShenzenSolitare_pthread.wasm",
+  "ShenzenSolitare_pthread_wasm.js",
+  "sdk.js",
+  "dmloader.js",
+  "ShenzenSolitare_pthread_wasm.js",
+  "ShenzenSolitare_pthread_wasm.js",
+  "ShenzenSolitare_pthread.wasm",
+  "ShenzenSolitare_pthread_wasm.js"
+ ],
+ "fatal": [],
+ "failures": [],
+ "log": [
+  {
+   "t": 0.07,
+   "kind": "req",
+   "text": "sdk.js"
+  },
+  {
+   "t": 0.07,
+   "kind": "req",
+   "text": "dmloader.js"
+  },
+  {
+   "t": 0.1,
+   "kind": "log",
+   "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+  },
+  {
+   "t": 0.1,
+   "kind": "net-fail",
+   "text": "http://127.0.0.1:39953/sdk.js net::ERR_ABORTED"
+  },
+  {
+   "t": 0.1,
+   "kind": "log",
+   "text": "[YA] absent"
+  },
+  {
+   "t": 0.11,
+   "kind": "req",
+   "text": "ShenzenSolitare_pthread_wasm.js"
+  },
+  {
+   "t": 0.12,
+   "kind": "req",
+   "text": "ShenzenSolitare_pthread_wasm.js"
+  },
+  {
+   "t": 0.17,
+   "kind": "req",
+   "text": "sdk.js"
+  },
+  {
+   "t": 0.17,
+   "kind": "req",
+   "text": "dmloader.js"
+  },
+  {
+   "t": 0.17,
+   "kind": "log",
+   "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+  },
+  {
+   "t": 0.18,
+   "kind": "net-fail",
+   "text": "http://127.0.0.1:39953/sdk.js net::ERR_ABORTED"
+  },
+  {
+   "t": 0.18,
+   "kind": "log",
+   "text": "[YA] absent"
+  },
+  {
+   "t": 0.19,
+   "kind": "req",
+   "text": "ShenzenSolitare_pthread_wasm.js"
+  },
+  {
+   "t": 0.21,
+   "kind": "req",
+   "text": "ShenzenSolitare_pthread_wasm.js"
+  },
+  {
+   "t": 0.28,
+   "kind": "req",
+   "text": "ShenzenSolitare_pthread.wasm"
+  },
+  {
+   "t": 0.4,
+   "kind": "log",
+   "text": "Running..."
+  },
+  {
+   "t": 0.46,
+   "kind": "log",
+   "text": "%c    %c    Made with Defold    %c    %c    https://www.defold.com background: #fd6623; padding:5px 0; border: 5px; background: #272c31; color: #fafafa; padding:5px 0; background: #39a3e4; padding:5px 0; background: #ffffff; color: #000000; padding:5px 0;"
+  },
+  {
+   "t": 0.66,
+   "kind": "req",
+   "text": "ShenzenSolitare_pthread_wasm.js"
+  },
+  {
+   "t": 0.89,
+   "kind": "log",
+   "text": "[AUDIO] resumed ctx=1 states=running"
+  },
+  {
+   "t": 0.91,
+   "kind": "log",
+   "text": ""
+  },
+  {
+   "t": 6.19,
+   "kind": "wait",
+   "text": "6s \u0434\u0432\u0438\u0436\u043e\u043a \u0433\u0440\u0443\u0437\u0438\u0442\u0441\u044f"
+  },
+  {
+   "t": 6.2,
+   "kind": "canvas",
+   "text": "960x540 scale=1.000 letterbox=(0,0)"
+  },
+  {
+   "t": 7.64,
+   "kind": "click",
+   "text": "game(480,232) css(480,308) PLAY"
+  },
+  {
+   "t": 11.64,
+   "kind": "wait",
+   "text": "4s \u0440\u0430\u0437\u0434\u0430\u0447\u0430 \u043e\u0441\u0435\u043b\u0430"
+  },
+  {
+   "t": 17.11,
+   "kind": "shot",
+   "text": "01-rail-no-sdk.png"
+  },
+  {
+   "t": 19.1,
+   "kind": "req",
+   "text": "sdk.js"
+  },
+  {
+   "t": 19.1,
+   "kind": "req",
+   "text": "dmloader.js"
+  },
+  {
+   "t": 19.1,
+   "kind": "log",
+   "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+  },
+  {
+   "t": 19.1,
+   "kind": "net-fail",
+   "text": "http://127.0.0.1:39953/sdk.js net::ERR_ABORTED"
+  },
+  {
+   "t": 19.12,
+   "kind": "req",
+   "text": "ShenzenSolitare_pthread_wasm.js"
+  },
+  {
+   "t": 19.16,
+   "kind": "req",
+   "text": "ShenzenSolitare_pthread_wasm.js"
+  },
+  {
+   "t": 19.27,
+   "kind": "req",
+   "text": "ShenzenSolitare_pthread.wasm"
+  },
+  {
+   "t": 19.34,
+   "kind": "log",
+   "text": "Running..."
+  },
+  {
+   "t": 19.38,
+   "kind": "log",
+   "text": ""
+  },
+  {
+   "t": 19.4,
+   "kind": "log",
+   "text": "%c    %c    Made with Defold    %c    %c    https://www.defold.com background: #fd6623; padding:5px 0; border: 5px; background: #272c31; color: #fafafa; padding:5px 0; background: #39a3e4; padding:5px 0; background: #ffffff; color: #000000; padding:5px 0;"
+  },
+  {
+   "t": 19.46,
+   "kind": "req",
+   "text": "ShenzenSolitare_pthread_wasm.js"
+  },
+  {
+   "t": 19.63,
+   "kind": "log",
+   "text": "[AUDIO] resumed ctx=1 states=running"
+  },
+  {
+   "t": 25.12,
+   "kind": "wait",
+   "text": "6s \u0434\u0432\u0438\u0436\u043e\u043a \u0433\u0440\u0443\u0437\u0438\u0442\u0441\u044f"
+  },
+  {
+   "t": 25.15,
+   "kind": "canvas",
+   "text": "960x540 scale=1.000 letterbox=(0,0)"
+  },
+  {
+   "t": 26.42,
+   "kind": "click",
+   "text": "game(480,232) css(480,308) PLAY"
+  },
+  {
+   "t": 30.43,
+   "kind": "wait",
+   "text": "4s \u0440\u0430\u0437\u0434\u0430\u0447\u0430 \u043e\u0441\u0435\u043b\u0430"
+  },
+  {
+   "t": 39.09,
+   "kind": "log",
+   "text": "[YA] ready lang=ru"
+  },
+  {
+   "t": 39.11,
+   "kind": "log",
+   "text": "[YA] loading-ready"
+  },
+  {
+   "t": 39.11,
+   "kind": "log",
+   "text": "[YA] gameplay-start"
+  },
+  {
+   "t": 48.12,
+   "kind": "wait",
+   "text": "15s SDK \u043d\u0430\u043a\u043e\u043d\u0435\u0446 \u043e\u0442\u0432\u0435\u0442\u0438\u043b"
+  },
+  {
+   "t": 48.13,
+   "kind": "ya",
+   "text": "\u043c\u043e\u0441\u0442: ready lang=ru,loading-ready,gameplay-start"
+  },
+  {
+   "t": 50.25,
+   "kind": "shot",
+   "text": "02-rail-sdk-ru.png"
+  },
+  {
+   "t": 50.26,
+   "kind": "log",
+   "text": "[YA] gameplay-stop"
+  },
+  {
+   "t": 50.26,
+   "kind": "log",
+   "text": "[AUDIO] suspended ctx=1 states=suspended"
+  },
+  {
+   "t": 50.76,
+   "kind": "wait",
+   "text": "0.5s \u0444\u043e\u043d"
+  },
+  {
+   "t": 50.79,
+   "kind": "log",
+   "text": "[YA] gameplay-start"
+  },
+  {
+   "t": 50.8,
+   "kind": "log",
+   "text": "[AUDIO] resumed ctx=1 states=running"
+  },
+  {
+   "t": 51.3,
+   "kind": "wait",
+   "text": "0.5s \u0432\u043e\u0437\u0432\u0440\u0430\u0442"
+  },
+  {
+   "t": 51.67,
+   "kind": "click",
+   "text": "game(907,56) css(907,484) RESTART"
+  },
+  {
+   "t": 53.68,
+   "kind": "wait",
+   "text": "2s \u0443\u0440\u043e\u0432\u0435\u043d\u044c \u043f\u0435\u0440\u0435\u0437\u0430\u0433\u0440\u0443\u0437\u0438\u043b\u0441\u044f"
+  },
+  {
+   "t": 53.69,
+   "kind": "ya",
+   "text": "\u0446\u0435\u043f\u043e\u0447\u043a\u0430 \u043f\u043e\u0441\u043b\u0435 \u0447\u0430\u0441\u0442\u0438 4: ready,start,stop,start"
+  },
+  {
+   "t": 54.63,
+   "kind": "req",
+   "text": "sdk.js"
+  },
+  {
+   "t": 54.63,
+   "kind": "req",
+   "text": "dmloader.js"
+  },
+  {
+   "t": 54.64,
+   "kind": "log",
+   "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+  },
+  {
+   "t": 54.64,
+   "kind": "net-fail",
+   "text": "http://127.0.0.1:39953/sdk.js net::ERR_ABORTED"
+  },
+  {
+   "t": 54.64,
+   "kind": "req",
+   "text": "ShenzenSolitare_pthread_wasm.js"
+  },
+  {
+   "t": 54.65,
+   "kind": "req",
+   "text": "ShenzenSolitare_pthread_wasm.js"
+  },
+  {
+   "t": 54.68,
+   "kind": "req",
+   "text": "ShenzenSolitare_pthread.wasm"
+  },
+  {
+   "t": 54.76,
+   "kind": "log",
+   "text": "Running..."
+  },
+  {
+   "t": 54.77,
+   "kind": "log",
+   "text": ""
+  },
+  {
+   "t": 54.78,
+   "kind": "log",
+   "text": "%c    %c    Made with Defold    %c    %c    https://www.defold.com background: #fd6623; padding:5px 0; border: 5px; background: #272c31; color: #fafafa; padding:5px 0; background: #39a3e4; padding:5px 0; background: #ffffff; color: #000000; padding:5px 0;"
+  },
+  {
+   "t": 54.81,
+   "kind": "req",
+   "text": "ShenzenSolitare_pthread_wasm.js"
+  },
+  {
+   "t": 54.92,
+   "kind": "log",
+   "text": "[AUDIO] suspended ctx=1 states=suspended"
+  },
+  {
+   "t": 60.65,
+   "kind": "wait",
+   "text": "6s \u0434\u0432\u0438\u0436\u043e\u043a \u0433\u0440\u0443\u0437\u0438\u0442\u0441\u044f"
+  },
+  {
+   "t": 60.66,
+   "kind": "canvas",
+   "text": "960x540 scale=1.000 letterbox=(0,0)"
+  },
+  {
+   "t": 74.64,
+   "kind": "log",
+   "text": "[YA] ready lang=ru"
+  },
+  {
+   "t": 74.67,
+   "kind": "log",
+   "text": "[YA] loading-ready"
+  },
+  {
+   "t": 80.67,
+   "kind": "wait",
+   "text": "20.0s SDK \u043e\u0442\u0432\u0435\u0442\u0438\u043b"
+  },
+  {
+   "t": 81.6,
+   "kind": "log",
+   "text": "[YA] gameplay-start"
+  },
+  {
+   "t": 81.63,
+   "kind": "click",
+   "text": "game(480,232) css(480,308) PLAY"
+  },
+  {
+   "t": 85.64,
+   "kind": "wait",
+   "text": "4s \u0440\u0430\u0437\u0434\u0430\u0447\u0430 \u043e\u0441\u0435\u043b\u0430"
+  },
+  {
+   "t": 86.8,
+   "kind": "ya",
+   "text": "\u0431\u0435\u0437 \u0444\u043e\u043a\u0443\u0441\u0430: ready,start"
+  },
+  {
+   "t": 86.8,
+   "kind": "cleanup",
+   "text": "unloading game and closing browser"
+  }
+ ]
+}

@@ -1,0 +1,38 @@
+serving /tmp/shenzhen-check-1105/bundle-release-1107
+  at http://127.0.0.1:35685/index.html  viewport=960x540 dpr=1.0  cross-origin-isolated=True
+
+  [req] sdk.js
+  [req] dmloader.js
+  [log] Failed to load resource: the server responded with a status of 404 (File not found)
+  [net-fail] http://127.0.0.1:35685/sdk.js net::ERR_ABORTED
+  [log] [YA] absent
+  [req] ShenzenSolitare_pthread_wasm.js
+  [req] ShenzenSolitare_pthread_wasm.js
+  [req] ShenzenSolitare_pthread.wasm
+  [log] Running...
+  [log] %c    %c    Made with Defold    %c    %c    https://www.defold.com background: #fd6623; padding:5px 0; border: 5px; background: #272c31; color: #fafafa; padding:5px 0; background: #39a3e4; padding:5px 0; background: #ffffff; color: #000000; padding:5px 0;
+  [req] ShenzenSolitare_pthread_wasm.js
+  [log] [AUDIO] resumed ctx=1 states=running
+  [log] 
+  [wait] 6s движок грузится
+  [canvas] 960x540 scale=1.000 letterbox=(0,0)
+  [timeout] no line matched \[DEBUG\] dev-клавиши: (on|off) in 5s вариант сборки
+  [variant] логи: молчат (release) → режим release
+  [click] game(480,232) css(480,308) PLAY
+  [wait] 4s раздача осела
+  [wait] 3s стол стоит без ввода
+  [key] s solver
+  [wait] 3s солвер успел бы отыграть
+  [key] r replay
+  [wait] 4s реплей успел бы повести карты
+  [key] Space restart
+  [wait] 4s пересдача успела бы случиться
+  [FAIL] release: пробел всё ещё перезапускает партию
+  [keys] release: S/R/Space стол не тронули
+  [cleanup] unloading game and closing browser
+
+=== scenario=debugkeys viewport=960x540 coi=True ===
+binaries served: ShenzenSolitare_pthread.wasm, ShenzenSolitare_pthread_wasm.js, dmloader.js, sdk.js
+29 events, 0 fatal, 1 failed expectations
+FAIL:  release: пробел всё ещё перезапускает партию
+RESULT: FAIL

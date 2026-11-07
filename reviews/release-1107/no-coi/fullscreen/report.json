@@ -1,0 +1,166 @@
+{
+ "scenario": "fullscreen",
+ "viewport": [
+  960,
+  540
+ ],
+ "release": true,
+ "mobile": false,
+ "dpr": 1.0,
+ "cross_origin_isolated": false,
+ "binaries": [
+  "sdk.js",
+  "dmloader.js",
+  "ShenzenSolitare_wasm.js",
+  "ShenzenSolitare_wasm.js",
+  "sdk.js",
+  "dmloader.js",
+  "ShenzenSolitare_wasm.js",
+  "ShenzenSolitare_wasm.js",
+  "ShenzenSolitare.wasm"
+ ],
+ "fatal": [],
+ "failures": [],
+ "log": [
+  {
+   "t": 0.02,
+   "kind": "req",
+   "text": "sdk.js"
+  },
+  {
+   "t": 0.02,
+   "kind": "req",
+   "text": "dmloader.js"
+  },
+  {
+   "t": 0.03,
+   "kind": "log",
+   "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+  },
+  {
+   "t": 0.03,
+   "kind": "net-fail",
+   "text": "http://127.0.0.1:46725/sdk.js net::ERR_ABORTED"
+  },
+  {
+   "t": 0.03,
+   "kind": "log",
+   "text": "[YA] absent"
+  },
+  {
+   "t": 0.04,
+   "kind": "req",
+   "text": "ShenzenSolitare_wasm.js"
+  },
+  {
+   "t": 0.05,
+   "kind": "req",
+   "text": "ShenzenSolitare_wasm.js"
+  },
+  {
+   "t": 0.06,
+   "kind": "req",
+   "text": "sdk.js"
+  },
+  {
+   "t": 0.06,
+   "kind": "req",
+   "text": "dmloader.js"
+  },
+  {
+   "t": 0.06,
+   "kind": "log",
+   "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+  },
+  {
+   "t": 0.06,
+   "kind": "net-fail",
+   "text": "http://127.0.0.1:46725/sdk.js net::ERR_ABORTED"
+  },
+  {
+   "t": 0.07,
+   "kind": "log",
+   "text": "[YA] absent"
+  },
+  {
+   "t": 0.07,
+   "kind": "req",
+   "text": "ShenzenSolitare_wasm.js"
+  },
+  {
+   "t": 0.08,
+   "kind": "req",
+   "text": "ShenzenSolitare_wasm.js"
+  },
+  {
+   "t": 0.12,
+   "kind": "req",
+   "text": "ShenzenSolitare.wasm"
+  },
+  {
+   "t": 0.22,
+   "kind": "log",
+   "text": "Running..."
+  },
+  {
+   "t": 0.25,
+   "kind": "log",
+   "text": "%c    %c    Made with Defold    %c    %c    https://www.defold.com background: #fd6623; padding:5px 0; border: 5px; background: #272c31; color: #fafafa; padding:5px 0; background: #39a3e4; padding:5px 0; background: #ffffff; color: #000000; padding:5px 0;"
+  },
+  {
+   "t": 0.54,
+   "kind": "log",
+   "text": "[AUDIO] resumed ctx=1 states=running"
+  },
+  {
+   "t": 0.56,
+   "kind": "log",
+   "text": ""
+  },
+  {
+   "t": 1.55,
+   "kind": "wait",
+   "text": "1s first game frames"
+  },
+  {
+   "t": 1.56,
+   "kind": "canvas",
+   "text": "960x540 scale=1.000 letterbox=(0,0)"
+  },
+  {
+   "t": 1.92,
+   "kind": "click",
+   "text": "game(480,232) css(480,308) PLAY"
+  },
+  {
+   "t": 4.42,
+   "kind": "wait",
+   "text": "2.5s deal settles"
+  },
+  {
+   "t": 6.24,
+   "kind": "probe",
+   "text": "column 1 exposed card at depth 4"
+  },
+  {
+   "t": 7.24,
+   "kind": "wait",
+   "text": "1s \u043f\u0440\u043e\u043c\u0438\u0441 .catch() \u0443\u0441\u043f\u0435\u043b \u043e\u0442\u0440\u0430\u0431\u043e\u0442\u0430\u0442\u044c"
+  },
+  {
+   "t": 7.25,
+   "kind": "fullscreen",
+   "text": "is_mobile=False \u0432\u044b\u0437\u043e\u0432\u043e\u0432 requestFullscreen \u043f\u043e\u0441\u043b\u0435 PLAY: 0"
+  },
+  {
+   "t": 8.88,
+   "kind": "probe",
+   "text": "column 1 exposed card at depth 4"
+  },
+  {
+   "t": 8.88,
+   "kind": "cleanup",
+   "text": "unloading game and closing browser"
+  }
+ ]
+}
