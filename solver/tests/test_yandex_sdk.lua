@@ -211,6 +211,13 @@ local function fake_gui()
       set_scale = function() end,
       animate = function() end,
       pick_node = function() return false end,
+      new_box_node = function() return {} end,
+      delete_node = function() end,
+      set_parent = function() end,
+      set_layer = function() end,
+      set_inherit_alpha = function() end,
+      set_rotation = function() end,
+      play_flipbook = function() end,
    }
    return g
 end

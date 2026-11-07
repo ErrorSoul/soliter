@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Headless browser play-test for the js-web bundle.
+"""Headless browser play-test for the wasm_pthread-web bundle.
 
 Boots the real Defold HTML5 build in headless Chromium (SwiftShader WebGL),
 drives it with real mouse/key events and captures everything the engine prints
@@ -10,7 +10,7 @@ drives it with real mouse/key events and captures everything the engine prints
 <bundle-dir> holds index.html, e.g. <bundle-output>/ShenzenSolitare.
 Build it with:
 
-    bob --platform js-web --archive --variant debug \
+    bob --platform wasm_pthread-web --archive --variant debug \
         --bundle-output <dir-OUTSIDE-build/> build bundle
 
 Two engine facts this harness exists to respect:
@@ -35,6 +35,7 @@ Two engine facts this harness exists to respect:
 Exit code 0 = scenario finished with no engine error and every expectation met.
 """
 import argparse
+import faulthandler
 import functools
 import http.server
 import io
@@ -66,7 +67,7 @@ BASE_SLOT = {1: (585, 457), 2: (793, 457), 3: (689, 457)}  # порядок id, 
 
 BENIGN = (re.compile(r"^INFO:"), re.compile(r"Defold Engine \d"), re.compile(r"^Downloading"))
 FATAL = (
-    re.compile(r"ERROR:(SCRIPT|GAMEOBJECT|RESOURCE|GUI|RENDER|SOUND)"),
+    re.compile(r"ERROR:(SCRIPT|GAMEOBJECT|GAMESYS|RESOURCE|GUI|RENDER|SOUND)"),
     re.compile(r"attempt to (index|call|compare|perform)"),
     re.compile(r"stack traceback"),
     re.compile(r"Assertion failed"),
@@ -116,6 +117,7 @@ class Session:
         self.t0 = time.time()
         self.rect = None
         self.is_mobile = False
+        self.is_release = False
 
     # ---------- observation ----------
     def note(self, kind, text):
@@ -282,13 +284,25 @@ class Session:
                 self.rect["oy"] + (GAME_H - y) * self.rect["scale"])
 
     # ---------- input ----------
+    def touch(self, kind, x=0, y=0):
+        if not hasattr(self, "cdp"):
+            self.cdp = self.page.context.new_cdp_session(self.page)
+        self.cdp.send("Input.dispatchTouchEvent", {"type": kind,
+            "touchPoints": [] if kind == "touchEnd" else [{"x": x, "y": y, "id": 1}]})
+
     def click_game(self, x, y, label="", hold=HOLD_MS):
         cx, cy = self._map(x, y)
-        self.page.mouse.move(cx, cy)
-        self.page.wait_for_timeout(FRAME_MS * 2)
-        self.page.mouse.down()
+        if self.is_mobile:
+            self.touch("touchStart", cx, cy)
+        else:
+            self.page.mouse.move(cx, cy)
+            self.page.wait_for_timeout(FRAME_MS * 2)
+            self.page.mouse.down()
         self.page.wait_for_timeout(hold)
-        self.page.mouse.up()
+        if self.is_mobile:
+            self.touch("touchEnd")
+        else:
+            self.page.mouse.up()
         self.page.wait_for_timeout(FRAME_MS * 2)
         self.note("click", f"game({x},{y}) css({cx:.0f},{cy:.0f}) {label}")
 
@@ -300,15 +314,25 @@ class Session:
         single teleport and never as a drag."""
         sx, sy = self._map(x1, y1)
         ex, ey = self._map(x2, y2)
-        self.page.mouse.move(sx, sy)
-        self.page.wait_for_timeout(FRAME_MS * 2)
-        self.page.mouse.down()
+        if self.is_mobile:
+            self.touch("touchStart", sx, sy)
+        else:
+            self.page.mouse.move(sx, sy)
+            self.page.wait_for_timeout(FRAME_MS * 2)
+            self.page.mouse.down()
         self.page.wait_for_timeout(HOLD_MS)
         for i in range(1, steps + 1):
-            self.page.mouse.move(sx + (ex - sx) * i / steps, sy + (ey - sy) * i / steps)
+            x, y = sx + (ex - sx) * i / steps, sy + (ey - sy) * i / steps
+            if self.is_mobile:
+                self.touch("touchMove", x, y)
+            else:
+                self.page.mouse.move(x, y)
             self.page.wait_for_timeout(FRAME_MS * 2)
         self.page.wait_for_timeout(HOLD_MS)
-        self.page.mouse.up()
+        if self.is_mobile:
+            self.touch("touchEnd")
+        else:
+            self.page.mouse.up()
         self.page.wait_for_timeout(FRAME_MS * 4)
         self.note("drag", f"({x1},{y1})->({x2},{y2}) {label}")
 
@@ -321,9 +345,12 @@ class Session:
 
     # ---------- game helpers ----------
     def boot(self):
-        self.wait(5, "engine boot")
+        self.page.wait_for_function("""() => typeof Module !== 'undefined' &&
+            Module._isEngineLoaded && !document.getElementById('defold-progress')""", timeout=30000)
+        self.wait(1, "first game frames")
         self.measure()
-        self.expect(self.logs_matching(r"Defold Engine"), "engine never announced itself")
+        if not self.is_release:
+            self.expect(self.logs_matching(r"Defold Engine"), "engine never announced itself")
 
     def wait(self, seconds, label=""):
         self.page.wait_for_timeout(int(seconds * 1000))
@@ -332,9 +359,13 @@ class Session:
 
     def press_play(self):
         self.click_game(*PLAY_BUTTON, label="PLAY")
-        got = self.wait_for_log(r"I am MAIN SCRIPT", 20, "level proxy load")
-        self.expect(got, "PLAY did not load the level (no main.script init)")
+        if not self.is_release:
+            got = self.wait_for_log(r"I am MAIN SCRIPT", 20, "level proxy load")
+            self.expect(got, "PLAY did not load the level (no main.script init)")
         self.wait(2.5, "deal settles")
+        if self.is_release:
+            felt = self.brightness(*FREE_CELL[1])
+            self.expect(self.exposed_depth(1, felt) is not None, "PLAY did not render a dealt board")
 
 
 # ================= scenarios =================
@@ -932,8 +963,8 @@ def scenario_fullscreen(s):
     наша ветка в engine_template.html. Без флага контекст десктопный (мышь,
     hover) -- и требование мобильное, поэтому вызова быть НЕ должно вообще.
 
-    PLAY здесь водится МЫШЬЮ (click_game) -- Chromium эмулирует pointerup и
-    для мышиного клика, так что "PLAY вызвал fullscreen" сам по себе не
+    PLAY здесь водится через click_game: мышью, а под --mobile -- CDP touch.
+    Оба жеста дают pointerup, так что "PLAY вызвал fullscreen" сам по себе не
     отличает "сработал pointerup" от "сработал touchend". На мобильной ветке
     сценарий отдельно перезагружает страницу и стреляет синтетическим
     touchend раньше любого другого жеста, чтобы подключение именно этого
@@ -1639,13 +1670,33 @@ def scenario_tutorialfree(s):
     # знает, о какой из десяти карт речь.
     def pulses(x, y, half=18, gap=280):
         a = s.patch(x, y, half, half)
-        s.page.wait_for_timeout(gap)
-        return a != s.patch(x, y, half, half)
+        # One pair can sample symmetric phases of the ping-pong, especially
+        # when ReadPixels is slow. Use unequal gaps to avoid that alias.
+        for interval in (gap, 170, 110):
+            s.page.wait_for_timeout(interval)
+            if a != s.patch(x, y, half, half):
+                return True
+        return False
 
     s.expect(pulses(TABLEAU_X[1], TABLEAU_TOP_Y - 4 * CARD_PITCH),
              "карта, о которой говорит подсказка (2_red), не подсвечена")
     s.expect(not pulses(TABLEAU_X[2], TABLEAU_TOP_Y),
              "подсвечена посторонняя карта (5_green) — подсветка бьёт мимо хода")
+
+    # The new ring must be visibly golden outside the face, not only scale-pulse.
+    from PIL import Image
+    import io
+    def ring_coverage():
+        edge = Image.open(io.BytesIO(s.patch(TABLEAU_X[1]-46, TABLEAU_TOP_Y-4*CARD_PITCH, 4, 45))).convert("RGB")
+        pixels = list(edge.getdata())
+        return sum(r > 150 and g > 100 and b < 160 and g > b * 1.3 for r,g,b in pixels) / len(pixels)
+    gold = ring_coverage()
+    s.note("highlight", f"golden focus ring edge coverage={gold:.3f}")
+    s.expect(gold > .12, "tutorial card lacks a visible golden focus ring")
+    s.drag_game(TABLEAU_X[1], TABLEAU_TOP_Y-4*CARD_PITCH, 900, 300, "reject hinted card on empty felt")
+    s.wait(1.5, "rejected card returns and hint resumes")
+    s.expect(ring_coverage() > .12, "rejected drop permanently lost tutorial focus ring")
+    s.shot("hint-after-rejected-drop")
 
     # --- тот самый ход, который ломал v2 -------------------------------------
     # 5_green — единственная карта второй колонки, лежит на depth 0.
@@ -2173,7 +2224,381 @@ def scenario_saveload(s):
              "вектор глубин не различает даже полную пересдачу — оракул слепой")
 
 
-SCENARIOS = {"boot": scenario_boot, "hittest": scenario_hittest,
+def scenario_pickupfx(s):
+    """Observe the actual shadow, flight pose and complete cleanup in pixels."""
+    s.boot()
+    s.press_play()
+    s.click_game(*TUTORIAL_BUTTON, label="deterministic effects board")
+    s.wait(3, "tutorial settled")
+    home = s.patch(169, 299, 30, 45)  # green 5 is not the hinted card
+    ground = s.brightness(654, 140, 2)
+    sx, sy = s._map(169, 299)
+    ex, ey = s._map(600, 150)
+    s.page.mouse.move(sx, sy)
+    s.page.mouse.down()
+    s.wait(0.2, "pickup")
+    for i in range(1, 13):
+        s.page.mouse.move(sx + (ex - sx) * i / 12, sy + (ey - sy) * i / 12)
+        s.page.wait_for_timeout(FRAME_MS * 2)
+    s.shot("moving-card")
+    s.wait(0.8, "card stops tilting")
+    shadow = s.brightness(654, 140, 2)
+    s.note("shadow", f"felt={ground:.1f}, under raised card={shadow:.1f}")
+    s.expect(shadow < ground - 4, "raised card has no visible shadow")
+    s.shot("raised-card-shadow")
+    s.page.mouse.up()  # invalid drop in the empty space below the columns
+    s.wait(1.2, "return and recoil finish")
+    s.expect(s.patch(169, 299, 30, 45) == home, "card did not return to its resting pose")
+    s.expect(abs(s.brightness(654, 140, 2) - ground) < 2, "shadow was left on the table")
+    s.shot("effects-cleared")
+
+
+def scenario_tutorialsave(s):
+    """A practice board must not destroy or replace an unfinished normal game."""
+    s.boot()
+    s.press_play()
+    s.wait(2, "deal settled")
+    felt = s.brightness(*FREE_CELL[1])
+    depth = s.exposed_depth(1, felt)
+    if not s.expect(depth is not None, "no exposed card to park"):
+        return
+    s.drag_game(TABLEAU_X[1], TABLEAU_TOP_Y - depth * CARD_PITCH,
+                *FREE_CELL[1], "park a card before practice")
+    s.wait(3, "save flushed")
+    expected = [s.exposed_depth(c, felt) for c in range(1, 9)]
+    card = s.patch(*FREE_CELL[1], 28, 45)
+    s.expect_card_at(*FREE_CELL[1], felt, "parked card")
+
+    def same_board(label):
+        s.wait(3, label)
+        actual = [s.exposed_depth(c, felt) for c in range(1, 9)]
+        s.expect(actual == expected, f"{label}: changed columns {expected} -> {actual}")
+        s.expect(s.patch(*FREE_CELL[1], 28, 45) == card,
+                 f"{label}: parked card changed or disappeared")
+        s.shot(label)
+
+    s.click_game(*TUTORIAL_BUTTON, label="practice")
+    s.wait(3, "tutorial loaded")
+    if not s.is_release:
+        s.expect(s.logs_matching(r"\[TUTOR\] found"), "tutorial never loaded")
+    s.expect_card_at(169, 299, felt, "practice card rendered")
+    s.click_game(110, 50, label="skip tutorial")
+    same_board("after-skip")
+
+    # Completing practice must also resume this exact board.
+    s.click_game(*TUTORIAL_BUTTON, label="practice again")
+    s.wait(3, "tutorial loaded again")
+    for x1, y1, x2, y2 in [
+        (65, 159, 585, 457), (65, 194, 585, 457),
+        (65, 229, 65, 457), (65, 264, 169, 299),
+    ]:
+        s.drag_game(x1, y1, x2, y2, "tutorial move")
+        s.wait(1, "move settled")
+    s.click_game(*DRAGON_BUTTON[1], label="collect dragons")
+    s.wait(2.2, "victory and confetti")
+    s.shot("victory-confetti")
+    burst = s.patch(150, 300, 125, 180)
+    s.wait(0.4, "confetti moves")
+    s.expect(s.patch(150, 300, 125, 180) != burst, "victory burst is not animated")
+    s.shot("victory-confetti-later")
+    s.wait(3, "confetti expires")
+    settled = s.patch(150, 300, 125, 180)
+    s.wait(0.4, "no permanent particle loop")
+    s.expect(s.patch(150, 300, 125, 180) == settled, "victory effect never settles")
+    s.click_game(480, 230, label="return from tutorial victory")
+    same_board("after-practice-win")
+
+    s.page.goto(s.url)
+    s.boot()
+    s.press_play()
+    same_board("after-page-reload")
+
+
+def scenario_menus(s):
+    """Real input: menu -> practice -> victory -> menu -> ordinary game.
+
+    Captures all new screens; the existing tutorialsave scenario independently
+    checks that practice does not replace the normal saved board.
+    """
+    s.boot()
+    s.shot("start")
+    s.click_game(480, 155, label="tutorial directly from the menu")
+    s.wait(3, "practice loaded")
+    s.expect(s.logs_matching(r"\[TUTOR\] found"), "menu tutorial did not load practice")
+    s.shot("practice")
+    for move in [(65, 159, 585, 457), (65, 194, 585, 457),
+                 (65, 229, 65, 457), (65, 264, 169, 299)]:
+        s.drag_game(*move, label="practice move")
+        s.wait(1, "move settles")
+    before = s.patch(480, 330, 220, 30)
+    s.click_game(*DRAGON_BUTTON[1], label="collect practice dragons")
+    s.wait(5, "victory settles")
+    s.expect(s.patch(480, 330, 220, 30) != before, "practice did not reach victory")
+    s.shot("victory")
+    s.click_game(480, 150, label="victory menu button")
+    s.wait(1, "back to menu")
+    s.shot("returned-to-menu")
+    levels = len(s.logs_matching(r"I am MAIN SCRIPT"))
+    s.press_play()
+    s.expect(len(s.logs_matching(r"I am MAIN SCRIPT")) > levels, "menu did not start a new level")
+    felt = s.brightness(*FREE_CELL[3])
+    s.expect(sum(s.exposed_depth(c, felt) is not None for c in range(1, 9)) >= 6,
+             "PLAY after tutorial MENU still loaded the practice board")
+    s.shot("ordinary-game")
+
+
+
+def scenario_music(s):
+    """Measure actual mixer PCM, not just the controller's log messages."""
+    s.boot()  # finish the initial load before installing the probe and reloading
+    s.page.add_init_script("""(() => {
+      window.__musicMeters = [];
+      const meters = new WeakMap();
+      const observed = new WeakSet();
+      const connect = AudioNode.prototype.connect;
+      AudioNode.prototype.connect = function(destination, ...args) {
+        const result = connect.call(this, destination, ...args);
+        if (destination === this.context.destination && !observed.has(this)) {
+          let meter = meters.get(this.context);
+          if (!meter) {
+            meter = this.context.createAnalyser(); meter.fftSize = 2048;
+            meters.set(this.context, meter);
+            window.__musicMeters.push(meter);
+          }
+          connect.call(this, meter);
+          observed.add(this);
+        }
+        return result;
+      };
+      window.__musicRms = async () => {
+        let sum=0, n=0;
+        for(let j=0;j<20;j++) {
+          for(const meter of window.__musicMeters) {
+            const pcm=new Float32Array(meter.fftSize);
+            meter.getFloatTimeDomainData(pcm);
+            for(const v of pcm) {sum+=v*v; n++;}
+          }
+          await new Promise(r=>setTimeout(r,25));
+        }
+        // No destination connection exists until Defold first plays a sound.
+        return n ? Math.sqrt(sum/n) : 0;
+      };
+    })();""")
+    s.page.goto(s.url)
+    s.boot()
+    def rms(label):
+        value=s.page.evaluate("window.__musicRms()")
+        s.note("music-rms", f"{label}: {value:.7f}; meters={s.page.evaluate("window.__musicMeters.length")}")
+        return value
+    s.expect(0 <= rms("before gesture") < .00001, "music played before interaction or mixer probe missing")
+    s.click_game(480,30,label="start music with a real gesture on empty menu space")
+    s.wait(3)
+    s.expect(rms("playing") > .0001, "no audible PCM after gesture")
+    s.click_game(907,235,label="mute music")
+    s.wait(1)
+    s.expect(0 <= rms("muted") < .00001, "music mute left an audible signal")
+    s.page.reload()
+    s.boot()
+    s.click_game(480,30,label="saved mute after reload")
+    s.wait(2)
+    s.expect(0 <= rms("saved mute") < .00001, "mute preference did not survive reload")
+    s.click_game(907,235,label="enable music")
+    s.wait(2)
+    s.expect(rms("enabled again") > .0001, "enable did not restore PCM")
+    # Do not count the previous page's voice; this page has exactly one start.
+    starts=len(s.logs_matching(r"^DEBUG:SCRIPT: \[MUSIC\] started$"))
+    if not s.is_release:  # release strips Lua print calls
+        s.expect(starts == 2, f"expected one voice on each of two page loads, got {starts}")
+    s.press_play()
+    s.click_game(907,56,label="restart while music plays")
+    s.wait(4)
+    if not s.is_release:
+        s.expect(len(s.logs_matching(r"^DEBUG:SCRIPT: \[MUSIC\] started$")) == starts,
+                 "level transitions started additional music voices")
+    s.expect(rms("after restart") > .0001, "restart killed persistent music")
+    s.click_game(907,235,label="mute during game")
+    s.wait(2)
+    s.expect(0 <= rms("game muted") < .00001, "game music button failed")
+    s.shot("music-muted")
+
+def scenario_foundationstill(s):
+    """An animal sent to foundation stays still beyond the longest idle interval."""
+    from PIL import Image, ImageChops, ImageStat
+    import io
+    def delta(a,b):
+        d=ImageChops.difference(Image.open(io.BytesIO(a)).convert("RGB"),Image.open(io.BytesIO(b)).convert("RGB"))
+        return sum(ImageStat.Stat(d).mean)/3
+    s.boot()
+    s.click_game(480,155,label="practice")
+    s.wait(3,"deal settles")
+    s.drag_game(65,159,585,457,label="2 red to foundation")
+    s.wait(2,"next red exposed")
+    # With only 2 red placed, tutorial intentionally pulses this destination.
+    # Place 3 as well: the hint now targets a free cell, leaving foundation still.
+    s.drag_game(65,194,585,457,label="3 red to foundation, remove destination hint")
+    s.wait(3,"foundation card settles")
+    s.expect_card_at(585,457,s.brightness(793,299),"3 red landed on foundation")
+    before=s.patch(585,443,34,40)
+    s.shot("foundation-start")
+    peak=0
+    deadline=time.time()+55
+    while time.time()<deadline:
+        s.page.wait_for_timeout(500)
+        peak=max(peak,delta(before,s.patch(585,443,34,40)))
+    s.note("foundation-motion",f"maximum portrait pixel difference over 55s: {peak:.5f}")
+    s.expect(peak<.1,"completed foundation card animated")
+    s.shot("foundation-still")
+
+
+def scenario_livingcards(s):
+    """Real menu motion and portraits under a stationary held pointer (mouse/touch)."""
+    from PIL import Image, ImageChops, ImageStat
+    import io
+    def delta(a,b):
+        diff=ImageChops.difference(Image.open(io.BytesIO(a)).convert("RGB"),Image.open(io.BytesIO(b)).convert("RGB"))
+        return sum(ImageStat.Stat(diff).mean)/3
+    s.boot()
+    ribbons=s.patch(180,300,140,170)
+    s.shot("menu-before")
+    s.wait(3,"menu ribbons drift")
+    s.expect(delta(ribbons,s.patch(180,300,140,170))>.15,"menu side decoration is static")
+    s.shot("menu-moving")
+    s.click_game(480,155,label="practice")
+    s.wait(3,"cards settle")
+    for label,cx,cy in [("orc",169,299),("dragon",273,299),("fox",65,159),("owl",65,264)]:
+        if label=="owl":
+            s.drag_game(65,159,585,457,label="2 red to foundation")
+            s.wait(2,"next red exposed")
+            s.drag_game(65,194,585,457,label="3 red to foundation")
+            s.wait(2,"green exposed")
+            s.drag_game(65,229,65,457,label="green to free cell")
+            s.wait(2,"owl exposed")
+        x,y=s._map(cx,cy)
+        hx,hy=s._map(700,320)
+        if s.is_mobile:
+            s.touch("touchStart",x,y)
+        else:
+            s.page.mouse.move(x,y)
+            s.page.wait_for_timeout(100)
+            s.page.mouse.down()
+        s.page.wait_for_timeout(HOLD_MS)
+        for step in range(1,11):
+            mx,my=x+(hx-x)*step/10,y+(hy-y)*step/10
+            if s.is_mobile: s.touch("touchMove",mx,my)
+            else: s.page.mouse.move(mx,my)
+            s.page.wait_for_timeout(FRAME_MS*2)
+        s.wait(1.5,"held card settles before sampling")
+        body=lambda:s.patch(701,305,30,35)
+        rank=lambda:s.patch(670,380,9,9)
+        before,number=body(),rank()
+        changed=False
+        deadline=time.time()+45
+        while time.time()<deadline:
+            s.page.wait_for_timeout(250)
+            if delta(before,body())>.6:
+                changed=True
+                break
+        s.expect(changed,label+" portrait never moves while held")
+        s.expect(delta(number,rank())<.1,label+" motion changed held index")
+        s.shot(label+"-held-animation")
+        # Reject outside all slots, then allow the existing return animation.
+        ox,oy=s._map(900,330)
+        if s.is_mobile:
+            s.touch("touchMove",ox,oy); s.page.wait_for_timeout(HOLD_MS); s.touch("touchEnd")
+        else:
+            s.page.mouse.move(ox,oy); s.page.wait_for_timeout(HOLD_MS); s.page.mouse.up()
+        s.wait(2,"rejected drop restores portrait")
+    s.shot("cards-restored")
+
+
+def scenario_dragonlife(s):
+    """Real card pixels: only illustration animates, then settles; idle works on touch."""
+    s.boot()
+    s.click_game(480,155,label="practice for a known exposed dragon")
+    s.wait(3,"practice settles")
+    s.shot("slots-and-dragons")
+    body=lambda:s.patch(273,285,34,40)
+    rank=lambda:s.patch(245,356,12,12)
+    from PIL import Image, ImageChops, ImageStat
+    import io
+    def delta(a,b):
+        diff=ImageChops.difference(Image.open(io.BytesIO(a)).convert("RGB"),Image.open(io.BytesIO(b)).convert("RGB"))
+        return sum(ImageStat.Stat(diff).mean)/3
+    baseline, number=body(),rank()
+    if not s.is_mobile:
+        x,y=s._map(273,299)
+        s.page.mouse.move(x,y)
+        s.wait(.6,"hover response")
+        s.expect(delta(body(),baseline)>.6,"hover did not animate dragon portrait")
+        s.expect(delta(rank(),number)<.1,"dragon animation moved or repainted rank")
+        s.shot("hover-breath")
+        x,y=s._map(850,350)
+        s.page.mouse.move(x,y)
+        s.wait(2.6,"hover settles")
+        s.expect(delta(body(),baseline)<.1,"dragon did not return to original illustration")
+    # No more input: a rare spontaneous animation must occur within its interval.
+    found=False
+    # SwiftShader + high-DPI capture on Steam Deck can advance game time much
+    # slower than wall time. Unit tests bound the simulated interval; here we
+    # still require real changed pixels, with a bounded slow-render allowance.
+    started=time.time()
+    samples=0
+    deadline=started+120
+    while time.time()<deadline:
+        s.page.wait_for_timeout(300)
+        samples+=1
+        if delta(body(),baseline)>.6:
+            found=True
+            break
+    s.note("dragon-timing",f"idle observed={found}, wall seconds={time.time()-started:.1f}, samples={samples}")
+    s.expect(found,"exposed dragon never performs its rare idle animation")
+    s.expect(delta(rank(),number)<.1,"idle animation changed the card number")
+    s.shot("idle-breath")
+    s.drag_game(273,299,65,457,label="pick up animated dragon into free cell")
+    s.wait(1.5,"dragon lands")
+    s.expect_card_at(65,457,s.brightness(273,299),"dragon remains playable")
+    s.shot("dragon-in-cell")
+
+
+def scenario_buttons(s):
+    """Shared button: visible press, release-outside cancellation, then one click.
+
+    Uses touch on --mobile and mouse otherwise. No game action may fire on down.
+    """
+    s.boot()
+    s.shot("start")
+    before = s.patch(480, 230, 145, 33)
+    x, y = s._map(480, 230)
+    if s.is_mobile:
+        s.touch("touchStart", x, y)
+    else:
+        s.page.mouse.move(x, y)
+        s.page.mouse.down()
+    s.wait(.35, "button held")
+    s.shot("pressed")
+    s.expect(s.patch(480, 230, 145, 33) != before, "button has no visible press animation")
+    s.expect(not s.logs_matching(r"I am MAIN SCRIPT"), "PLAY fired on press")
+    ox, oy = s._map(700, 230)
+    if s.is_mobile:
+        s.touch("touchMove", ox, oy)
+        s.page.wait_for_timeout(150)
+        s.touch("touchEnd")
+    else:
+        s.page.mouse.move(ox, oy)
+        s.page.wait_for_timeout(150)
+        s.page.mouse.up()
+    s.wait(.4, "cancel settles")
+    s.shot("cancelled")
+    s.expect(not s.logs_matching(r"I am MAIN SCRIPT"), "release outside started game")
+    s.expect(s.patch(480, 230, 145, 33) == before, "cancel did not restore button")
+    s.click_game(617, 230, label="PLAY near right edge: hit area must not shrink")
+    s.expect(s.wait_for_log(r"I am MAIN SCRIPT", 20), "edge click did not load game")
+    s.wait(2.5, "deal settles")
+    s.expect(len([e for e in s.logs_matching(r"I am MAIN SCRIPT") if e["kind"] == "log"]) == 1, "one click must load one level")
+    s.shot("game")
+
+
+SCENARIOS = {"foundationstill": scenario_foundationstill, "livingcards": scenario_livingcards, "dragonlife": scenario_dragonlife, "buttons": scenario_buttons, "music": scenario_music, "boot": scenario_boot, "hittest": scenario_hittest, "menus": scenario_menus,
              "dragz": scenario_dragz, "regrab": scenario_regrab,
              "guilock": scenario_guilock, "dragonrestart": scenario_dragonrestart,
              "celldrain": scenario_celldrain, "o2sweep": scenario_o2sweep,
@@ -2185,7 +2610,34 @@ SCENARIOS = {"boot": scenario_boot, "hittest": scenario_hittest,
              "i18n": scenario_i18n, "yasdk": scenario_yasdk,
              "resize": scenario_resize, "dealrng": scenario_dealrng,
              "tutorialfree": scenario_tutorialfree,
-             "saveload": scenario_saveload}
+             "saveload": scenario_saveload, "tutorialsave": scenario_tutorialsave,
+             "pickupfx": scenario_pickupfx}
+
+# Capability restrictions live next to the registry. A new ordinary scenario
+# automatically joins the debug batch; release support must be explicit.
+FIXTURE_SCENARIOS = frozenset({"dragz", "dragonrestart", "celldrain", "o2sweep"})
+RELEASE_SCENARIOS = frozenset({"music", "boot", "hittest", "fullscreen", "debugkeys",
+                               "yasdk", "tutorialsave", "pickupfx"})
+
+
+def batch_scenarios(release=False):
+    return [name for name in SCENARIOS if
+            (name in RELEASE_SCENARIOS if release else name not in FIXTURE_SCENARIOS)]
+
+
+def close_browser(s, browser):
+    """Best-effort navigation must not prevent closing or change a verdict."""
+    s.note("cleanup", "unloading game and closing browser")
+    faulthandler.dump_traceback_later(30)
+    try:
+        try:
+            s.page.goto("about:blank", wait_until="commit", timeout=10000)
+        except Exception as exc:
+            s.note("cleanup-warning", f"could not unload page: {type(exc).__name__}: {exc}")
+        finally:
+            browser.close()
+    finally:
+        faulthandler.cancel_dump_traceback_later()
 
 
 def main():
@@ -2203,10 +2655,14 @@ def main():
                     help="serve WITHOUT cross-origin isolation (no SharedArrayBuffer), "
                          "which is what a host that omits COOP/COEP gives you")
     ap.add_argument("--headed", action="store_true")
+    ap.add_argument("--browser-channel", default=None,
+                    help="installed browser channel, e.g. chrome; default is Playwright Chromium")
+    ap.add_argument("--release", action="store_true",
+                    help="verify startup through pixels; release engines strip Lua logs")
     ap.add_argument("--query", default="",
                     help="query-строка к index.html, например lang=ru (H2: так язык задают Я.Игры)")
     ap.add_argument("--mobile", action="store_true",
-                    help="эмулировать тач как основной ввод (has_touch=True). Только это, БЕЗ "
+                    help="CDP touch-ввод в click_game/drag_game и has_touch=True, БЕЗ "
                          "is_mobile: is_mobile ещё и включает мета-viewport width=device-width "
                          "и меняет innerWidth (960->981 замерено), а has_touch один в один "
                          "поворачивает matchMedia('(hover:none) and (pointer:coarse)'), от которого "
@@ -2230,6 +2686,7 @@ def main():
     with sync_playwright() as pw:
         browser = pw.chromium.launch(
             headless=not args.headed,
+            channel=args.browser_channel,
             args=["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader",
                   "--disable-gpu-sandbox", "--autoplay-policy=no-user-gesture-required"],
         )
@@ -2240,6 +2697,7 @@ def main():
         s = Session(page, args.out)
         s.url = url
         s.is_mobile = args.mobile
+        s.is_release = args.release
 
         def on_console(m):
             kind = classify(m.text)
@@ -2264,14 +2722,18 @@ def main():
         finally:
             report = {
                 "scenario": args.scenario, "viewport": [vw, vh],
+                "release": args.release, "mobile": args.mobile, "dpr": args.dpr,
                 "cross_origin_isolated": not args.no_coi,
                 "binaries": binaries, "fatal": fatal,
                 "failures": s.failures, "log": s.log,
             }
-            with open(os.path.join(args.out, "report.json"), "w") as f:
-                json.dump(report, f, indent=1)
-            browser.close()
-    httpd.shutdown()
+            try:
+                close_browser(s, browser)
+            finally:
+                with open(os.path.join(args.out, "report.json"), "w") as f:
+                    json.dump(report, f, indent=1)
+                httpd.shutdown()
+                httpd.server_close()
 
     print(f"\n=== scenario={args.scenario} viewport={vw}x{vh} coi={not args.no_coi} ===")
     print(f"binaries served: {', '.join(sorted(set(binaries))) or '(none)'}")

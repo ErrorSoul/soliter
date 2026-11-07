@@ -1,0 +1,12 @@
+  [log] DEBUG:SCRIPT: [REPLAY] timeout — cannot drive this deal.
+  [match] \[REPLAY\] (SOLVED|timeout) <- DEBUG:SCRIPT: [REPLAY] timeout — cannot drive this deal.
+  [log] DEBUG:SCRIPT: [REPLAY] SOLVED in 115 moves — driving real cards (115 directives).
+  [match] \[REPLAY\] (SOLVED|timeout) <- DEBUG:SCRIPT: [REPLAY] SOLVED in 115 moves — driving real cards (115 directives).
+  [timeout] no line matched \[REPLAY\] (SOLVED|timeout) in 1s
+OK: wait_for_log consumes each verdict once
+  [cleanup] unloading game and closing browser
+  [cleanup-warning] could not unload page: TimeoutError: test: page cannot navigate
+  [cleanup] unloading game and closing browser
+  [cleanup-warning] could not unload page: TimeoutError: test: page cannot navigate
+OK: cleanup preserves both passing and failing scenario results on unload timeout
+OK: batches derive from the scenario registry and respect fixture/release restrictions

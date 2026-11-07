@@ -1,0 +1,11 @@
+{
+  "source_matches_deck": {
+    "main/Scripts/card.script": "660f4a25a3d1e06312076220d99ed5bac859d8657a12273ebfa68c2fe27f3ca2",
+    "main/Scripts/dragon_motion.lua": "adad0efcc5a5ca479807dd0401ce216fda896d93aed1c1b0dfae38e34513495b",
+    "main/Scripts/menu_motion.lua": "da920e5561e6236a0475961eee1361f5be81859a9b083e08dbe6737ff3c3b483",
+    "gui/ui.gui_script": "d2cb58b3919329f1b292a456b9723be3c008c073bddea79c1bc827f9a5b75ec0",
+    "tools/browser-test.py": "14f43324356d7233ccc7421ada6a267a2f7676fa846fdb73fc4d5d53dbac9649",
+    "assets/music/quiet-garden.ogg": "422521661f1033ad9303b464525df0f0ca3441881af4c0f4b67f0bf1eb69151a"
+  },
+  "bundle_archive_sha256": "f86756675ef15a6a24ec2102a8aa443d278c20f86872ffa5d3028646037fa167"
+}

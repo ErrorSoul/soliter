@@ -54,3 +54,28 @@ If switching to OGG, update paths in `main/Game Objects/sound_manager.go`.
 - **Freesound.org** — filter by CC0 license
 - **Mixkit.co** — free, no attribution
 - **jsfxr** (`sfxr.me`) — generate and export WAV
+
+## Ambient music (2026-11-04)
+
+`assets/music/quiet-garden.ogg`: original 96-second stereo composition, 60 BPM,
+D major / B minor, soft plucks and pads, no percussion or sampled recordings.
+The reproducible score and synthesis are in `tools/compose-garden.py` and
+`assets/music/score.json`. Run `python3 tools/compose-garden.py` with ffmpeg;
+this also writes a 44.1kHz / 16-bit WAV master into ignored `build/music/`.
+The installed ffmpeg uses its native experimental Vorbis encoder, explicitly
+selected by the script. Ogg is approximately 497 KiB. Note/reverb tails wrap
+around the 96-second boundary; startup fades in over 0.8 s, mute over 0.18 s.
+
+`main/main.collection` owns a persistent `music.go` with controller + looping
+sound. It survives proxy unload/restart and keeps one voice. The GUI's first
+real touch/click enables the track; the music button toggles it on every screen.
+The preference is saved separately from game progress (`audio`, key `music`).
+Disabling pauses after the fade; enabling resumes the same voice. Final stops it.
+The existing HTML5 audio-focus guard suspends all Web Audio contexts on blur or
+hidden state, covering music too. Production Yandex ads are not exercised here.
+
+Defold API contract: [sound playback and gain](https://defold.com/manuals/sound/).
+Browser scenario `music` probes actual PCM at the mixer output, including release;
+Lua start-count assertions apply only to debug, since release strips print calls.
+`focus` independently checks actual AudioContext suspended/running states.
+Mobile runs are Chrome touch emulation, not a physical device listening test.

@@ -73,6 +73,19 @@ function on_input(self, action_id, action)
       go.set_position(self.cursor_pos, ".")
    end
 
+   -- Hover is decorative and only targets the exposed card, never a buried head.
+   if action.x and action_id == nil and not self.is_dragging and not self.was_pressed
+      and (self.flying_count or 0) == 0 then
+      local card=hit.check_last_cards(self,ax,ay)
+      local id=card and not card.card_data.is_flower and card.id or nil
+      if not id then
+         local cell=hit.check_free_slots(self,ax,ay)
+         id=cell and cell.slot_id or nil
+      end
+      if id and id~=self.hover_dragon then msg.post(id,"dragon_hover") end
+      self.hover_dragon=id
+   end
+
    -- Блок D: physics debug — инструмент разработчика. В релизе Space не должен
    -- ни рисовать коллизии, ни слать в main «init».
    if debug_flags.enabled and action_id == hash("space") then
@@ -328,17 +341,19 @@ end
 
 local function fly_card_arc(card_id, target_pos, delay, callback)
     local start_pos = go.get_position(card_id)
-    local fly_z = 0.5
-    local mid = vmath.vector3(
-        (start_pos.x + target_pos.x) / 2,
-        math.max(start_pos.y, target_pos.y) + 80,
-        fly_z
-    )
-    local land = vmath.vector3(target_pos.x, target_pos.y, fly_z)
-    go.animate(card_id, "position", go.PLAYBACK_ONCE_FORWARD,
-        mid, go.EASING_OUTQUAD, 0.35, delay, function()
-            go.animate(card_id, "position", go.PLAYBACK_ONCE_FORWARD,
-                land, go.EASING_INQUAD, 0.35, 0, callback)
+    go.cancel_animations(card_id, "position")
+    -- Keep the card inside the table, with a distinct layer per dragon.
+    -- X moves continuously; only Y eases at the apex, avoiding a full stop
+    -- halfway through the old two-segment flight.
+    local peak = math.min(math.max(start_pos.y, target_pos.y) + 65,
+        config.DISPLAY_HEIGHT - config.CARD_HALF_SIZE.y - 6)
+    go.set_position(vmath.vector3(start_pos.x, start_pos.y, 0.5 + delay * 0.01), card_id)
+    go.animate(card_id, "position.x", go.PLAYBACK_ONCE_FORWARD,
+        target_pos.x, go.EASING_INOUTSINE, 0.7, delay)
+    go.animate(card_id, "position.y", go.PLAYBACK_ONCE_FORWARD,
+        peak, go.EASING_OUTQUAD, 0.35, delay, function()
+            go.animate(card_id, "position.y", go.PLAYBACK_ONCE_FORWARD,
+                target_pos.y, go.EASING_INQUAD, 0.35, 0, callback)
         end)
 end
 

@@ -158,6 +158,10 @@ function update_visible_cards(self)
    -- допустимы: кадром позже карты садятся ровно сюда.
    for i = 1, #self.stack do
       go.set_position(card_slot_position(self, i), self.stack[i].id)
+      msg.post(self.stack[i].id, "index_layout", {
+         exposed = i == #self.stack,
+         compact = i < #self.stack and -config.stack_offset_y(#self.stack, go.get_position().y) < 32
+      })
    end
 
    -- Сохраняем список видимых карт

@@ -1,0 +1,389 @@
+{
+  "tested_commit": "06b9dbaf1b0e834adb1ef826c006b25de3a93db3",
+  "merge_base_reference": "5cb671dc73f328de1a09265f72f2f7ea9a6fd5d2",
+  "bundle_variant": "release",
+  "bundle_command": "bash tools/defold-bundle.sh /private/tmp/shenzhen-gate-06b9dba-release --variant release",
+  "build_log_sha256": "52db057b237f063eb3997d333df2065df07cc7f55d2fabe6bc65e52b782464eb",
+  "source_verification": {
+    "tracked_files_checked_before_and_after": 201,
+    "changed": [],
+    "harness_sha256": {
+      "tools/browser-review.py": "89a4d080fe6a9dd6cdf6206192be28b83bd18b560840a6ed8fda7488d965bed4",
+      "tools/browser-test-selfcheck.py": "ee90aaf43e2552e16f5b04b8a7e7bdc1e53fd4471e7cb1bb52207a257c61ec26",
+      "tools/browser-test.py": "8059b49aa69c9ac7bd4c65e379074dc873bd4ea0bae7fef2dad41c2a3f0e6d74"
+    }
+  },
+  "lua_tests": {
+    "command": "lua solver/tests/run_all.lua",
+    "passed": 278,
+    "failed": 0,
+    "exit_code": 0,
+    "log_sha256": "691531a4f7da87732cfe571aa062dbd9cd369b655c5953dda7de03d406929c1a"
+  },
+  "harness_selfcheck": {
+    "exit_code": 0,
+    "log_sha256": "584a7620c58aab56f7f2a52d2e0f2b835bd137cad2bb5a9b86bef377d683868e"
+  },
+  "browser_runs": [
+    {
+      "group": "release",
+      "scenario": "debugkeys",
+      "exit_code": 0,
+      "viewport": [
+        960,
+        540
+      ],
+      "release": true,
+      "mobile": false,
+      "dpr": 1.0,
+      "cross_origin_isolated": true,
+      "fatal": [],
+      "failures": [],
+      "wasm": [
+        "ShenzenSolitare_pthread.wasm"
+      ],
+      "report_path": "build/gate-1101/release/debugkeys/report.json",
+      "report_sha256": "a778fa3c6f1f12d559cbe482aafa5cf5c5e28036395e2a53e00d5cadd59015f7",
+      "observations": [
+        {
+          "t": 30.74,
+          "kind": "keys",
+          "text": "release: S/R/Space стол не тронули"
+        }
+      ]
+    },
+    {
+      "group": "release",
+      "scenario": "yasdk",
+      "exit_code": 0,
+      "viewport": [
+        960,
+        540
+      ],
+      "release": true,
+      "mobile": false,
+      "dpr": 1.0,
+      "cross_origin_isolated": true,
+      "fatal": [],
+      "failures": [],
+      "wasm": [
+        "ShenzenSolitare_pthread.wasm"
+      ],
+      "report_path": "build/gate-1101/release/yasdk/report.json",
+      "report_sha256": "c1817f3cbadd12a9ede1fc2a2ca539c5bb106fb154c948c59b12b903a8d3e19e",
+      "observations": [
+        {
+          "t": 36.36,
+          "kind": "ya",
+          "text": "мост: ready lang=ru,loading-ready,gameplay-start"
+        },
+        {
+          "t": 39.91,
+          "kind": "ya",
+          "text": "цепочка после части 4: ready,start,stop,start"
+        },
+        {
+          "t": 70.43,
+          "kind": "ya",
+          "text": "без фокуса: ready,start"
+        }
+      ]
+    },
+    {
+      "group": "release",
+      "scenario": "tutorialsave",
+      "exit_code": 0,
+      "viewport": [
+        960,
+        540
+      ],
+      "release": true,
+      "mobile": false,
+      "dpr": 1.0,
+      "cross_origin_isolated": true,
+      "fatal": [],
+      "failures": [],
+      "wasm": [
+        "ShenzenSolitare_pthread.wasm"
+      ],
+      "report_path": "build/gate-1101/release/tutorialsave/report.json",
+      "report_sha256": "bb3ea6b1fc608697bf38dcc6e3cd82e49c5846734de0a348510d168fc0f04755",
+      "observations": [
+        {
+          "t": 11.24,
+          "kind": "pixel",
+          "text": "parked card luminance=148 vs felt 38"
+        },
+        {
+          "t": 14.63,
+          "kind": "pixel",
+          "text": "practice card rendered luminance=142 vs felt 38"
+        }
+      ]
+    },
+    {
+      "group": "release",
+      "scenario": "pickupfx",
+      "exit_code": 0,
+      "viewport": [
+        960,
+        540
+      ],
+      "release": true,
+      "mobile": false,
+      "dpr": 1.0,
+      "cross_origin_isolated": true,
+      "fatal": [],
+      "failures": [],
+      "wasm": [
+        "ShenzenSolitare_pthread.wasm"
+      ],
+      "report_path": "build/gate-1101/release/pickupfx/report.json",
+      "report_sha256": "da02f9a50ff4c4f23d940715d34ed700925e304bc045a43df1aa1246ff70ac70",
+      "observations": [
+        {
+          "t": 9.44,
+          "kind": "shadow",
+          "text": "felt=61.4, under raised card=44.5"
+        }
+      ]
+    },
+    {
+      "group": "release",
+      "scenario": "hittest",
+      "exit_code": 0,
+      "viewport": [
+        960,
+        540
+      ],
+      "release": true,
+      "mobile": false,
+      "dpr": 1.0,
+      "cross_origin_isolated": true,
+      "fatal": [],
+      "failures": [],
+      "wasm": [
+        "ShenzenSolitare_pthread.wasm"
+      ],
+      "report_path": "build/gate-1101/release/hittest/report.json",
+      "report_sha256": "9f4c1cbd695e2e6a37608d4beb77cf07093e885d12e20c5e3487a59ff156220d",
+      "observations": [
+        {
+          "t": 4.63,
+          "kind": "pixel",
+          "text": "felt reference (empty free cell 1) luminance=38"
+        },
+        {
+          "t": 7.46,
+          "kind": "pixel",
+          "text": "free cell 1 after the drag luminance=169 vs felt 38"
+        },
+        {
+          "t": 7.51,
+          "kind": "pixel",
+          "text": "column 1 bottom edge after the card left luminance=45 vs felt 38"
+        }
+      ]
+    },
+    {
+      "group": "mobile",
+      "scenario": "hittest",
+      "exit_code": 0,
+      "viewport": [
+        844,
+        390
+      ],
+      "release": true,
+      "mobile": true,
+      "dpr": 3.0,
+      "cross_origin_isolated": true,
+      "fatal": [],
+      "failures": [],
+      "wasm": [
+        "ShenzenSolitare_pthread.wasm"
+      ],
+      "report_path": "build/gate-1101/mobile/hittest/report.json",
+      "report_sha256": "9e539fd4d6ebc0490c8cf8b6b58dc7da8cbd207bed051362da6fa9ec6fd4a7d8",
+      "observations": [
+        {
+          "t": 5.64,
+          "kind": "pixel",
+          "text": "felt reference (empty free cell 1) luminance=38"
+        },
+        {
+          "t": 10.11,
+          "kind": "pixel",
+          "text": "free cell 1 after the drag luminance=142 vs felt 38"
+        },
+        {
+          "t": 10.35,
+          "kind": "pixel",
+          "text": "column 1 bottom edge after the card left luminance=45 vs felt 38"
+        }
+      ]
+    },
+    {
+      "group": "mobile",
+      "scenario": "fullscreen",
+      "exit_code": 0,
+      "viewport": [
+        844,
+        390
+      ],
+      "release": true,
+      "mobile": true,
+      "dpr": 3.0,
+      "cross_origin_isolated": true,
+      "fatal": [],
+      "failures": [],
+      "wasm": [
+        "ShenzenSolitare_pthread.wasm"
+      ],
+      "report_path": "build/gate-1101/mobile/fullscreen/report.json",
+      "report_sha256": "d188050f9bc7882aebe26c243970ad272f9331aae999b4e1333a2a74e991529f",
+      "observations": [
+        {
+          "t": 5.57,
+          "kind": "fullscreen",
+          "text": "is_mobile=True вызовов requestFullscreen после PLAY: 1"
+        }
+      ]
+    },
+    {
+      "group": "mobile",
+      "scenario": "tutorialsave",
+      "exit_code": 0,
+      "viewport": [
+        844,
+        390
+      ],
+      "release": true,
+      "mobile": true,
+      "dpr": 3.0,
+      "cross_origin_isolated": true,
+      "fatal": [],
+      "failures": [],
+      "wasm": [
+        "ShenzenSolitare_pthread.wasm"
+      ],
+      "report_path": "build/gate-1101/mobile/tutorialsave/report.json",
+      "report_sha256": "ceebd4fc63d1ec436812a9cb47f6c70c17704b7e1d450b04b43fd1d5fa0a81a4",
+      "observations": [
+        {
+          "t": 14.44,
+          "kind": "pixel",
+          "text": "parked card luminance=123 vs felt 38"
+        },
+        {
+          "t": 17.98,
+          "kind": "pixel",
+          "text": "practice card rendered luminance=141 vs felt 38"
+        }
+      ]
+    },
+    {
+      "group": "no-coi",
+      "scenario": "hittest",
+      "exit_code": 0,
+      "viewport": [
+        800,
+        600
+      ],
+      "release": true,
+      "mobile": false,
+      "dpr": 2.0,
+      "cross_origin_isolated": false,
+      "fatal": [],
+      "failures": [],
+      "wasm": [
+        "ShenzenSolitare.wasm"
+      ],
+      "report_path": "build/gate-1101/no-coi/hittest/report.json",
+      "report_sha256": "b2e98252bfafb5c2543ae41db56ac7d87970a74cc85beeef68d8acd6402c0bc0",
+      "observations": [
+        {
+          "t": 5.21,
+          "kind": "pixel",
+          "text": "felt reference (empty free cell 1) luminance=38"
+        },
+        {
+          "t": 8.83,
+          "kind": "pixel",
+          "text": "free cell 1 after the drag luminance=169 vs felt 38"
+        },
+        {
+          "t": 9.04,
+          "kind": "pixel",
+          "text": "column 1 bottom edge after the card left luminance=45 vs felt 38"
+        }
+      ]
+    },
+    {
+      "group": "no-coi",
+      "scenario": "tutorialsave",
+      "exit_code": 0,
+      "viewport": [
+        800,
+        600
+      ],
+      "release": true,
+      "mobile": false,
+      "dpr": 2.0,
+      "cross_origin_isolated": false,
+      "fatal": [],
+      "failures": [],
+      "wasm": [
+        "ShenzenSolitare.wasm"
+      ],
+      "report_path": "build/gate-1101/no-coi/tutorialsave/report.json",
+      "report_sha256": "aa632cc67534a6801ba69b3521c2146ddc12450906f5a05a528d1f4e789878b7",
+      "observations": [
+        {
+          "t": 12.68,
+          "kind": "pixel",
+          "text": "parked card luminance=113 vs felt 38"
+        },
+        {
+          "t": 16.15,
+          "kind": "pixel",
+          "text": "practice card rendered luminance=142 vs felt 38"
+        }
+      ]
+    },
+    {
+      "group": "no-coi",
+      "scenario": "pickupfx",
+      "exit_code": 0,
+      "viewport": [
+        800,
+        600
+      ],
+      "release": true,
+      "mobile": false,
+      "dpr": 2.0,
+      "cross_origin_isolated": false,
+      "fatal": [],
+      "failures": [],
+      "wasm": [
+        "ShenzenSolitare.wasm"
+      ],
+      "report_path": "build/gate-1101/no-coi/pickupfx/report.json",
+      "report_sha256": "a8818fb22ae5edf4f9cb7dd0332e7efa3cf83451f89710130878c817c7adb95f",
+      "observations": [
+        {
+          "t": 10.13,
+          "kind": "shadow",
+          "text": "felt=61.5, under raised card=44.4"
+        }
+      ]
+    }
+  ],
+  "limits": [
+    "11 browser runs cover the three previously missing modes; this is not a rerun of the entire historical 34-run matrix.",
+    "Mobile means Chromium touch emulation, not a physical mobile device.",
+    "The SDK scenario uses the harness mock, not a production Yandex deployment.",
+    "Raw logs and screenshots remain in ignored build/gate-1101; this tracked summary records observed results and hashes.",
+    "Independent background review, Grok and advisor verdicts are not included or implied."
+  ],
+  "evidence_log_correction": "Removed one trailing space from reviews/evidence-1031/selfcheck.log and updated its recorded SHA-256; test outcome unchanged."
+}

@@ -1,0 +1,38 @@
+VERDICT: APPROVE
+Дата: 2026-11-02.
+Роль: независимый advisor, Codex subagent; отдельный advisor CLI не использовался.
+Объект: весь merge diff master...e7fff781f55ad494c0153780146837ff332f170f, включая унаследованный docs-коммит 98a444a, игровые правки, тесты, browser harness и документы. HEAD при собственных проверках: e7fff781f55ad494c0153780146837ff332f170f.
+
+ОБЯЗАТЕЛЬНЫЕ ИСПРАВЛЕНИЯ / BLOCKERS: нет.
+
+Продуктовый контракт соблюдён: TUTORIAL сохраняет обычную партию, SKIP и PLAY NOW после учебной победы продолжают её; обычные RESTART / PLAY AGAIN пересдают. Это решение владельца, не основание возвращать прежнее уничтожение сохранения.
+
+Сначала сделаны собственные выводы по коду и прогонам, затем проверен raw Grok verdict. Прочитаны INDEX.md, CLAUDE.md, релевантные handoff, полный список diff и исходники изменённых gameplay/test/tool путей. Чужие ~/.claude и ~/.grok transcripts, plans/card-redesign-wip/ и чужие worktree не читались. Основной репозиторий намеренно не редактировался; коммитов и мержа не делал. Мутации только в /private/tmp/shenzhen-advisor-mutations-6cumhhxf. Git status после проверки: только исходный untracked plans/card-redesign-wip/.
+
+СОБСТВЕННАЯ ВЕРИФИКАЦИЯ
+- lua solver/tests/run_all.lua: exit 0, 279 passed / 0 failed.
+- python3 tools/browser-test-selfcheck.py: exit 0. Проверены одноразовое потребление строк wait_for_log, продолжение browser.close при таймауте вспомогательного goto, сохранение исходного исключения сценария, вычисление batch из реестра и release/fixture ограничения.
+- git diff --check master...e7fff781f55ad494c0153780146837ff332f170f: exit 0.
+- Дополнительно собственный targeted mutation run реального solver.tests.test_effects_review в отдельной копии: контроль 6/0; все 14 негативных вариантов пойманы ожидаемыми assertions. Варианты: безусловный clear_save в manager; шесть вариантов сломанной UI-проводки preserve_save (общий false, SKIP, PLAY NOW, TUTORIAL, RESTART, PLAY AGAIN); удаление unhighlight drag guard; удаление cleanup конфетти на hide, expiry, GUI final и повторном start; откат base_slot и flower_slot к master по одному. Это подтверждает различающую способность новых тестов, а не только их зелёный результат.
+
+ЧТО ПОДТВЕРЖДЕНО ПО КОДУ
+- gui/ui.gui_script:114,135,184 отправляет preserve_save=true, обычные рестарты оставляют false; game_manager.script:90 очищает только пересдачу. main.script фиксирует tutorial_mode на экземпляре уровня, выбирает учебную раздачу до load_saved_game, блокирует её сохранение через should_save, а WIN чистит файл только для is_full_deal. Переключение общего tutorial_state при выходе само по себе не превращает учебную доску в сохраняемую обычную.
+- card.script отменяет scale/tint/euler анимации при новом захвате; вспышка стала отменяемой tint-анимацией, оба drop-пути гасят тень и доводят масштаб. Unhighlight не сплющивает карту в руке. card.go действительно содержит используемый shadow sprite.
+- cursor.fly_card_arc отменяет старую составную position-анимацию до независимых x/y; callback по завершению Y отправляет обычный drop_success и уменьшает flying_count. Flower больше не запускает второй полёт. Foundation захватывает финальный слой каждой прибывающей карты до callback; мутация прежнего кода поймана тестом.
+- celebration имеет ограниченные 40 частиц / 2.8 секунды, не расходует RNG раздачи, заменяет старый burst, удаляет узлы при expiry/hide/final. Тест исполняет реальный модуль и реальный UI final, хотя GUI и движок замоканы.
+- Harness учитывает failures/fatal в коде возврата, release startup использует JS/pixels вместо отсутствующих Lua-логов; batch release допускает только явно перечисленные сценарии. tutorialsave проверяет SKIP, учебную победу, возврат и настоящий page.goto/reload; сравнивает глубины колонок и изображение припаркованной карты. Проверка движения и последующего затухания конфетти не сводится к отсутствию ошибок.
+
+НЕБЛОКИРУЮЩИЕ ОСТАТКИ И ГРАНИЦЫ
+1. tools/browser-test.py:2222-2234: pickupfx напрямую вызывает page.mouse даже при --mobile. Воспроизведение границы: запуск pickupfx --mobile всё равно посылает mouse move/down/up внутри этого сценария. CDP touch действительно применяется в click_game/drag_game, в том числе tutorialsave. Нельзя объявлять все mobile сценарии полностью touch-проверенными.
+2. tools/browser-test.py:2339 и :2434: browser.close без таймаута; faulthandler только печатает стек, report записывается после возврата close. Зависший close может оставить пакет без report до 900-секундного subprocess timeout; исключение close также способно заменить исходное исключение сценария. Selfcheck покрывает именно goto timeout, не hang/exception самого close. Это ограничение диагностического стенда, не false PASS игры.
+3. tools/browser-test.py:2256-2262: tutorialsave сравнивает вектор глубин и одну parked-card patch, не идентичность всех карт/оснований/цветка. Сохранение целого snapshot дополнительно проверяют Lua-тесты; сам браузерный оракул не следует описывать как полную проверку всего содержимого доски.
+4. main/Scripts/cursor.script:337: queued dragons получают flight Z до своей задержки; вершина ограничена y=459 при цели y=457, поэтому конец дуги почти горизонтален. Косметические ограничения, блокировки ввода из них не следует.
+5. main/Scripts/card.script:269-271: highlight во время drag ставит флаг и возвращается; сама отложенная подсветка после drop не воспроизводится автоматически. Не повод блокировать сохранение/эффекты; полноценное engine-покрытие этой гонки отсутствует.
+6. Не выполнял новый HTML5 build, браузерную матрицу debug/release/mobile/no-COI, тесты на физических устройствах или production iframe Яндекс Игр. Не измерял в движке совместную работу position.x/y, G7 auto_move_dragon, визуальный cleanup тени после успешного хода. Исторические JSON/log и чужие браузерные результаты не считаю собственным текущим прогоном. Мутационные проверки выше работают под Lua stub и не доказывают интерполяцию/рендер Defold.
+
+ПРИМЕНИМОСТЬ GROK APPROVE
+reviews/gate-1101-grok47.json содержит VERDICT APPROVE, BLOCKERS none, stopReason=end_turn; рассмотренный Grok head ea7eff1. Его собственные заявленные проверки: Lua 279/0 и diff --check. Независимо сверил ea7eff1..e7fff78: изменены только INDEX.md, review markdown и docstring fullscreen в tools/browser-test.py. Отдельное сравнение Python AST с удалёнными docstrings подтвердило полное равенство исполняемого кода browser-test. Игровой код и тесты этим коммитом не менялись. Указанные Grok устаревшие описания количества тестов, release boot и mouse-only PLAY исправлены. Поэтому Grok APPROVE применим к e7fff781f55ad494c0153780146837ff332f170f без повторного модельного прогона.
+
+Если следующим коммитом только архивируются неизменённые тексты обоих verdicts и их метаданные в reviews/evidence-1102, без изменения runtime/tests/harness, текущий advisor APPROVE и применимость Grok APPROVE сохраняются. Такой evidence-only коммит должен честно сохранить проверенные SHA, даты и границы прогонов; это не новый browser run. При любом исполняемом изменении вывод необходимо переоценить.
+
+APPROVE советника не заменяет отдельный явный апрув владельца на merge, требуемый CLAUDE.md. Мерж не выполнен.

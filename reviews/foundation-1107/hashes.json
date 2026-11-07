@@ -1,0 +1,7 @@
+{
+  "main/Scripts/base_slot.script": "fd1855d80ecf92b6bfe2ae8f19393a24d074ede2e6280571807924a200da65d1",
+  "main/Scripts/card.script": "660f4a25a3d1e06312076220d99ed5bac859d8657a12273ebfa68c2fe27f3ca2",
+  "solver/tests/test_dragon_motion.lua": "52177b760016e66ee65d7b14d575f6a8bc737bdc4e63040e8fbdb11817cc86a7",
+  "solver/tests/test_layout.lua": "ce4f04ed2b4dea47e6fe13a4610de16267f5d63f76a18e8af35242f2da49abbc",
+  "tools/browser-test.py": "518280e23e9a85333fea97b604ab0c523178902e484e7d966502edf79ebdf935"
+}

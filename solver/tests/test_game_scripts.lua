@@ -3385,6 +3385,7 @@ end)
 -- перестал бы видеть само заражение.
 local function o1_a2_double_press(z_layout)
    load_script("main/Scripts/cursor.script")
+   local cursor_input, cursor_update = on_input, update
    require("main.Scripts.tutorial_state").reset()
    msg.clear()
    local hand, pos = {}, {}
@@ -3424,8 +3425,8 @@ local function o1_a2_double_press(z_layout)
       msg.clear()
    end
    local function press()
-      on_input(cur, hash("touch"), { x = 65, y = 299 + 65, pressed = true })
-      update(cur, 0.016)
+      cursor_input(cur, hash("touch"), { x = 65, y = 299 + 65, pressed = true })
+      cursor_update(cur, 0.016)
       deliver()
    end
    press()

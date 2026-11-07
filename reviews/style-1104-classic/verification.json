@@ -1,0 +1,4018 @@
+[
+  {
+    "run": "verified-desktop/focus",
+    "report": {
+      "scenario": "focus",
+      "viewport": [
+        960,
+        540
+      ],
+      "release": false,
+      "mobile": false,
+      "dpr": 1.0,
+      "cross_origin_isolated": true,
+      "binaries": [
+        "sdk.js",
+        "dmloader.js",
+        "ShenzenSolitare_pthread_wasm.js",
+        "ShenzenSolitare_pthread_wasm.js",
+        "ShenzenSolitare_pthread.wasm",
+        "ShenzenSolitare_pthread_wasm.js"
+      ],
+      "fatal": [],
+      "failures": [],
+      "log": [
+        {
+          "t": 0.04,
+          "kind": "req",
+          "text": "sdk.js"
+        },
+        {
+          "t": 0.04,
+          "kind": "req",
+          "text": "dmloader.js"
+        },
+        {
+          "t": 0.82,
+          "kind": "log",
+          "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+        },
+        {
+          "t": 0.82,
+          "kind": "net-fail",
+          "text": "http://127.0.0.1:57612/sdk.js net::ERR_ABORTED"
+        },
+        {
+          "t": 0.83,
+          "kind": "log",
+          "text": "[YA] absent"
+        },
+        {
+          "t": 0.83,
+          "kind": "req",
+          "text": "ShenzenSolitare_pthread_wasm.js"
+        },
+        {
+          "t": 0.83,
+          "kind": "log",
+          "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+        },
+        {
+          "t": 0.84,
+          "kind": "req",
+          "text": "ShenzenSolitare_pthread_wasm.js"
+        },
+        {
+          "t": 0.86,
+          "kind": "req",
+          "text": "ShenzenSolitare_pthread.wasm"
+        },
+        {
+          "t": 0.87,
+          "kind": "log",
+          "text": "Running..."
+        },
+        {
+          "t": 3.24,
+          "kind": "log",
+          "text": "[.WebGL-0x134000d6200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+        },
+        {
+          "t": 3.24,
+          "kind": "log",
+          "text": ""
+        },
+        {
+          "t": 3.24,
+          "kind": "info",
+          "text": "INFO:DLIB: Log server started on port 0\n"
+        },
+        {
+          "t": 3.24,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Installed graphics device 'ADAPTER_FAMILY_OPENGL'\n"
+        },
+        {
+          "t": 3.24,
+          "kind": "info",
+          "text": "INFO:ENGINE: Defold Engine 1.13.1 (574678c)\n"
+        },
+        {
+          "t": 3.24,
+          "kind": "log",
+          "text": "%c    %c    Made with Defold    %c    %c    https://www.defold.com background: #fd6623; padding:5px 0; border: 5px; background: #272c31; color: #fafafa; padding:5px 0; background: #39a3e4; padding:5px 0; background: #ffffff; color: #000000; padding:5px 0;"
+        },
+        {
+          "t": 3.24,
+          "kind": "info",
+          "text": "INFO:PROFILER: Skipped ProfilerJS profiler due to setting profiler.performance_timeline_enabled\n"
+        },
+        {
+          "t": 4.2,
+          "kind": "wait",
+          "text": "1s first game frames"
+        },
+        {
+          "t": 4.37,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Checking ASTC Array support. May produce GL error.\n"
+        },
+        {
+          "t": 4.47,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Device: OpenGL\n"
+        },
+        {
+          "t": 4.48,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Renderer: WebKit WebGL\n"
+        },
+        {
+          "t": 4.48,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Version: OpenGL ES 3.0 (WebGL 2.0 (OpenGL ES 3.0 Chromium))\n"
+        },
+        {
+          "t": 4.48,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Vendor: WebKit\n"
+        },
+        {
+          "t": 4.48,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Extensions:\n"
+        },
+        {
+          "t": 4.48,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_clip_control\n"
+        },
+        {
+          "t": 4.48,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_color_buffer_float\n"
+        },
+        {
+          "t": 4.48,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_color_buffer_half_float\n"
+        },
+        {
+          "t": 4.48,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_conservative_depth\n"
+        },
+        {
+          "t": 4.48,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_depth_clamp\n"
+        },
+        {
+          "t": 4.48,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_disjoint_timer_query_webgl2\n"
+        },
+        {
+          "t": 4.48,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_float_blend\n"
+        },
+        {
+          "t": 4.48,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_polygon_offset_clamp\n"
+        },
+        {
+          "t": 4.48,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_texture_compression_bptc\n"
+        },
+        {
+          "t": 4.48,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_texture_compression_rgtc\n"
+        },
+        {
+          "t": 4.48,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_texture_filter_anisotropic\n"
+        },
+        {
+          "t": 4.48,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   NV_shader_noperspective_interpolation\n"
+        },
+        {
+          "t": 4.49,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   OES_texture_float_linear\n"
+        },
+        {
+          "t": 4.49,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_clip_cull_distance\n"
+        },
+        {
+          "t": 4.49,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_compressed_texture_astc\n"
+        },
+        {
+          "t": 4.49,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_compressed_texture_etc\n"
+        },
+        {
+          "t": 4.49,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_compressed_texture_etc1\n"
+        },
+        {
+          "t": 4.49,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_compressed_texture_s3tc\n"
+        },
+        {
+          "t": 4.49,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_compressed_texture_s3tc_srgb\n"
+        },
+        {
+          "t": 4.49,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_debug_renderer_info\n"
+        },
+        {
+          "t": 4.5,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_debug_shaders\n"
+        },
+        {
+          "t": 4.5,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_lose_context\n"
+        },
+        {
+          "t": 4.5,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_multi_draw\n"
+        },
+        {
+          "t": 4.5,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_polygon_mode\n"
+        },
+        {
+          "t": 4.5,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_clip_control\n"
+        },
+        {
+          "t": 4.5,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_color_buffer_float\n"
+        },
+        {
+          "t": 4.5,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_color_buffer_half_float\n"
+        },
+        {
+          "t": 4.5,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_conservative_depth\n"
+        },
+        {
+          "t": 4.5,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_depth_clamp\n"
+        },
+        {
+          "t": 4.5,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_disjoint_timer_query_webgl2\n"
+        },
+        {
+          "t": 4.5,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_float_blend\n"
+        },
+        {
+          "t": 4.5,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_polygon_offset_clamp\n"
+        },
+        {
+          "t": 4.5,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_texture_compression_bptc\n"
+        },
+        {
+          "t": 4.5,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_texture_compression_rgtc\n"
+        },
+        {
+          "t": 4.5,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_texture_filter_anisotropic\n"
+        },
+        {
+          "t": 4.5,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_NV_shader_noperspective_interpolation\n"
+        },
+        {
+          "t": 4.5,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_OES_texture_float_linear\n"
+        },
+        {
+          "t": 4.5,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_clip_cull_distance\n"
+        },
+        {
+          "t": 4.5,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_compressed_texture_astc\n"
+        },
+        {
+          "t": 4.5,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_compressed_texture_etc\n"
+        },
+        {
+          "t": 4.5,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_compressed_texture_etc1\n"
+        },
+        {
+          "t": 4.5,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_compressed_texture_s3tc\n"
+        },
+        {
+          "t": 4.5,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_compressed_texture_s3tc_srgb\n"
+        },
+        {
+          "t": 4.5,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_debug_renderer_info\n"
+        },
+        {
+          "t": 4.5,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_debug_shaders\n"
+        },
+        {
+          "t": 4.5,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_lose_context\n"
+        },
+        {
+          "t": 4.5,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_multi_draw\n"
+        },
+        {
+          "t": 4.5,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_polygon_mode\n"
+        },
+        {
+          "t": 4.5,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Context features:\n"
+        },
+        {
+          "t": 4.5,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   CONTEXT_FEATURE_MULTI_TARGET_RENDERING\n"
+        },
+        {
+          "t": 4.5,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   CONTEXT_FEATURE_TEXTURE_ARRAY\n"
+        },
+        {
+          "t": 4.5,
+          "kind": "info",
+          "text": "INFO:ENGINE: Loading data from: archive:game.dmanifest\n"
+        },
+        {
+          "t": 4.62,
+          "kind": "info",
+          "text": "INFO:SOUND: Info\n"
+        },
+        {
+          "t": 4.62,
+          "kind": "info",
+          "text": "INFO:SOUND:   nSamplesPerSec:   48000\n"
+        },
+        {
+          "t": 4.62,
+          "kind": "info",
+          "text": "INFO:SOUND:   DSP backend: Fallback\n"
+        },
+        {
+          "t": 4.62,
+          "kind": "req",
+          "text": "ShenzenSolitare_pthread_wasm.js"
+        },
+        {
+          "t": 4.62,
+          "kind": "info",
+          "text": "INFO:SOUND: Sound\n"
+        },
+        {
+          "t": 4.62,
+          "kind": "info",
+          "text": "INFO:SOUND:   nSamplesPerSec:   48000\n"
+        },
+        {
+          "t": 4.62,
+          "kind": "info",
+          "text": "INFO:SOUND:        useThread:   1\n"
+        },
+        {
+          "t": 4.62,
+          "kind": "info",
+          "text": "INFO:ENGINE: Initialised sound device 'default'\n"
+        },
+        {
+          "t": 4.73,
+          "kind": "info",
+          "text": "INFO:PHYSICS: Created physics context: Box2D v2.2.1\n"
+        },
+        {
+          "t": 4.78,
+          "kind": "log",
+          "text": "DEBUG:SCRIPT: [DEBUG] dev-клавиши: on\n"
+        },
+        {
+          "t": 4.78,
+          "kind": "log",
+          "text": "DEBUG:SCRIPT: [I18N] язык: ru\n"
+        },
+        {
+          "t": 4.78,
+          "kind": "log",
+          "text": "[AUDIO] resumed ctx=1 states=running"
+        },
+        {
+          "t": 4.78,
+          "kind": "log",
+          "text": "DEBUG:SCRIPT: [YA] state=absent\n"
+        },
+        {
+          "t": 4.8,
+          "kind": "log",
+          "text": "[.WebGL-0x134000d6e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+        },
+        {
+          "t": 4.8,
+          "kind": "canvas",
+          "text": "960x540 scale=1.000 letterbox=(0,0)"
+        },
+        {
+          "t": 4.81,
+          "kind": "log",
+          "text": "[.WebGL-0x134000d6e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+        },
+        {
+          "t": 4.81,
+          "kind": "style",
+          "text": "overscroll html=none body=none, canvas touch-action=none"
+        },
+        {
+          "t": 4.82,
+          "kind": "menu",
+          "text": "contextmenu подавлен: {'canvas': True, 'app-container': True, 'body': True}"
+        },
+        {
+          "t": 5.02,
+          "kind": "log",
+          "text": "[.WebGL-0x134000d6e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+        },
+        {
+          "t": 5.08,
+          "kind": "log",
+          "text": "DEBUG:SCRIPT: [MUSIC] started\n"
+        },
+        {
+          "t": 5.13,
+          "kind": "log",
+          "text": "DEBUG:SCRIPT: I am MAIN SCRIPT\n"
+        },
+        {
+          "t": 5.13,
+          "kind": "log",
+          "text": "DEBUG:SCRIPT: [DEAL] fingerprint=0329517754 t=1793777132\n"
+        },
+        {
+          "t": 5.17,
+          "kind": "log",
+          "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+        },
+        {
+          "t": 5.37,
+          "kind": "click",
+          "text": "game(480,232) css(480,308) PLAY"
+        },
+        {
+          "t": 5.37,
+          "kind": "match",
+          "text": "I am MAIN SCRIPT <- DEBUG:SCRIPT: I am MAIN SCRIPT\n"
+        },
+        {
+          "t": 7.87,
+          "kind": "wait",
+          "text": "2.5s deal settles"
+        },
+        {
+          "t": 9.87,
+          "kind": "wait",
+          "text": "2s звук успел завестись"
+        },
+        {
+          "t": 9.87,
+          "kind": "log",
+          "text": "[AUDIO] suspended ctx=1 states=suspended"
+        },
+        {
+          "t": 9.88,
+          "kind": "match",
+          "text": "\\[AUDIO\\] suspended ctx=[1-9][0-9]* states= <- [AUDIO] suspended ctx=1 states=suspended"
+        },
+        {
+          "t": 9.92,
+          "kind": "log",
+          "text": "[AUDIO] resumed ctx=1 states=running"
+        },
+        {
+          "t": 10.08,
+          "kind": "match",
+          "text": "\\[AUDIO\\] resumed ctx=[1-9][0-9]* states= <- [AUDIO] resumed ctx=1 states=running"
+        },
+        {
+          "t": 10.08,
+          "kind": "log",
+          "text": "[AUDIO] suspended ctx=1 states=suspended"
+        },
+        {
+          "t": 10.11,
+          "kind": "log",
+          "text": "[AUDIO] resumed ctx=1 states=running"
+        },
+        {
+          "t": 13.09,
+          "kind": "wait",
+          "text": "3s промисы аудио осели"
+        },
+        {
+          "t": 13.09,
+          "kind": "audio",
+          "text": "после быстрого разворота: [AUDIO] resumed ctx=1 states=running"
+        },
+        {
+          "t": 13.1,
+          "kind": "log",
+          "text": "[MARK] focus-path"
+        },
+        {
+          "t": 13.1,
+          "kind": "match",
+          "text": "\\[MARK\\] focus-path <- [MARK] focus-path"
+        },
+        {
+          "t": 13.1,
+          "kind": "log",
+          "text": "[AUDIO] suspended ctx=1 states=suspended"
+        },
+        {
+          "t": 13.1,
+          "kind": "match",
+          "text": "\\[AUDIO\\] suspended ctx=[1-9][0-9]* states= <- [AUDIO] suspended ctx=1 states=suspended"
+        },
+        {
+          "t": 13.1,
+          "kind": "audio",
+          "text": "вкладка видима, фокус потерян: [AUDIO] suspended ctx=1 states=suspended"
+        },
+        {
+          "t": 13.14,
+          "kind": "log",
+          "text": "[AUDIO] resumed ctx=1 states=running"
+        },
+        {
+          "t": 13.3,
+          "kind": "match",
+          "text": "\\[AUDIO\\] resumed ctx=[1-9][0-9]* states= <- [AUDIO] resumed ctx=1 states=running"
+        },
+        {
+          "t": 13.3,
+          "kind": "cleanup",
+          "text": "unloading game and closing browser"
+        }
+      ]
+    }
+  },
+  {
+    "run": "verified-desktop/hittest",
+    "report": {
+      "scenario": "hittest",
+      "viewport": [
+        960,
+        540
+      ],
+      "release": false,
+      "mobile": false,
+      "dpr": 1.0,
+      "cross_origin_isolated": true,
+      "binaries": [
+        "sdk.js",
+        "dmloader.js",
+        "ShenzenSolitare_pthread_wasm.js",
+        "ShenzenSolitare_pthread_wasm.js",
+        "ShenzenSolitare_pthread.wasm",
+        "ShenzenSolitare_pthread_wasm.js"
+      ],
+      "fatal": [],
+      "failures": [],
+      "log": [
+        {
+          "t": 0.05,
+          "kind": "req",
+          "text": "sdk.js"
+        },
+        {
+          "t": 0.05,
+          "kind": "req",
+          "text": "dmloader.js"
+        },
+        {
+          "t": 0.77,
+          "kind": "log",
+          "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+        },
+        {
+          "t": 0.77,
+          "kind": "net-fail",
+          "text": "http://127.0.0.1:57536/sdk.js net::ERR_ABORTED"
+        },
+        {
+          "t": 0.77,
+          "kind": "log",
+          "text": "[YA] absent"
+        },
+        {
+          "t": 0.78,
+          "kind": "req",
+          "text": "ShenzenSolitare_pthread_wasm.js"
+        },
+        {
+          "t": 0.78,
+          "kind": "log",
+          "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+        },
+        {
+          "t": 0.79,
+          "kind": "req",
+          "text": "ShenzenSolitare_pthread_wasm.js"
+        },
+        {
+          "t": 0.81,
+          "kind": "req",
+          "text": "ShenzenSolitare_pthread.wasm"
+        },
+        {
+          "t": 0.83,
+          "kind": "log",
+          "text": "Running..."
+        },
+        {
+          "t": 3.12,
+          "kind": "info",
+          "text": "INFO:DLIB: Log server started on port 0\n"
+        },
+        {
+          "t": 3.12,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Installed graphics device 'ADAPTER_FAMILY_OPENGL'\n"
+        },
+        {
+          "t": 3.12,
+          "kind": "info",
+          "text": "INFO:ENGINE: Defold Engine 1.13.1 (574678c)\n"
+        },
+        {
+          "t": 3.13,
+          "kind": "log",
+          "text": "%c    %c    Made with Defold    %c    %c    https://www.defold.com background: #fd6623; padding:5px 0; border: 5px; background: #272c31; color: #fafafa; padding:5px 0; background: #39a3e4; padding:5px 0; background: #ffffff; color: #000000; padding:5px 0;"
+        },
+        {
+          "t": 3.13,
+          "kind": "info",
+          "text": "INFO:PROFILER: Skipped ProfilerJS profiler due to setting profiler.performance_timeline_enabled\n"
+        },
+        {
+          "t": 3.76,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Checking ASTC Array support. May produce GL error.\n"
+        },
+        {
+          "t": 3.83,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Device: OpenGL\n"
+        },
+        {
+          "t": 3.83,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Renderer: WebKit WebGL\n"
+        },
+        {
+          "t": 3.83,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Version: OpenGL ES 3.0 (WebGL 2.0 (OpenGL ES 3.0 Chromium))\n"
+        },
+        {
+          "t": 3.83,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Vendor: WebKit\n"
+        },
+        {
+          "t": 3.83,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Extensions:\n"
+        },
+        {
+          "t": 3.83,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_clip_control\n"
+        },
+        {
+          "t": 3.83,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_color_buffer_float\n"
+        },
+        {
+          "t": 3.83,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_color_buffer_half_float\n"
+        },
+        {
+          "t": 3.83,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_conservative_depth\n"
+        },
+        {
+          "t": 3.83,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_depth_clamp\n"
+        },
+        {
+          "t": 3.83,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_disjoint_timer_query_webgl2\n"
+        },
+        {
+          "t": 3.83,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_float_blend\n"
+        },
+        {
+          "t": 3.84,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_polygon_offset_clamp\n"
+        },
+        {
+          "t": 3.84,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_texture_compression_bptc\n"
+        },
+        {
+          "t": 3.84,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_texture_compression_rgtc\n"
+        },
+        {
+          "t": 3.84,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_texture_filter_anisotropic\n"
+        },
+        {
+          "t": 3.84,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   NV_shader_noperspective_interpolation\n"
+        },
+        {
+          "t": 3.84,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   OES_texture_float_linear\n"
+        },
+        {
+          "t": 3.84,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_clip_cull_distance\n"
+        },
+        {
+          "t": 3.84,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_compressed_texture_astc\n"
+        },
+        {
+          "t": 3.84,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_compressed_texture_etc\n"
+        },
+        {
+          "t": 3.84,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_compressed_texture_etc1\n"
+        },
+        {
+          "t": 3.84,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_compressed_texture_s3tc\n"
+        },
+        {
+          "t": 3.84,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_compressed_texture_s3tc_srgb\n"
+        },
+        {
+          "t": 3.84,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_debug_renderer_info\n"
+        },
+        {
+          "t": 3.84,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_debug_shaders\n"
+        },
+        {
+          "t": 3.84,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_lose_context\n"
+        },
+        {
+          "t": 3.84,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_multi_draw\n"
+        },
+        {
+          "t": 3.84,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_polygon_mode\n"
+        },
+        {
+          "t": 3.84,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_clip_control\n"
+        },
+        {
+          "t": 3.84,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_color_buffer_float\n"
+        },
+        {
+          "t": 3.84,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_color_buffer_half_float\n"
+        },
+        {
+          "t": 3.84,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_conservative_depth\n"
+        },
+        {
+          "t": 3.84,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_depth_clamp\n"
+        },
+        {
+          "t": 3.84,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_disjoint_timer_query_webgl2\n"
+        },
+        {
+          "t": 3.84,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_float_blend\n"
+        },
+        {
+          "t": 3.84,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_polygon_offset_clamp\n"
+        },
+        {
+          "t": 3.84,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_texture_compression_bptc\n"
+        },
+        {
+          "t": 3.84,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_texture_compression_rgtc\n"
+        },
+        {
+          "t": 3.84,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_texture_filter_anisotropic\n"
+        },
+        {
+          "t": 3.84,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_NV_shader_noperspective_interpolation\n"
+        },
+        {
+          "t": 3.84,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_OES_texture_float_linear\n"
+        },
+        {
+          "t": 3.84,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_clip_cull_distance\n"
+        },
+        {
+          "t": 3.84,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_compressed_texture_astc\n"
+        },
+        {
+          "t": 3.84,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_compressed_texture_etc\n"
+        },
+        {
+          "t": 3.84,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_compressed_texture_etc1\n"
+        },
+        {
+          "t": 3.84,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_compressed_texture_s3tc\n"
+        },
+        {
+          "t": 3.84,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_compressed_texture_s3tc_srgb\n"
+        },
+        {
+          "t": 3.84,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_debug_renderer_info\n"
+        },
+        {
+          "t": 3.84,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_debug_shaders\n"
+        },
+        {
+          "t": 3.84,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_lose_context\n"
+        },
+        {
+          "t": 3.84,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_multi_draw\n"
+        },
+        {
+          "t": 3.84,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_polygon_mode\n"
+        },
+        {
+          "t": 3.84,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Context features:\n"
+        },
+        {
+          "t": 3.84,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   CONTEXT_FEATURE_MULTI_TARGET_RENDERING\n"
+        },
+        {
+          "t": 3.84,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   CONTEXT_FEATURE_TEXTURE_ARRAY\n"
+        },
+        {
+          "t": 3.84,
+          "kind": "info",
+          "text": "INFO:ENGINE: Loading data from: archive:game.dmanifest\n"
+        },
+        {
+          "t": 3.97,
+          "kind": "info",
+          "text": "INFO:SOUND: Info\n"
+        },
+        {
+          "t": 3.97,
+          "kind": "info",
+          "text": "INFO:SOUND:   nSamplesPerSec:   48000\n"
+        },
+        {
+          "t": 3.97,
+          "kind": "info",
+          "text": "INFO:SOUND:   DSP backend: Fallback\n"
+        },
+        {
+          "t": 3.97,
+          "kind": "req",
+          "text": "ShenzenSolitare_pthread_wasm.js"
+        },
+        {
+          "t": 3.97,
+          "kind": "info",
+          "text": "INFO:SOUND: Sound\n"
+        },
+        {
+          "t": 3.97,
+          "kind": "info",
+          "text": "INFO:SOUND:   nSamplesPerSec:   48000\n"
+        },
+        {
+          "t": 3.97,
+          "kind": "info",
+          "text": "INFO:SOUND:        useThread:   1\n"
+        },
+        {
+          "t": 3.97,
+          "kind": "info",
+          "text": "INFO:ENGINE: Initialised sound device 'default'\n"
+        },
+        {
+          "t": 4.07,
+          "kind": "info",
+          "text": "INFO:PHYSICS: Created physics context: Box2D v2.2.1\n"
+        },
+        {
+          "t": 4.25,
+          "kind": "log",
+          "text": "DEBUG:SCRIPT: [DEBUG] dev-клавиши: on\n"
+        },
+        {
+          "t": 4.25,
+          "kind": "log",
+          "text": "DEBUG:SCRIPT: [I18N] язык: ru\n"
+        },
+        {
+          "t": 4.25,
+          "kind": "log",
+          "text": "[AUDIO] resumed ctx=1 states=running"
+        },
+        {
+          "t": 4.25,
+          "kind": "log",
+          "text": "DEBUG:SCRIPT: [YA] state=absent\n"
+        },
+        {
+          "t": 4.27,
+          "kind": "log",
+          "text": "[.WebGL-0x11c000d5600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+        },
+        {
+          "t": 4.27,
+          "kind": "log",
+          "text": "[.WebGL-0x11c000d6200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+        },
+        {
+          "t": 4.27,
+          "kind": "log",
+          "text": ""
+        },
+        {
+          "t": 4.29,
+          "kind": "log",
+          "text": "[.WebGL-0x11c000d6200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+        },
+        {
+          "t": 4.47,
+          "kind": "log",
+          "text": "[.WebGL-0x11c000d6200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+        },
+        {
+          "t": 5.25,
+          "kind": "wait",
+          "text": "1s first game frames"
+        },
+        {
+          "t": 5.26,
+          "kind": "canvas",
+          "text": "960x540 scale=1.000 letterbox=(0,0)"
+        },
+        {
+          "t": 5.43,
+          "kind": "shot",
+          "text": "01-start-screen.png"
+        },
+        {
+          "t": 5.49,
+          "kind": "log",
+          "text": "DEBUG:SCRIPT: [MUSIC] started\n"
+        },
+        {
+          "t": 5.62,
+          "kind": "log",
+          "text": "DEBUG:SCRIPT: I am MAIN SCRIPT\n"
+        },
+        {
+          "t": 5.62,
+          "kind": "log",
+          "text": "DEBUG:SCRIPT: [DEAL] fingerprint=0276030151 t=1793777109\n"
+        },
+        {
+          "t": 5.67,
+          "kind": "log",
+          "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+        },
+        {
+          "t": 5.77,
+          "kind": "click",
+          "text": "game(480,232) css(480,308) PLAY"
+        },
+        {
+          "t": 5.77,
+          "kind": "match",
+          "text": "I am MAIN SCRIPT <- DEBUG:SCRIPT: I am MAIN SCRIPT\n"
+        },
+        {
+          "t": 8.27,
+          "kind": "wait",
+          "text": "2.5s deal settles"
+        },
+        {
+          "t": 8.48,
+          "kind": "shot",
+          "text": "02-dealt.png"
+        },
+        {
+          "t": 8.65,
+          "kind": "pixel",
+          "text": "felt reference (empty free cell 1) luminance=46"
+        },
+        {
+          "t": 8.81,
+          "kind": "probe",
+          "text": "column 1 exposed card at depth 4"
+        },
+        {
+          "t": 10.13,
+          "kind": "drag",
+          "text": "(65,159)->(65,457) col1 exposed card -> free cell 1"
+        },
+        {
+          "t": 11.64,
+          "kind": "wait",
+          "text": "1.5s drop settles"
+        },
+        {
+          "t": 11.92,
+          "kind": "shot",
+          "text": "03-after-drag-to-free-cell.png"
+        },
+        {
+          "t": 12.15,
+          "kind": "pixel",
+          "text": "free cell 1 after the drag luminance=169 vs felt 46"
+        },
+        {
+          "t": 12.32,
+          "kind": "pixel",
+          "text": "column 1 bottom edge after the card left luminance=45 vs felt 46"
+        },
+        {
+          "t": 12.32,
+          "kind": "cleanup",
+          "text": "unloading game and closing browser"
+        }
+      ]
+    }
+  },
+  {
+    "run": "verified-desktop/menus",
+    "report": {
+      "scenario": "menus",
+      "viewport": [
+        960,
+        540
+      ],
+      "release": false,
+      "mobile": false,
+      "dpr": 1.0,
+      "cross_origin_isolated": true,
+      "binaries": [
+        "sdk.js",
+        "dmloader.js",
+        "ShenzenSolitare_pthread_wasm.js",
+        "ShenzenSolitare_pthread_wasm.js",
+        "ShenzenSolitare_pthread.wasm",
+        "ShenzenSolitare_pthread_wasm.js"
+      ],
+      "fatal": [],
+      "failures": [],
+      "log": [
+        {
+          "t": 0.04,
+          "kind": "req",
+          "text": "sdk.js"
+        },
+        {
+          "t": 0.05,
+          "kind": "req",
+          "text": "dmloader.js"
+        },
+        {
+          "t": 0.83,
+          "kind": "log",
+          "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+        },
+        {
+          "t": 0.83,
+          "kind": "net-fail",
+          "text": "http://127.0.0.1:57291/sdk.js net::ERR_ABORTED"
+        },
+        {
+          "t": 0.83,
+          "kind": "log",
+          "text": "[YA] absent"
+        },
+        {
+          "t": 0.83,
+          "kind": "log",
+          "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+        },
+        {
+          "t": 0.83,
+          "kind": "req",
+          "text": "ShenzenSolitare_pthread_wasm.js"
+        },
+        {
+          "t": 0.84,
+          "kind": "req",
+          "text": "ShenzenSolitare_pthread_wasm.js"
+        },
+        {
+          "t": 0.85,
+          "kind": "req",
+          "text": "ShenzenSolitare_pthread.wasm"
+        },
+        {
+          "t": 0.88,
+          "kind": "log",
+          "text": "Running..."
+        },
+        {
+          "t": 2.11,
+          "kind": "info",
+          "text": "INFO:DLIB: Log server started on port 0\n"
+        },
+        {
+          "t": 2.11,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Installed graphics device 'ADAPTER_FAMILY_OPENGL'\n"
+        },
+        {
+          "t": 2.11,
+          "kind": "info",
+          "text": "INFO:ENGINE: Defold Engine 1.13.1 (574678c)\n"
+        },
+        {
+          "t": 2.11,
+          "kind": "log",
+          "text": "%c    %c    Made with Defold    %c    %c    https://www.defold.com background: #fd6623; padding:5px 0; border: 5px; background: #272c31; color: #fafafa; padding:5px 0; background: #39a3e4; padding:5px 0; background: #ffffff; color: #000000; padding:5px 0;"
+        },
+        {
+          "t": 2.12,
+          "kind": "info",
+          "text": "INFO:PROFILER: Skipped ProfilerJS profiler due to setting profiler.performance_timeline_enabled\n"
+        },
+        {
+          "t": 3.1,
+          "kind": "wait",
+          "text": "1s first game frames"
+        },
+        {
+          "t": 3.56,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Checking ASTC Array support. May produce GL error.\n"
+        },
+        {
+          "t": 3.61,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Device: OpenGL\n"
+        },
+        {
+          "t": 3.61,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Renderer: WebKit WebGL\n"
+        },
+        {
+          "t": 3.61,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Version: OpenGL ES 3.0 (WebGL 2.0 (OpenGL ES 3.0 Chromium))\n"
+        },
+        {
+          "t": 3.61,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Vendor: WebKit\n"
+        },
+        {
+          "t": 3.61,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Extensions:\n"
+        },
+        {
+          "t": 3.61,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_clip_control\n"
+        },
+        {
+          "t": 3.61,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_color_buffer_float\n"
+        },
+        {
+          "t": 3.61,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_color_buffer_half_float\n"
+        },
+        {
+          "t": 3.61,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_conservative_depth\n"
+        },
+        {
+          "t": 3.61,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_depth_clamp\n"
+        },
+        {
+          "t": 3.61,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_disjoint_timer_query_webgl2\n"
+        },
+        {
+          "t": 3.61,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_float_blend\n"
+        },
+        {
+          "t": 3.61,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_polygon_offset_clamp\n"
+        },
+        {
+          "t": 3.61,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_texture_compression_bptc\n"
+        },
+        {
+          "t": 3.61,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_texture_compression_rgtc\n"
+        },
+        {
+          "t": 3.61,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_texture_filter_anisotropic\n"
+        },
+        {
+          "t": 3.61,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   NV_shader_noperspective_interpolation\n"
+        },
+        {
+          "t": 3.61,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   OES_texture_float_linear\n"
+        },
+        {
+          "t": 3.61,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_clip_cull_distance\n"
+        },
+        {
+          "t": 3.61,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_compressed_texture_astc\n"
+        },
+        {
+          "t": 3.61,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_compressed_texture_etc\n"
+        },
+        {
+          "t": 3.61,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_compressed_texture_etc1\n"
+        },
+        {
+          "t": 3.61,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_compressed_texture_s3tc\n"
+        },
+        {
+          "t": 3.61,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_compressed_texture_s3tc_srgb\n"
+        },
+        {
+          "t": 3.61,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_debug_renderer_info\n"
+        },
+        {
+          "t": 3.61,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_debug_shaders\n"
+        },
+        {
+          "t": 3.61,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_lose_context\n"
+        },
+        {
+          "t": 3.61,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_multi_draw\n"
+        },
+        {
+          "t": 3.61,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_polygon_mode\n"
+        },
+        {
+          "t": 3.61,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_clip_control\n"
+        },
+        {
+          "t": 3.61,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_color_buffer_float\n"
+        },
+        {
+          "t": 3.61,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_color_buffer_half_float\n"
+        },
+        {
+          "t": 3.61,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_conservative_depth\n"
+        },
+        {
+          "t": 3.62,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_depth_clamp\n"
+        },
+        {
+          "t": 3.62,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_disjoint_timer_query_webgl2\n"
+        },
+        {
+          "t": 3.62,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_float_blend\n"
+        },
+        {
+          "t": 3.62,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_polygon_offset_clamp\n"
+        },
+        {
+          "t": 3.62,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_texture_compression_bptc\n"
+        },
+        {
+          "t": 3.62,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_texture_compression_rgtc\n"
+        },
+        {
+          "t": 3.62,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_texture_filter_anisotropic\n"
+        },
+        {
+          "t": 3.62,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_NV_shader_noperspective_interpolation\n"
+        },
+        {
+          "t": 3.62,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_OES_texture_float_linear\n"
+        },
+        {
+          "t": 3.62,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_clip_cull_distance\n"
+        },
+        {
+          "t": 3.62,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_compressed_texture_astc\n"
+        },
+        {
+          "t": 3.62,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_compressed_texture_etc\n"
+        },
+        {
+          "t": 3.62,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_compressed_texture_etc1\n"
+        },
+        {
+          "t": 3.62,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_compressed_texture_s3tc\n"
+        },
+        {
+          "t": 3.62,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_compressed_texture_s3tc_srgb\n"
+        },
+        {
+          "t": 3.62,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_debug_renderer_info\n"
+        },
+        {
+          "t": 3.62,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_debug_shaders\n"
+        },
+        {
+          "t": 3.62,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_lose_context\n"
+        },
+        {
+          "t": 3.62,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_multi_draw\n"
+        },
+        {
+          "t": 3.62,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_polygon_mode\n"
+        },
+        {
+          "t": 3.62,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Context features:\n"
+        },
+        {
+          "t": 3.62,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   CONTEXT_FEATURE_MULTI_TARGET_RENDERING\n"
+        },
+        {
+          "t": 3.62,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   CONTEXT_FEATURE_TEXTURE_ARRAY\n"
+        },
+        {
+          "t": 3.62,
+          "kind": "info",
+          "text": "INFO:ENGINE: Loading data from: archive:game.dmanifest\n"
+        },
+        {
+          "t": 3.74,
+          "kind": "info",
+          "text": "INFO:SOUND: Info\n"
+        },
+        {
+          "t": 3.74,
+          "kind": "info",
+          "text": "INFO:SOUND:   nSamplesPerSec:   48000\n"
+        },
+        {
+          "t": 3.74,
+          "kind": "info",
+          "text": "INFO:SOUND:   DSP backend: Fallback\n"
+        },
+        {
+          "t": 3.74,
+          "kind": "req",
+          "text": "ShenzenSolitare_pthread_wasm.js"
+        },
+        {
+          "t": 3.74,
+          "kind": "info",
+          "text": "INFO:SOUND: Sound\n"
+        },
+        {
+          "t": 3.74,
+          "kind": "info",
+          "text": "INFO:SOUND:   nSamplesPerSec:   48000\n"
+        },
+        {
+          "t": 3.74,
+          "kind": "info",
+          "text": "INFO:SOUND:        useThread:   1\n"
+        },
+        {
+          "t": 3.74,
+          "kind": "info",
+          "text": "INFO:ENGINE: Initialised sound device 'default'\n"
+        },
+        {
+          "t": 3.79,
+          "kind": "info",
+          "text": "INFO:PHYSICS: Created physics context: Box2D v2.2.1\n"
+        },
+        {
+          "t": 3.87,
+          "kind": "log",
+          "text": "DEBUG:SCRIPT: [DEBUG] dev-клавиши: on\n"
+        },
+        {
+          "t": 3.87,
+          "kind": "log",
+          "text": "DEBUG:SCRIPT: [I18N] язык: ru\n"
+        },
+        {
+          "t": 3.87,
+          "kind": "log",
+          "text": "[AUDIO] resumed ctx=1 states=running"
+        },
+        {
+          "t": 3.87,
+          "kind": "log",
+          "text": "DEBUG:SCRIPT: [YA] state=absent\n"
+        },
+        {
+          "t": 3.88,
+          "kind": "log",
+          "text": "[.WebGL-0x13c000c7800]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+        },
+        {
+          "t": 3.88,
+          "kind": "log",
+          "text": ""
+        },
+        {
+          "t": 3.88,
+          "kind": "canvas",
+          "text": "960x540 scale=1.000 letterbox=(0,0)"
+        },
+        {
+          "t": 3.88,
+          "kind": "log",
+          "text": "[.WebGL-0x13c000d6200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+        },
+        {
+          "t": 3.89,
+          "kind": "log",
+          "text": "[.WebGL-0x13c000d6200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+        },
+        {
+          "t": 4.04,
+          "kind": "log",
+          "text": "[.WebGL-0x13c000d6200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+        },
+        {
+          "t": 4.12,
+          "kind": "shot",
+          "text": "01-start.png"
+        },
+        {
+          "t": 4.2,
+          "kind": "log",
+          "text": "DEBUG:SCRIPT: [MUSIC] started\n"
+        },
+        {
+          "t": 4.23,
+          "kind": "log",
+          "text": "DEBUG:SCRIPT: I am MAIN SCRIPT\n"
+        },
+        {
+          "t": 4.28,
+          "kind": "log",
+          "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+        },
+        {
+          "t": 4.48,
+          "kind": "click",
+          "text": "game(480,155) css(480,385) tutorial directly from the menu"
+        },
+        {
+          "t": 5.58,
+          "kind": "log",
+          "text": "DEBUG:SCRIPT: [TUTOR] found foundation за 68 мс\n"
+        },
+        {
+          "t": 5.85,
+          "kind": "log",
+          "text": "DEBUG:SCRIPT: [TUTOR] found foundation за 64 мс\n"
+        },
+        {
+          "t": 7.48,
+          "kind": "wait",
+          "text": "3s practice loaded"
+        },
+        {
+          "t": 7.63,
+          "kind": "shot",
+          "text": "02-practice.png"
+        },
+        {
+          "t": 8.74,
+          "kind": "log",
+          "text": "DEBUG:SCRIPT: [TUTOR] found foundation за 26 мс\n"
+        },
+        {
+          "t": 8.76,
+          "kind": "drag",
+          "text": "(65,159)->(585,457) practice move"
+        },
+        {
+          "t": 9.77,
+          "kind": "wait",
+          "text": "1s move settles"
+        },
+        {
+          "t": 10.92,
+          "kind": "log",
+          "text": "DEBUG:SCRIPT: [TUTOR] found free_cell за 8 мс\n"
+        },
+        {
+          "t": 10.96,
+          "kind": "drag",
+          "text": "(65,194)->(585,457) practice move"
+        },
+        {
+          "t": 11.96,
+          "kind": "wait",
+          "text": "1s move settles"
+        },
+        {
+          "t": 13.04,
+          "kind": "log",
+          "text": "DEBUG:SCRIPT: [TUTOR] found stack за 4 мс\n"
+        },
+        {
+          "t": 13.08,
+          "kind": "drag",
+          "text": "(65,229)->(65,457) practice move"
+        },
+        {
+          "t": 14.09,
+          "kind": "wait",
+          "text": "1s move settles"
+        },
+        {
+          "t": 15.17,
+          "kind": "log",
+          "text": "DEBUG:SCRIPT: [TUTOR] found dragon за 1 мс\n"
+        },
+        {
+          "t": 15.21,
+          "kind": "drag",
+          "text": "(65,264)->(169,299) practice move"
+        },
+        {
+          "t": 16.21,
+          "kind": "wait",
+          "text": "1s move settles"
+        },
+        {
+          "t": 16.63,
+          "kind": "click",
+          "text": "game(481,508) css(481,32) collect practice dragons"
+        },
+        {
+          "t": 17.37,
+          "kind": "log",
+          "text": "DEBUG:SCRIPT: [TUTOR] won - за 0 мс\n"
+        },
+        {
+          "t": 21.63,
+          "kind": "wait",
+          "text": "5s victory settles"
+        },
+        {
+          "t": 21.78,
+          "kind": "shot",
+          "text": "03-victory.png"
+        },
+        {
+          "t": 22.13,
+          "kind": "click",
+          "text": "game(480,150) css(480,390) victory menu button"
+        },
+        {
+          "t": 23.14,
+          "kind": "wait",
+          "text": "1s back to menu"
+        },
+        {
+          "t": 23.22,
+          "kind": "shot",
+          "text": "04-returned-to-menu.png"
+        },
+        {
+          "t": 23.31,
+          "kind": "log",
+          "text": "DEBUG:SCRIPT: I am MAIN SCRIPT\n"
+        },
+        {
+          "t": 23.31,
+          "kind": "log",
+          "text": "DEBUG:SCRIPT: [DEAL] fingerprint=0928660580 t=1793777053\n"
+        },
+        {
+          "t": 23.57,
+          "kind": "click",
+          "text": "game(480,232) css(480,308) PLAY"
+        },
+        {
+          "t": 23.57,
+          "kind": "match",
+          "text": "I am MAIN SCRIPT <- DEBUG:SCRIPT: I am MAIN SCRIPT\n"
+        },
+        {
+          "t": 26.07,
+          "kind": "wait",
+          "text": "2.5s deal settles"
+        },
+        {
+          "t": 26.25,
+          "kind": "probe",
+          "text": "column 1 exposed card at depth 3"
+        },
+        {
+          "t": 26.3,
+          "kind": "probe",
+          "text": "column 2 exposed card at depth 4"
+        },
+        {
+          "t": 26.35,
+          "kind": "probe",
+          "text": "column 3 exposed card at depth 4"
+        },
+        {
+          "t": 26.4,
+          "kind": "probe",
+          "text": "column 4 exposed card at depth 4"
+        },
+        {
+          "t": 26.45,
+          "kind": "probe",
+          "text": "column 5 exposed card at depth 4"
+        },
+        {
+          "t": 26.5,
+          "kind": "probe",
+          "text": "column 6 exposed card at depth 4"
+        },
+        {
+          "t": 26.55,
+          "kind": "probe",
+          "text": "column 7 exposed card at depth 4"
+        },
+        {
+          "t": 26.6,
+          "kind": "probe",
+          "text": "column 8 exposed card at depth 4"
+        },
+        {
+          "t": 26.73,
+          "kind": "shot",
+          "text": "05-ordinary-game.png"
+        },
+        {
+          "t": 26.73,
+          "kind": "cleanup",
+          "text": "unloading game and closing browser"
+        }
+      ]
+    }
+  },
+  {
+    "run": "verified-desktop/music",
+    "report": {
+      "scenario": "music",
+      "viewport": [
+        960,
+        540
+      ],
+      "release": false,
+      "mobile": false,
+      "dpr": 1.0,
+      "cross_origin_isolated": true,
+      "binaries": [
+        "sdk.js",
+        "dmloader.js",
+        "ShenzenSolitare_pthread_wasm.js",
+        "ShenzenSolitare_pthread_wasm.js",
+        "ShenzenSolitare_pthread.wasm",
+        "ShenzenSolitare_pthread_wasm.js",
+        "sdk.js",
+        "dmloader.js",
+        "ShenzenSolitare_pthread_wasm.js",
+        "ShenzenSolitare_pthread_wasm.js",
+        "ShenzenSolitare_pthread.wasm",
+        "ShenzenSolitare_pthread_wasm.js",
+        "sdk.js",
+        "dmloader.js",
+        "ShenzenSolitare_pthread_wasm.js",
+        "ShenzenSolitare_pthread_wasm.js",
+        "ShenzenSolitare_pthread.wasm",
+        "ShenzenSolitare_pthread_wasm.js"
+      ],
+      "fatal": [],
+      "failures": [],
+      "log": [
+        {
+          "t": 0.06,
+          "kind": "req",
+          "text": "sdk.js"
+        },
+        {
+          "t": 0.06,
+          "kind": "req",
+          "text": "dmloader.js"
+        },
+        {
+          "t": 0.72,
+          "kind": "log",
+          "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+        },
+        {
+          "t": 0.72,
+          "kind": "net-fail",
+          "text": "http://127.0.0.1:57082/sdk.js net::ERR_ABORTED"
+        },
+        {
+          "t": 0.72,
+          "kind": "log",
+          "text": "[YA] absent"
+        },
+        {
+          "t": 0.72,
+          "kind": "log",
+          "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+        },
+        {
+          "t": 0.73,
+          "kind": "req",
+          "text": "ShenzenSolitare_pthread_wasm.js"
+        },
+        {
+          "t": 0.73,
+          "kind": "req",
+          "text": "ShenzenSolitare_pthread_wasm.js"
+        },
+        {
+          "t": 0.75,
+          "kind": "req",
+          "text": "ShenzenSolitare_pthread.wasm"
+        },
+        {
+          "t": 0.76,
+          "kind": "log",
+          "text": "Running..."
+        },
+        {
+          "t": 2.84,
+          "kind": "info",
+          "text": "INFO:DLIB: Log server started on port 0\n"
+        },
+        {
+          "t": 2.84,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Installed graphics device 'ADAPTER_FAMILY_OPENGL'\n"
+        },
+        {
+          "t": 2.84,
+          "kind": "info",
+          "text": "INFO:ENGINE: Defold Engine 1.13.1 (574678c)\n"
+        },
+        {
+          "t": 2.84,
+          "kind": "log",
+          "text": "%c    %c    Made with Defold    %c    %c    https://www.defold.com background: #fd6623; padding:5px 0; border: 5px; background: #272c31; color: #fafafa; padding:5px 0; background: #39a3e4; padding:5px 0; background: #ffffff; color: #000000; padding:5px 0;"
+        },
+        {
+          "t": 2.84,
+          "kind": "info",
+          "text": "INFO:PROFILER: Skipped ProfilerJS profiler due to setting profiler.performance_timeline_enabled\n"
+        },
+        {
+          "t": 3.27,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Checking ASTC Array support. May produce GL error.\n"
+        },
+        {
+          "t": 3.28,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Device: OpenGL\n"
+        },
+        {
+          "t": 3.28,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Renderer: WebKit WebGL\n"
+        },
+        {
+          "t": 3.28,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Version: OpenGL ES 3.0 (WebGL 2.0 (OpenGL ES 3.0 Chromium))\n"
+        },
+        {
+          "t": 3.29,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Vendor: WebKit\n"
+        },
+        {
+          "t": 3.29,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Extensions:\n"
+        },
+        {
+          "t": 3.29,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_clip_control\n"
+        },
+        {
+          "t": 3.29,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_color_buffer_float\n"
+        },
+        {
+          "t": 3.29,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_color_buffer_half_float\n"
+        },
+        {
+          "t": 3.29,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_conservative_depth\n"
+        },
+        {
+          "t": 3.29,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_depth_clamp\n"
+        },
+        {
+          "t": 3.29,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_disjoint_timer_query_webgl2\n"
+        },
+        {
+          "t": 3.29,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_float_blend\n"
+        },
+        {
+          "t": 3.29,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_polygon_offset_clamp\n"
+        },
+        {
+          "t": 3.29,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_texture_compression_bptc\n"
+        },
+        {
+          "t": 3.29,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_texture_compression_rgtc\n"
+        },
+        {
+          "t": 3.29,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_texture_filter_anisotropic\n"
+        },
+        {
+          "t": 3.29,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   NV_shader_noperspective_interpolation\n"
+        },
+        {
+          "t": 3.29,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   OES_texture_float_linear\n"
+        },
+        {
+          "t": 3.29,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_clip_cull_distance\n"
+        },
+        {
+          "t": 3.29,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_compressed_texture_astc\n"
+        },
+        {
+          "t": 3.29,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_compressed_texture_etc\n"
+        },
+        {
+          "t": 3.29,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_compressed_texture_etc1\n"
+        },
+        {
+          "t": 3.29,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_compressed_texture_s3tc\n"
+        },
+        {
+          "t": 3.29,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_compressed_texture_s3tc_srgb\n"
+        },
+        {
+          "t": 3.29,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_debug_renderer_info\n"
+        },
+        {
+          "t": 3.29,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_debug_shaders\n"
+        },
+        {
+          "t": 3.29,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_lose_context\n"
+        },
+        {
+          "t": 3.29,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_multi_draw\n"
+        },
+        {
+          "t": 3.29,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_polygon_mode\n"
+        },
+        {
+          "t": 3.29,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_clip_control\n"
+        },
+        {
+          "t": 3.29,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_color_buffer_float\n"
+        },
+        {
+          "t": 3.29,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_color_buffer_half_float\n"
+        },
+        {
+          "t": 3.29,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_conservative_depth\n"
+        },
+        {
+          "t": 3.29,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_depth_clamp\n"
+        },
+        {
+          "t": 3.29,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_disjoint_timer_query_webgl2\n"
+        },
+        {
+          "t": 3.29,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_float_blend\n"
+        },
+        {
+          "t": 3.29,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_polygon_offset_clamp\n"
+        },
+        {
+          "t": 3.29,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_texture_compression_bptc\n"
+        },
+        {
+          "t": 3.29,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_texture_compression_rgtc\n"
+        },
+        {
+          "t": 3.29,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_texture_filter_anisotropic\n"
+        },
+        {
+          "t": 3.29,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_NV_shader_noperspective_interpolation\n"
+        },
+        {
+          "t": 3.29,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_OES_texture_float_linear\n"
+        },
+        {
+          "t": 3.29,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_clip_cull_distance\n"
+        },
+        {
+          "t": 3.29,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_compressed_texture_astc\n"
+        },
+        {
+          "t": 3.29,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_compressed_texture_etc\n"
+        },
+        {
+          "t": 3.29,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_compressed_texture_etc1\n"
+        },
+        {
+          "t": 3.3,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_compressed_texture_s3tc\n"
+        },
+        {
+          "t": 3.3,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_compressed_texture_s3tc_srgb\n"
+        },
+        {
+          "t": 3.3,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_debug_renderer_info\n"
+        },
+        {
+          "t": 3.3,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_debug_shaders\n"
+        },
+        {
+          "t": 3.3,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_lose_context\n"
+        },
+        {
+          "t": 3.3,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_multi_draw\n"
+        },
+        {
+          "t": 3.3,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_polygon_mode\n"
+        },
+        {
+          "t": 3.3,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Context features:\n"
+        },
+        {
+          "t": 3.3,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   CONTEXT_FEATURE_MULTI_TARGET_RENDERING\n"
+        },
+        {
+          "t": 3.3,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   CONTEXT_FEATURE_TEXTURE_ARRAY\n"
+        },
+        {
+          "t": 3.3,
+          "kind": "info",
+          "text": "INFO:ENGINE: Loading data from: archive:game.dmanifest\n"
+        },
+        {
+          "t": 3.41,
+          "kind": "info",
+          "text": "INFO:SOUND: Info\n"
+        },
+        {
+          "t": 3.41,
+          "kind": "info",
+          "text": "INFO:SOUND:   nSamplesPerSec:   48000\n"
+        },
+        {
+          "t": 3.41,
+          "kind": "info",
+          "text": "INFO:SOUND:   DSP backend: Fallback\n"
+        },
+        {
+          "t": 3.42,
+          "kind": "req",
+          "text": "ShenzenSolitare_pthread_wasm.js"
+        },
+        {
+          "t": 3.42,
+          "kind": "info",
+          "text": "INFO:SOUND: Sound\n"
+        },
+        {
+          "t": 3.42,
+          "kind": "info",
+          "text": "INFO:SOUND:   nSamplesPerSec:   48000\n"
+        },
+        {
+          "t": 3.42,
+          "kind": "info",
+          "text": "INFO:SOUND:        useThread:   1\n"
+        },
+        {
+          "t": 3.42,
+          "kind": "info",
+          "text": "INFO:ENGINE: Initialised sound device 'default'\n"
+        },
+        {
+          "t": 3.42,
+          "kind": "info",
+          "text": "INFO:PHYSICS: Created physics context: Box2D v2.2.1\n"
+        },
+        {
+          "t": 3.46,
+          "kind": "log",
+          "text": "DEBUG:SCRIPT: [DEBUG] dev-клавиши: on\n"
+        },
+        {
+          "t": 3.46,
+          "kind": "log",
+          "text": "DEBUG:SCRIPT: [I18N] язык: ru\n"
+        },
+        {
+          "t": 3.46,
+          "kind": "log",
+          "text": "[AUDIO] resumed ctx=1 states=running"
+        },
+        {
+          "t": 3.46,
+          "kind": "log",
+          "text": "DEBUG:SCRIPT: [YA] state=absent\n"
+        },
+        {
+          "t": 3.47,
+          "kind": "log",
+          "text": "[.WebGL-0x10c000c6c00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+        },
+        {
+          "t": 3.49,
+          "kind": "log",
+          "text": "[.WebGL-0x10c000c7e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+        },
+        {
+          "t": 3.49,
+          "kind": "log",
+          "text": ""
+        },
+        {
+          "t": 3.49,
+          "kind": "log",
+          "text": "[.WebGL-0x10c000c7e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+        },
+        {
+          "t": 3.62,
+          "kind": "log",
+          "text": "[.WebGL-0x10c000c7e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+        },
+        {
+          "t": 4.46,
+          "kind": "wait",
+          "text": "1s first game frames"
+        },
+        {
+          "t": 4.46,
+          "kind": "canvas",
+          "text": "960x540 scale=1.000 letterbox=(0,0)"
+        },
+        {
+          "t": 4.47,
+          "kind": "log",
+          "text": "[AUDIO] suspended ctx=1 states=suspended"
+        },
+        {
+          "t": 4.52,
+          "kind": "req",
+          "text": "sdk.js"
+        },
+        {
+          "t": 4.52,
+          "kind": "req",
+          "text": "dmloader.js"
+        },
+        {
+          "t": 4.52,
+          "kind": "log",
+          "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+        },
+        {
+          "t": 4.52,
+          "kind": "net-fail",
+          "text": "http://127.0.0.1:57082/sdk.js net::ERR_ABORTED"
+        },
+        {
+          "t": 4.52,
+          "kind": "log",
+          "text": "[YA] absent"
+        },
+        {
+          "t": 4.53,
+          "kind": "req",
+          "text": "ShenzenSolitare_pthread_wasm.js"
+        },
+        {
+          "t": 4.53,
+          "kind": "req",
+          "text": "ShenzenSolitare_pthread_wasm.js"
+        },
+        {
+          "t": 4.54,
+          "kind": "req",
+          "text": "ShenzenSolitare_pthread.wasm"
+        },
+        {
+          "t": 4.56,
+          "kind": "log",
+          "text": "Running..."
+        },
+        {
+          "t": 4.66,
+          "kind": "info",
+          "text": "INFO:DLIB: Log server started on port 0\n"
+        },
+        {
+          "t": 4.66,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Installed graphics device 'ADAPTER_FAMILY_OPENGL'\n"
+        },
+        {
+          "t": 4.66,
+          "kind": "info",
+          "text": "INFO:ENGINE: Defold Engine 1.13.1 (574678c)\n"
+        },
+        {
+          "t": 4.66,
+          "kind": "log",
+          "text": "%c    %c    Made with Defold    %c    %c    https://www.defold.com background: #fd6623; padding:5px 0; border: 5px; background: #272c31; color: #fafafa; padding:5px 0; background: #39a3e4; padding:5px 0; background: #ffffff; color: #000000; padding:5px 0;"
+        },
+        {
+          "t": 4.66,
+          "kind": "info",
+          "text": "INFO:PROFILER: Skipped ProfilerJS profiler due to setting profiler.performance_timeline_enabled\n"
+        },
+        {
+          "t": 4.67,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Checking ASTC Array support. May produce GL error.\n"
+        },
+        {
+          "t": 4.67,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Device: OpenGL\n"
+        },
+        {
+          "t": 4.67,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Renderer: WebKit WebGL\n"
+        },
+        {
+          "t": 4.67,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Version: OpenGL ES 3.0 (WebGL 2.0 (OpenGL ES 3.0 Chromium))\n"
+        },
+        {
+          "t": 4.67,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Vendor: WebKit\n"
+        },
+        {
+          "t": 4.67,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Extensions:\n"
+        },
+        {
+          "t": 4.67,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_clip_control\n"
+        },
+        {
+          "t": 4.67,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_color_buffer_float\n"
+        },
+        {
+          "t": 4.67,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_color_buffer_half_float\n"
+        },
+        {
+          "t": 4.67,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_conservative_depth\n"
+        },
+        {
+          "t": 4.67,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_depth_clamp\n"
+        },
+        {
+          "t": 4.67,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_disjoint_timer_query_webgl2\n"
+        },
+        {
+          "t": 4.67,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_float_blend\n"
+        },
+        {
+          "t": 4.67,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_polygon_offset_clamp\n"
+        },
+        {
+          "t": 4.67,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_texture_compression_bptc\n"
+        },
+        {
+          "t": 4.67,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_texture_compression_rgtc\n"
+        },
+        {
+          "t": 4.67,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_texture_filter_anisotropic\n"
+        },
+        {
+          "t": 4.67,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   NV_shader_noperspective_interpolation\n"
+        },
+        {
+          "t": 4.67,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   OES_texture_float_linear\n"
+        },
+        {
+          "t": 4.67,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_clip_cull_distance\n"
+        },
+        {
+          "t": 4.67,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_compressed_texture_astc\n"
+        },
+        {
+          "t": 4.67,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_compressed_texture_etc\n"
+        },
+        {
+          "t": 4.68,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_compressed_texture_etc1\n"
+        },
+        {
+          "t": 4.68,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_compressed_texture_s3tc\n"
+        },
+        {
+          "t": 4.68,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_compressed_texture_s3tc_srgb\n"
+        },
+        {
+          "t": 4.68,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_debug_renderer_info\n"
+        },
+        {
+          "t": 4.68,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_debug_shaders\n"
+        },
+        {
+          "t": 4.68,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_lose_context\n"
+        },
+        {
+          "t": 4.68,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_multi_draw\n"
+        },
+        {
+          "t": 4.68,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_polygon_mode\n"
+        },
+        {
+          "t": 4.68,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_clip_control\n"
+        },
+        {
+          "t": 4.68,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_color_buffer_float\n"
+        },
+        {
+          "t": 4.68,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_color_buffer_half_float\n"
+        },
+        {
+          "t": 4.68,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_conservative_depth\n"
+        },
+        {
+          "t": 4.68,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_depth_clamp\n"
+        },
+        {
+          "t": 4.68,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_disjoint_timer_query_webgl2\n"
+        },
+        {
+          "t": 4.68,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_float_blend\n"
+        },
+        {
+          "t": 4.68,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_polygon_offset_clamp\n"
+        },
+        {
+          "t": 4.68,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_texture_compression_bptc\n"
+        },
+        {
+          "t": 4.68,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_texture_compression_rgtc\n"
+        },
+        {
+          "t": 4.68,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_texture_filter_anisotropic\n"
+        },
+        {
+          "t": 4.68,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_NV_shader_noperspective_interpolation\n"
+        },
+        {
+          "t": 4.68,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_OES_texture_float_linear\n"
+        },
+        {
+          "t": 4.68,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_clip_cull_distance\n"
+        },
+        {
+          "t": 4.68,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_compressed_texture_astc\n"
+        },
+        {
+          "t": 4.68,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_compressed_texture_etc\n"
+        },
+        {
+          "t": 4.68,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_compressed_texture_etc1\n"
+        },
+        {
+          "t": 4.68,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_compressed_texture_s3tc\n"
+        },
+        {
+          "t": 4.68,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_compressed_texture_s3tc_srgb\n"
+        },
+        {
+          "t": 4.68,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_debug_renderer_info\n"
+        },
+        {
+          "t": 4.68,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_debug_shaders\n"
+        },
+        {
+          "t": 4.68,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_lose_context\n"
+        },
+        {
+          "t": 4.68,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_multi_draw\n"
+        },
+        {
+          "t": 4.68,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_polygon_mode\n"
+        },
+        {
+          "t": 4.68,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Context features:\n"
+        },
+        {
+          "t": 4.68,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   CONTEXT_FEATURE_MULTI_TARGET_RENDERING\n"
+        },
+        {
+          "t": 4.68,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   CONTEXT_FEATURE_TEXTURE_ARRAY\n"
+        },
+        {
+          "t": 4.68,
+          "kind": "info",
+          "text": "INFO:ENGINE: Loading data from: archive:game.dmanifest\n"
+        },
+        {
+          "t": 4.68,
+          "kind": "info",
+          "text": "INFO:SOUND: Info\n"
+        },
+        {
+          "t": 4.68,
+          "kind": "info",
+          "text": "INFO:SOUND:   nSamplesPerSec:   48000\n"
+        },
+        {
+          "t": 4.68,
+          "kind": "info",
+          "text": "INFO:SOUND:   DSP backend: Fallback\n"
+        },
+        {
+          "t": 4.68,
+          "kind": "info",
+          "text": "INFO:SOUND: Sound\n"
+        },
+        {
+          "t": 4.68,
+          "kind": "info",
+          "text": "INFO:SOUND:   nSamplesPerSec:   48000\n"
+        },
+        {
+          "t": 4.68,
+          "kind": "info",
+          "text": "INFO:SOUND:        useThread:   1\n"
+        },
+        {
+          "t": 4.68,
+          "kind": "info",
+          "text": "INFO:ENGINE: Initialised sound device 'default'\n"
+        },
+        {
+          "t": 4.69,
+          "kind": "req",
+          "text": "ShenzenSolitare_pthread_wasm.js"
+        },
+        {
+          "t": 4.69,
+          "kind": "info",
+          "text": "INFO:PHYSICS: Created physics context: Box2D v2.2.1\n"
+        },
+        {
+          "t": 4.7,
+          "kind": "log",
+          "text": "DEBUG:SCRIPT: [DEBUG] dev-клавиши: on\n"
+        },
+        {
+          "t": 4.71,
+          "kind": "log",
+          "text": "DEBUG:SCRIPT: [I18N] язык: ru\n"
+        },
+        {
+          "t": 4.71,
+          "kind": "log",
+          "text": "[AUDIO] resumed ctx=1 states=running"
+        },
+        {
+          "t": 4.71,
+          "kind": "log",
+          "text": ""
+        },
+        {
+          "t": 4.71,
+          "kind": "log",
+          "text": "DEBUG:SCRIPT: [YA] state=absent\n"
+        },
+        {
+          "t": 5.66,
+          "kind": "wait",
+          "text": "1s first game frames"
+        },
+        {
+          "t": 5.66,
+          "kind": "canvas",
+          "text": "960x540 scale=1.000 letterbox=(0,0)"
+        },
+        {
+          "t": 6.19,
+          "kind": "music-rms",
+          "text": "before gesture: 0.0000000; meters=0"
+        },
+        {
+          "t": 6.25,
+          "kind": "log",
+          "text": "DEBUG:SCRIPT: [MUSIC] started\n"
+        },
+        {
+          "t": 6.3,
+          "kind": "log",
+          "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+        },
+        {
+          "t": 6.52,
+          "kind": "click",
+          "text": "game(480,30) css(480,510) start music with a real gesture on empty menu space"
+        },
+        {
+          "t": 10.05,
+          "kind": "music-rms",
+          "text": "playing: 0.0249025; meters=1"
+        },
+        {
+          "t": 10.29,
+          "kind": "log",
+          "text": "DEBUG:SCRIPT: [MUSIC] paused\n"
+        },
+        {
+          "t": 10.39,
+          "kind": "click",
+          "text": "game(907,235) css(907,305) mute music"
+        },
+        {
+          "t": 11.92,
+          "kind": "music-rms",
+          "text": "muted: 0.0000000; meters=1"
+        },
+        {
+          "t": 11.93,
+          "kind": "log",
+          "text": "[AUDIO] suspended ctx=1 states=suspended"
+        },
+        {
+          "t": 11.99,
+          "kind": "req",
+          "text": "sdk.js"
+        },
+        {
+          "t": 11.99,
+          "kind": "req",
+          "text": "dmloader.js"
+        },
+        {
+          "t": 11.99,
+          "kind": "log",
+          "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+        },
+        {
+          "t": 11.99,
+          "kind": "net-fail",
+          "text": "http://127.0.0.1:57082/sdk.js net::ERR_ABORTED"
+        },
+        {
+          "t": 11.99,
+          "kind": "log",
+          "text": "[YA] absent"
+        },
+        {
+          "t": 11.99,
+          "kind": "req",
+          "text": "ShenzenSolitare_pthread_wasm.js"
+        },
+        {
+          "t": 11.99,
+          "kind": "req",
+          "text": "ShenzenSolitare_pthread_wasm.js"
+        },
+        {
+          "t": 12.02,
+          "kind": "req",
+          "text": "ShenzenSolitare_pthread.wasm"
+        },
+        {
+          "t": 12.03,
+          "kind": "log",
+          "text": "Running..."
+        },
+        {
+          "t": 12.04,
+          "kind": "info",
+          "text": "INFO:DLIB: Log server started on port 0\n"
+        },
+        {
+          "t": 12.04,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Installed graphics device 'ADAPTER_FAMILY_OPENGL'\n"
+        },
+        {
+          "t": 12.04,
+          "kind": "info",
+          "text": "INFO:ENGINE: Defold Engine 1.13.1 (574678c)\n"
+        },
+        {
+          "t": 12.04,
+          "kind": "log",
+          "text": "%c    %c    Made with Defold    %c    %c    https://www.defold.com background: #fd6623; padding:5px 0; border: 5px; background: #272c31; color: #fafafa; padding:5px 0; background: #39a3e4; padding:5px 0; background: #ffffff; color: #000000; padding:5px 0;"
+        },
+        {
+          "t": 12.04,
+          "kind": "info",
+          "text": "INFO:PROFILER: Skipped ProfilerJS profiler due to setting profiler.performance_timeline_enabled\n"
+        },
+        {
+          "t": 12.05,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Checking ASTC Array support. May produce GL error.\n"
+        },
+        {
+          "t": 12.05,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Device: OpenGL\n"
+        },
+        {
+          "t": 12.05,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Renderer: WebKit WebGL\n"
+        },
+        {
+          "t": 12.05,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Version: OpenGL ES 3.0 (WebGL 2.0 (OpenGL ES 3.0 Chromium))\n"
+        },
+        {
+          "t": 12.05,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Vendor: WebKit\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Extensions:\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_clip_control\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_color_buffer_float\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_color_buffer_half_float\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_conservative_depth\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_depth_clamp\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_disjoint_timer_query_webgl2\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_float_blend\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_polygon_offset_clamp\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_texture_compression_bptc\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_texture_compression_rgtc\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   EXT_texture_filter_anisotropic\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   NV_shader_noperspective_interpolation\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   OES_texture_float_linear\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_clip_cull_distance\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_compressed_texture_astc\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_compressed_texture_etc\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_compressed_texture_etc1\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_compressed_texture_s3tc\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_compressed_texture_s3tc_srgb\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_debug_renderer_info\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_debug_shaders\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_lose_context\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_multi_draw\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   WEBGL_polygon_mode\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_clip_control\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_color_buffer_float\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_color_buffer_half_float\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_conservative_depth\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_depth_clamp\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_disjoint_timer_query_webgl2\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_float_blend\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_polygon_offset_clamp\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_texture_compression_bptc\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_texture_compression_rgtc\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_EXT_texture_filter_anisotropic\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_NV_shader_noperspective_interpolation\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_OES_texture_float_linear\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_clip_cull_distance\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_compressed_texture_astc\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_compressed_texture_etc\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_compressed_texture_etc1\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_compressed_texture_s3tc\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_compressed_texture_s3tc_srgb\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_debug_renderer_info\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_debug_shaders\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_lose_context\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_multi_draw\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   GL_WEBGL_polygon_mode\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS: Context features:\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   CONTEXT_FEATURE_MULTI_TARGET_RENDERING\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:GRAPHICS:   CONTEXT_FEATURE_TEXTURE_ARRAY\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:ENGINE: Loading data from: archive:game.dmanifest\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:SOUND: Info\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:SOUND:   nSamplesPerSec:   48000\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:SOUND:   DSP backend: Fallback\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "req",
+          "text": "ShenzenSolitare_pthread_wasm.js"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:SOUND: Sound\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:SOUND:   nSamplesPerSec:   48000\n"
+        },
+        {
+          "t": 12.06,
+          "kind": "info",
+          "text": "INFO:SOUND:        useThread:   1\n"
+        },
+        {
+          "t": 12.07,
+          "kind": "info",
+          "text": "INFO:ENGINE: Initialised sound device 'default'\n"
+        },
+        {
+          "t": 12.07,
+          "kind": "info",
+          "text": "INFO:PHYSICS: Created physics context: Box2D v2.2.1\n"
+        },
+        {
+          "t": 12.09,
+          "kind": "log",
+          "text": "DEBUG:SCRIPT: [DEBUG] dev-клавиши: on\n"
+        },
+        {
+          "t": 12.09,
+          "kind": "log",
+          "text": "DEBUG:SCRIPT: [I18N] язык: ru\n"
+        },
+        {
+          "t": 12.09,
+          "kind": "log",
+          "text": "[AUDIO] resumed ctx=1 states=running"
+        },
+        {
+          "t": 12.09,
+          "kind": "log",
+          "text": "DEBUG:SCRIPT: [YA] state=absent\n"
+        },
+        {
+          "t": 12.09,
+          "kind": "log",
+          "text": ""
+        },
+        {
+          "t": 13.09,
+          "kind": "wait",
+          "text": "1s first game frames"
+        },
+        {
+          "t": 13.09,
+          "kind": "canvas",
+          "text": "960x540 scale=1.000 letterbox=(0,0)"
+        },
+        {
+          "t": 13.44,
+          "kind": "click",
+          "text": "game(480,30) css(480,510) saved mute after reload"
+        },
+        {
+          "t": 15.97,
+          "kind": "music-rms",
+          "text": "saved mute: 0.0000000; meters=0"
+        },
+        {
+          "t": 16.03,
+          "kind": "log",
+          "text": "DEBUG:SCRIPT: [MUSIC] started\n"
+        },
+        {
+          "t": 16.09,
+          "kind": "log",
+          "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+        },
+        {
+          "t": 16.31,
+          "kind": "click",
+          "text": "game(907,235) css(907,305) enable music"
+        },
+        {
+          "t": 18.83,
+          "kind": "music-rms",
+          "text": "enabled again: 0.0242180; meters=1"
+        },
+        {
+          "t": 18.92,
+          "kind": "log",
+          "text": "DEBUG:SCRIPT: I am MAIN SCRIPT\n"
+        },
+        {
+          "t": 18.92,
+          "kind": "log",
+          "text": "DEBUG:SCRIPT: [DEAL] fingerprint=0652598244 t=1793777004\n"
+        },
+        {
+          "t": 19.17,
+          "kind": "click",
+          "text": "game(480,232) css(480,308) PLAY"
+        },
+        {
+          "t": 19.17,
+          "kind": "match",
+          "text": "I am MAIN SCRIPT <- DEBUG:SCRIPT: I am MAIN SCRIPT\n"
+        },
+        {
+          "t": 21.67,
+          "kind": "wait",
+          "text": "2.5s deal settles"
+        },
+        {
+          "t": 21.75,
+          "kind": "log",
+          "text": "DEBUG:SCRIPT: I am MAIN SCRIPT\n"
+        },
+        {
+          "t": 21.75,
+          "kind": "log",
+          "text": "DEBUG:SCRIPT: [DEAL] fingerprint=0757518897 t=1793777007\n"
+        },
+        {
+          "t": 22.03,
+          "kind": "click",
+          "text": "game(907,56) css(907,484) restart while music plays"
+        },
+        {
+          "t": 26.56,
+          "kind": "music-rms",
+          "text": "after restart: 0.0273280; meters=1"
+        },
+        {
+          "t": 26.78,
+          "kind": "log",
+          "text": "DEBUG:SCRIPT: [MUSIC] paused\n"
+        },
+        {
+          "t": 26.89,
+          "kind": "click",
+          "text": "game(907,235) css(907,305) mute during game"
+        },
+        {
+          "t": 29.42,
+          "kind": "music-rms",
+          "text": "game muted: 0.0000000; meters=1"
+        },
+        {
+          "t": 29.61,
+          "kind": "shot",
+          "text": "01-music-muted.png"
+        },
+        {
+          "t": 29.61,
+          "kind": "cleanup",
+          "text": "unloading game and closing browser"
+        }
+      ]
+    }
+  },
+  {
+    "run": "verified-release/hittest",
+    "report": {
+      "scenario": "hittest",
+      "viewport": [
+        800,
+        600
+      ],
+      "release": true,
+      "mobile": false,
+      "dpr": 2.0,
+      "cross_origin_isolated": false,
+      "binaries": [
+        "sdk.js",
+        "dmloader.js",
+        "ShenzenSolitare_wasm.js",
+        "ShenzenSolitare_wasm.js",
+        "ShenzenSolitare.wasm"
+      ],
+      "fatal": [],
+      "failures": [],
+      "log": [
+        {
+          "t": 0.03,
+          "kind": "req",
+          "text": "sdk.js"
+        },
+        {
+          "t": 0.03,
+          "kind": "req",
+          "text": "dmloader.js"
+        },
+        {
+          "t": 0.03,
+          "kind": "log",
+          "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+        },
+        {
+          "t": 0.03,
+          "kind": "net-fail",
+          "text": "http://127.0.0.1:57620/sdk.js net::ERR_ABORTED"
+        },
+        {
+          "t": 0.04,
+          "kind": "log",
+          "text": "[YA] absent"
+        },
+        {
+          "t": 0.04,
+          "kind": "req",
+          "text": "ShenzenSolitare_wasm.js"
+        },
+        {
+          "t": 0.05,
+          "kind": "log",
+          "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+        },
+        {
+          "t": 0.05,
+          "kind": "req",
+          "text": "ShenzenSolitare_wasm.js"
+        },
+        {
+          "t": 0.06,
+          "kind": "req",
+          "text": "ShenzenSolitare.wasm"
+        },
+        {
+          "t": 0.08,
+          "kind": "log",
+          "text": "Running..."
+        },
+        {
+          "t": 2.21,
+          "kind": "log",
+          "text": "%c    %c    Made with Defold    %c    %c    https://www.defold.com background: #fd6623; padding:5px 0; border: 5px; background: #272c31; color: #fafafa; padding:5px 0; background: #39a3e4; padding:5px 0; background: #ffffff; color: #000000; padding:5px 0;"
+        },
+        {
+          "t": 4.17,
+          "kind": "log",
+          "text": "[AUDIO] resumed ctx=1 states=running"
+        },
+        {
+          "t": 4.2,
+          "kind": "log",
+          "text": "[.WebGL-0x12c000d3e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+        },
+        {
+          "t": 4.2,
+          "kind": "log",
+          "text": "[.WebGL-0x12c000d4400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+        },
+        {
+          "t": 4.2,
+          "kind": "log",
+          "text": ""
+        },
+        {
+          "t": 4.2,
+          "kind": "log",
+          "text": "[.WebGL-0x12c000d4400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+        },
+        {
+          "t": 4.43,
+          "kind": "log",
+          "text": "[.WebGL-0x12c000d4400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+        },
+        {
+          "t": 5.18,
+          "kind": "wait",
+          "text": "1s first game frames"
+        },
+        {
+          "t": 5.18,
+          "kind": "canvas",
+          "text": "800x600 scale=0.833 letterbox=(0,75)"
+        },
+        {
+          "t": 5.42,
+          "kind": "shot",
+          "text": "01-start-screen.png"
+        },
+        {
+          "t": 5.62,
+          "kind": "log",
+          "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+        },
+        {
+          "t": 5.78,
+          "kind": "click",
+          "text": "game(480,232) css(400,332) PLAY"
+        },
+        {
+          "t": 8.29,
+          "kind": "wait",
+          "text": "2.5s deal settles"
+        },
+        {
+          "t": 9.57,
+          "kind": "probe",
+          "text": "column 1 exposed card at depth 2"
+        },
+        {
+          "t": 10.23,
+          "kind": "shot",
+          "text": "02-dealt.png"
+        },
+        {
+          "t": 10.73,
+          "kind": "pixel",
+          "text": "felt reference (empty free cell 1) luminance=46"
+        },
+        {
+          "t": 11.65,
+          "kind": "probe",
+          "text": "column 1 exposed card at depth 2"
+        },
+        {
+          "t": 12.94,
+          "kind": "drag",
+          "text": "(65,229)->(65,457) col1 exposed card -> free cell 1"
+        },
+        {
+          "t": 14.44,
+          "kind": "wait",
+          "text": "1.5s drop settles"
+        },
+        {
+          "t": 14.92,
+          "kind": "shot",
+          "text": "03-after-drag-to-free-cell.png"
+        },
+        {
+          "t": 15.26,
+          "kind": "pixel",
+          "text": "free cell 1 after the drag luminance=169 vs felt 46"
+        },
+        {
+          "t": 15.5,
+          "kind": "pixel",
+          "text": "column 1 bottom edge after the card left luminance=47 vs felt 46"
+        },
+        {
+          "t": 15.5,
+          "kind": "cleanup",
+          "text": "unloading game and closing browser"
+        },
+        {
+          "t": 15.5,
+          "kind": "log",
+          "text": "[AUDIO] suspended ctx=1 states=suspended"
+        }
+      ]
+    }
+  },
+  {
+    "run": "verified-release/music",
+    "report": {
+      "scenario": "music",
+      "viewport": [
+        800,
+        600
+      ],
+      "release": true,
+      "mobile": false,
+      "dpr": 2.0,
+      "cross_origin_isolated": false,
+      "binaries": [
+        "sdk.js",
+        "dmloader.js",
+        "ShenzenSolitare_wasm.js",
+        "ShenzenSolitare_wasm.js",
+        "ShenzenSolitare.wasm",
+        "sdk.js",
+        "dmloader.js",
+        "ShenzenSolitare_wasm.js",
+        "ShenzenSolitare_wasm.js",
+        "ShenzenSolitare.wasm",
+        "sdk.js",
+        "dmloader.js",
+        "ShenzenSolitare_wasm.js",
+        "ShenzenSolitare_wasm.js",
+        "ShenzenSolitare.wasm"
+      ],
+      "fatal": [],
+      "failures": [],
+      "log": [
+        {
+          "t": 0.02,
+          "kind": "req",
+          "text": "sdk.js"
+        },
+        {
+          "t": 0.02,
+          "kind": "req",
+          "text": "dmloader.js"
+        },
+        {
+          "t": 0.02,
+          "kind": "log",
+          "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+        },
+        {
+          "t": 0.02,
+          "kind": "net-fail",
+          "text": "http://127.0.0.1:57437/sdk.js net::ERR_ABORTED"
+        },
+        {
+          "t": 0.02,
+          "kind": "log",
+          "text": "[YA] absent"
+        },
+        {
+          "t": 0.03,
+          "kind": "req",
+          "text": "ShenzenSolitare_wasm.js"
+        },
+        {
+          "t": 0.06,
+          "kind": "req",
+          "text": "ShenzenSolitare_wasm.js"
+        },
+        {
+          "t": 0.06,
+          "kind": "log",
+          "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+        },
+        {
+          "t": 0.07,
+          "kind": "req",
+          "text": "ShenzenSolitare.wasm"
+        },
+        {
+          "t": 0.1,
+          "kind": "log",
+          "text": "Running..."
+        },
+        {
+          "t": 2.35,
+          "kind": "log",
+          "text": "%c    %c    Made with Defold    %c    %c    https://www.defold.com background: #fd6623; padding:5px 0; border: 5px; background: #272c31; color: #fafafa; padding:5px 0; background: #39a3e4; padding:5px 0; background: #ffffff; color: #000000; padding:5px 0;"
+        },
+        {
+          "t": 4.26,
+          "kind": "log",
+          "text": "[AUDIO] resumed ctx=1 states=running"
+        },
+        {
+          "t": 4.27,
+          "kind": "log",
+          "text": "[.WebGL-0x11c000dc600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+        },
+        {
+          "t": 4.27,
+          "kind": "log",
+          "text": "[.WebGL-0x11c000e2600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+        },
+        {
+          "t": 4.27,
+          "kind": "log",
+          "text": ""
+        },
+        {
+          "t": 4.28,
+          "kind": "log",
+          "text": "[.WebGL-0x11c000e2600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+        },
+        {
+          "t": 4.49,
+          "kind": "log",
+          "text": "[.WebGL-0x11c000e2600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+        },
+        {
+          "t": 5.26,
+          "kind": "wait",
+          "text": "1s first game frames"
+        },
+        {
+          "t": 5.27,
+          "kind": "canvas",
+          "text": "800x600 scale=0.833 letterbox=(0,75)"
+        },
+        {
+          "t": 5.28,
+          "kind": "log",
+          "text": "[AUDIO] suspended ctx=1 states=suspended"
+        },
+        {
+          "t": 5.43,
+          "kind": "req",
+          "text": "sdk.js"
+        },
+        {
+          "t": 5.43,
+          "kind": "req",
+          "text": "dmloader.js"
+        },
+        {
+          "t": 5.47,
+          "kind": "log",
+          "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+        },
+        {
+          "t": 5.47,
+          "kind": "net-fail",
+          "text": "http://127.0.0.1:57437/sdk.js net::ERR_ABORTED"
+        },
+        {
+          "t": 5.47,
+          "kind": "log",
+          "text": "[YA] absent"
+        },
+        {
+          "t": 5.48,
+          "kind": "req",
+          "text": "ShenzenSolitare_wasm.js"
+        },
+        {
+          "t": 5.48,
+          "kind": "req",
+          "text": "ShenzenSolitare_wasm.js"
+        },
+        {
+          "t": 5.5,
+          "kind": "req",
+          "text": "ShenzenSolitare.wasm"
+        },
+        {
+          "t": 5.51,
+          "kind": "log",
+          "text": "Running..."
+        },
+        {
+          "t": 5.64,
+          "kind": "log",
+          "text": ""
+        },
+        {
+          "t": 5.64,
+          "kind": "log",
+          "text": "%c    %c    Made with Defold    %c    %c    https://www.defold.com background: #fd6623; padding:5px 0; border: 5px; background: #272c31; color: #fafafa; padding:5px 0; background: #39a3e4; padding:5px 0; background: #ffffff; color: #000000; padding:5px 0;"
+        },
+        {
+          "t": 5.71,
+          "kind": "log",
+          "text": "[AUDIO] resumed ctx=1 states=running"
+        },
+        {
+          "t": 6.65,
+          "kind": "wait",
+          "text": "1s first game frames"
+        },
+        {
+          "t": 6.65,
+          "kind": "canvas",
+          "text": "800x600 scale=0.833 letterbox=(0,75)"
+        },
+        {
+          "t": 7.17,
+          "kind": "music-rms",
+          "text": "before gesture: 0.0000000; meters=0"
+        },
+        {
+          "t": 7.33,
+          "kind": "log",
+          "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+        },
+        {
+          "t": 7.52,
+          "kind": "click",
+          "text": "game(480,30) css(400,500) start music with a real gesture on empty menu space"
+        },
+        {
+          "t": 11.07,
+          "kind": "music-rms",
+          "text": "playing: 0.0277680; meters=1"
+        },
+        {
+          "t": 11.41,
+          "kind": "click",
+          "text": "game(907,235) css(756,329) mute music"
+        },
+        {
+          "t": 12.95,
+          "kind": "music-rms",
+          "text": "muted: 0.0000000; meters=1"
+        },
+        {
+          "t": 12.97,
+          "kind": "log",
+          "text": "[AUDIO] suspended ctx=1 states=suspended"
+        },
+        {
+          "t": 13.12,
+          "kind": "req",
+          "text": "sdk.js"
+        },
+        {
+          "t": 13.12,
+          "kind": "req",
+          "text": "dmloader.js"
+        },
+        {
+          "t": 13.12,
+          "kind": "log",
+          "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+        },
+        {
+          "t": 13.12,
+          "kind": "net-fail",
+          "text": "http://127.0.0.1:57437/sdk.js net::ERR_ABORTED"
+        },
+        {
+          "t": 13.12,
+          "kind": "log",
+          "text": "[YA] absent"
+        },
+        {
+          "t": 13.13,
+          "kind": "req",
+          "text": "ShenzenSolitare_wasm.js"
+        },
+        {
+          "t": 13.13,
+          "kind": "req",
+          "text": "ShenzenSolitare_wasm.js"
+        },
+        {
+          "t": 13.15,
+          "kind": "req",
+          "text": "ShenzenSolitare.wasm"
+        },
+        {
+          "t": 13.17,
+          "kind": "log",
+          "text": "Running..."
+        },
+        {
+          "t": 13.28,
+          "kind": "log",
+          "text": ""
+        },
+        {
+          "t": 13.28,
+          "kind": "log",
+          "text": "%c    %c    Made with Defold    %c    %c    https://www.defold.com background: #fd6623; padding:5px 0; border: 5px; background: #272c31; color: #fafafa; padding:5px 0; background: #39a3e4; padding:5px 0; background: #ffffff; color: #000000; padding:5px 0;"
+        },
+        {
+          "t": 13.34,
+          "kind": "log",
+          "text": "[AUDIO] resumed ctx=1 states=running"
+        },
+        {
+          "t": 14.28,
+          "kind": "wait",
+          "text": "1s first game frames"
+        },
+        {
+          "t": 14.29,
+          "kind": "canvas",
+          "text": "800x600 scale=0.833 letterbox=(0,75)"
+        },
+        {
+          "t": 14.62,
+          "kind": "click",
+          "text": "game(480,30) css(400,500) saved mute after reload"
+        },
+        {
+          "t": 17.17,
+          "kind": "music-rms",
+          "text": "saved mute: 0.0000000; meters=0"
+        },
+        {
+          "t": 17.32,
+          "kind": "log",
+          "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+        },
+        {
+          "t": 17.52,
+          "kind": "click",
+          "text": "game(907,235) css(756,329) enable music"
+        },
+        {
+          "t": 20.05,
+          "kind": "music-rms",
+          "text": "enabled again: 0.0241859; meters=1"
+        },
+        {
+          "t": 20.38,
+          "kind": "click",
+          "text": "game(480,232) css(400,332) PLAY"
+        },
+        {
+          "t": 22.89,
+          "kind": "wait",
+          "text": "2.5s deal settles"
+        },
+        {
+          "t": 23.38,
+          "kind": "probe",
+          "text": "column 1 exposed card at depth 4"
+        },
+        {
+          "t": 23.74,
+          "kind": "click",
+          "text": "game(907,56) css(756,478) restart while music plays"
+        },
+        {
+          "t": 28.28,
+          "kind": "music-rms",
+          "text": "after restart: 0.0260511; meters=1"
+        },
+        {
+          "t": 28.62,
+          "kind": "click",
+          "text": "game(907,235) css(756,329) mute during game"
+        },
+        {
+          "t": 31.16,
+          "kind": "music-rms",
+          "text": "game muted: 0.0000000; meters=1"
+        },
+        {
+          "t": 31.65,
+          "kind": "shot",
+          "text": "01-music-muted.png"
+        },
+        {
+          "t": 31.65,
+          "kind": "cleanup",
+          "text": "unloading game and closing browser"
+        },
+        {
+          "t": 31.66,
+          "kind": "log",
+          "text": "[AUDIO] suspended ctx=1 states=suspended"
+        }
+      ]
+    }
+  }
+]

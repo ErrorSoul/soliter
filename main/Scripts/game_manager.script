@@ -16,8 +16,8 @@ local SAVE_VERSION = 1
 -- Стирает сохранение партии. Единственный вызывающий — on_message на
 -- restart_level/switch_level, СТРОГО до show(): рестарт уровня не должен
 -- подсовывать следующему init() партию, которую игрок как раз бросает
--- (см. main.script.load_saved_game). На start_game (первый PLAY) НЕ зовём —
--- это единственный путь, которому положено найти и продолжить сохранение.
+-- (см. main.script.load_saved_game). start_game и переходы в обучение / из
+-- него (preserve_save=true) продолжают сохранение и не зовут clear_save.
 function clear_save()
    pcall(sys.save, sys.get_save_file(SAVE_APP_ID, SAVE_FILE), { v = SAVE_VERSION, data = "" })
 end
@@ -85,10 +85,9 @@ function on_message(self, message_id, message, sender)
       yandex.gameplay(true)
       show(self, "#level_proxy")
    elseif message_id == hash("restart_level") then
-      -- D3: до show() — новый init() ищет сохранение первым делом
-      -- (main.script.load_saved_game), и оно обязано быть уже пустым, иначе
-      -- рестарт вернул бы брошенную партию вместо новой.
-      clear_save()
+      -- D3: явная пересдача очищает файл до show(), чтобы init не вернул
+      -- брошенную партию. Учебная доска использует отдельный режим.
+      if not message.preserve_save then clear_save() end
       yandex.gameplay(true)
       show(self, "#level_proxy")
    elseif message_id == hash("switch_level") then

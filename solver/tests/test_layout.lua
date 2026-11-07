@@ -30,7 +30,7 @@ local config = require("main.Scripts.config")
 
 local CARD_W, CARD_H = 90, 150
 local MAX_COLUMN = 12   -- потолок длины колонки, замерено в reviews/probe_stack_len.lua
-local RAIL_LEFT = 868   -- рельс дизайна: right:14px, width:78px
+local RAIL_LEFT = 868   -- граница зоны HUD; сам рельс: центр 907, ширина 60, левый край 877
 
 local function read(path)
    local f = io.open(path, "r")
@@ -268,22 +268,34 @@ H.test("G6 элементы поля не наезжают друг на дру�
 end)
 
 H.test("G6 клик по игровой кнопке не проваливается в игру", function()
-   local src = read("gui/ui.gui_script")
-   -- Ветка кнопки обязана и проверять is_enabled (pick_node — чистая геометрия,
-   -- по выключенной ноде он тоже попадает), и возвращать true, иначе тот же тап
-   -- уедет в курсор и начнёт драг карты под кнопкой.
-   local block = src:match("(Игровые кнопки.*)$")
-   if not block then return false, "не нашёл блок «Игровые кнопки» в on_input" end
-   for _, id in ipairs({ "restart_button", "tutorial_button" }) do
-      local branch = block:match('(gui%.get_node%("' .. id .. '"%).-\n%s*end)')
-      if not branch then return false, "не нашёл ветку " .. id end
-      if not branch:match("is_enabled") then
-         return false, id .. ": нет проверки gui.is_enabled — тап по выключенной кнопке сработает"
+   stub.install()
+   local old_gui=gui
+   local tutorial=require("main.Scripts.tutorial_state")
+   local old_tutorial=tutorial.is_tutorial
+   tutorial.is_tutorial=false
+   local enabled,hit={},nil
+   gui=setmetatable({
+      get_node=function(id) return id end,
+      set_enabled=function(id,v) enabled[id]=v end,
+      is_enabled=function(id) return enabled[id]~=false end,
+      pick_node=function(id,x) return id==hit and x==1 end,
+   },{__index=function() return function() end end})
+   local ok,err=pcall(function()
+      assert(loadfile("gui/ui.gui_script"))()
+      local self={}; init(self); self.game_started=true
+      for _,id in ipairs({"restart_button","tutorial_button"}) do
+         hit=id; enabled[id]=true
+         assert(on_input(self,hash("touch"),{pressed=true,x=1,y=1})==true,
+            id..": press leaked to the game")
+         assert(on_input(self,hash("touch"),{released=true,x=0,y=1})==true,
+            id..": cancelled release leaked to the game")
+         enabled[id]=false
+         assert(not on_input(self,hash("touch"),{pressed=true,x=1,y=1}),
+            id..": disabled button consumed a game press")
       end
-      if not branch:match("return true") then
-         return false, id .. ": нет return true — клик уйдёт и в кнопку, и в карту"
-      end
-   end
+   end)
+   gui=old_gui; tutorial.is_tutorial=old_tutorial
+   assert(ok,err)
    return true
 end)
 

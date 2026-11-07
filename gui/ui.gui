@@ -1,451 +1,1636 @@
 script: "/gui/ui.gui_script"
 fonts {
-  name: "default"
-  font: "/builtins/fonts/default.font"
-}
-fonts {
-  name: "main_font"
-  font: "/assets/fonts/main_font.font"
-}
-fonts {
-  name: "second"
-  font: "/assets/fonts/second.font"
+ name: "main_font"
+ font: "/assets/fonts/main_font.font"
 }
 textures {
-  name: "main"
-  texture: "/main/main.atlas"
+ name: "main"
+ texture: "/main/main.atlas"
+}
+textures {
+ name: "ui"
+ texture: "/gui/theme.atlas"
 }
 nodes {
-  position {
-    x: 907.0
-    y: 90.0
-  }
-  size {
-    x: 78.0
-    y: 152.0
-  }
-  color {
-    x: 0.08
-    y: 0.12
-    z: 0.09
-    w: 0.5
-  }
-  type: TYPE_BOX
-  id: "hud_rail"
-  layer: "background"
-  inherit_alpha: true
+position {
+  x: 907.0
+  y: 90.0
+}
+size {
+  x: 60.0
+  y: 152.0
+}
+color {
+  x: 0.023529411764705882
+  y: 0.23921568627450981
+  z: 0.20784313725490197
+  w: 1
+}
+slice9 {
+  x: 16.0
+  y: 16.0
+  z: 16.0
+  w: 16.0
+}
+type: TYPE_BOX
+id: "hud_rail"
+layer: "background"
+texture: "ui/outlined"
+alpha: 1
+inherit_alpha: true
+enabled: true
 }
 nodes {
-  position {
-    x: 907.0
-    y: 56.0
-  }
-  size {
-    x: 70.0
-    y: 56.0
-  }
-  color {
-    x: 0.15
-    y: 0.3
-    z: 0.15
-  }
-  type: TYPE_BOX
-  id: "restart_button"
-  layer: "buttons"
-  inherit_alpha: true
+position {
+  x: 907.0
+  y: 56.0
+}
+size {
+  x: 56.0
+  y: 56.0
+}
+color {
+  x: 0.027450980392156862
+  y: 0.5254901960784314
+  z: 0.37254901960784315
+  w: 1
+}
+type: TYPE_BOX
+id: "restart_button"
+layer: "buttons"
+texture: "ui/button_hit"
+alpha: 1
+inherit_alpha: true
+enabled: true
 }
 nodes {
-  scale {
-    x: 0.32
-    y: 0.32
-  }
-  size {
-    x: 70.0
-    y: 56.0
-  }
-  type: TYPE_TEXT
-  text: "RESTART"
-  font: "main_font"
-  id: "restart_text"
-  parent: "restart_button"
-  layer: "buttons"
-  inherit_alpha: true
+position {
+  x: 0.0
+  y: 0.0
+}
+size {
+  x: 56.0
+  y: 56.0
+}
+color {
+  x: 0.027450980392156862
+  y: 0.5254901960784314
+  z: 0.37254901960784315
+  w: 1
+}
+slice9 {
+  x: 16.0
+  y: 16.0
+  z: 16.0
+  w: 16.0
+}
+type: TYPE_BOX
+id: "restart_button_face"
+layer: "buttons"
+parent: "restart_button"
+texture: "ui/button_face"
+alpha: 1
+inherit_alpha: true
+enabled: true
 }
 nodes {
-  position {
-    x: 480.0
-    y: 270.0
-  }
-  size {
-    x: 960.0
-    y: 540.0
-  }
-  type: TYPE_BOX
-  texture: "main/victory_bg"
-  id: "victory_overlay"
-  layer: "buttons"
-  inherit_alpha: true
-  enabled: false
+position {
+  x: 0.0
+  y: 8.0
+}
+size {
+  x: 24.0
+  y: 24.0
+}
+color {
+  x: 0.9607843137254902
+  y: 0.9372549019607843
+  z: 0.8745098039215686
+  w: 1
+}
+type: TYPE_BOX
+id: "restart_button_icon"
+layer: "buttons"
+parent: "restart_button_face"
+texture: "ui/icon_restart"
+alpha: 1
+inherit_alpha: true
+enabled: true
 }
 nodes {
-  position {
-    y: 60.0
-  }
-  size {
-    x: 560.0
-    y: 104.0
-  }
-  color {
-    x: 0.12
-    y: 0.1
-    z: 0.2
-  }
-  type: TYPE_BOX
-  id: "victory_title_plate"
-  parent: "victory_overlay"
-  layer: "buttons"
-  inherit_alpha: false
+position {
+  x: 0.0
+  y: -17.0
+}
+size {
+  x: 48.0
+  y: 56.0
+}
+color {
+  x: 0.9607843137254902
+  y: 0.9372549019607843
+  z: 0.8745098039215686
+  w: 1
+}
+scale {
+  x: 0.22
+  y: 0.22
+  z: 1.0
+}
+type: TYPE_TEXT
+id: "restart_text"
+layer: "buttons"
+parent: "restart_button_face"
+text: "RESTART"
+font: "main_font"
+alpha: 1
+inherit_alpha: true
+enabled: true
 }
 nodes {
-  scale {
-    x: 1.8
-    y: 1.8
-  }
-  size {
-    x: 400.0
-    y: 80.0
-  }
-  color {
-    x: 0.95
-    y: 0.85
-    z: 0.4
-  }
-  type: TYPE_TEXT
-  text: "VICTORY!"
-  font: "main_font"
-  id: "text1"
-  parent: "victory_title_plate"
-  inherit_alpha: true
+position {
+  x: 907.0
+  y: 124.0
+}
+size {
+  x: 56.0
+  y: 56.0
+}
+color {
+  x: 0.027450980392156862
+  y: 0.5254901960784314
+  z: 0.37254901960784315
+  w: 1
+}
+type: TYPE_BOX
+id: "tutorial_button"
+layer: "buttons"
+texture: "ui/button_hit"
+alpha: 1
+inherit_alpha: true
+enabled: true
 }
 nodes {
-  position {
-    y: -40.0
-  }
-  size {
-    x: 260.0
-    y: 64.0
-  }
-  color {
-    x: 0.55
-    y: 0.15
-    z: 0.1
-  }
-  type: TYPE_BOX
-  id: "victory_restart"
-  parent: "victory_overlay"
-  layer: "buttons"
-  inherit_alpha: false
+position {
+  x: 0.0
+  y: 0.0
+}
+size {
+  x: 56.0
+  y: 56.0
+}
+color {
+  x: 0.027450980392156862
+  y: 0.5254901960784314
+  z: 0.37254901960784315
+  w: 1
+}
+slice9 {
+  x: 16.0
+  y: 16.0
+  z: 16.0
+  w: 16.0
+}
+type: TYPE_BOX
+id: "tutorial_button_face"
+layer: "buttons"
+parent: "tutorial_button"
+texture: "ui/button_face"
+alpha: 1
+inherit_alpha: true
+enabled: true
 }
 nodes {
-  scale {
-    x: 0.8
-    y: 0.8
-  }
-  size {
-    x: 260.0
-    y: 64.0
-  }
-  type: TYPE_TEXT
-  text: "PLAY AGAIN"
-  font: "main_font"
-  id: "text"
-  parent: "victory_restart"
-  inherit_alpha: true
+position {
+  x: 0.0
+  y: 8.0
+}
+size {
+  x: 24.0
+  y: 24.0
+}
+color {
+  x: 0.9607843137254902
+  y: 0.9372549019607843
+  z: 0.8745098039215686
+  w: 1
+}
+type: TYPE_BOX
+id: "tutorial_button_icon"
+layer: "buttons"
+parent: "tutorial_button_face"
+texture: "ui/icon_learn"
+alpha: 1
+inherit_alpha: true
+enabled: true
 }
 nodes {
-  position {
-    y: -120.0
-  }
-  size {
-    x: 200.0
-    y: 50.0
-  }
-  color {
-    x: 0.15
-    y: 0.3
-    z: 0.15
-  }
-  type: TYPE_BOX
-  id: "victory_menu_button"
-  parent: "victory_overlay"
-  layer: "buttons"
-  inherit_alpha: false
+position {
+  x: 0.0
+  y: -17.0
+}
+size {
+  x: 48.0
+  y: 56.0
+}
+color {
+  x: 0.9607843137254902
+  y: 0.9372549019607843
+  z: 0.8745098039215686
+  w: 1
+}
+scale {
+  x: 0.22
+  y: 0.22
+  z: 1.0
+}
+type: TYPE_TEXT
+id: "restart_text1"
+layer: "buttons"
+parent: "tutorial_button_face"
+text: "TUTORIAL"
+font: "main_font"
+alpha: 1
+inherit_alpha: true
+enabled: true
 }
 nodes {
-  scale {
-    x: 0.65
-    y: 0.65
-  }
-  size {
-    x: 200.0
-    y: 50.0
-  }
-  type: TYPE_TEXT
-  text: "MENU"
-  font: "main_font"
-  id: "victory_menu_text"
-  parent: "victory_menu_button"
-  inherit_alpha: true
+position {
+  x: 480.0
+  y: 270.0
+}
+size {
+  x: 4000.0
+  y: 4000.0
+}
+color {
+  x: 0.023529411764705882
+  y: 0.23921568627450981
+  z: 0.20784313725490197
+  w: 1
+}
+type: TYPE_BOX
+id: "victory_overlay"
+layer: "buttons"
+alpha: 1
+inherit_alpha: true
+enabled: false
 }
 nodes {
-  position {
-    x: 907.0
-    y: 124.0
-  }
-  size {
-    x: 70.0
-    y: 56.0
-  }
-  color {
-    x: 0.15
-    y: 0.3
-    z: 0.15
-  }
-  type: TYPE_BOX
-  id: "tutorial_button"
-  layer: "buttons"
-  inherit_alpha: true
+position {
+  x: 0.0
+  y: 0.0
+}
+size {
+  x: 960.0
+  y: 540.0
+}
+color {
+  x: 1.0
+  y: 1.0
+  z: 1.0
+  w: 1
+}
+type: TYPE_BOX
+id: "victory_art"
+layer: "buttons"
+parent: "victory_overlay"
+texture: "ui/screen_art"
+alpha: 1
+inherit_alpha: true
+enabled: true
 }
 nodes {
-  scale {
-    x: 0.32
-    y: 0.32
-  }
-  size {
-    x: 70.0
-    y: 56.0
-  }
-  type: TYPE_TEXT
-  text: "TUTORIAL"
-  font: "main_font"
-  id: "restart_text1"
-  parent: "tutorial_button"
-  inherit_alpha: true
+position {
+  x: -177.0
+  y: 143.0
+}
+size {
+  x: 64.0
+  y: 107.0
+}
+color {
+  x: 1.0
+  y: 1.0
+  z: 1.0
+  w: 1
+}
+rotation {
+  z: 15.0
+}
+type: TYPE_BOX
+id: "victory_left_card"
+layer: "buttons"
+parent: "victory_overlay"
+texture: "main/d_red"
+alpha: 1
+inherit_alpha: true
+enabled: true
 }
 nodes {
-  position {
-    x: 480.0
-    y: 270.0
-  }
-  size {
-    x: 960.0
-    y: 540.0
-  }
-  color {
-    x: 0.15
-    y: 0.3
-    z: 0.15
-  }
-  type: TYPE_BOX
-  id: "start_screen"
-  layer: "layer"
-  inherit_alpha: true
+position {
+  x: 177.0
+  y: 143.0
+}
+size {
+  x: 64.0
+  y: 107.0
+}
+color {
+  x: 1.0
+  y: 1.0
+  z: 1.0
+  w: 1
+}
+rotation {
+  z: -15.0
+}
+type: TYPE_BOX
+id: "victory_right_card"
+layer: "buttons"
+parent: "victory_overlay"
+texture: "main/d_blue"
+alpha: 1
+inherit_alpha: true
+enabled: true
 }
 nodes {
-  position {
-    y: 80.0
-  }
-  size {
-    x: 400.0
-    y: 80.0
-  }
-  color {
-    x: 0.0
-    y: 0.0
-    z: 0.0
-  }
-  type: TYPE_TEXT
-  text: "Shenzhen Solitaire"
-  font: "main_font"
-  id: "title_text"
-  parent: "start_screen"
-  layer: "layer"
-  inherit_alpha: true
+position {
+  x: 0.0
+  y: 163.0
+}
+size {
+  x: 106.0
+  y: 106.0
+}
+color {
+  x: 1.0
+  y: 1.0
+  z: 1.0
+  w: 1
+}
+type: TYPE_BOX
+id: "victory_medallion"
+layer: "buttons"
+parent: "victory_overlay"
+texture: "main/button_green"
+alpha: 1
+inherit_alpha: true
+enabled: true
 }
 nodes {
-  position {
-    y: -40.0
-  }
-  size {
-    x: 200.0
-    y: 80.0
-  }
-  type: TYPE_BOX
-  id: "play_button"
-  parent: "start_screen"
-  layer: "layer"
-  inherit_alpha: true
+position {
+  x: 0.0
+  y: 60.0
+}
+size {
+  x: 570.0
+  y: 86.0
+}
+color {
+  x: 0.03137254901960784
+  y: 0.49019607843137253
+  z: 0.34901960784313724
+  w: 1
+}
+slice9 {
+  x: 16.0
+  y: 16.0
+  z: 16.0
+  w: 16.0
+}
+type: TYPE_BOX
+id: "victory_title_plate"
+layer: "buttons"
+parent: "victory_overlay"
+texture: "ui/outlined"
+alpha: 1
+inherit_alpha: true
+enabled: true
 }
 nodes {
-  size {
-    x: 200.0
-    y: 80.0
-  }
-  color {
-    x: 0.0
-    y: 0.0
-    z: 0.0
-  }
-  type: TYPE_TEXT
-  text: "PLAY"
-  font: "main_font"
-  id: "play_text"
-  parent: "play_button"
-  layer: "layer"
-  inherit_alpha: true
+position {
+  x: 0.0
+  y: 0.0
+}
+size {
+  x: 550.0
+  y: 74.0
+}
+color {
+  x: 0.9607843137254902
+  y: 0.9372549019607843
+  z: 0.8745098039215686
+  w: 1
+}
+scale {
+  x: 1.25
+  y: 1.25
+  z: 1.0
+}
+type: TYPE_TEXT
+id: "text1"
+layer: "buttons"
+parent: "victory_title_plate"
+text: "Victory!"
+font: "main_font"
+alpha: 1
+inherit_alpha: true
+enabled: true
 }
 nodes {
-  position {
-    x: 480.0
-    y: 270.0
-  }
-  size {
-    x: 960.0
-    y: 540.0
-  }
-  color {
-    x: 0.0
-    y: 0.0
-    z: 0.0
-  }
-  type: TYPE_BOX
-  id: "tutorial_overlay"
-  layer: "buttons"
-  inherit_alpha: true
-  alpha: 0.0
-  enabled: false
+position {
+  x: 0.0
+  y: -5.0
+}
+size {
+  x: 650.0
+  y: 30.0
+}
+color {
+  x: 1.0
+  y: 0.8980392156862745
+  z: 0.41568627450980394
+  w: 1
+}
+scale {
+  x: 0.46
+  y: 0.46
+  z: 1.0
+}
+type: TYPE_TEXT
+id: "victory_caption"
+layer: "buttons"
+parent: "victory_overlay"
+text: ""
+font: "main_font"
+alpha: 1
+inherit_alpha: true
+enabled: true
 }
 nodes {
-  size {
-    x: 920.0
-    y: 400.0
-  }
-  type: TYPE_BOX
-  id: "tutorial_highlight"
-  parent: "tutorial_overlay"
-  layer: "buttons"
-  alpha: 0.0
+position {
+  x: 0.0
+  y: -40.0
+}
+size {
+  x: 280.0
+  y: 58.0
+}
+color {
+  x: 1.0
+  y: 0.8235294117647058
+  z: 0.24313725490196078
+  w: 1
+}
+type: TYPE_BOX
+id: "victory_restart"
+layer: "buttons"
+parent: "victory_overlay"
+texture: "ui/button_hit"
+alpha: 1
+inherit_alpha: true
+enabled: true
 }
 nodes {
-  position {
-    y: -220.0
-  }
-  size {
-    x: 800.0
-    y: 80.0
-  }
-  color {
-    x: 0.1
-    y: 0.2
-    z: 0.1
-  }
-  type: TYPE_BOX
-  id: "tutorial_text_bg"
-  parent: "tutorial_overlay"
-  layer: "buttons"
-  inherit_alpha: false
-  alpha: 0.95
+position {
+  x: 0.0
+  y: 0.0
+}
+size {
+  x: 280.0
+  y: 58.0
+}
+color {
+  x: 1.0
+  y: 0.8235294117647058
+  z: 0.24313725490196078
+  w: 1
+}
+slice9 {
+  x: 16.0
+  y: 16.0
+  z: 16.0
+  w: 16.0
+}
+type: TYPE_BOX
+id: "victory_restart_face"
+layer: "buttons"
+parent: "victory_restart"
+texture: "ui/button_face"
+alpha: 1
+inherit_alpha: true
+enabled: true
 }
 nodes {
-  scale {
-    x: 0.7
-    y: 0.7
-  }
-  size {
-    x: 760.0
-    y: 60.0
-  }
-  type: TYPE_TEXT
-  font: "main_font"
-  id: "tutorial_text"
-  line_break: true
-  parent: "tutorial_text_bg"
-  layer: "buttons"
-  inherit_alpha: true
+position {
+  x: -110.0
+  y: 0.0
+}
+size {
+  x: 24.0
+  y: 24.0
+}
+color {
+  x: 0.023529411764705882
+  y: 0.23921568627450981
+  z: 0.20784313725490197
+  w: 1
+}
+type: TYPE_BOX
+id: "victory_restart_icon"
+layer: "buttons"
+parent: "victory_restart_face"
+texture: "ui/icon_play"
+alpha: 1
+inherit_alpha: true
+enabled: true
 }
 nodes {
-  position {
-    x: 350.0
-  }
-  scale {
-    x: 0.55
-    y: 0.55
-  }
-  size {
-    x: 60.0
-    y: 30.0
-  }
-  color {
-    x: 0.7
-    y: 0.8
-    z: 0.7
-  }
-  type: TYPE_TEXT
-  text: "1/5"
-  font: "main_font"
-  id: "tutorial_step_text"
-  parent: "tutorial_text_bg"
-  layer: "buttons"
-  inherit_alpha: false
+position {
+  x: 15.0
+  y: 0.0
+}
+size {
+  x: 272.0
+  y: 58.0
+}
+color {
+  x: 0.023529411764705882
+  y: 0.23921568627450981
+  z: 0.20784313725490197
+  w: 1
+}
+scale {
+  x: 0.6
+  y: 0.6
+  z: 1.0
+}
+type: TYPE_TEXT
+id: "text"
+layer: "buttons"
+parent: "victory_restart_face"
+text: "PLAY AGAIN"
+font: "main_font"
+alpha: 1
+inherit_alpha: true
+enabled: true
 }
 nodes {
-  position {
-    x: -370.0
-    y: -220.0
-  }
-  size {
-    x: 100.0
-    y: 40.0
-  }
-  color {
-    x: 0.4
-    y: 0.15
-    z: 0.15
-  }
-  type: TYPE_BOX
-  id: "tutorial_skip_btn"
-  parent: "tutorial_overlay"
-  layer: "buttons"
-  inherit_alpha: false
+position {
+  x: 0.0
+  y: -120.0
+}
+size {
+  x: 230.0
+  y: 52.0
+}
+color {
+  x: 0.027450980392156862
+  y: 0.5254901960784314
+  z: 0.37254901960784315
+  w: 1
+}
+type: TYPE_BOX
+id: "victory_menu_button"
+layer: "buttons"
+parent: "victory_overlay"
+texture: "ui/button_hit"
+alpha: 1
+inherit_alpha: true
+enabled: true
 }
 nodes {
-  scale {
-    x: 0.6
-    y: 0.6
-  }
-  size {
-    x: 100.0
-    y: 40.0
-  }
-  type: TYPE_TEXT
-  text: "SKIP"
-  font: "main_font"
-  id: "tutorial_skip_text"
-  parent: "tutorial_skip_btn"
-  layer: "buttons"
-  inherit_alpha: true
+position {
+  x: 0.0
+  y: 0.0
+}
+size {
+  x: 230.0
+  y: 52.0
+}
+color {
+  x: 0.027450980392156862
+  y: 0.5254901960784314
+  z: 0.37254901960784315
+  w: 1
+}
+slice9 {
+  x: 16.0
+  y: 16.0
+  z: 16.0
+  w: 16.0
+}
+type: TYPE_BOX
+id: "victory_menu_button_face"
+layer: "buttons"
+parent: "victory_menu_button"
+texture: "ui/button_face"
+alpha: 1
+inherit_alpha: true
+enabled: true
+}
+nodes {
+position {
+  x: -85.0
+  y: 0.0
+}
+size {
+  x: 24.0
+  y: 24.0
+}
+color {
+  x: 0.9607843137254902
+  y: 0.9372549019607843
+  z: 0.8745098039215686
+  w: 1
+}
+type: TYPE_BOX
+id: "victory_menu_button_icon"
+layer: "buttons"
+parent: "victory_menu_button_face"
+texture: "ui/icon_menu"
+alpha: 1
+inherit_alpha: true
+enabled: true
+}
+nodes {
+position {
+  x: 15.0
+  y: 0.0
+}
+size {
+  x: 222.0
+  y: 52.0
+}
+color {
+  x: 0.9607843137254902
+  y: 0.9372549019607843
+  z: 0.8745098039215686
+  w: 1
+}
+scale {
+  x: 0.5
+  y: 0.5
+  z: 1.0
+}
+type: TYPE_TEXT
+id: "victory_menu_text"
+layer: "buttons"
+parent: "victory_menu_button_face"
+text: "MENU"
+font: "main_font"
+alpha: 1
+inherit_alpha: true
+enabled: true
+}
+nodes {
+position {
+  x: 0.0
+  y: -220.0
+}
+size {
+  x: 600.0
+  y: 28.0
+}
+color {
+  x: 1.0
+  y: 0.8980392156862745
+  z: 0.41568627450980394
+  w: 1
+}
+scale {
+  x: 0.34
+  y: 0.34
+  z: 1.0
+}
+type: TYPE_TEXT
+id: "victory_footer"
+layer: "buttons"
+parent: "victory_overlay"
+text: ""
+font: "main_font"
+alpha: 1
+inherit_alpha: true
+enabled: true
+}
+nodes {
+position {
+  x: 480.0
+  y: 270.0
+}
+size {
+  x: 4000.0
+  y: 4000.0
+}
+color {
+  x: 0.023529411764705882
+  y: 0.23921568627450981
+  z: 0.20784313725490197
+  w: 1
+}
+type: TYPE_BOX
+id: "start_screen"
+layer: "layer"
+alpha: 1
+inherit_alpha: true
+enabled: true
+}
+nodes {
+position {
+  x: 0.0
+  y: 0.0
+}
+size {
+  x: 960.0
+  y: 540.0
+}
+color {
+  x: 1.0
+  y: 1.0
+  z: 1.0
+  w: 1
+}
+type: TYPE_BOX
+id: "start_art"
+layer: "layer"
+parent: "start_screen"
+texture: "ui/menu_back"
+alpha: 1
+inherit_alpha: true
+enabled: true
+}
+nodes {
+position {
+  x: 0.0
+  y: 0.0
+}
+size {
+  x: 960.0
+  y: 540.0
+}
+color {
+  x: 1.0
+  y: 1.0
+  z: 1.0
+  w: 1
+}
+type: TYPE_BOX
+id: "menu_left"
+layer: "layer"
+parent: "start_screen"
+texture: "ui/menu_left"
+alpha: 1
+inherit_alpha: true
+enabled: true
+}
+nodes {
+position {
+  x: 0.0
+  y: 0.0
+}
+size {
+  x: 960.0
+  y: 540.0
+}
+color {
+  x: 1.0
+  y: 1.0
+  z: 1.0
+  w: 1
+}
+type: TYPE_BOX
+id: "menu_right"
+layer: "layer"
+parent: "start_screen"
+texture: "ui/menu_right"
+alpha: 1
+inherit_alpha: true
+enabled: true
+}
+nodes {
+position {
+  x: -280.0
+  y: -35.0
+}
+size {
+  x: 420.0
+  y: 200.0
+}
+color {
+  x: 1.0
+  y: 1.0
+  z: 1.0
+  w: 0.45
+}
+type: TYPE_BOX
+id: "menu_mist_left"
+layer: "layer"
+parent: "start_screen"
+texture: "ui/menu_mist"
+alpha: 0.45
+inherit_alpha: true
+enabled: true
+}
+nodes {
+position {
+  x: 280.0
+  y: 55.0
+}
+size {
+  x: 440.0
+  y: 220.0
+}
+color {
+  x: 1.0
+  y: 1.0
+  z: 1.0
+  w: 0.35
+}
+type: TYPE_BOX
+id: "menu_mist_right"
+layer: "layer"
+parent: "start_screen"
+texture: "ui/menu_mist"
+alpha: 0.35
+inherit_alpha: true
+enabled: true
+}
+nodes {
+position {
+  x: 0.0
+  y: 220.0
+}
+size {
+  x: 600.0
+  y: 25.0
+}
+color {
+  x: 1.0
+  y: 0.8980392156862745
+  z: 0.41568627450980394
+  w: 1
+}
+scale {
+  x: 0.32
+  y: 0.32
+  z: 1.0
+}
+type: TYPE_TEXT
+id: "start_eyebrow"
+layer: "layer"
+parent: "start_screen"
+text: ""
+font: "main_font"
+alpha: 1
+inherit_alpha: true
+enabled: true
+}
+nodes {
+position {
+  x: 0.0
+  y: 175.0
+}
+size {
+  x: 850.0
+  y: 65.0
+}
+color {
+  x: 0.9607843137254902
+  y: 0.9372549019607843
+  z: 0.8745098039215686
+  w: 1
+}
+scale {
+  x: 1.05
+  y: 1.05
+  z: 1.0
+}
+type: TYPE_TEXT
+id: "title_text"
+layer: "layer"
+parent: "start_screen"
+text: "Shenzhen Solitaire"
+font: "main_font"
+alpha: 1
+inherit_alpha: true
+enabled: true
+}
+nodes {
+position {
+  x: -100.0
+  y: 75.0
+}
+size {
+  x: 74.0
+  y: 123.0
+}
+color {
+  x: 1.0
+  y: 1.0
+  z: 1.0
+  w: 1
+}
+rotation {
+  z: 12.0
+}
+type: TYPE_BOX
+id: "start_card_red"
+layer: "layer"
+parent: "start_screen"
+texture: "main/d_red"
+alpha: 1
+inherit_alpha: true
+enabled: true
+}
+nodes {
+position {
+  x: 100.0
+  y: 75.0
+}
+size {
+  x: 74.0
+  y: 123.0
+}
+color {
+  x: 1.0
+  y: 1.0
+  z: 1.0
+  w: 1
+}
+rotation {
+  z: -12.0
+}
+type: TYPE_BOX
+id: "start_card_blue"
+layer: "layer"
+parent: "start_screen"
+texture: "main/d_blue"
+alpha: 1
+inherit_alpha: true
+enabled: true
+}
+nodes {
+position {
+  x: 0.0
+  y: 82.0
+}
+size {
+  x: 82.0
+  y: 137.0
+}
+color {
+  x: 1.0
+  y: 1.0
+  z: 1.0
+  w: 1
+}
+type: TYPE_BOX
+id: "start_card_green"
+layer: "layer"
+parent: "start_screen"
+texture: "main/d_green"
+alpha: 1
+inherit_alpha: true
+enabled: true
+}
+nodes {
+position {
+  x: 0.0
+  y: -40.0
+}
+size {
+  x: 280.0
+  y: 58.0
+}
+color {
+  x: 1.0
+  y: 0.8235294117647058
+  z: 0.24313725490196078
+  w: 1
+}
+type: TYPE_BOX
+id: "play_button"
+layer: "layer"
+parent: "start_screen"
+texture: "ui/button_hit"
+alpha: 1
+inherit_alpha: true
+enabled: true
+}
+nodes {
+position {
+  x: 0.0
+  y: 0.0
+}
+size {
+  x: 280.0
+  y: 58.0
+}
+color {
+  x: 1.0
+  y: 0.8235294117647058
+  z: 0.24313725490196078
+  w: 1
+}
+slice9 {
+  x: 16.0
+  y: 16.0
+  z: 16.0
+  w: 16.0
+}
+type: TYPE_BOX
+id: "play_button_face"
+layer: "layer"
+parent: "play_button"
+texture: "ui/button_face"
+alpha: 1
+inherit_alpha: true
+enabled: true
+}
+nodes {
+position {
+  x: -110.0
+  y: 0.0
+}
+size {
+  x: 24.0
+  y: 24.0
+}
+color {
+  x: 0.023529411764705882
+  y: 0.23921568627450981
+  z: 0.20784313725490197
+  w: 1
+}
+type: TYPE_BOX
+id: "play_button_icon"
+layer: "layer"
+parent: "play_button_face"
+texture: "ui/icon_play"
+alpha: 1
+inherit_alpha: true
+enabled: true
+}
+nodes {
+position {
+  x: 15.0
+  y: 0.0
+}
+size {
+  x: 272.0
+  y: 58.0
+}
+color {
+  x: 0.023529411764705882
+  y: 0.23921568627450981
+  z: 0.20784313725490197
+  w: 1
+}
+scale {
+  x: 0.64
+  y: 0.64
+  z: 1.0
+}
+type: TYPE_TEXT
+id: "play_text"
+layer: "layer"
+parent: "play_button_face"
+text: "PLAY"
+font: "main_font"
+alpha: 1
+inherit_alpha: true
+enabled: true
+}
+nodes {
+position {
+  x: 0.0
+  y: -115.0
+}
+size {
+  x: 230.0
+  y: 52.0
+}
+color {
+  x: 0.027450980392156862
+  y: 0.5254901960784314
+  z: 0.37254901960784315
+  w: 1
+}
+type: TYPE_BOX
+id: "start_tutorial_button"
+layer: "layer"
+parent: "start_screen"
+texture: "ui/button_hit"
+alpha: 1
+inherit_alpha: true
+enabled: true
+}
+nodes {
+position {
+  x: 0.0
+  y: 0.0
+}
+size {
+  x: 230.0
+  y: 52.0
+}
+color {
+  x: 0.027450980392156862
+  y: 0.5254901960784314
+  z: 0.37254901960784315
+  w: 1
+}
+slice9 {
+  x: 16.0
+  y: 16.0
+  z: 16.0
+  w: 16.0
+}
+type: TYPE_BOX
+id: "start_tutorial_button_face"
+layer: "layer"
+parent: "start_tutorial_button"
+texture: "ui/button_face"
+alpha: 1
+inherit_alpha: true
+enabled: true
+}
+nodes {
+position {
+  x: -85.0
+  y: 0.0
+}
+size {
+  x: 24.0
+  y: 24.0
+}
+color {
+  x: 0.9607843137254902
+  y: 0.9372549019607843
+  z: 0.8745098039215686
+  w: 1
+}
+type: TYPE_BOX
+id: "start_tutorial_button_icon"
+layer: "layer"
+parent: "start_tutorial_button_face"
+texture: "ui/icon_learn"
+alpha: 1
+inherit_alpha: true
+enabled: true
+}
+nodes {
+position {
+  x: 15.0
+  y: 0.0
+}
+size {
+  x: 222.0
+  y: 52.0
+}
+color {
+  x: 0.9607843137254902
+  y: 0.9372549019607843
+  z: 0.8745098039215686
+  w: 1
+}
+scale {
+  x: 0.48
+  y: 0.48
+  z: 1.0
+}
+type: TYPE_TEXT
+id: "start_tutorial_text"
+layer: "layer"
+parent: "start_tutorial_button_face"
+text: "TUTORIAL"
+font: "main_font"
+alpha: 1
+inherit_alpha: true
+enabled: true
+}
+nodes {
+position {
+  x: 0.0
+  y: -185.0
+}
+size {
+  x: 800.0
+  y: 30.0
+}
+color {
+  x: 1.0
+  y: 0.8980392156862745
+  z: 0.41568627450980394
+  w: 1
+}
+scale {
+  x: 0.38
+  y: 0.38
+  z: 1.0
+}
+type: TYPE_TEXT
+id: "start_caption"
+layer: "layer"
+parent: "start_screen"
+text: ""
+font: "main_font"
+alpha: 1
+inherit_alpha: true
+enabled: true
+}
+nodes {
+position {
+  x: 0.0
+  y: -220.0
+}
+size {
+  x: 800.0
+  y: 28.0
+}
+color {
+  x: 0.6549019607843137
+  y: 0.7254901960784313
+  z: 0.6823529411764706
+  w: 1
+}
+scale {
+  x: 0.32
+  y: 0.32
+  z: 1.0
+}
+type: TYPE_TEXT
+id: "start_footer"
+layer: "layer"
+parent: "start_screen"
+text: ""
+font: "main_font"
+alpha: 1
+inherit_alpha: true
+enabled: true
+}
+nodes {
+position {
+  x: 480.0
+  y: 270.0
+}
+size {
+  x: 960.0
+  y: 540.0
+}
+color {
+  x: 1.0
+  y: 1.0
+  z: 1.0
+  w: 0
+}
+type: TYPE_BOX
+id: "tutorial_overlay"
+layer: "buttons"
+alpha: 0
+inherit_alpha: true
+enabled: false
+}
+nodes {
+position {
+  x: 0.0
+  y: 0.0
+}
+size {
+  x: 920.0
+  y: 400.0
+}
+color {
+  x: 1.0
+  y: 1.0
+  z: 1.0
+  w: 0
+}
+type: TYPE_BOX
+id: "tutorial_highlight"
+layer: "buttons"
+parent: "tutorial_overlay"
+alpha: 0
+inherit_alpha: true
+enabled: true
+}
+nodes {
+position {
+  x: 0.0
+  y: -220.0
+}
+size {
+  x: 860.0
+  y: 80.0
+}
+color {
+  x: 0.03137254901960784
+  y: 0.49019607843137253
+  z: 0.34901960784313724
+  w: 1
+}
+slice9 {
+  x: 16.0
+  y: 16.0
+  z: 16.0
+  w: 16.0
+}
+type: TYPE_BOX
+id: "tutorial_text_bg"
+layer: "buttons"
+parent: "tutorial_overlay"
+texture: "ui/outlined"
+alpha: 1
+inherit_alpha: false
+enabled: true
+}
+nodes {
+position {
+  x: 65.0
+  y: 10.0
+}
+size {
+  x: 660.0
+  y: 40.0
+}
+color {
+  x: 0.9607843137254902
+  y: 0.9372549019607843
+  z: 0.8745098039215686
+  w: 1
+}
+scale {
+  x: 0.48
+  y: 0.48
+  z: 1.0
+}
+type: TYPE_TEXT
+id: "tutorial_text"
+layer: "buttons"
+parent: "tutorial_text_bg"
+text: ""
+font: "main_font"
+alpha: 1
+inherit_alpha: true
+enabled: true
+}
+nodes {
+position {
+  x: 65.0
+  y: -19.0
+}
+size {
+  x: 600.0
+  y: 25.0
+}
+color {
+  x: 1.0
+  y: 0.8980392156862745
+  z: 0.41568627450980394
+  w: 1
+}
+scale {
+  x: 0.34
+  y: 0.34
+  z: 1.0
+}
+type: TYPE_TEXT
+id: "tutorial_step_text"
+layer: "buttons"
+parent: "tutorial_text_bg"
+text: ""
+font: "main_font"
+alpha: 1
+inherit_alpha: true
+enabled: true
+}
+nodes {
+position {
+  x: -370.0
+  y: -220.0
+}
+size {
+  x: 112.0
+  y: 48.0
+}
+color {
+  x: 0.027450980392156862
+  y: 0.5254901960784314
+  z: 0.37254901960784315
+  w: 1
+}
+type: TYPE_BOX
+id: "tutorial_skip_btn"
+layer: "buttons"
+parent: "tutorial_overlay"
+texture: "ui/button_hit"
+alpha: 1
+inherit_alpha: false
+enabled: true
+}
+nodes {
+position {
+  x: 0.0
+  y: 0.0
+}
+size {
+  x: 112.0
+  y: 48.0
+}
+color {
+  x: 0.027450980392156862
+  y: 0.5254901960784314
+  z: 0.37254901960784315
+  w: 1
+}
+slice9 {
+  x: 16.0
+  y: 16.0
+  z: 16.0
+  w: 16.0
+}
+type: TYPE_BOX
+id: "tutorial_skip_btn_face"
+layer: "buttons"
+parent: "tutorial_skip_btn"
+texture: "ui/button_face"
+alpha: 1
+inherit_alpha: true
+enabled: true
+}
+nodes {
+position {
+  x: -26.0
+  y: 0.0
+}
+size {
+  x: 24.0
+  y: 24.0
+}
+color {
+  x: 0.9607843137254902
+  y: 0.9372549019607843
+  z: 0.8745098039215686
+  w: 1
+}
+type: TYPE_BOX
+id: "tutorial_skip_btn_icon"
+layer: "buttons"
+parent: "tutorial_skip_btn_face"
+texture: "ui/icon_skip"
+alpha: 1
+inherit_alpha: true
+enabled: true
+}
+nodes {
+position {
+  x: 15.0
+  y: 0.0
+}
+size {
+  x: 104.0
+  y: 48.0
+}
+color {
+  x: 0.9607843137254902
+  y: 0.9372549019607843
+  z: 0.8745098039215686
+  w: 1
+}
+scale {
+  x: 0.4
+  y: 0.4
+  z: 1.0
+}
+type: TYPE_TEXT
+id: "tutorial_skip_text"
+layer: "buttons"
+parent: "tutorial_skip_btn_face"
+text: "SKIP"
+font: "main_font"
+alpha: 1
+inherit_alpha: true
+enabled: true
+}
+nodes {
+position {
+  x: 907.0
+  y: 235.0
+}
+size {
+  x: 56.0
+  y: 56.0
+}
+color {
+  x: 0.027450980392156862
+  y: 0.5254901960784314
+  z: 0.37254901960784315
+  w: 1
+}
+type: TYPE_BOX
+id: "music_button"
+layer: "layer"
+texture: "ui/button_hit"
+alpha: 1
+inherit_alpha: true
+enabled: true
+}
+nodes {
+position {
+  x: 0.0
+  y: 0.0
+}
+size {
+  x: 56.0
+  y: 56.0
+}
+color {
+  x: 0.027450980392156862
+  y: 0.5254901960784314
+  z: 0.37254901960784315
+  w: 1
+}
+slice9 {
+  x: 16.0
+  y: 16.0
+  z: 16.0
+  w: 16.0
+}
+type: TYPE_BOX
+id: "music_button_face"
+layer: "layer"
+parent: "music_button"
+texture: "ui/button_face"
+alpha: 1
+inherit_alpha: true
+enabled: true
+}
+nodes {
+position {
+  x: 0.0
+  y: 8.0
+}
+size {
+  x: 24.0
+  y: 24.0
+}
+color {
+  x: 0.9607843137254902
+  y: 0.9372549019607843
+  z: 0.8745098039215686
+  w: 1
+}
+type: TYPE_BOX
+id: "music_button_icon"
+layer: "layer"
+parent: "music_button_face"
+texture: "ui/icon_music"
+alpha: 1
+inherit_alpha: true
+enabled: true
+}
+nodes {
+position {
+  x: 0.0
+  y: -17.0
+}
+size {
+  x: 48.0
+  y: 56.0
+}
+color {
+  x: 0.9607843137254902
+  y: 0.9372549019607843
+  z: 0.8745098039215686
+  w: 1
+}
+scale {
+  x: 0.22
+  y: 0.22
+  z: 1.0
+}
+type: TYPE_TEXT
+id: "music_text"
+layer: "layer"
+parent: "music_button_face"
+text: "MUSIC ON"
+font: "main_font"
+alpha: 1
+inherit_alpha: true
+enabled: true
 }
 layers {
-  name: "background"
+ name: "background"
 }
 layers {
-  name: "cards"
+ name: "cards"
 }
 layers {
-  name: "buttons"
+ name: "buttons"
 }
 layers {
-  name: "layer"
+ name: "layer"
 }
 material: "/builtins/materials/gui.material"
 adjust_reference: ADJUST_REFERENCE_PARENT

@@ -1,37 +1,37 @@
 images {
-  image: "/assets/cards/red_cards/2_red.png"
+  image: "/assets/vivid/cards/2_red.png"
   sprite_trim_mode: SPRITE_TRIM_MODE_8
 }
 images {
-  image: "/assets/cards/red_cards/3_red.png"
+  image: "/assets/vivid/cards/3_red.png"
   sprite_trim_mode: SPRITE_TRIM_MODE_4
 }
 images {
-  image: "/assets/cards/red_cards/4_red.png"
+  image: "/assets/vivid/cards/4_red.png"
   sprite_trim_mode: SPRITE_TRIM_MODE_4
 }
 images {
-  image: "/assets/cards/red_cards/5_red.png"
+  image: "/assets/vivid/cards/5_red.png"
   sprite_trim_mode: SPRITE_TRIM_MODE_4
 }
 images {
-  image: "/assets/cards/red_cards/6_red.png"
+  image: "/assets/vivid/cards/6_red.png"
   sprite_trim_mode: SPRITE_TRIM_MODE_4
 }
 images {
-  image: "/assets/cards/red_cards/7_red.png"
+  image: "/assets/vivid/cards/7_red.png"
   sprite_trim_mode: SPRITE_TRIM_MODE_4
 }
 images {
-  image: "/assets/cards/red_cards/8_red.png"
+  image: "/assets/vivid/cards/8_red.png"
   sprite_trim_mode: SPRITE_TRIM_MODE_4
 }
 images {
-  image: "/assets/cards/red_cards/9_red.png"
+  image: "/assets/vivid/cards/9_red.png"
   sprite_trim_mode: SPRITE_TRIM_MODE_4
 }
 images {
-  image: "/assets/cards/red_cards/10_red.png"
+  image: "/assets/vivid/cards/10_red.png"
   sprite_trim_mode: SPRITE_TRIM_MODE_4
 }
 images {
@@ -39,70 +39,70 @@ images {
   sprite_trim_mode: SPRITE_TRIM_MODE_4
 }
 images {
-  image: "/assets/cards/blue_cards/2_blue.png"
+  image: "/assets/vivid/cards/2_blue.png"
 }
 images {
-  image: "/assets/cards/blue_cards/3_blue.png"
+  image: "/assets/vivid/cards/3_blue.png"
 }
 images {
-  image: "/assets/cards/blue_cards/5_blue.png"
+  image: "/assets/vivid/cards/5_blue.png"
 }
 images {
-  image: "/assets/cards/blue_cards/6_blue.png"
+  image: "/assets/vivid/cards/6_blue.png"
 }
 images {
-  image: "/assets/cards/blue_cards/7_blue.png"
+  image: "/assets/vivid/cards/7_blue.png"
 }
 images {
-  image: "/assets/cards/blue_cards/8_blue.png"
+  image: "/assets/vivid/cards/8_blue.png"
 }
 images {
-  image: "/assets/cards/blue_cards/9_blue.png"
+  image: "/assets/vivid/cards/9_blue.png"
 }
 images {
-  image: "/assets/cards/blue_cards/10_blue.png"
+  image: "/assets/vivid/cards/10_blue.png"
 }
 images {
-  image: "/assets/cards/green_cards/2_green.png"
+  image: "/assets/vivid/cards/2_green.png"
 }
 images {
-  image: "/assets/cards/green_cards/3_green.png"
+  image: "/assets/vivid/cards/3_green.png"
 }
 images {
-  image: "/assets/cards/green_cards/4_green.png"
+  image: "/assets/vivid/cards/4_green.png"
 }
 images {
-  image: "/assets/cards/green_cards/5_green.png"
+  image: "/assets/vivid/cards/5_green.png"
 }
 images {
-  image: "/assets/cards/green_cards/6_green.png"
+  image: "/assets/vivid/cards/6_green.png"
 }
 images {
-  image: "/assets/cards/green_cards/7_green.png"
+  image: "/assets/vivid/cards/7_green.png"
 }
 images {
-  image: "/assets/cards/green_cards/8_green.png"
+  image: "/assets/vivid/cards/8_green.png"
 }
 images {
-  image: "/assets/cards/green_cards/9_green.png"
+  image: "/assets/vivid/cards/9_green.png"
 }
 images {
-  image: "/assets/cards/green_cards/10_green.png"
+  image: "/assets/vivid/cards/10_green.png"
 }
 images {
-  image: "/assets/cards/blue_cards/4_blue.png"
+  image: "/assets/vivid/cards/4_blue.png"
 }
 images {
-  image: "/assets/cards/f_flower.png"
+  image: "/assets/vivid/cards/f_flower.png"
 }
 images {
-  image: "/assets/cards/d_red.png"
+  image: "/assets/vivid/cards/d_red.png"
 }
 images {
-  image: "/assets/cards/d_blue.png"
+  image: "/assets/vivid/cards/d_blue.png"
 }
 images {
-  image: "/assets/cards/d_green.png"
+  image: "/assets/vivid/cards/d_green.png"
 }
 images {
   image: "/assets/buttons/button_red.png"
@@ -139,54 +139,54 @@ images {
   image: "/assets/cards/back/flower_back_wo.png"
 }
 images {
-  image: "/assets/cards/slot_tableau.png"
+  image: "/assets/vivid/slots/slot_tableau.png"
 }
 images {
-  image: "/assets/cards/slot_free.png"
+  image: "/assets/ui/slots/slot_free.png"
 }
 images {
-  image: "/assets/cards/slot_flower.png"
+  image: "/assets/ui/slots/slot_flower.png"
 }
 images {
-  image: "/assets/cards/slot_foundation.png"
+  image: "/assets/ui/slots/slot_foundation.png"
 }
 images {
-  image: "/assets/cards/slot_foundation_red.png"
+  image: "/assets/ui/slots/slot_foundation_red.png"
 }
 images {
-  image: "/assets/cards/slot_foundation_green.png"
+  image: "/assets/ui/slots/slot_foundation_green.png"
 }
 images {
-  image: "/assets/cards/slot_foundation_blue.png"
+  image: "/assets/ui/slots/slot_foundation_blue.png"
 }
 animations {
   id: "New Animation"
   images {
-    image: "/assets/cards/green_cards/2_green.png"
+    image: "/assets/vivid/cards/2_green.png"
   }
   images {
-    image: "/assets/cards/green_cards/3_green.png"
+    image: "/assets/vivid/cards/3_green.png"
   }
   images {
-    image: "/assets/cards/green_cards/4_green.png"
+    image: "/assets/vivid/cards/4_green.png"
   }
   images {
-    image: "/assets/cards/green_cards/5_green.png"
+    image: "/assets/vivid/cards/5_green.png"
   }
   images {
-    image: "/assets/cards/green_cards/6_green.png"
+    image: "/assets/vivid/cards/6_green.png"
   }
   images {
-    image: "/assets/cards/green_cards/7_green.png"
+    image: "/assets/vivid/cards/7_green.png"
   }
   images {
-    image: "/assets/cards/green_cards/8_green.png"
+    image: "/assets/vivid/cards/8_green.png"
   }
   images {
-    image: "/assets/cards/green_cards/9_green.png"
+    image: "/assets/vivid/cards/9_green.png"
   }
   images {
-    image: "/assets/cards/green_cards/10_green.png"
+    image: "/assets/vivid/cards/10_green.png"
   }
   playback: PLAYBACK_LOOP_FORWARD
 }
@@ -194,3 +194,501 @@ images {
   image: "/assets/victory_bg.png"
 }
 extrude_borders: 2
+images {
+ image: "/assets/vivid/motion/animal_red_motion_1.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_red_motion_2.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_red_motion_3.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_red_motion_4.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_red_motion_5.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_red_motion_6.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_red_motion_7.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_red_motion_8.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_red_motion_9.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_red_motion_10.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_red_motion_11.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_red_motion_12.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_red_motion_13.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_red_motion_14.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_red_motion_15.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_red_motion_16.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_red_motion_17.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_red_motion_18.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_green_motion_1.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_green_motion_2.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_green_motion_3.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_green_motion_4.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_green_motion_5.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_green_motion_6.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_green_motion_7.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_green_motion_8.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_green_motion_9.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_green_motion_10.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_green_motion_11.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_green_motion_12.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_green_motion_13.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_green_motion_14.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_green_motion_15.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_green_motion_16.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_green_motion_17.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_green_motion_18.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_blue_motion_1.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_blue_motion_2.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_blue_motion_3.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_blue_motion_4.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_blue_motion_5.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_blue_motion_6.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_blue_motion_7.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_blue_motion_8.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_blue_motion_9.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_blue_motion_10.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_blue_motion_11.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_blue_motion_12.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_blue_motion_13.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_blue_motion_14.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_blue_motion_15.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_blue_motion_16.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_blue_motion_17.png"
+}
+images {
+ image: "/assets/vivid/motion/animal_blue_motion_18.png"
+}
+images {
+ image: "/assets/vivid/motion/d_red_motion_1.png"
+}
+images {
+ image: "/assets/vivid/motion/d_red_motion_2.png"
+}
+images {
+ image: "/assets/vivid/motion/d_red_motion_3.png"
+}
+images {
+ image: "/assets/vivid/motion/d_red_motion_4.png"
+}
+images {
+ image: "/assets/vivid/motion/d_red_motion_5.png"
+}
+images {
+ image: "/assets/vivid/motion/d_red_motion_6.png"
+}
+images {
+ image: "/assets/vivid/motion/d_red_motion_7.png"
+}
+images {
+ image: "/assets/vivid/motion/d_red_motion_8.png"
+}
+images {
+ image: "/assets/vivid/motion/d_red_motion_9.png"
+}
+images {
+ image: "/assets/vivid/motion/d_red_motion_10.png"
+}
+images {
+ image: "/assets/vivid/motion/d_red_motion_11.png"
+}
+images {
+ image: "/assets/vivid/motion/d_red_motion_12.png"
+}
+images {
+ image: "/assets/vivid/motion/d_red_motion_13.png"
+}
+images {
+ image: "/assets/vivid/motion/d_red_motion_14.png"
+}
+images {
+ image: "/assets/vivid/motion/d_red_motion_15.png"
+}
+images {
+ image: "/assets/vivid/motion/d_red_motion_16.png"
+}
+images {
+ image: "/assets/vivid/motion/d_red_motion_17.png"
+}
+images {
+ image: "/assets/vivid/motion/d_red_motion_18.png"
+}
+images {
+ image: "/assets/vivid/motion/d_green_motion_1.png"
+}
+images {
+ image: "/assets/vivid/motion/d_green_motion_2.png"
+}
+images {
+ image: "/assets/vivid/motion/d_green_motion_3.png"
+}
+images {
+ image: "/assets/vivid/motion/d_green_motion_4.png"
+}
+images {
+ image: "/assets/vivid/motion/d_green_motion_5.png"
+}
+images {
+ image: "/assets/vivid/motion/d_green_motion_6.png"
+}
+images {
+ image: "/assets/vivid/motion/d_green_motion_7.png"
+}
+images {
+ image: "/assets/vivid/motion/d_green_motion_8.png"
+}
+images {
+ image: "/assets/vivid/motion/d_green_motion_9.png"
+}
+images {
+ image: "/assets/vivid/motion/d_green_motion_10.png"
+}
+images {
+ image: "/assets/vivid/motion/d_green_motion_11.png"
+}
+images {
+ image: "/assets/vivid/motion/d_green_motion_12.png"
+}
+images {
+ image: "/assets/vivid/motion/d_green_motion_13.png"
+}
+images {
+ image: "/assets/vivid/motion/d_green_motion_14.png"
+}
+images {
+ image: "/assets/vivid/motion/d_green_motion_15.png"
+}
+images {
+ image: "/assets/vivid/motion/d_green_motion_16.png"
+}
+images {
+ image: "/assets/vivid/motion/d_green_motion_17.png"
+}
+images {
+ image: "/assets/vivid/motion/d_green_motion_18.png"
+}
+images {
+ image: "/assets/vivid/motion/d_blue_motion_1.png"
+}
+images {
+ image: "/assets/vivid/motion/d_blue_motion_2.png"
+}
+images {
+ image: "/assets/vivid/motion/d_blue_motion_3.png"
+}
+images {
+ image: "/assets/vivid/motion/d_blue_motion_4.png"
+}
+images {
+ image: "/assets/vivid/motion/d_blue_motion_5.png"
+}
+images {
+ image: "/assets/vivid/motion/d_blue_motion_6.png"
+}
+images {
+ image: "/assets/vivid/motion/d_blue_motion_7.png"
+}
+images {
+ image: "/assets/vivid/motion/d_blue_motion_8.png"
+}
+images {
+ image: "/assets/vivid/motion/d_blue_motion_9.png"
+}
+images {
+ image: "/assets/vivid/motion/d_blue_motion_10.png"
+}
+images {
+ image: "/assets/vivid/motion/d_blue_motion_11.png"
+}
+images {
+ image: "/assets/vivid/motion/d_blue_motion_12.png"
+}
+images {
+ image: "/assets/vivid/motion/d_blue_motion_13.png"
+}
+images {
+ image: "/assets/vivid/motion/d_blue_motion_14.png"
+}
+images {
+ image: "/assets/vivid/motion/d_blue_motion_15.png"
+}
+images {
+ image: "/assets/vivid/motion/d_blue_motion_16.png"
+}
+images {
+ image: "/assets/vivid/motion/d_blue_motion_17.png"
+}
+images {
+ image: "/assets/vivid/motion/d_blue_motion_18.png"
+}
+images {
+ image: "/assets/vivid/cards/2_red_compact.png"
+}
+images {
+ image: "/assets/vivid/cards/3_red_compact.png"
+}
+images {
+ image: "/assets/vivid/cards/4_red_compact.png"
+}
+images {
+ image: "/assets/vivid/cards/5_red_compact.png"
+}
+images {
+ image: "/assets/vivid/cards/6_red_compact.png"
+}
+images {
+ image: "/assets/vivid/cards/7_red_compact.png"
+}
+images {
+ image: "/assets/vivid/cards/8_red_compact.png"
+}
+images {
+ image: "/assets/vivid/cards/9_red_compact.png"
+}
+images {
+ image: "/assets/vivid/cards/10_red_compact.png"
+}
+images {
+ image: "/assets/vivid/cards/d_red_compact.png"
+}
+images {
+ image: "/assets/vivid/cards/2_green_compact.png"
+}
+images {
+ image: "/assets/vivid/cards/3_green_compact.png"
+}
+images {
+ image: "/assets/vivid/cards/4_green_compact.png"
+}
+images {
+ image: "/assets/vivid/cards/5_green_compact.png"
+}
+images {
+ image: "/assets/vivid/cards/6_green_compact.png"
+}
+images {
+ image: "/assets/vivid/cards/7_green_compact.png"
+}
+images {
+ image: "/assets/vivid/cards/8_green_compact.png"
+}
+images {
+ image: "/assets/vivid/cards/9_green_compact.png"
+}
+images {
+ image: "/assets/vivid/cards/10_green_compact.png"
+}
+images {
+ image: "/assets/vivid/cards/d_green_compact.png"
+}
+images {
+ image: "/assets/vivid/cards/2_blue_compact.png"
+}
+images {
+ image: "/assets/vivid/cards/3_blue_compact.png"
+}
+images {
+ image: "/assets/vivid/cards/4_blue_compact.png"
+}
+images {
+ image: "/assets/vivid/cards/5_blue_compact.png"
+}
+images {
+ image: "/assets/vivid/cards/6_blue_compact.png"
+}
+images {
+ image: "/assets/vivid/cards/7_blue_compact.png"
+}
+images {
+ image: "/assets/vivid/cards/8_blue_compact.png"
+}
+images {
+ image: "/assets/vivid/cards/9_blue_compact.png"
+}
+images {
+ image: "/assets/vivid/cards/10_blue_compact.png"
+}
+images {
+ image: "/assets/vivid/cards/d_blue_compact.png"
+}
+images {
+ image: "/assets/vivid/cards/f_flower_compact.png"
+}
+images {
+ image: "/assets/vivid/cards/2_red_empty.png"
+}
+images {
+ image: "/assets/vivid/cards/3_red_empty.png"
+}
+images {
+ image: "/assets/vivid/cards/4_red_empty.png"
+}
+images {
+ image: "/assets/vivid/cards/5_red_empty.png"
+}
+images {
+ image: "/assets/vivid/cards/6_red_empty.png"
+}
+images {
+ image: "/assets/vivid/cards/7_red_empty.png"
+}
+images {
+ image: "/assets/vivid/cards/8_red_empty.png"
+}
+images {
+ image: "/assets/vivid/cards/9_red_empty.png"
+}
+images {
+ image: "/assets/vivid/cards/10_red_empty.png"
+}
+images {
+ image: "/assets/vivid/cards/2_green_empty.png"
+}
+images {
+ image: "/assets/vivid/cards/3_green_empty.png"
+}
+images {
+ image: "/assets/vivid/cards/4_green_empty.png"
+}
+images {
+ image: "/assets/vivid/cards/5_green_empty.png"
+}
+images {
+ image: "/assets/vivid/cards/6_green_empty.png"
+}
+images {
+ image: "/assets/vivid/cards/7_green_empty.png"
+}
+images {
+ image: "/assets/vivid/cards/8_green_empty.png"
+}
+images {
+ image: "/assets/vivid/cards/9_green_empty.png"
+}
+images {
+ image: "/assets/vivid/cards/10_green_empty.png"
+}
+images {
+ image: "/assets/vivid/cards/2_blue_empty.png"
+}
+images {
+ image: "/assets/vivid/cards/3_blue_empty.png"
+}
+images {
+ image: "/assets/vivid/cards/4_blue_empty.png"
+}
+images {
+ image: "/assets/vivid/cards/5_blue_empty.png"
+}
+images {
+ image: "/assets/vivid/cards/6_blue_empty.png"
+}
+images {
+ image: "/assets/vivid/cards/7_blue_empty.png"
+}
+images {
+ image: "/assets/vivid/cards/8_blue_empty.png"
+}
+images {
+ image: "/assets/vivid/cards/9_blue_empty.png"
+}
+images {
+ image: "/assets/vivid/cards/10_blue_empty.png"
+}

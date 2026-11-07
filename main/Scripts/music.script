@@ -1,0 +1,43 @@
+-- Persistent root collection: level restarts never create another music voice.
+function init(self)
+    self.started = false
+    self.enabled = false
+    self.paused = false
+    self.level = 0
+end
+
+function on_message(self, message_id, message, sender)
+    if message_id ~= hash("music_state") then return end
+    local enabled = message.enabled == true
+    if enabled and not self.started then
+        sound.play("#ambient", {gain = 0})
+        self.started = true
+        print("[MUSIC] started")
+    elseif enabled and self.paused then
+        sound.pause("#ambient", false)
+        self.paused = false
+        print("[MUSIC] resumed")
+    end
+    self.enabled = enabled
+end
+
+function update(self, dt)
+    if not self.started then return end
+    local previous = self.level
+    -- Slow entrance, short soft mute. A rapid toggle reverses the same fade.
+    if self.enabled then
+        self.level = math.min(1, self.level + dt / 0.8)
+    else
+        self.level = math.max(0, self.level - dt / 0.18)
+    end
+    if previous ~= self.level then sound.set_gain("#ambient", self.level) end
+    if not self.enabled and self.level == 0 and not self.paused then
+        sound.pause("#ambient", true)
+        self.paused = true
+        print("[MUSIC] paused")
+    end
+end
+
+function final(self)
+    if self.started then sound.stop("#ambient") end
+end
