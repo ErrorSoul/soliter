@@ -1,0 +1,14 @@
+[I18N] язык: en
+
+=== TEST RESULTS ===
+  PASS  G6 ни одна кнопка интерфейса не перекрывает карту
+  PASS  G6 обе коллекции раскладывают слоты одинаково
+  PASS  G6 поле не залезает в рельс, а рельс не залезает в поле
+  PASS  G6 колонка на 12 карт целиком помещается по вертикали
+  PASS  G6 элементы поля не наезжают друг на друга
+  FAIL  G6 клик по игровой кнопке не проваливается в игру  -- EXCEPTION: ./solver/tests/test_layout.lua:298: ./solver/tests/test_layout.lua:288: restart_button: press leaked to the game
+
+5 passed / 1 failed
+
+
+PASS: removing on_input consumption is caught in disposable copy

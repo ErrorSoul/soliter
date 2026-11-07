@@ -51,6 +51,8 @@ local test_modules = {
    "solver.tests.test_save",
    "solver.tests.test_effects_review",
    "solver.tests.test_music",
+   "solver.tests.test_buttons",
+   "solver.tests.test_dragon_motion",
 }
 
 local total_passed = 0

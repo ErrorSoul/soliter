@@ -5,11 +5,11 @@
   "bars": 24,
   "sample_rate": 44100,
   "channels": 2,
-  "peak_dbfs": -5.036239459875991,
-  "rms_dbfs": -17.89191969481361,
+  "peak_dbfs": -7.958800173440752,
+  "rms_dbfs": -19.204364222970568,
   "seam_step": [
-    0.0049211793726681085,
-    0.005410794425771858
+    0.005329554719783788,
+    0.006152171735992231
   ],
   "provenance": "Original deterministic synthesis; no samples; tools/compose-garden.py",
   "score": [
@@ -43,30 +43,30 @@
     },
     {
       "beat": 0.35,
-      "midi": 74,
+      "midi": 62,
       "instrument": "pluck",
-      "gain": 0.13,
+      "gain": 0.075,
       "pan": -0.24
     },
     {
       "beat": 1.75,
-      "midi": 78,
+      "midi": 66,
       "instrument": "pluck",
-      "gain": 0.095,
+      "gain": 0.055,
       "pan": 0.22
     },
     {
       "beat": 2.9,
-      "midi": 76,
+      "midi": 64,
       "instrument": "pluck",
-      "gain": 0.095,
+      "gain": 0.055,
       "pan": 0.05
     },
     {
       "beat": 2.2,
-      "midi": 69,
+      "midi": 57,
       "instrument": "pluck",
-      "gain": 0.047,
+      "gain": 0.03,
       "pan": -0.35
     },
     {
@@ -99,23 +99,23 @@
     },
     {
       "beat": 4.35,
-      "midi": 73,
+      "midi": 61,
       "instrument": "pluck",
-      "gain": 0.13,
+      "gain": 0.075,
       "pan": -0.24
     },
     {
       "beat": 5.75,
-      "midi": 69,
+      "midi": 57,
       "instrument": "pluck",
-      "gain": 0.095,
+      "gain": 0.055,
       "pan": 0.22
     },
     {
       "beat": 6.9,
-      "midi": 74,
+      "midi": 62,
       "instrument": "pluck",
-      "gain": 0.095,
+      "gain": 0.055,
       "pan": 0.05
     },
     {
@@ -148,30 +148,30 @@
     },
     {
       "beat": 8.35,
-      "midi": 71,
+      "midi": 59,
       "instrument": "pluck",
-      "gain": 0.13,
+      "gain": 0.075,
       "pan": -0.24
     },
     {
       "beat": 9.75,
-      "midi": 74,
+      "midi": 62,
       "instrument": "pluck",
-      "gain": 0.095,
+      "gain": 0.055,
       "pan": 0.22
     },
     {
       "beat": 10.9,
-      "midi": 78,
+      "midi": 66,
       "instrument": "pluck",
-      "gain": 0.095,
+      "gain": 0.055,
       "pan": 0.05
     },
     {
       "beat": 10.2,
-      "midi": 66,
+      "midi": 54,
       "instrument": "pluck",
-      "gain": 0.047,
+      "gain": 0.03,
       "pan": -0.35
     },
     {
@@ -204,16 +204,16 @@
     },
     {
       "beat": 12.35,
-      "midi": 76,
+      "midi": 64,
       "instrument": "pluck",
-      "gain": 0.13,
+      "gain": 0.075,
       "pan": -0.24
     },
     {
       "beat": 13.75,
-      "midi": 71,
+      "midi": 59,
       "instrument": "pluck",
-      "gain": 0.095,
+      "gain": 0.055,
       "pan": 0.22
     },
     {
@@ -246,30 +246,30 @@
     },
     {
       "beat": 16.35,
-      "midi": 78,
+      "midi": 66,
       "instrument": "pluck",
-      "gain": 0.13,
+      "gain": 0.075,
       "pan": -0.24
     },
     {
       "beat": 17.75,
-      "midi": 81,
+      "midi": 69,
       "instrument": "pluck",
-      "gain": 0.095,
+      "gain": 0.055,
       "pan": 0.22
     },
     {
       "beat": 18.9,
-      "midi": 76,
+      "midi": 64,
       "instrument": "pluck",
-      "gain": 0.095,
+      "gain": 0.055,
       "pan": 0.05
     },
     {
       "beat": 18.2,
-      "midi": 69,
+      "midi": 57,
       "instrument": "pluck",
-      "gain": 0.047,
+      "gain": 0.03,
       "pan": -0.35
     },
     {
@@ -302,23 +302,23 @@
     },
     {
       "beat": 20.35,
-      "midi": 74,
+      "midi": 62,
       "instrument": "pluck",
-      "gain": 0.13,
+      "gain": 0.075,
       "pan": -0.24
     },
     {
       "beat": 21.75,
-      "midi": 73,
+      "midi": 61,
       "instrument": "pluck",
-      "gain": 0.095,
+      "gain": 0.055,
       "pan": 0.22
     },
     {
       "beat": 22.9,
-      "midi": 69,
+      "midi": 57,
       "instrument": "pluck",
-      "gain": 0.095,
+      "gain": 0.055,
       "pan": 0.05
     },
     {
@@ -351,30 +351,30 @@
     },
     {
       "beat": 24.35,
-      "midi": 71,
+      "midi": 59,
       "instrument": "pluck",
-      "gain": 0.13,
+      "gain": 0.075,
       "pan": -0.24
     },
     {
       "beat": 25.75,
-      "midi": 78,
+      "midi": 66,
       "instrument": "pluck",
-      "gain": 0.095,
+      "gain": 0.055,
       "pan": 0.22
     },
     {
       "beat": 26.9,
-      "midi": 74,
+      "midi": 62,
       "instrument": "pluck",
-      "gain": 0.095,
+      "gain": 0.055,
       "pan": 0.05
     },
     {
       "beat": 26.2,
-      "midi": 66,
+      "midi": 54,
       "instrument": "pluck",
-      "gain": 0.047,
+      "gain": 0.03,
       "pan": -0.35
     },
     {
@@ -407,16 +407,16 @@
     },
     {
       "beat": 28.35,
-      "midi": 76,
+      "midi": 64,
       "instrument": "pluck",
-      "gain": 0.13,
+      "gain": 0.075,
       "pan": -0.24
     },
     {
       "beat": 29.75,
-      "midi": 74,
+      "midi": 62,
       "instrument": "pluck",
-      "gain": 0.095,
+      "gain": 0.055,
       "pan": 0.22
     },
     {
@@ -449,30 +449,30 @@
     },
     {
       "beat": 32.35,
-      "midi": 74,
+      "midi": 62,
       "instrument": "pluck",
-      "gain": 0.13,
+      "gain": 0.075,
       "pan": -0.24
     },
     {
       "beat": 33.75,
-      "midi": 78,
+      "midi": 66,
       "instrument": "pluck",
-      "gain": 0.095,
+      "gain": 0.055,
       "pan": 0.22
     },
     {
       "beat": 34.9,
-      "midi": 76,
+      "midi": 64,
       "instrument": "pluck",
-      "gain": 0.095,
+      "gain": 0.055,
       "pan": 0.05
     },
     {
       "beat": 34.2,
-      "midi": 69,
+      "midi": 57,
       "instrument": "pluck",
-      "gain": 0.047,
+      "gain": 0.03,
       "pan": -0.35
     },
     {
@@ -505,23 +505,23 @@
     },
     {
       "beat": 36.35,
-      "midi": 73,
+      "midi": 61,
       "instrument": "pluck",
-      "gain": 0.13,
+      "gain": 0.075,
       "pan": -0.24
     },
     {
       "beat": 37.75,
-      "midi": 69,
+      "midi": 57,
       "instrument": "pluck",
-      "gain": 0.095,
+      "gain": 0.055,
       "pan": 0.22
     },
     {
       "beat": 38.9,
-      "midi": 74,
+      "midi": 62,
       "instrument": "pluck",
-      "gain": 0.095,
+      "gain": 0.055,
       "pan": 0.05
     },
     {
@@ -554,30 +554,30 @@
     },
     {
       "beat": 40.35,
-      "midi": 71,
+      "midi": 59,
       "instrument": "pluck",
-      "gain": 0.13,
+      "gain": 0.075,
       "pan": -0.24
     },
     {
       "beat": 41.75,
-      "midi": 74,
+      "midi": 62,
       "instrument": "pluck",
-      "gain": 0.095,
+      "gain": 0.055,
       "pan": 0.22
     },
     {
       "beat": 42.9,
-      "midi": 78,
+      "midi": 66,
       "instrument": "pluck",
-      "gain": 0.095,
+      "gain": 0.055,
       "pan": 0.05
     },
     {
       "beat": 42.2,
-      "midi": 66,
+      "midi": 54,
       "instrument": "pluck",
-      "gain": 0.047,
+      "gain": 0.03,
       "pan": -0.35
     },
     {
@@ -610,16 +610,16 @@
     },
     {
       "beat": 44.35,
-      "midi": 76,
+      "midi": 64,
       "instrument": "pluck",
-      "gain": 0.13,
+      "gain": 0.075,
       "pan": -0.24
     },
     {
       "beat": 45.75,
-      "midi": 71,
+      "midi": 59,
       "instrument": "pluck",
-      "gain": 0.095,
+      "gain": 0.055,
       "pan": 0.22
     },
     {
@@ -652,30 +652,30 @@
     },
     {
       "beat": 48.35,
-      "midi": 78,
+      "midi": 66,
       "instrument": "pluck",
-      "gain": 0.13,
+      "gain": 0.075,
       "pan": -0.24
     },
     {
       "beat": 49.75,
-      "midi": 81,
+      "midi": 69,
       "instrument": "pluck",
-      "gain": 0.095,
+      "gain": 0.055,
       "pan": 0.22
     },
     {
       "beat": 50.9,
-      "midi": 76,
+      "midi": 64,
       "instrument": "pluck",
-      "gain": 0.095,
+      "gain": 0.055,
       "pan": 0.05
     },
     {
       "beat": 50.2,
-      "midi": 69,
+      "midi": 57,
       "instrument": "pluck",
-      "gain": 0.047,
+      "gain": 0.03,
       "pan": -0.35
     },
     {
@@ -708,23 +708,23 @@
     },
     {
       "beat": 52.35,
-      "midi": 74,
+      "midi": 62,
       "instrument": "pluck",
-      "gain": 0.13,
+      "gain": 0.075,
       "pan": -0.24
     },
     {
       "beat": 53.75,
-      "midi": 73,
+      "midi": 61,
       "instrument": "pluck",
-      "gain": 0.095,
+      "gain": 0.055,
       "pan": 0.22
     },
     {
       "beat": 54.9,
-      "midi": 69,
+      "midi": 57,
       "instrument": "pluck",
-      "gain": 0.095,
+      "gain": 0.055,
       "pan": 0.05
     },
     {
@@ -757,30 +757,30 @@
     },
     {
       "beat": 56.35,
-      "midi": 71,
+      "midi": 59,
       "instrument": "pluck",
-      "gain": 0.13,
+      "gain": 0.075,
       "pan": -0.24
     },
     {
       "beat": 57.75,
-      "midi": 78,
+      "midi": 66,
       "instrument": "pluck",
-      "gain": 0.095,
+      "gain": 0.055,
       "pan": 0.22
     },
     {
       "beat": 58.9,
-      "midi": 74,
+      "midi": 62,
       "instrument": "pluck",
-      "gain": 0.095,
+      "gain": 0.055,
       "pan": 0.05
     },
     {
       "beat": 58.2,
-      "midi": 66,
+      "midi": 54,
       "instrument": "pluck",
-      "gain": 0.047,
+      "gain": 0.03,
       "pan": -0.35
     },
     {
@@ -813,16 +813,16 @@
     },
     {
       "beat": 60.35,
-      "midi": 76,
+      "midi": 64,
       "instrument": "pluck",
-      "gain": 0.13,
+      "gain": 0.075,
       "pan": -0.24
     },
     {
       "beat": 61.75,
-      "midi": 74,
+      "midi": 62,
       "instrument": "pluck",
-      "gain": 0.095,
+      "gain": 0.055,
       "pan": 0.22
     },
     {
@@ -855,30 +855,30 @@
     },
     {
       "beat": 64.35,
-      "midi": 74,
+      "midi": 62,
       "instrument": "pluck",
-      "gain": 0.13,
+      "gain": 0.075,
       "pan": -0.24
     },
     {
       "beat": 65.75,
-      "midi": 78,
+      "midi": 66,
       "instrument": "pluck",
-      "gain": 0.095,
+      "gain": 0.055,
       "pan": 0.22
     },
     {
       "beat": 66.9,
-      "midi": 76,
+      "midi": 64,
       "instrument": "pluck",
-      "gain": 0.095,
+      "gain": 0.055,
       "pan": 0.05
     },
     {
       "beat": 66.2,
-      "midi": 69,
+      "midi": 57,
       "instrument": "pluck",
-      "gain": 0.047,
+      "gain": 0.03,
       "pan": -0.35
     },
     {
@@ -911,23 +911,23 @@
     },
     {
       "beat": 68.35,
-      "midi": 73,
+      "midi": 61,
       "instrument": "pluck",
-      "gain": 0.13,
+      "gain": 0.075,
       "pan": -0.24
     },
     {
       "beat": 69.75,
-      "midi": 69,
+      "midi": 57,
       "instrument": "pluck",
-      "gain": 0.095,
+      "gain": 0.055,
       "pan": 0.22
     },
     {
       "beat": 70.9,
-      "midi": 74,
+      "midi": 62,
       "instrument": "pluck",
-      "gain": 0.095,
+      "gain": 0.055,
       "pan": 0.05
     },
     {
@@ -960,30 +960,30 @@
     },
     {
       "beat": 72.35,
-      "midi": 71,
+      "midi": 59,
       "instrument": "pluck",
-      "gain": 0.13,
+      "gain": 0.075,
       "pan": -0.24
     },
     {
       "beat": 73.75,
-      "midi": 74,
+      "midi": 62,
       "instrument": "pluck",
-      "gain": 0.095,
+      "gain": 0.055,
       "pan": 0.22
     },
     {
       "beat": 74.9,
-      "midi": 78,
+      "midi": 66,
       "instrument": "pluck",
-      "gain": 0.095,
+      "gain": 0.055,
       "pan": 0.05
     },
     {
       "beat": 74.2,
-      "midi": 66,
+      "midi": 54,
       "instrument": "pluck",
-      "gain": 0.047,
+      "gain": 0.03,
       "pan": -0.35
     },
     {
@@ -1016,16 +1016,16 @@
     },
     {
       "beat": 76.35,
-      "midi": 76,
+      "midi": 64,
       "instrument": "pluck",
-      "gain": 0.13,
+      "gain": 0.075,
       "pan": -0.24
     },
     {
       "beat": 77.75,
-      "midi": 71,
+      "midi": 59,
       "instrument": "pluck",
-      "gain": 0.095,
+      "gain": 0.055,
       "pan": 0.22
     },
     {
@@ -1058,30 +1058,30 @@
     },
     {
       "beat": 80.35,
-      "midi": 78,
+      "midi": 66,
       "instrument": "pluck",
-      "gain": 0.13,
+      "gain": 0.075,
       "pan": -0.24
     },
     {
       "beat": 81.75,
-      "midi": 81,
+      "midi": 69,
       "instrument": "pluck",
-      "gain": 0.095,
+      "gain": 0.055,
       "pan": 0.22
     },
     {
       "beat": 82.9,
-      "midi": 76,
+      "midi": 64,
       "instrument": "pluck",
-      "gain": 0.095,
+      "gain": 0.055,
       "pan": 0.05
     },
     {
       "beat": 82.2,
-      "midi": 69,
+      "midi": 57,
       "instrument": "pluck",
-      "gain": 0.047,
+      "gain": 0.03,
       "pan": -0.35
     },
     {
@@ -1114,23 +1114,23 @@
     },
     {
       "beat": 84.35,
-      "midi": 74,
+      "midi": 62,
       "instrument": "pluck",
-      "gain": 0.13,
+      "gain": 0.075,
       "pan": -0.24
     },
     {
       "beat": 85.75,
-      "midi": 73,
+      "midi": 61,
       "instrument": "pluck",
-      "gain": 0.095,
+      "gain": 0.055,
       "pan": 0.22
     },
     {
       "beat": 86.9,
-      "midi": 69,
+      "midi": 57,
       "instrument": "pluck",
-      "gain": 0.095,
+      "gain": 0.055,
       "pan": 0.05
     },
     {
@@ -1163,30 +1163,30 @@
     },
     {
       "beat": 88.35,
-      "midi": 71,
+      "midi": 59,
       "instrument": "pluck",
-      "gain": 0.13,
+      "gain": 0.075,
       "pan": -0.24
     },
     {
       "beat": 89.75,
-      "midi": 78,
+      "midi": 66,
       "instrument": "pluck",
-      "gain": 0.095,
+      "gain": 0.055,
       "pan": 0.22
     },
     {
       "beat": 90.9,
-      "midi": 74,
+      "midi": 62,
       "instrument": "pluck",
-      "gain": 0.095,
+      "gain": 0.055,
       "pan": 0.05
     },
     {
       "beat": 90.2,
-      "midi": 66,
+      "midi": 54,
       "instrument": "pluck",
-      "gain": 0.047,
+      "gain": 0.03,
       "pan": -0.35
     },
     {
@@ -1219,16 +1219,16 @@
     },
     {
       "beat": 92.35,
-      "midi": 76,
+      "midi": 64,
       "instrument": "pluck",
-      "gain": 0.13,
+      "gain": 0.075,
       "pan": -0.24
     },
     {
       "beat": 93.75,
-      "midi": 74,
+      "midi": 62,
       "instrument": "pluck",
-      "gain": 0.095,
+      "gain": 0.055,
       "pan": 0.22
     }
   ]

@@ -43,6 +43,7 @@ H.test("Review: TUTORIAL, SKIP and PLAY NOW keep the save; RESTART redeals", fun
       msg.clear()
       gui.pick_node = function(n) return n == node end
       on_input(self, hash("touch"), {pressed = true, x = 0, y = 0})
+      on_input(self, hash("touch"), {released = true, x = 0, y = 0})
       local sent = {}
       for _, e in ipairs(msg.log) do
          if e.id == "restart_level" then sent[#sent + 1] = e.data.preserve_save end
@@ -80,6 +81,33 @@ H.test("Review: clearing a hint does not flatten a card held in the hand", funct
    stub.go_props.scale = vmath.vector3(1.1, 1.1, 1)
    on_message(self, hash("unhighlight"), {})
    assert(stub.go_props.scale.x == 1.1, "hint cleanup flattened dragged card")
+   return true
+end)
+
+H.test("Tutorial: focus ring clears on pickup and cannot reappear during drag", function()
+   stub.install()
+   local tint, old_set = nil, go.set
+   go.set = function(url, prop, value)
+      if url == "#hint" and prop == "tint.w" then tint = value end
+      old_set(url, prop, value)
+   end
+   assert(loadfile("main/Scripts/card.script"))()
+   local self = {}; init(self)
+   assert(tint == 0, "focus ring visible on an ordinary card")
+   on_message(self, hash("highlight"), {})
+   assert(tint == 1, "hint failed to show focus ring")
+   on_message(self, hash("unhighlight"), {})
+   assert(tint == 0, "previous hint left its ring behind")
+   on_message(self, hash("highlight"), {})
+   on_message(self, hash("start_drag"), {})
+   assert(tint == 0, "focus ring follows picked-up card")
+   on_message(self, hash("highlight"), {})
+   assert(tint == 0, "hint during drag restored focus ring")
+   on_message(self, hash("drop_failed"), {position=vmath.vector3(65,159,0.03)})
+   stub.flush_anims(8)
+   assert(tint == 1, "rejected move lost the active tutorial hint")
+   on_message(self, hash("unhighlight"), {})
+   assert(tint == 0)
    return true
 end)
 

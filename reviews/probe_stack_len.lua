@@ -7,7 +7,7 @@
 --   A. АНАЛИТИКА  — потолок по правилам (без перебора).
 --   B. СЛУЧАЙНАЯ ИГРА — что реально набегает у обычного игрока.
 --   C. ЛУЧЕВОЙ ПОИСК — целенаправленно строим самую длинную колонку.
---   D. ГЕОМЕТРИЯ  — где карта вылезает за экран при шаге 35 px.
+--   D. ГЕОМЕТРИЯ  — текущий адаптивный шаг из config.lua.
 --
 -- ВАЖНО про модель форс-ходов: настоящая игра (tableau_script.last_card_to_slot)
 -- авто-отправляет в foundation ТОЛЬКО двойку, цветок и дракона-в-счётчик. Она НЕ
@@ -144,25 +144,19 @@ end
 -- ============================================================
 -- D. Геометрия текущей раскладки
 -- ============================================================
-local SLOT_Y, CARD_H, PITCH, SCREEN_H = 299, 150, 35, 540
+-- The vector stub only supplies config's dimensions; layout math is real.
+vmath = { vector3 = function(x, y, z) return {x=x, y=y, z=z} end }
+local config = dofile("main/Scripts/config.lua")
 local function geometry()
-   print("D. ГЕОМЕТРИЯ (slot y=" .. SLOT_Y .. ", карта " .. CARD_H
-         .. " px, шаг " .. PITCH .. " px, экран 0.." .. SCREEN_H .. ")")
-   print("  n | центр посл. | низ  | верх | состояние последней (=хватаемой) карты")
+   local slot_y = 299
+   print("D. ТЕКУЩАЯ ГЕОМЕТРИЯ (config.stack_offset_y, слот y=299)")
+   print("  n | шаг px | низ последней | запас над индексом 18 px")
    for n = 5, 13 do
-      local cy = SLOT_Y - PITCH * (n - 1)
-      local bot, top = cy - CARD_H / 2, cy + CARD_H / 2
-      local st
-      if bot >= 0 then st = "видна целиком"
-      elseif top <= 0 then st = "ПОЛНОСТЬЮ ЗА ЭКРАНОМ — не взять"
-      else st = string.format("обрезана, видно %d px", math.floor(top)) end
-      print(string.format("%3d | %11d | %4d | %4d | %s", n, cy, bot, top, st))
-   end
-   local span = SLOT_Y + CARD_H / 2   -- от верхнего края карты до y=0
-   print(string.format("  Доступная высота под колонку: %d px", span))
-   for _, n in ipairs({ 8, 10, 12, 13 }) do
-      print(string.format("  Чтобы влезло %d карт, шаг должен быть <= %.2f px",
-                          n, (span - CARD_H) / (n - 1)))
+      local pitch = -config.stack_offset_y(n, slot_y)
+      local bottom = slot_y - pitch * (n - 1) - config.CARD_HALF_SIZE.y
+      print(string.format("%3d | %6.2f | %13.2f | %.2f", n, pitch, bottom, pitch - 18))
+      assert(bottom >= config.STACK_BOTTOM_MARGIN - 1e-6, "column clips screen")
+      assert(pitch >= 18, "boxed index overlaps next card")
    end
 end
 

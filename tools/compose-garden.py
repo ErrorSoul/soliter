@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Original 96s ambient loop 'Quiet Garden', no samples or external music.
 
-60 BPM, D major / B minor, 24 bars. Felt-like plucks, sine bell overtones,
+60 BPM, D major / B minor, 24 bars. Low felt-like tones, restrained overtones,
 warm slow pads. Circular mixing carries note and reverb tails over the seam.
 Python standard library + ffmpeg (Vorbis encoder). WAV master in build/music/.
 """
@@ -27,7 +27,7 @@ def main():
         key=(midi,kind)
         if key not in cache:
             freq=440*2**((midi-69)/12)
-            length=8 if kind=='pad' else 5
+            length=8 if kind=='pad' else 6
             voice=array('d')
             for i in range(length*SR):
                 sec=i/SR
@@ -35,8 +35,8 @@ def main():
                     env=math.sin(math.pi*sec/length)**2
                     value=(math.sin(TAU*freq*sec)+.22*math.sin(TAU*2*freq*sec)+.08*math.sin(TAU*3*freq*sec))/1.3
                 else:
-                    env=(1-math.exp(-sec/0.016))*math.exp(-sec/1.15)*(1-sec/length)**2
-                    value=(math.sin(TAU*freq*sec)+.32*math.sin(TAU*2*freq*sec)*math.exp(-sec/0.6)+.12*math.sin(TAU*3*freq*sec)*math.exp(-sec/.25))
+                    env=(1-math.exp(-sec/0.16))*math.exp(-sec/1.8)*(1-sec/length)**2
+                    value=(math.sin(TAU*freq*sec)+.08*math.sin(TAU*2*freq*sec)*math.exp(-sec/0.6)+.015*math.sin(TAU*3*freq*sec)*math.exp(-sec/.25))
                 voice.append(env*value)
             cache[key]=voice
         gl=gain*math.sqrt((1-pan)/2)
@@ -60,9 +60,9 @@ def main():
         for j,pitch in enumerate(phrase):
             # Leave regular breathing spaces; no percussion or high bright ticks.
             if bar%8 in [3,7] and j==2: continue
-            note(start+[.35,1.75,2.9][j],pitch,'pluck',.13 if j==0 else .095,[-.24,.22,.05][j])
+            note(start+[.35,1.75,2.9][j],pitch-12,'pluck',.075 if j==0 else .055,[-.24,.22,.05][j])
         if bar%2==0:
-            note(start+2.2,chord[1]+12,'pluck',.047,-.35)
+            note(start+2.2,chord[1],'pluck',.03,-.35)
     # Circular stereo reflections, each tap uses the dry signal (no runaway feedback).
     dry_l=array('d',left); dry_r=array('d',right)
     for delay,gain in [(.173,.21),(.379,.16),(.617,.12),(.929,.085),(1.387,.055),(2.113,.035)]:
@@ -72,7 +72,7 @@ def main():
             left[i]+=dry_r[src]*gain
             right[i]+=dry_l[src]*gain
     peak=max(max(map(abs,left)),max(map(abs,right)))
-    gain=.56/peak
+    gain=.40/peak
     pcm=array('h')
     for l,r in zip(left,right): pcm.extend((round(l*gain*32767),round(r*gain*32767)))
     master=ROOT/'build/music/quiet-garden.wav'
@@ -84,7 +84,7 @@ def main():
     subprocess.run(['ffmpeg','-v','error','-y','-i',str(master),'-c:a','vorbis','-strict','experimental','-q:a','4',str(out/'quiet-garden.ogg')],check=True)
     rms=math.sqrt(sum((v/32768)**2 for v in pcm)/len(pcm))
     report=dict(title='Quiet Garden',duration_seconds=DURATION,bpm=60,bars=24,
-        sample_rate=SR,channels=2,peak_dbfs=20*math.log10(.56),rms_dbfs=20*math.log10(rms),
+        sample_rate=SR,channels=2,peak_dbfs=20*math.log10(.40),rms_dbfs=20*math.log10(rms),
         seam_step=[abs(left[0]-left[-1])*gain,abs(right[0]-right[-1])*gain],
         provenance='Original deterministic synthesis; no samples; tools/compose-garden.py',score=score)
     (out/'score.json').write_text(json.dumps(report,indent=2)+'\n')

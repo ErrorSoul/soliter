@@ -1,6 +1,7 @@
 -- Generated palette: tools/build-theme.py --theme vivid
 return {
     wildlife = false,
+    compact_indices = true,
     background = {0.023529, 0.239216, 0.207843},
     panel = {0.031373, 0.490196, 0.34902},
     primary = {1.0, 0.823529, 0.243137},

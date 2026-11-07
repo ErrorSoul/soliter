@@ -68,7 +68,11 @@ local function mirror_to_main(self)
 end
 
 function on_message(self, message_id, message, sender)
-   if message_id == hash("check_slot") then
+   if message_id == hash("dragon_hover") then
+      if self.is_occupied and not self.is_blocked and self.card_data then
+         msg.post(self.card_data.id, "dragon_hover")
+      end
+   elseif message_id == hash("check_slot") then
       if self.is_occupied then
          msg.post(sender, "slot_invalid")
       else
@@ -84,6 +88,9 @@ function on_message(self, message_id, message, sender)
       self.current_card = sender
       message.slot_id = go.get_id()
       self.card_data = message.card
+      msg.post(message.card.id, "index_layout", {
+         compact=false, exposed=not (message.complete or self.is_blocked)
+      })
       --go.set_position(go.get_position(), sender)
       if message.animation then
          go.animate(message.card.id, "position", go.PLAYBACK_ONCE_FORWARD, go.get_position() + vmath.vector3(0, 0, 0.2), go.EASING_LINEAR, 0.5, 0.3)

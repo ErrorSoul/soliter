@@ -1683,6 +1683,21 @@ def scenario_tutorialfree(s):
     s.expect(not pulses(TABLEAU_X[2], TABLEAU_TOP_Y),
              "подсвечена посторонняя карта (5_green) — подсветка бьёт мимо хода")
 
+    # The new ring must be visibly golden outside the face, not only scale-pulse.
+    from PIL import Image
+    import io
+    def ring_coverage():
+        edge = Image.open(io.BytesIO(s.patch(TABLEAU_X[1]-46, TABLEAU_TOP_Y-4*CARD_PITCH, 4, 45))).convert("RGB")
+        pixels = list(edge.getdata())
+        return sum(r > 150 and g > 100 and b < 160 and g > b * 1.3 for r,g,b in pixels) / len(pixels)
+    gold = ring_coverage()
+    s.note("highlight", f"golden focus ring edge coverage={gold:.3f}")
+    s.expect(gold > .12, "tutorial card lacks a visible golden focus ring")
+    s.drag_game(TABLEAU_X[1], TABLEAU_TOP_Y-4*CARD_PITCH, 900, 300, "reject hinted card on empty felt")
+    s.wait(1.5, "rejected card returns and hint resumes")
+    s.expect(ring_coverage() > .12, "rejected drop permanently lost tutorial focus ring")
+    s.shot("hint-after-rejected-drop")
+
     # --- тот самый ход, который ломал v2 -------------------------------------
     # 5_green — единственная карта второй колонки, лежит на depth 0.
     s.drag_game(TABLEAU_X[2], TABLEAU_TOP_Y, FREE_CELL[1][0], FREE_CELL[1][1],
@@ -2406,7 +2421,184 @@ def scenario_music(s):
     s.expect(0 <= rms("game muted") < .00001, "game music button failed")
     s.shot("music-muted")
 
-SCENARIOS = {"music": scenario_music, "boot": scenario_boot, "hittest": scenario_hittest, "menus": scenario_menus,
+def scenario_foundationstill(s):
+    """An animal sent to foundation stays still beyond the longest idle interval."""
+    from PIL import Image, ImageChops, ImageStat
+    import io
+    def delta(a,b):
+        d=ImageChops.difference(Image.open(io.BytesIO(a)).convert("RGB"),Image.open(io.BytesIO(b)).convert("RGB"))
+        return sum(ImageStat.Stat(d).mean)/3
+    s.boot()
+    s.click_game(480,155,label="practice")
+    s.wait(3,"deal settles")
+    s.drag_game(65,159,585,457,label="2 red to foundation")
+    s.wait(2,"next red exposed")
+    # With only 2 red placed, tutorial intentionally pulses this destination.
+    # Place 3 as well: the hint now targets a free cell, leaving foundation still.
+    s.drag_game(65,194,585,457,label="3 red to foundation, remove destination hint")
+    s.wait(3,"foundation card settles")
+    s.expect_card_at(585,457,s.brightness(793,299),"3 red landed on foundation")
+    before=s.patch(585,443,34,40)
+    s.shot("foundation-start")
+    peak=0
+    deadline=time.time()+55
+    while time.time()<deadline:
+        s.page.wait_for_timeout(500)
+        peak=max(peak,delta(before,s.patch(585,443,34,40)))
+    s.note("foundation-motion",f"maximum portrait pixel difference over 55s: {peak:.5f}")
+    s.expect(peak<.1,"completed foundation card animated")
+    s.shot("foundation-still")
+
+
+def scenario_livingcards(s):
+    """Real menu motion and portraits under a stationary held pointer (mouse/touch)."""
+    from PIL import Image, ImageChops, ImageStat
+    import io
+    def delta(a,b):
+        diff=ImageChops.difference(Image.open(io.BytesIO(a)).convert("RGB"),Image.open(io.BytesIO(b)).convert("RGB"))
+        return sum(ImageStat.Stat(diff).mean)/3
+    s.boot()
+    ribbons=s.patch(180,300,140,170)
+    s.shot("menu-before")
+    s.wait(3,"menu ribbons drift")
+    s.expect(delta(ribbons,s.patch(180,300,140,170))>.15,"menu side decoration is static")
+    s.shot("menu-moving")
+    s.click_game(480,155,label="practice")
+    s.wait(3,"cards settle")
+    for label,cx,cy in [("orc",169,299),("dragon",273,299),("fox",65,159),("owl",65,264)]:
+        if label=="owl":
+            s.drag_game(65,159,585,457,label="2 red to foundation")
+            s.wait(2,"next red exposed")
+            s.drag_game(65,194,585,457,label="3 red to foundation")
+            s.wait(2,"green exposed")
+            s.drag_game(65,229,65,457,label="green to free cell")
+            s.wait(2,"owl exposed")
+        x,y=s._map(cx,cy)
+        hx,hy=s._map(700,320)
+        if s.is_mobile:
+            s.touch("touchStart",x,y)
+        else:
+            s.page.mouse.move(x,y)
+            s.page.wait_for_timeout(100)
+            s.page.mouse.down()
+        s.page.wait_for_timeout(HOLD_MS)
+        for step in range(1,11):
+            mx,my=x+(hx-x)*step/10,y+(hy-y)*step/10
+            if s.is_mobile: s.touch("touchMove",mx,my)
+            else: s.page.mouse.move(mx,my)
+            s.page.wait_for_timeout(FRAME_MS*2)
+        s.wait(1.5,"held card settles before sampling")
+        body=lambda:s.patch(701,305,30,35)
+        rank=lambda:s.patch(670,380,9,9)
+        before,number=body(),rank()
+        changed=False
+        deadline=time.time()+45
+        while time.time()<deadline:
+            s.page.wait_for_timeout(250)
+            if delta(before,body())>.6:
+                changed=True
+                break
+        s.expect(changed,label+" portrait never moves while held")
+        s.expect(delta(number,rank())<.1,label+" motion changed held index")
+        s.shot(label+"-held-animation")
+        # Reject outside all slots, then allow the existing return animation.
+        ox,oy=s._map(900,330)
+        if s.is_mobile:
+            s.touch("touchMove",ox,oy); s.page.wait_for_timeout(HOLD_MS); s.touch("touchEnd")
+        else:
+            s.page.mouse.move(ox,oy); s.page.wait_for_timeout(HOLD_MS); s.page.mouse.up()
+        s.wait(2,"rejected drop restores portrait")
+    s.shot("cards-restored")
+
+
+def scenario_dragonlife(s):
+    """Real card pixels: only illustration animates, then settles; idle works on touch."""
+    s.boot()
+    s.click_game(480,155,label="practice for a known exposed dragon")
+    s.wait(3,"practice settles")
+    s.shot("slots-and-dragons")
+    body=lambda:s.patch(273,285,34,40)
+    rank=lambda:s.patch(245,356,12,12)
+    from PIL import Image, ImageChops, ImageStat
+    import io
+    def delta(a,b):
+        diff=ImageChops.difference(Image.open(io.BytesIO(a)).convert("RGB"),Image.open(io.BytesIO(b)).convert("RGB"))
+        return sum(ImageStat.Stat(diff).mean)/3
+    baseline, number=body(),rank()
+    if not s.is_mobile:
+        x,y=s._map(273,299)
+        s.page.mouse.move(x,y)
+        s.wait(.6,"hover response")
+        s.expect(delta(body(),baseline)>.6,"hover did not animate dragon portrait")
+        s.expect(delta(rank(),number)<.1,"dragon animation moved or repainted rank")
+        s.shot("hover-breath")
+        x,y=s._map(850,350)
+        s.page.mouse.move(x,y)
+        s.wait(2.6,"hover settles")
+        s.expect(delta(body(),baseline)<.1,"dragon did not return to original illustration")
+    # No more input: a rare spontaneous animation must occur within its interval.
+    found=False
+    # SwiftShader + high-DPI capture on Steam Deck can advance game time much
+    # slower than wall time. Unit tests bound the simulated interval; here we
+    # still require real changed pixels, with a bounded slow-render allowance.
+    started=time.time()
+    samples=0
+    deadline=started+120
+    while time.time()<deadline:
+        s.page.wait_for_timeout(300)
+        samples+=1
+        if delta(body(),baseline)>.6:
+            found=True
+            break
+    s.note("dragon-timing",f"idle observed={found}, wall seconds={time.time()-started:.1f}, samples={samples}")
+    s.expect(found,"exposed dragon never performs its rare idle animation")
+    s.expect(delta(rank(),number)<.1,"idle animation changed the card number")
+    s.shot("idle-breath")
+    s.drag_game(273,299,65,457,label="pick up animated dragon into free cell")
+    s.wait(1.5,"dragon lands")
+    s.expect_card_at(65,457,s.brightness(273,299),"dragon remains playable")
+    s.shot("dragon-in-cell")
+
+
+def scenario_buttons(s):
+    """Shared button: visible press, release-outside cancellation, then one click.
+
+    Uses touch on --mobile and mouse otherwise. No game action may fire on down.
+    """
+    s.boot()
+    s.shot("start")
+    before = s.patch(480, 230, 145, 33)
+    x, y = s._map(480, 230)
+    if s.is_mobile:
+        s.touch("touchStart", x, y)
+    else:
+        s.page.mouse.move(x, y)
+        s.page.mouse.down()
+    s.wait(.35, "button held")
+    s.shot("pressed")
+    s.expect(s.patch(480, 230, 145, 33) != before, "button has no visible press animation")
+    s.expect(not s.logs_matching(r"I am MAIN SCRIPT"), "PLAY fired on press")
+    ox, oy = s._map(700, 230)
+    if s.is_mobile:
+        s.touch("touchMove", ox, oy)
+        s.page.wait_for_timeout(150)
+        s.touch("touchEnd")
+    else:
+        s.page.mouse.move(ox, oy)
+        s.page.wait_for_timeout(150)
+        s.page.mouse.up()
+    s.wait(.4, "cancel settles")
+    s.shot("cancelled")
+    s.expect(not s.logs_matching(r"I am MAIN SCRIPT"), "release outside started game")
+    s.expect(s.patch(480, 230, 145, 33) == before, "cancel did not restore button")
+    s.click_game(617, 230, label="PLAY near right edge: hit area must not shrink")
+    s.expect(s.wait_for_log(r"I am MAIN SCRIPT", 20), "edge click did not load game")
+    s.wait(2.5, "deal settles")
+    s.expect(len([e for e in s.logs_matching(r"I am MAIN SCRIPT") if e["kind"] == "log"]) == 1, "one click must load one level")
+    s.shot("game")
+
+
+SCENARIOS = {"foundationstill": scenario_foundationstill, "livingcards": scenario_livingcards, "dragonlife": scenario_dragonlife, "buttons": scenario_buttons, "music": scenario_music, "boot": scenario_boot, "hittest": scenario_hittest, "menus": scenario_menus,
              "dragz": scenario_dragz, "regrab": scenario_regrab,
              "guilock": scenario_guilock, "dragonrestart": scenario_dragonrestart,
              "celldrain": scenario_celldrain, "o2sweep": scenario_o2sweep,

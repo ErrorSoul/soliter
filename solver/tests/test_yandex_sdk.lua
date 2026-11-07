@@ -217,6 +217,7 @@ local function fake_gui()
       set_layer = function() end,
       set_inherit_alpha = function() end,
       set_rotation = function() end,
+      play_flipbook = function() end,
    }
    return g
 end

@@ -1,4 +1,6 @@
 local sfx = require("main.Scripts.sfx")
+local dragon_motion = require("main.Scripts.dragon_motion")
+local theme = require("main.Scripts.theme")
 local config = require("main.Scripts.config")
 
 function init(self)
@@ -8,10 +10,14 @@ function init(self)
    self.is_face_up = false -- Видна ли карта лицом вверх
    self.is_dragon = false  -- Это дракон?
    self.is_flower = false  -- Это цветок?
+   self.motion = dragon_motion.new(tostring(go.get_id()))
+   go.set("#portrait", "tint.w", 0)
+   self.exposed = true
    self.flying = false
    self.owner = nil
 
    self.is_highlighted = false
+   go.set("#hint", "tint.w", 0)
    -- Сохраняем начальный цвет спрайта
    self.normal_tint = vmath.vector4(1, 1, 1, 1)
    go.set("#shadow", "tint", vmath.vector4(0, 0, 0, 0))
@@ -39,6 +45,14 @@ function set_card(self, value, suit, is_dragon, is_flower, owner)
 
 end
 
+local function index_layout(self, compact)
+   if not theme.compact_indices or not self.sprite_id then return end
+   dragon_motion.stop(self.motion)
+   go.set("#portrait", "tint.w", 0)
+   self.compact_index = compact
+   msg.post("#sprite", "play_animation", {id = hash(self.sprite_id .. (compact and "_compact" or ""))})
+end
+
 function is_correct_card(self, selected_card)
    --pprint('selected', selected_card)
    if self.is_flower or self.is_dragon then
@@ -52,11 +66,55 @@ function is_correct_card(self, selected_card)
    end
 end
 
+local function dragon_eligible(self)
+   return theme.compact_indices and not self.is_flower and self.exposed and
+       not self.compact_index and (self.is_dragging or not self.is_highlighted) and not self.collected
+end
+
+local function stop_dragon(self)
+   go.set("#portrait", "tint.w", 0)
+   if dragon_motion.stop(self.motion) and self.sprite_id then
+      msg.post("#sprite", "play_animation", {id=hash(self.sprite_id .. (self.compact_index and "_compact" or ""))})
+   end
+end
+
+function update(self, dt)
+   local frame=dragon_motion.update(self.motion,dt,dragon_eligible(self),self.is_dragging)
+   if frame and self.sprite_id then
+      if frame==0 or self.is_dragon then
+         go.set("#portrait", "tint.w", 0)
+         local name=frame==0 and self.sprite_id .. (self.compact_index and "_compact" or "")
+             or self.sprite_id .. "_motion_" .. frame
+         msg.post("#sprite", "play_animation", {id=hash(name)})
+      else
+         msg.post("#sprite", "play_animation", {id=hash(self.sprite_id .. "_empty")})
+         msg.post("#portrait", "play_animation", {id=hash("animal_" .. self.suit .. "_motion_" .. frame)})
+         -- Match pickup/glint tint so entering a shared frame does not dim the art.
+         go.set("#portrait", "tint", go.get("#sprite", "tint"))
+      end
+   end
+end
+
+local function show_card_hint(self)
+      go.cancel_animations("#sprite", "tint")
+      -- The border carries the emphasis; artwork and numbers retain their colors.
+      go.set("#sprite", "tint", self.normal_tint)
+      go.cancel_animations("#hint", "tint.w")
+      go.set("#hint", "tint.w", 1)
+      go.animate("#hint", "tint.w", go.PLAYBACK_LOOP_PINGPONG,
+          0.55, go.EASING_INSINE, 0.7)
+      go.cancel_animations(".", "scale")
+      go.animate(".", "scale", go.PLAYBACK_LOOP_PINGPONG,
+          vmath.vector3(1.025, 1.025, 1), go.EASING_INSINE, 0.7)
+end
+
 -- Возврат карты в «спокойный» вид. Идемпотентна и не зависит от того, какой
 -- именно эффект был на карте: любой путь окончания драга обязан её звать,
 -- иначе карта остаётся повёрнутой/сжатой навсегда (сообщение drop_* может и не
 -- прийти — см. F10: драг, начатый в окне 1.5с до dragons_collected).
 function reset_card_fx(settle)
+   go.cancel_animations("#hint", "tint.w")
+   go.set("#hint", "tint.w", 0)
    go.cancel_animations(".", "scale")
    go.cancel_animations("#sprite", "tint")
    go.cancel_animations(".", "euler.z")
@@ -76,8 +134,15 @@ end
 function on_message(self, message_id, message, sender)
 
 
-   if message_id == hash("start_drag") then
+   if message_id == hash("index_layout") then
+      self.exposed = message.exposed ~= false
+      index_layout(self, message.compact == true)
+   elseif message_id == hash("dragon_hover") then
+      if dragon_eligible(self) then dragon_motion.start(self.motion) end
+   elseif message_id == hash("start_drag") then
+      stop_dragon(self)
       self.is_dragging = true
+      if self.motion then dragon_motion.hold(self.motion) end
       -- Новый захват отменяет ВСЁ прежнее движение карты. Иначе перезахват
       -- посреди покачивания (оно идёт по position.x после доехавшего возврата)
       -- оставил бы цепочку живой: `go.set_position` анимацию не отменяет
@@ -162,6 +227,9 @@ function on_message(self, message_id, message, sender)
       end
 
    elseif message_id == hash("drop_success") then
+      self.exposed = true
+      self.collected = message.complete == true
+      index_layout(self, false)
       self.is_dragging = false
       if message.animation then
          sfx.flower_auto()
@@ -202,6 +270,7 @@ function on_message(self, message_id, message, sender)
                   vmath.vector3(1, 1, 1), go.EASING_OUTSINE, 0.16)
           end)
    elseif message_id == hash("drop_failed") then
+      stop_dragon(self)
       self.is_dragging = false
       sfx.card_error()
       go.set("#sprite", "tint", vmath.vector4(1, 1, 1, 1))
@@ -246,6 +315,9 @@ function on_message(self, message_id, message, sender)
                                                      -- Найдено вторым кругом ревью grok-4.5.
                                                      msg.post(self.owner, "relayout",
                                                               { id = go.get_id() })
+                                                     if self.is_highlighted and not self.is_dragging then
+                                                         show_card_hint(self)
+                                                     end
                                                  end)
                                          end)
                                  end)
@@ -266,15 +338,13 @@ function on_message(self, message_id, message, sender)
    end
 
    if message_id == hash("highlight") then
+      stop_dragon(self)
       self.is_highlighted = true
       if self.is_dragging then return end
-      go.cancel_animations("#sprite", "tint")
-      -- Pulsing glow: bright yellow-white tint
-      go.set("#sprite", "tint", vmath.vector4(1.5, 1.4, 1.0, 1))
-      go.cancel_animations(".", "scale")
-      go.animate(".", "scale", go.PLAYBACK_LOOP_PINGPONG,
-          vmath.vector3(1.06, 1.06, 1), go.EASING_INSINE, 0.5)
+      show_card_hint(self)
    elseif message_id == hash("unhighlight") then
+      go.cancel_animations("#hint", "tint.w")
+      go.set("#hint", "tint.w", 0)
       self.is_highlighted = false
       if self.is_dragging then return end
       go.cancel_animations("#sprite", "tint")

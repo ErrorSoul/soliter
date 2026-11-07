@@ -20,6 +20,9 @@ function on_message(self, message_id, message, sender)
          msg.post(sender, "slot_invalid")
       end
    elseif message_id == hash("occupy_slot") then
+      -- Foundations are completed cards, including restored and later covered ranks.
+      -- The owner disables portrait motion for both manual and automatic arrivals.
+      msg.post(message.card.id, "index_layout", {compact=false, exposed=false})
       self.empty = false
       self.last_card = message.card
       self.card_count = self.card_count + 1

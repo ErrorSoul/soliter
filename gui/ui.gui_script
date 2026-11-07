@@ -1,7 +1,9 @@
+local menu_motion = require("main.Scripts.menu_motion")
 local tutorial_state = require("main.Scripts.tutorial_state")
 local i18n = require("main.Scripts.i18n")
 local sfx = require("main.Scripts.sfx")
 local celebration = require("main.Scripts.celebration")
+local button = require("main.Scripts.button")
 local theme = require("main.Scripts.theme")
 
 local function theme_color(name, alpha)
@@ -104,9 +106,10 @@ function init(self)
     gui.set_enabled(gui.get_node("tutorial_overlay"), false)
     -- Стартовый экран включён по умолчанию
     self.game_started = false
+    self.buttons = {}
 end
 
-function on_input(self, action_id, action)
+local function activate(self, action_id, action)
     if action_id == hash("touch") and action.pressed then
         if gui.pick_node(gui.get_node("music_button"), action.x, action.y) then
             music_enabled = not music_enabled
@@ -228,7 +231,39 @@ function on_input(self, action_id, action)
     end
 end
 
+local function active_buttons(self)
+    local ids = {"music_button"}
+    if gui.is_enabled(gui.get_node("victory_overlay")) then
+        ids[#ids+1] = "victory_restart"
+        ids[#ids+1] = "victory_menu_button"
+    elseif not self.game_started then
+        ids[#ids+1] = "play_button"
+        ids[#ids+1] = "start_tutorial_button"
+    elseif tutorial_state.is_tutorial then
+        ids[#ids+1] = "tutorial_skip_btn"
+    else
+        ids[#ids+1] = "restart_button"
+        ids[#ids+1] = "tutorial_button"
+    end
+    return ids
+end
+
+function on_input(self, action_id, action)
+    if action_id ~= hash("touch") then return end
+    local clicked, consumed = button.input(self.buttons, action, active_buttons(self))
+    if clicked then
+        -- Reuse game actions only after the common button has accepted release.
+        activate(self, action_id, {pressed=true, x=action.x, y=action.y})
+    elseif action.pressed and not consumed then
+        msg.post("/music#controller", "music_state", {enabled=music_enabled})
+    end
+    if consumed then return true end
+    -- Modal screens also consume empty-space gestures.
+    if not self.game_started or gui.is_enabled(gui.get_node("victory_overlay")) then return true end
+end
+
 function update(self, dt)
+    menu_motion.update(self, dt)
     celebration.update(self, dt)
     -- Poll shared state (cross-collection workaround: msg.post can't reach UI from proxied collection)
     if tutorial_state.ui_dirty then
@@ -288,6 +323,7 @@ function update(self, dt)
 end
 
 function final(self)
+    button.cancel(self.buttons or {})
     celebration.clear(self)
 end
 
