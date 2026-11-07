@@ -1,0 +1,12 @@
+{
+  "base": "5cb671dc73f328de1a09265f72f2f7ea9a6fd5d2",
+  "candidate": "25068c871efb39ffa79fc213b661c4790c48a7a0",
+  "prompt_sha256": "bbd6c8d098ed346feaa84f4aa7eb14d1d4826a2aef4076c1f2cdc59fbf8de1e7",
+  "prompt_bytes": 320091,
+  "owner_authorized_merge": true,
+  "owner_authorized_xai_transfer": true,
+  "excluded_owner_work": "plans/card-redesign-wip/",
+  "advisor_verdict": "APPROVE",
+  "grok_verdict": "APPROVE",
+  "grok_stop_reason": "end_turn"
+}
