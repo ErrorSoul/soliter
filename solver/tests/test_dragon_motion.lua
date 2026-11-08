@@ -130,8 +130,9 @@ H.test("Foundation: landed and restored cards stay still, including covered rank
 end)
 
 -- Owner decision 2026-11-06: while a card is held, a finished cycle repeats after
--- 2-6 s; an idle portrait waits 18-32 s and keeps a 7 s hover cooldown.
-H.test("Portrait repeat timing: 2-6 s while held, 18-32 s idle",function()
+-- 2-6 s. Idle is only documented as "rare" (INDEX), so no idle numbers are pinned
+-- here: the idle repeat just has to be longer than any held repeat.
+H.test("Portrait repeat timing: 2-6 s while held, rarer when idle",function()
     local function finish_cycle(held)
         local lo,hi=math.huge,-math.huge
         for i=1,30 do
@@ -143,19 +144,48 @@ H.test("Portrait repeat timing: 2-6 s while held, 18-32 s idle",function()
             end
             assert(done,"cycle never finished")
             assert(not s.age,"finished cycle still running")
-            lo=math.min(lo,s.wait); hi=math.max(hi,s.wait)
-            if held then
-                assert(s.cooldown==0,"held repeat kept the idle cooldown")
-            else
-                assert(s.cooldown==7,"idle cycle lost its 7 s cooldown")
-            end
+            -- A leftover cooldown would hold the next start past the 2-6 s wait.
+            local next_start=math.max(s.wait,s.cooldown)
+            lo=math.min(lo,next_start); hi=math.max(hi,next_start)
         end
         return lo,hi
     end
     local lo,hi=finish_cycle(true)
     assert(lo>=2 and hi<=6,("held repeat outside 2-6 s: %.2f..%.2f"):format(lo,hi))
-    lo,hi=finish_cycle(false)
-    assert(lo>=18 and hi<=32,("idle repeat outside 18-32 s: %.2f..%.2f"):format(lo,hi))
+    local idle_lo=finish_cycle(false)
+    assert(idle_lo>6,("idle repeat not rarer than a held one: %.2f s"):format(idle_lo))
+    return true
+end)
+
+-- The same rule through the real card: card.script must tell the timing module
+-- that the card is held (grok-4.7 review 2026-11-08: passing false there stayed
+-- green, because the module test above sets `held` itself).
+H.test("Held card: the next portrait cycle starts 2-6 s after the previous one",function()
+    local stub=require("solver.tests.defold_stub")
+    stub.install()
+    assert(loadfile("main/Scripts/card.script"))()
+    local self={}; init(self)
+    on_message(self,hash("set_card"),{data={value=7,suit="red"},slot_id="column"})
+    on_message(self,hash("start_drag"),{})
+    local t,started,ended,restarted=0,nil,nil,nil
+    for _=1,250 do
+        msg.clear(); update(self,.1); t=t+.1
+        for _,m in ipairs(msg.log) do
+            if m.id=="play_animation" then
+                local id=tostring(m.data.id)
+                if id:match("^animal_red_motion_") then
+                    if not started then started=t elseif ended and not restarted then restarted=t end
+                elseif started and not ended and id=="7_red" then
+                    ended=t   -- frame 0 restores the still face
+                end
+            end
+        end
+        if restarted then break end
+    end
+    assert(started and ended,"held card never finished a portrait cycle")
+    assert(restarted,"held card did not start a second cycle within 25 s")
+    local gap=restarted-ended
+    assert(gap>=1.9 and gap<=6.15,("held repeat gap %.2f s outside 2-6 s"):format(gap))
     return true
 end)
 
@@ -256,20 +286,30 @@ H.test("Collected dragons stay still: free cell contract, card contract, whole p
     assert(not animated(collected),"card: collected dragon animates when reported exposed")
 
     -- Whole path: the card's landing message reaches the real free cell, and the
-    -- cell's reply reaches the card.
+    -- cell's reply reaches the card. Both hops are asserted, not only the outcome
+    -- (grok-4.7 review 2026-11-08: the card's own `collected` kept the outcome
+    -- green even with the occupy_slot post deleted).
     local real=dragon(); land(real,true)
     local posted={}
     for _,m in ipairs(msg.log) do posted[#posted+1]=m end
     local cell={is_occupied=false,is_blocked=false,cursor="cursor",slot_id="free_slot1",dragon_button_trace=trace}
+    local told_cell,told_card=false,false
     for _,m in ipairs(posted) do
-        if m.id=="occupy_slot" then
+        if m.id=="occupy_slot" and m.to=="free_slot1" then
+            told_cell=true
             msg.clear()
             cell_message(cell,hash("occupy_slot"),m.data,"d1")
             for _,r in ipairs(msg.log) do
-                if r.to=="d1" then card_message(real,hash(r.id),r.data or {}) end
+                if r.to=="d1" then
+                    if r.id=="index_layout" then told_card=true end
+                    card_message(real,hash(r.id),r.data or {})
+                end
             end
         end
     end
+    assert(told_cell,"landing card never sent occupy_slot to its free cell")
+    assert(told_card,"free cell never answered the card with index_layout")
+    assert(real.exposed==false,"sealed dragon still marked exposed after the cell's reply")
     assert(not animated(real),"collected dragon in a sealed cell animates")
     return true
 end)
