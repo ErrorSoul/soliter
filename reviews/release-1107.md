@@ -10,6 +10,9 @@ headless Chromium / SwiftShader, viewport 960×540, DPR 1.
 
 ## Итог
 
+> Актуальный итог после правок 2026-11-08 — **11/11 с COI и 11/11 без COI**,
+> см. «Дополнение 2026-11-08». Ниже — итог от 2026-11-07.
+
 **16/16 итоговых проверок PASS**: по 8 сценариев с COI и без COI — music,
 boot, hittest, fullscreen, debugkeys, yasdk, tutorialsave, pickupfx.
 Во всех итоговых отчётах 0 fatal / 0 failures.
@@ -77,8 +80,10 @@ Lua заново не запускался: Lua-код не менялся, пр
 
 Правки по ruthless-ревью работы Codex от 2026-11-07 (пункты P1–P5). Код игры
 не менялся. Бандлы те же, что у ревью (`efa3587`, release `cde4da25…` /
-debug `1f7c033a…`, мутант `m-flag`), харнесс — `tools/browser-test.py` этого коммита
-(sha256 `737680a0cac286e9…`). Steam Deck, браузер по одному. Сводка 32 прогонов —
+debug `1f7c033a…`, мутанты `m-flag` и `m-luaerr-rel`), харнесс — `tools/browser-test.py`
+коммита `bd3ec34` (sha256 `737680a0cac286e9…`). Бандлы собраны ревью из экспорта
+`efa3587`; сборки bob недетерминированы, поэтому их связь с коммитом держится на
+исходнике, а не на хэше. Steam Deck, браузер по одному. Сводка 35 прогонов —
 [fix-1108/summary.json](release-1107/fix-1108/summary.json).
 
 **Новый release-оракул `debugkeys`** (P1, P2):
@@ -99,6 +104,14 @@ debug `1f7c033a…`, мутант `m-flag`), харнесс — `tools/browser-t
 | Release без COI, 11 сценариев | **11/11 PASS**, 0 fatal, `ShenzenSolitare.wasm` |
 | Отрицательный контроль: debug-бандл под `--release` ×6 | 6/6 FAIL по Space **и** по R |
 | Мутант release с `debug_flags.enabled = true` ×2 | 2/2 FAIL по Space и по R |
+
+**Ловит ли расширенная матрица ошибку Lua.** Release-мутант ревью `m-luaerr-rel`
+(`error()` в каждом `update` портрета карты): `livingcards` FAIL («portrait never
+moves while held»), `dragonlife` FAIL («hover did not animate»), `foundationstill`
+PASS. Во всех трёх 0 fatal. `foundationstill` проверяет неподвижность, а
+сломанный кадр как раз всё останавливает, поэтому его зелень здесь ожидаема.
+Прежние 8 сценариев эту ошибку не видели: у ревью `hittest` и `tutorialsave`
+были зелёными.
 
 **Сколько раз виден R.** В 6 отрицательных контролях реплей решил раздачу
 каждый раз и за 4 с выполнил по 7 ходов (первый ход: в ячейку ×4, в основание ×2).
