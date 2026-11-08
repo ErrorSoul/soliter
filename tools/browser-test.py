@@ -861,50 +861,72 @@ def scenario_debugkeys(s):
         return
 
     # ---- release: судим по столу, а не по логам ----
-    # The first tableau row's top strip contains fixed indices and frames.
-    # Portraits below it now move at idle: comparing the full board falsely
-    # reports a redeal when a random animal animation starts. A real Space
-    # redeal changes this row. --release can also enforce this oracle on a
-    # debug bundle as a negative control (live Space must fail).
-    board = (480, 360, 380, 12)
-    before_play = s.patch(*board)
+    # Два неподвижных участка стола (портреты под ними с 2026-11-06 живут сами,
+    # поэтому весь стол сравнивать нельзя — анимация читалась как пересдача):
+    #   strip — верхняя полоса первой строки всех восьми колонок (индексы и рамки);
+    #           пересдача её меняет. С 2026-11-08 полоса начинается от x=20, чтобы
+    #           колонка 1 тоже входила (раньше x=100 её отрезал).
+    #   cells — ряд свободных ячеек. Сама игра туда ничего не кладёт: только ввод
+    #           игрока, реплей R и кнопка драконов. Реплей ходит в низ колонок, и
+    #           одна полоса первой строки его почти не видела (ревью 2026-11-07:
+    #           2 из 5 прогонов, где реплей реально ходил); первым ходом он уводил
+    #           карту в ячейку во всех пяти.
+    strip = (429, 360, 409, 12)
+    cells = (169, 457, 149, 60)
+
+    def table():
+        return (s.patch(*strip), s.patch(*cells))
+
+    before_play = table()
     s.click_game(*PLAY_BUTTON, label="PLAY")
     s.wait(4, "раздача осела")
-    dealt = s.patch(*board)
+    dealt = table()
     # Контроль: если PLAY не сработал, дальше «ничего не изменилось» доказывало
     # бы только то, что мы смотрим на пустой экран.
-    s.expect(dealt != before_play, "release: PLAY не разложил стол — сравнивать нечего")
+    s.expect(dealt[0] != before_play[0], "release: PLAY не разложил стол — сравнивать нечего")
 
     s.wait(3, "стол стоит без ввода")
-    idle = s.patch(*board)
+    idle = table()
     s.expect(idle == dealt, "release: стол меняется сам по себе — пиксельная проверка тут не судья")
 
-    # ⚠ ГРАНИЦА МЕТОДА, уточнена ревью блока I. В release движок молчит, поэтому
-    # судить можно только по столу — и по столу видно не всё:
-    #   S  — не двигает карты вообще (только считает и печатает), значит живую S
-    #        от мёртвой здесь не отличить НИКОГДА;
-    #   R  — двигает, но при неразрешимой в бюджете раздаче debug_replay выходит
-    #        сразу, ничего не тронув. То есть «R мёртв» иногда ложная зелень
-    #        (бюджет реплея 40k; на сидах 1..40 около 12% раздач не решаются).
-    #   Space — пересдаёт всегда. Это и есть настоящий различитель флага в
-    #        release; мутация M.enabled=true ловится именно им (и, когда повезёт
-    #        с раздачей, ещё и R).
-    # Все три проверки оставлены: лишняя не мешает, а Space держит вердикт.
+    # Каждая клавиша сравнивается с состоянием стола ПРЯМО ПЕРЕД ней, и Space идёт
+    # первым. Прежний порядок S → R → Space сравнивал Space с состоянием до R: на
+    # живом R отрицательный контроль падал по Space при любом его поведении
+    # (ревью 2026-11-07, P2). Теперь Space изолирован в каждом прогоне.
+    #
+    # ⚠ ГРАНИЦА МЕТОДА. В release движок молчит, поэтому судить можно только по
+    # столу, и по столу видно не всё:
+    #   Space — пересдаёт всегда. Это настоящий различитель флага в release.
+    #   R  — двигает карты, но на раздаче, которую реплей не решает в своём
+    #        бюджете, выходит, ничего не тронув ([REPLAY] timeout). Тогда живой R
+    #        отсюда не виден. Частота замерена на debug-бандле под --release
+    #        (reviews/release-1107.md, «Дополнение 2026-11-08»).
+    #   S  — не двигает карты вообще (только считает и печатает), живую S от
+    #        мёртвой здесь не отличить НИКОГДА.
+    s.key("Space", "restart")
+    s.wait(4, "пересдача успела бы случиться")
+    after_space = table()
+    space_live = after_space != idle
+    s.expect(not space_live, "release: пробел всё ещё перезапускает партию")
+    if space_live:
+        s.wait(3, "новая раздача оседает")
+    base = table()
+    s.wait(2, "стол перед S стоит")
+    s.expect(table() == base, "release: стол не успокоился перед S — дальше сравнивать нечего")
+
     s.key("s", "solver")
     s.wait(3, "солвер успел бы отыграть")
-    after_s = s.patch(*board)
-    s.expect(after_s == idle, "release: клавиша S всё ещё что-то делает со столом")
+    after_s = table()
+    s.expect(after_s == base, "release: клавиша S всё ещё что-то делает со столом")
 
     s.key("r", "replay")
     s.wait(4, "реплей успел бы повести карты")
-    after_r = s.patch(*board)
-    s.expect(after_r == idle, "release: клавиша R всё ещё отдаёт партию автоигроку")
-
-    s.key("Space", "restart")
-    s.wait(4, "пересдача успела бы случиться")
-    after_space = s.patch(*board)
-    s.expect(after_space == idle, "release: пробел всё ещё перезапускает партию")
-    s.note("keys", "release: проверены неподвижные индексы после S/R/Space; итог — в failures")
+    after_r = table()
+    s.expect(after_r == after_s, "release: клавиша R всё ещё отдаёт партию автоигроку")
+    s.note("keys", f"release: Space→{'стол изменился' if space_live else 'стол тот же'}, "
+                   f"S→{'изменился' if after_s != base else 'тот же'}, "
+                   f"R→{'изменился' if after_r != after_s else 'тот же'} "
+                   f"(полоса индексов + свободные ячейки)")
 
 
 def scenario_audiobg(s):
@@ -2621,8 +2643,12 @@ SCENARIOS = {"foundationstill": scenario_foundationstill, "livingcards": scenari
 # Capability restrictions live next to the registry. A new ordinary scenario
 # automatically joins the debug batch; release support must be explicit.
 FIXTURE_SCENARIOS = frozenset({"dragz", "dragonrestart", "celldrain", "o2sweep"})
+# Release prints nothing, so "0 fatal" cannot reveal a Lua runtime error there.
+# Only a pixel oracle on the broken path can; the animation scenarios cover the
+# per-frame card code that the original eight never watch (review 2026-11-07, P5).
 RELEASE_SCENARIOS = frozenset({"music", "boot", "hittest", "fullscreen", "debugkeys",
-                               "yasdk", "tutorialsave", "pickupfx"})
+                               "yasdk", "tutorialsave", "pickupfx",
+                               "livingcards", "foundationstill", "dragonlife"})
 
 
 def batch_scenarios(release=False):
