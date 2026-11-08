@@ -1,0 +1,33 @@
+{
+  "commit": "98d8c857d12fc4dc9bdee2971fa3336700fa311f",
+  "bundle": {
+    "ShenzenSolitare.wasm": "5ccf540e0a6519771426bb1c80255eb2962cfa5bca674a1a03cb75d3c980cc38",
+    "ShenzenSolitare_pthread.wasm": "cde4da2507f6857fc4917c17e2cce2d2ac535a529feb831fd44378d9bc89a623",
+    "ShenzenSolitare_pthread_wasm.js": "276d3f97a51cd59d8697a4078b9e07161001064df5ac0f9a53eafcc5605da7e6",
+    "ShenzenSolitare_wasm.js": "e0f3d314b99a19325457df91ef1fca8836263651fb4f6c9f4c4e8de271d646ac",
+    "archive/archive_files.json": "85e58f000a5f8f87436999b13ed19487f0b7f149be36b0525a1ef05f4507fbd6",
+    "archive/game0.arcd": "cf7bda15e29500113a7170ec11eebe9dacb6ee1821507198c2a5df27a838a78a",
+    "archive/game0.arci": "e5b98281704adf01e1afab31c49632acf4a030b14adbdd4c31ca99243800aad6",
+    "archive/game0.dmanifest": "29530062ea6bbaeb0be8c73c406310b85a974e687882e9d45f7ff4a21915bb7d",
+    "archive/game0.projectc": "de5b4c55bcc829a51c22188c480396574fa8e7a6b0a765e30a05cef9183093d5",
+    "archive/game1.arcd": "71d5c5d2405702a62afd11cdbfd58881e7deb29698dfc1465d014fbf362737dc",
+    "archive/game2.arcd": "7bd346999862a63c4313328146fead4595b5f57ed1efb0a0f1742fa407fcb101",
+    "archive/game3.arcd": "080063bc044cbb7a9b8025a428ff3f8b39daeae232ebad0f3b3cec401f1f2958",
+    "archive/game4.arcd": "89f1a01c0f3ffb7a9b43a7446a6f7d9b04ae17c8187d943385da7705402c02a2",
+    "archive/game5.arcd": "cb2dbf14e160cd90dd1af7e66700441ae7d64231db79b9d4236a6b71679f697b",
+    "dmloader.js": "24ba0169a955c7da4165523e2cb2097a105902d7a0421dd5f3d19ecc7e5dfaea",
+    "index.html": "04a52c836758881962a1b82f6108892ac2dd5445dafac4c83f37ed9a6d0e46da"
+  },
+  "initial_source": {
+    "tools/browser-test.py": "518280e23e9a85333fea97b604ab0c523178902e484e7d966502edf79ebdf935",
+    "tools/browser-review.py": "89a4d080fe6a9dd6cdf6206192be28b83bd18b560840a6ed8fda7488d965bed4",
+    "tools/defold-bundle.sh": "1a2ff65e7596e8a8b185e6a12c1878ea03c85e9cbfb75637102e7922d3dab705",
+    "game.project": "f27727c6ccbf745020e5881664485dd87079940f9383a40936dc8ccaa7bedff6"
+  },
+  "final_source": {
+    "tools/browser-test.py": "14016b8767abf1a0dcc4996d72061bbeb20987e4f028283cba3a075f6cabe43a",
+    "tools/browser-review.py": "89a4d080fe6a9dd6cdf6206192be28b83bd18b560840a6ed8fda7488d965bed4",
+    "tools/defold-bundle.sh": "1a2ff65e7596e8a8b185e6a12c1878ea03c85e9cbfb75637102e7922d3dab705",
+    "game.project": "f27727c6ccbf745020e5881664485dd87079940f9383a40936dc8ccaa7bedff6"
+  }
+}

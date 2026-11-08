@@ -1,0 +1,156 @@
+[
+  {
+    "mode": "coi",
+    "scenario": "boot",
+    "pass": true,
+    "report": "initial-coi/boot/report.json",
+    "wasm": [
+      "ShenzenSolitare_pthread.wasm"
+    ]
+  },
+  {
+    "mode": "coi",
+    "scenario": "debugkeys",
+    "pass": true,
+    "report": "debugkeys-fixed/report.json",
+    "wasm": [
+      "ShenzenSolitare_pthread.wasm"
+    ]
+  },
+  {
+    "mode": "coi",
+    "scenario": "fullscreen",
+    "pass": true,
+    "report": "initial-coi/fullscreen/report.json",
+    "wasm": [
+      "ShenzenSolitare_pthread.wasm"
+    ]
+  },
+  {
+    "mode": "coi",
+    "scenario": "hittest",
+    "pass": true,
+    "report": "initial-coi/hittest/report.json",
+    "wasm": [
+      "ShenzenSolitare_pthread.wasm"
+    ]
+  },
+  {
+    "mode": "coi",
+    "scenario": "music",
+    "pass": true,
+    "report": "initial-coi/music/report.json",
+    "wasm": [
+      "ShenzenSolitare_pthread.wasm",
+      "ShenzenSolitare_pthread.wasm",
+      "ShenzenSolitare_pthread.wasm"
+    ]
+  },
+  {
+    "mode": "coi",
+    "scenario": "pickupfx",
+    "pass": true,
+    "report": "initial-coi/pickupfx/report.json",
+    "wasm": [
+      "ShenzenSolitare_pthread.wasm"
+    ]
+  },
+  {
+    "mode": "coi",
+    "scenario": "tutorialsave",
+    "pass": true,
+    "report": "initial-coi/tutorialsave/report.json",
+    "wasm": [
+      "ShenzenSolitare_pthread.wasm",
+      "ShenzenSolitare_pthread.wasm"
+    ]
+  },
+  {
+    "mode": "coi",
+    "scenario": "yasdk",
+    "pass": true,
+    "report": "initial-coi/yasdk/report.json",
+    "wasm": [
+      "ShenzenSolitare_pthread.wasm",
+      "ShenzenSolitare_pthread.wasm",
+      "ShenzenSolitare_pthread.wasm"
+    ]
+  },
+  {
+    "mode": "no-coi",
+    "scenario": "boot",
+    "pass": true,
+    "report": "no-coi/boot/report.json",
+    "wasm": [
+      "ShenzenSolitare.wasm"
+    ]
+  },
+  {
+    "mode": "no-coi",
+    "scenario": "debugkeys",
+    "pass": true,
+    "report": "no-coi/debugkeys/report.json",
+    "wasm": [
+      "ShenzenSolitare.wasm"
+    ]
+  },
+  {
+    "mode": "no-coi",
+    "scenario": "fullscreen",
+    "pass": true,
+    "report": "no-coi/fullscreen/report.json",
+    "wasm": [
+      "ShenzenSolitare.wasm"
+    ]
+  },
+  {
+    "mode": "no-coi",
+    "scenario": "hittest",
+    "pass": true,
+    "report": "no-coi/hittest/report.json",
+    "wasm": [
+      "ShenzenSolitare.wasm"
+    ]
+  },
+  {
+    "mode": "no-coi",
+    "scenario": "music",
+    "pass": true,
+    "report": "no-coi/music/report.json",
+    "wasm": [
+      "ShenzenSolitare.wasm",
+      "ShenzenSolitare.wasm",
+      "ShenzenSolitare.wasm"
+    ]
+  },
+  {
+    "mode": "no-coi",
+    "scenario": "pickupfx",
+    "pass": true,
+    "report": "no-coi/pickupfx/report.json",
+    "wasm": [
+      "ShenzenSolitare.wasm"
+    ]
+  },
+  {
+    "mode": "no-coi",
+    "scenario": "tutorialsave",
+    "pass": true,
+    "report": "no-coi/tutorialsave/report.json",
+    "wasm": [
+      "ShenzenSolitare.wasm",
+      "ShenzenSolitare.wasm"
+    ]
+  },
+  {
+    "mode": "no-coi",
+    "scenario": "yasdk",
+    "pass": true,
+    "report": "no-coi/yasdk/report.json",
+    "wasm": [
+      "ShenzenSolitare.wasm",
+      "ShenzenSolitare.wasm",
+      "ShenzenSolitare.wasm"
+    ]
+  }
+]

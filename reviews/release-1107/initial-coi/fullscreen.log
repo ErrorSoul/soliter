@@ -1,0 +1,109 @@
+serving /tmp/shenzhen-check-1105/bundle-release-1107
+  at http://127.0.0.1:38489/index.html  viewport=960x540 dpr=1.0  cross-origin-isolated=True
+
+  [req] sdk.js
+  [req] dmloader.js
+  [log] Failed to load resource: the server responded with a status of 404 (File not found)
+  [net-fail] http://127.0.0.1:38489/sdk.js net::ERR_ABORTED
+  [log] [YA] absent
+  [req] ShenzenSolitare_pthread_wasm.js
+  [req] ShenzenSolitare_pthread_wasm.js
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 50568)
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 50588)
+Traceback (most recent call last):
+  File "/usr/lib/python3.13/socketserver.py", line 692, in process_request_thread
+    self.finish_request(request, client_address)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/http/server.py", line 672, in __init__
+    super().__init__(*args, **kwargs)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  [req] sdk.js
+  [req] dmloader.js
+  [log] Failed to load resource: the server responded with a status of 404 (File not found)
+  File "/usr/lib/python3.13/socketserver.py", line 761, in __init__
+    self.handle()
+    ~~~~~~~~~~~^^
+Traceback (most recent call last):
+  [net-fail] http://127.0.0.1:38489/sdk.js net::ERR_ABORTED
+  [log] [YA] absent
+  File "/usr/lib/python3.13/http/server.py", line 436, in handle
+    self.handle_one_request()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/usr/lib/python3.13/socketserver.py", line 692, in process_request_thread
+    self.finish_request(request, client_address)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/http/server.py", line 424, in handle_one_request
+    method()
+    ~~~~~~^^
+  File "/usr/lib/python3.13/socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/http/server.py", line 672, in __init__
+    super().__init__(*args, **kwargs)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/socketserver.py", line 761, in __init__
+    self.handle()
+    ~~~~~~~~~~~^^
+  File "/usr/lib/python3.13/http/server.py", line 436, in handle
+    self.handle_one_request()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/usr/lib/python3.13/http/server.py", line 424, in handle_one_request
+    method()
+    ~~~~~~^^
+  File "/usr/lib/python3.13/http/server.py", line 679, in do_GET
+    self.copyfile(f, self.wfile)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/http/server.py", line 679, in do_GET
+    self.copyfile(f, self.wfile)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/http/server.py", line 878, in copyfile
+    shutil.copyfileobj(source, outputfile)
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/shutil.py", line 204, in copyfileobj
+    fdst_write(buf)
+    ~~~~~~~~~~^^^^^
+  File "/usr/lib/python3.13/socketserver.py", line 840, in write
+    self._sock.sendall(b)
+    ~~~~~~~~~~~~~~~~~~^^^
+  File "/usr/lib/python3.13/http/server.py", line 878, in copyfile
+    shutil.copyfileobj(source, outputfile)
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+ConnectionResetError: [Errno 104] Connection reset by peer
+  File "/usr/lib/python3.13/shutil.py", line 204, in copyfileobj
+    fdst_write(buf)
+    ~~~~~~~~~~^^^^^
+----------------------------------------
+  File "/usr/lib/python3.13/socketserver.py", line 840, in write
+    self._sock.sendall(b)
+    ~~~~~~~~~~~~~~~~~~^^^
+BrokenPipeError: [Errno 32] Broken pipe
+----------------------------------------
+  [req] ShenzenSolitare_pthread_wasm.js
+  [req] ShenzenSolitare_pthread_wasm.js
+  [req] ShenzenSolitare_pthread.wasm
+  [log] Running...
+  [log] %c    %c    Made with Defold    %c    %c    https://www.defold.com background: #fd6623; padding:5px 0; border: 5px; background: #272c31; color: #fafafa; padding:5px 0; background: #39a3e4; padding:5px 0; background: #ffffff; color: #000000; padding:5px 0;
+  [req] ShenzenSolitare_pthread_wasm.js
+  [log] [AUDIO] resumed ctx=1 states=running
+  [log] 
+  [wait] 1s first game frames
+  [canvas] 960x540 scale=1.000 letterbox=(0,0)
+  [click] game(480,232) css(480,308) PLAY
+  [wait] 2.5s deal settles
+/tmp/shenzhen-check-1105/project/tools/browser-test.py:216: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use get_flattened_data instead.
+  px = list(img.getdata())
+  [probe] column 1 exposed card at depth 4
+  [wait] 1s промис .catch() успел отработать
+  [fullscreen] is_mobile=False вызовов requestFullscreen после PLAY: 0
+  [probe] column 1 exposed card at depth 4
+  [cleanup] unloading game and closing browser
+
+=== scenario=fullscreen viewport=960x540 coi=True ===
+binaries served: ShenzenSolitare_pthread.wasm, ShenzenSolitare_pthread_wasm.js, dmloader.js, sdk.js
+29 events, 0 fatal, 0 failed expectations
+RESULT: PASS

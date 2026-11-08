@@ -1,0 +1,539 @@
+{
+ "scenario": "tutorialsave",
+ "viewport": [
+  960,
+  540
+ ],
+ "release": true,
+ "mobile": false,
+ "dpr": 1.0,
+ "cross_origin_isolated": true,
+ "binaries": [
+  "sdk.js",
+  "dmloader.js",
+  "ShenzenSolitare_pthread_wasm.js",
+  "ShenzenSolitare_pthread_wasm.js",
+  "ShenzenSolitare_pthread.wasm",
+  "ShenzenSolitare_pthread_wasm.js",
+  "sdk.js",
+  "dmloader.js",
+  "ShenzenSolitare_pthread_wasm.js",
+  "ShenzenSolitare_pthread_wasm.js",
+  "ShenzenSolitare_pthread.wasm",
+  "ShenzenSolitare_pthread_wasm.js"
+ ],
+ "fatal": [],
+ "failures": [],
+ "log": [
+  {
+   "t": 0.04,
+   "kind": "req",
+   "text": "sdk.js"
+  },
+  {
+   "t": 0.04,
+   "kind": "req",
+   "text": "dmloader.js"
+  },
+  {
+   "t": 0.05,
+   "kind": "log",
+   "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+  },
+  {
+   "t": 0.05,
+   "kind": "net-fail",
+   "text": "http://127.0.0.1:46325/sdk.js net::ERR_ABORTED"
+  },
+  {
+   "t": 0.05,
+   "kind": "log",
+   "text": "[YA] absent"
+  },
+  {
+   "t": 0.06,
+   "kind": "req",
+   "text": "ShenzenSolitare_pthread_wasm.js"
+  },
+  {
+   "t": 0.07,
+   "kind": "req",
+   "text": "ShenzenSolitare_pthread_wasm.js"
+  },
+  {
+   "t": 0.11,
+   "kind": "req",
+   "text": "ShenzenSolitare_pthread.wasm"
+  },
+  {
+   "t": 0.21,
+   "kind": "log",
+   "text": "Running..."
+  },
+  {
+   "t": 0.23,
+   "kind": "log",
+   "text": "%c    %c    Made with Defold    %c    %c    https://www.defold.com background: #fd6623; padding:5px 0; border: 5px; background: #272c31; color: #fafafa; padding:5px 0; background: #39a3e4; padding:5px 0; background: #ffffff; color: #000000; padding:5px 0;"
+  },
+  {
+   "t": 0.35,
+   "kind": "req",
+   "text": "ShenzenSolitare_pthread_wasm.js"
+  },
+  {
+   "t": 0.51,
+   "kind": "log",
+   "text": "[AUDIO] resumed ctx=1 states=running"
+  },
+  {
+   "t": 0.53,
+   "kind": "log",
+   "text": ""
+  },
+  {
+   "t": 1.22,
+   "kind": "wait",
+   "text": "1s first game frames"
+  },
+  {
+   "t": 1.23,
+   "kind": "canvas",
+   "text": "960x540 scale=1.000 letterbox=(0,0)"
+  },
+  {
+   "t": 1.6,
+   "kind": "click",
+   "text": "game(480,232) css(480,308) PLAY"
+  },
+  {
+   "t": 4.1,
+   "kind": "wait",
+   "text": "2.5s deal settles"
+  },
+  {
+   "t": 6.0,
+   "kind": "probe",
+   "text": "column 1 exposed card at depth 4"
+  },
+  {
+   "t": 8.0,
+   "kind": "wait",
+   "text": "2s deal settled"
+  },
+  {
+   "t": 9.92,
+   "kind": "probe",
+   "text": "column 1 exposed card at depth 4"
+  },
+  {
+   "t": 11.35,
+   "kind": "drag",
+   "text": "(65,159)->(65,457) park a card before practice"
+  },
+  {
+   "t": 14.36,
+   "kind": "wait",
+   "text": "3s save flushed"
+  },
+  {
+   "t": 16.24,
+   "kind": "probe",
+   "text": "column 1 exposed card at depth 3"
+  },
+  {
+   "t": 17.12,
+   "kind": "probe",
+   "text": "column 2 exposed card at depth 4"
+  },
+  {
+   "t": 18.04,
+   "kind": "probe",
+   "text": "column 3 exposed card at depth 4"
+  },
+  {
+   "t": 18.98,
+   "kind": "probe",
+   "text": "column 4 exposed card at depth 4"
+  },
+  {
+   "t": 19.91,
+   "kind": "probe",
+   "text": "column 5 exposed card at depth 4"
+  },
+  {
+   "t": 20.86,
+   "kind": "probe",
+   "text": "column 6 exposed card at depth 4"
+  },
+  {
+   "t": 21.79,
+   "kind": "probe",
+   "text": "column 7 exposed card at depth 4"
+  },
+  {
+   "t": 23.73,
+   "kind": "probe",
+   "text": "column 8 exposed card at depth 3"
+  },
+  {
+   "t": 25.67,
+   "kind": "pixel",
+   "text": "parked card luminance=106 vs felt 46"
+  },
+  {
+   "t": 26.03,
+   "kind": "click",
+   "text": "game(907,124) css(907,416) practice"
+  },
+  {
+   "t": 29.04,
+   "kind": "wait",
+   "text": "3s tutorial loaded"
+  },
+  {
+   "t": 29.17,
+   "kind": "pixel",
+   "text": "practice card rendered luminance=146 vs felt 46"
+  },
+  {
+   "t": 29.52,
+   "kind": "click",
+   "text": "game(110,50) css(110,490) skip tutorial"
+  },
+  {
+   "t": 32.53,
+   "kind": "wait",
+   "text": "3s after-skip"
+  },
+  {
+   "t": 34.46,
+   "kind": "probe",
+   "text": "column 1 exposed card at depth 3"
+  },
+  {
+   "t": 35.43,
+   "kind": "probe",
+   "text": "column 2 exposed card at depth 4"
+  },
+  {
+   "t": 36.4,
+   "kind": "probe",
+   "text": "column 3 exposed card at depth 4"
+  },
+  {
+   "t": 37.33,
+   "kind": "probe",
+   "text": "column 4 exposed card at depth 4"
+  },
+  {
+   "t": 38.21,
+   "kind": "probe",
+   "text": "column 5 exposed card at depth 4"
+  },
+  {
+   "t": 39.12,
+   "kind": "probe",
+   "text": "column 6 exposed card at depth 4"
+  },
+  {
+   "t": 40.03,
+   "kind": "probe",
+   "text": "column 7 exposed card at depth 4"
+  },
+  {
+   "t": 41.86,
+   "kind": "probe",
+   "text": "column 8 exposed card at depth 3"
+  },
+  {
+   "t": 43.94,
+   "kind": "shot",
+   "text": "01-after-skip.png"
+  },
+  {
+   "t": 44.31,
+   "kind": "click",
+   "text": "game(907,124) css(907,416) practice again"
+  },
+  {
+   "t": 47.32,
+   "kind": "wait",
+   "text": "3s tutorial loaded again"
+  },
+  {
+   "t": 48.53,
+   "kind": "drag",
+   "text": "(65,159)->(585,457) tutorial move"
+  },
+  {
+   "t": 49.54,
+   "kind": "wait",
+   "text": "1s move settled"
+  },
+  {
+   "t": 50.75,
+   "kind": "drag",
+   "text": "(65,194)->(585,457) tutorial move"
+  },
+  {
+   "t": 51.75,
+   "kind": "wait",
+   "text": "1s move settled"
+  },
+  {
+   "t": 53.02,
+   "kind": "drag",
+   "text": "(65,229)->(65,457) tutorial move"
+  },
+  {
+   "t": 54.02,
+   "kind": "wait",
+   "text": "1s move settled"
+  },
+  {
+   "t": 55.25,
+   "kind": "drag",
+   "text": "(65,264)->(169,299) tutorial move"
+  },
+  {
+   "t": 56.26,
+   "kind": "wait",
+   "text": "1s move settled"
+  },
+  {
+   "t": 56.61,
+   "kind": "click",
+   "text": "game(481,508) css(481,32) collect dragons"
+  },
+  {
+   "t": 58.81,
+   "kind": "wait",
+   "text": "2.2s victory and confetti"
+  },
+  {
+   "t": 59.3,
+   "kind": "shot",
+   "text": "02-victory-confetti.png"
+  },
+  {
+   "t": 60.35,
+   "kind": "wait",
+   "text": "0.4s confetti moves"
+  },
+  {
+   "t": 61.73,
+   "kind": "shot",
+   "text": "03-victory-confetti-later.png"
+  },
+  {
+   "t": 64.74,
+   "kind": "wait",
+   "text": "3s confetti expires"
+  },
+  {
+   "t": 65.82,
+   "kind": "wait",
+   "text": "0.4s no permanent particle loop"
+  },
+  {
+   "t": 66.89,
+   "kind": "click",
+   "text": "game(480,230) css(480,310) return from tutorial victory"
+  },
+  {
+   "t": 69.9,
+   "kind": "wait",
+   "text": "3s after-practice-win"
+  },
+  {
+   "t": 71.81,
+   "kind": "probe",
+   "text": "column 1 exposed card at depth 3"
+  },
+  {
+   "t": 72.69,
+   "kind": "probe",
+   "text": "column 2 exposed card at depth 4"
+  },
+  {
+   "t": 73.58,
+   "kind": "probe",
+   "text": "column 3 exposed card at depth 4"
+  },
+  {
+   "t": 74.54,
+   "kind": "probe",
+   "text": "column 4 exposed card at depth 4"
+  },
+  {
+   "t": 75.54,
+   "kind": "probe",
+   "text": "column 5 exposed card at depth 4"
+  },
+  {
+   "t": 76.48,
+   "kind": "probe",
+   "text": "column 6 exposed card at depth 4"
+  },
+  {
+   "t": 77.33,
+   "kind": "probe",
+   "text": "column 7 exposed card at depth 4"
+  },
+  {
+   "t": 79.26,
+   "kind": "probe",
+   "text": "column 8 exposed card at depth 3"
+  },
+  {
+   "t": 81.39,
+   "kind": "shot",
+   "text": "04-after-practice-win.png"
+  },
+  {
+   "t": 82.44,
+   "kind": "req",
+   "text": "sdk.js"
+  },
+  {
+   "t": 82.44,
+   "kind": "req",
+   "text": "dmloader.js"
+  },
+  {
+   "t": 82.44,
+   "kind": "log",
+   "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+  },
+  {
+   "t": 82.44,
+   "kind": "net-fail",
+   "text": "http://127.0.0.1:46325/sdk.js net::ERR_ABORTED"
+  },
+  {
+   "t": 82.44,
+   "kind": "log",
+   "text": "[YA] absent"
+  },
+  {
+   "t": 82.45,
+   "kind": "req",
+   "text": "ShenzenSolitare_pthread_wasm.js"
+  },
+  {
+   "t": 82.46,
+   "kind": "req",
+   "text": "ShenzenSolitare_pthread_wasm.js"
+  },
+  {
+   "t": 82.48,
+   "kind": "req",
+   "text": "ShenzenSolitare_pthread.wasm"
+  },
+  {
+   "t": 82.58,
+   "kind": "log",
+   "text": "Running..."
+  },
+  {
+   "t": 82.59,
+   "kind": "log",
+   "text": "%c    %c    Made with Defold    %c    %c    https://www.defold.com background: #fd6623; padding:5px 0; border: 5px; background: #272c31; color: #fafafa; padding:5px 0; background: #39a3e4; padding:5px 0; background: #ffffff; color: #000000; padding:5px 0;"
+  },
+  {
+   "t": 82.61,
+   "kind": "req",
+   "text": "ShenzenSolitare_pthread_wasm.js"
+  },
+  {
+   "t": 82.74,
+   "kind": "log",
+   "text": "[AUDIO] resumed ctx=1 states=running"
+  },
+  {
+   "t": 82.74,
+   "kind": "log",
+   "text": ""
+  },
+  {
+   "t": 83.59,
+   "kind": "wait",
+   "text": "1s first game frames"
+  },
+  {
+   "t": 83.59,
+   "kind": "canvas",
+   "text": "960x540 scale=1.000 letterbox=(0,0)"
+  },
+  {
+   "t": 83.93,
+   "kind": "click",
+   "text": "game(480,232) css(480,308) PLAY"
+  },
+  {
+   "t": 86.44,
+   "kind": "wait",
+   "text": "2.5s deal settles"
+  },
+  {
+   "t": 89.29,
+   "kind": "probe",
+   "text": "column 1 exposed card at depth 3"
+  },
+  {
+   "t": 92.3,
+   "kind": "wait",
+   "text": "3s after-page-reload"
+  },
+  {
+   "t": 94.31,
+   "kind": "probe",
+   "text": "column 1 exposed card at depth 3"
+  },
+  {
+   "t": 95.3,
+   "kind": "probe",
+   "text": "column 2 exposed card at depth 4"
+  },
+  {
+   "t": 96.27,
+   "kind": "probe",
+   "text": "column 3 exposed card at depth 4"
+  },
+  {
+   "t": 97.2,
+   "kind": "probe",
+   "text": "column 4 exposed card at depth 4"
+  },
+  {
+   "t": 98.16,
+   "kind": "probe",
+   "text": "column 5 exposed card at depth 4"
+  },
+  {
+   "t": 99.18,
+   "kind": "probe",
+   "text": "column 6 exposed card at depth 4"
+  },
+  {
+   "t": 100.18,
+   "kind": "probe",
+   "text": "column 7 exposed card at depth 4"
+  },
+  {
+   "t": 102.1,
+   "kind": "probe",
+   "text": "column 8 exposed card at depth 3"
+  },
+  {
+   "t": 104.1,
+   "kind": "shot",
+   "text": "05-after-page-reload.png"
+  },
+  {
+   "t": 104.1,
+   "kind": "cleanup",
+   "text": "unloading game and closing browser"
+  }
+ ]
+}

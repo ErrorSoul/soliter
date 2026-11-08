@@ -1,0 +1,86 @@
+serving /tmp/shenzhen-check-1105/bundle-release-1107
+  at http://127.0.0.1:39953/index.html  viewport=960x540 dpr=1.0  cross-origin-isolated=True
+
+  [req] sdk.js
+  [req] dmloader.js
+  [log] Failed to load resource: the server responded with a status of 404 (File not found)
+  [net-fail] http://127.0.0.1:39953/sdk.js net::ERR_ABORTED
+  [log] [YA] absent
+  [req] ShenzenSolitare_pthread_wasm.js
+  [req] ShenzenSolitare_pthread_wasm.js
+  [req] sdk.js
+  [req] dmloader.js
+  [log] Failed to load resource: the server responded with a status of 404 (File not found)
+  [net-fail] http://127.0.0.1:39953/sdk.js net::ERR_ABORTED
+  [log] [YA] absent
+  [req] ShenzenSolitare_pthread_wasm.js
+  [req] ShenzenSolitare_pthread_wasm.js
+  [req] ShenzenSolitare_pthread.wasm
+  [log] Running...
+  [log] %c    %c    Made with Defold    %c    %c    https://www.defold.com background: #fd6623; padding:5px 0; border: 5px; background: #272c31; color: #fafafa; padding:5px 0; background: #39a3e4; padding:5px 0; background: #ffffff; color: #000000; padding:5px 0;
+  [req] ShenzenSolitare_pthread_wasm.js
+  [log] [AUDIO] resumed ctx=1 states=running
+  [log] 
+  [wait] 6s движок грузится
+  [canvas] 960x540 scale=1.000 letterbox=(0,0)
+  [click] game(480,232) css(480,308) PLAY
+  [wait] 4s раздача осела
+  [shot] 01-rail-no-sdk.png
+  [req] sdk.js
+  [req] dmloader.js
+  [log] Failed to load resource: the server responded with a status of 404 (File not found)
+  [net-fail] http://127.0.0.1:39953/sdk.js net::ERR_ABORTED
+  [req] ShenzenSolitare_pthread_wasm.js
+  [req] ShenzenSolitare_pthread_wasm.js
+  [req] ShenzenSolitare_pthread.wasm
+  [log] Running...
+  [log] 
+  [log] %c    %c    Made with Defold    %c    %c    https://www.defold.com background: #fd6623; padding:5px 0; border: 5px; background: #272c31; color: #fafafa; padding:5px 0; background: #39a3e4; padding:5px 0; background: #ffffff; color: #000000; padding:5px 0;
+  [req] ShenzenSolitare_pthread_wasm.js
+  [log] [AUDIO] resumed ctx=1 states=running
+  [wait] 6s движок грузится
+  [canvas] 960x540 scale=1.000 letterbox=(0,0)
+  [click] game(480,232) css(480,308) PLAY
+  [wait] 4s раздача осела
+  [log] [YA] ready lang=ru
+  [log] [YA] loading-ready
+  [log] [YA] gameplay-start
+  [wait] 15s SDK наконец ответил
+  [ya] мост: ready lang=ru,loading-ready,gameplay-start
+  [shot] 02-rail-sdk-ru.png
+  [log] [YA] gameplay-stop
+  [log] [AUDIO] suspended ctx=1 states=suspended
+  [wait] 0.5s фон
+  [log] [YA] gameplay-start
+  [log] [AUDIO] resumed ctx=1 states=running
+  [wait] 0.5s возврат
+  [click] game(907,56) css(907,484) RESTART
+  [wait] 2s уровень перезагрузился
+  [ya] цепочка после части 4: ready,start,stop,start
+  [req] sdk.js
+  [req] dmloader.js
+  [log] Failed to load resource: the server responded with a status of 404 (File not found)
+  [net-fail] http://127.0.0.1:39953/sdk.js net::ERR_ABORTED
+  [req] ShenzenSolitare_pthread_wasm.js
+  [req] ShenzenSolitare_pthread_wasm.js
+  [req] ShenzenSolitare_pthread.wasm
+  [log] Running...
+  [log] 
+  [log] %c    %c    Made with Defold    %c    %c    https://www.defold.com background: #fd6623; padding:5px 0; border: 5px; background: #272c31; color: #fafafa; padding:5px 0; background: #39a3e4; padding:5px 0; background: #ffffff; color: #000000; padding:5px 0;
+  [req] ShenzenSolitare_pthread_wasm.js
+  [log] [AUDIO] suspended ctx=1 states=suspended
+  [wait] 6s движок грузится
+  [canvas] 960x540 scale=1.000 letterbox=(0,0)
+  [log] [YA] ready lang=ru
+  [log] [YA] loading-ready
+  [wait] 20.0s SDK ответил
+  [log] [YA] gameplay-start
+  [click] game(480,232) css(480,308) PLAY
+  [wait] 4s раздача осела
+  [ya] без фокуса: ready,start
+  [cleanup] unloading game and closing browser
+
+=== scenario=yasdk viewport=960x540 coi=True ===
+binaries served: ShenzenSolitare_pthread.wasm, ShenzenSolitare_pthread_wasm.js, dmloader.js, sdk.js
+78 events, 0 fatal, 0 failed expectations
+RESULT: PASS

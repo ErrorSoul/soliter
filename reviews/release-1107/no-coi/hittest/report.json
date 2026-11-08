@@ -1,0 +1,157 @@
+{
+ "scenario": "hittest",
+ "viewport": [
+  960,
+  540
+ ],
+ "release": true,
+ "mobile": false,
+ "dpr": 1.0,
+ "cross_origin_isolated": false,
+ "binaries": [
+  "sdk.js",
+  "dmloader.js",
+  "ShenzenSolitare_wasm.js",
+  "ShenzenSolitare_wasm.js",
+  "ShenzenSolitare.wasm"
+ ],
+ "fatal": [],
+ "failures": [],
+ "log": [
+  {
+   "t": 0.02,
+   "kind": "req",
+   "text": "sdk.js"
+  },
+  {
+   "t": 0.02,
+   "kind": "req",
+   "text": "dmloader.js"
+  },
+  {
+   "t": 0.03,
+   "kind": "log",
+   "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+  },
+  {
+   "t": 0.03,
+   "kind": "net-fail",
+   "text": "http://127.0.0.1:45495/sdk.js net::ERR_ABORTED"
+  },
+  {
+   "t": 0.03,
+   "kind": "log",
+   "text": "[YA] absent"
+  },
+  {
+   "t": 0.04,
+   "kind": "req",
+   "text": "ShenzenSolitare_wasm.js"
+  },
+  {
+   "t": 0.05,
+   "kind": "req",
+   "text": "ShenzenSolitare_wasm.js"
+  },
+  {
+   "t": 0.08,
+   "kind": "req",
+   "text": "ShenzenSolitare.wasm"
+  },
+  {
+   "t": 0.18,
+   "kind": "log",
+   "text": "Running..."
+  },
+  {
+   "t": 0.2,
+   "kind": "log",
+   "text": "%c    %c    Made with Defold    %c    %c    https://www.defold.com background: #fd6623; padding:5px 0; border: 5px; background: #272c31; color: #fafafa; padding:5px 0; background: #39a3e4; padding:5px 0; background: #ffffff; color: #000000; padding:5px 0;"
+  },
+  {
+   "t": 0.46,
+   "kind": "log",
+   "text": "[AUDIO] resumed ctx=1 states=running"
+  },
+  {
+   "t": 0.48,
+   "kind": "log",
+   "text": ""
+  },
+  {
+   "t": 1.47,
+   "kind": "wait",
+   "text": "1s first game frames"
+  },
+  {
+   "t": 1.47,
+   "kind": "canvas",
+   "text": "960x540 scale=1.000 letterbox=(0,0)"
+  },
+  {
+   "t": 1.7,
+   "kind": "shot",
+   "text": "01-start-screen.png"
+  },
+  {
+   "t": 2.06,
+   "kind": "click",
+   "text": "game(480,232) css(480,308) PLAY"
+  },
+  {
+   "t": 4.56,
+   "kind": "wait",
+   "text": "2.5s deal settles"
+  },
+  {
+   "t": 6.3,
+   "kind": "probe",
+   "text": "column 1 exposed card at depth 4"
+  },
+  {
+   "t": 7.33,
+   "kind": "shot",
+   "text": "02-dealt.png"
+  },
+  {
+   "t": 8.17,
+   "kind": "pixel",
+   "text": "felt reference (empty free cell 1) luminance=46"
+  },
+  {
+   "t": 8.93,
+   "kind": "probe",
+   "text": "column 1 exposed card at depth 4"
+  },
+  {
+   "t": 10.18,
+   "kind": "drag",
+   "text": "(65,159)->(65,457) col1 exposed card -> free cell 1"
+  },
+  {
+   "t": 11.69,
+   "kind": "wait",
+   "text": "1.5s drop settles"
+  },
+  {
+   "t": 12.66,
+   "kind": "shot",
+   "text": "03-after-drag-to-free-cell.png"
+  },
+  {
+   "t": 13.51,
+   "kind": "pixel",
+   "text": "free cell 1 after the drag luminance=140 vs felt 46"
+  },
+  {
+   "t": 14.3,
+   "kind": "pixel",
+   "text": "column 1 bottom edge after the card left luminance=45 vs felt 46"
+  },
+  {
+   "t": 14.3,
+   "kind": "cleanup",
+   "text": "unloading game and closing browser"
+  }
+ ]
+}

@@ -1,0 +1,172 @@
+{
+ "scenario": "fullscreen",
+ "viewport": [
+  960,
+  540
+ ],
+ "release": true,
+ "mobile": false,
+ "dpr": 1.0,
+ "cross_origin_isolated": true,
+ "binaries": [
+  "sdk.js",
+  "dmloader.js",
+  "ShenzenSolitare_pthread_wasm.js",
+  "ShenzenSolitare_pthread_wasm.js",
+  "sdk.js",
+  "dmloader.js",
+  "ShenzenSolitare_pthread_wasm.js",
+  "ShenzenSolitare_pthread_wasm.js",
+  "ShenzenSolitare_pthread.wasm",
+  "ShenzenSolitare_pthread_wasm.js"
+ ],
+ "fatal": [],
+ "failures": [],
+ "log": [
+  {
+   "t": 0.03,
+   "kind": "req",
+   "text": "sdk.js"
+  },
+  {
+   "t": 0.03,
+   "kind": "req",
+   "text": "dmloader.js"
+  },
+  {
+   "t": 0.05,
+   "kind": "log",
+   "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+  },
+  {
+   "t": 0.05,
+   "kind": "net-fail",
+   "text": "http://127.0.0.1:38489/sdk.js net::ERR_ABORTED"
+  },
+  {
+   "t": 0.05,
+   "kind": "log",
+   "text": "[YA] absent"
+  },
+  {
+   "t": 0.05,
+   "kind": "req",
+   "text": "ShenzenSolitare_pthread_wasm.js"
+  },
+  {
+   "t": 0.06,
+   "kind": "req",
+   "text": "ShenzenSolitare_pthread_wasm.js"
+  },
+  {
+   "t": 0.08,
+   "kind": "req",
+   "text": "sdk.js"
+  },
+  {
+   "t": 0.08,
+   "kind": "req",
+   "text": "dmloader.js"
+  },
+  {
+   "t": 0.08,
+   "kind": "log",
+   "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+  },
+  {
+   "t": 0.08,
+   "kind": "net-fail",
+   "text": "http://127.0.0.1:38489/sdk.js net::ERR_ABORTED"
+  },
+  {
+   "t": 0.08,
+   "kind": "log",
+   "text": "[YA] absent"
+  },
+  {
+   "t": 0.09,
+   "kind": "req",
+   "text": "ShenzenSolitare_pthread_wasm.js"
+  },
+  {
+   "t": 0.09,
+   "kind": "req",
+   "text": "ShenzenSolitare_pthread_wasm.js"
+  },
+  {
+   "t": 0.13,
+   "kind": "req",
+   "text": "ShenzenSolitare_pthread.wasm"
+  },
+  {
+   "t": 0.22,
+   "kind": "log",
+   "text": "Running..."
+  },
+  {
+   "t": 0.24,
+   "kind": "log",
+   "text": "%c    %c    Made with Defold    %c    %c    https://www.defold.com background: #fd6623; padding:5px 0; border: 5px; background: #272c31; color: #fafafa; padding:5px 0; background: #39a3e4; padding:5px 0; background: #ffffff; color: #000000; padding:5px 0;"
+  },
+  {
+   "t": 0.35,
+   "kind": "req",
+   "text": "ShenzenSolitare_pthread_wasm.js"
+  },
+  {
+   "t": 0.51,
+   "kind": "log",
+   "text": "[AUDIO] resumed ctx=1 states=running"
+  },
+  {
+   "t": 0.53,
+   "kind": "log",
+   "text": ""
+  },
+  {
+   "t": 1.51,
+   "kind": "wait",
+   "text": "1s first game frames"
+  },
+  {
+   "t": 1.52,
+   "kind": "canvas",
+   "text": "960x540 scale=1.000 letterbox=(0,0)"
+  },
+  {
+   "t": 1.89,
+   "kind": "click",
+   "text": "game(480,232) css(480,308) PLAY"
+  },
+  {
+   "t": 4.4,
+   "kind": "wait",
+   "text": "2.5s deal settles"
+  },
+  {
+   "t": 6.73,
+   "kind": "probe",
+   "text": "column 1 exposed card at depth 4"
+  },
+  {
+   "t": 7.73,
+   "kind": "wait",
+   "text": "1s \u043f\u0440\u043e\u043c\u0438\u0441 .catch() \u0443\u0441\u043f\u0435\u043b \u043e\u0442\u0440\u0430\u0431\u043e\u0442\u0430\u0442\u044c"
+  },
+  {
+   "t": 7.74,
+   "kind": "fullscreen",
+   "text": "is_mobile=False \u0432\u044b\u0437\u043e\u0432\u043e\u0432 requestFullscreen \u043f\u043e\u0441\u043b\u0435 PLAY: 0"
+  },
+  {
+   "t": 9.8,
+   "kind": "probe",
+   "text": "column 1 exposed card at depth 4"
+  },
+  {
+   "t": 9.8,
+   "kind": "cleanup",
+   "text": "unloading game and closing browser"
+  }
+ ]
+}

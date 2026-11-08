@@ -1,0 +1,38 @@
+serving /tmp/shenzhen-check-1105/bundle-release-1107
+  at http://127.0.0.1:42687/index.html  viewport=960x540 dpr=1.0  cross-origin-isolated=True
+
+  [req] sdk.js
+  [req] dmloader.js
+  [log] Failed to load resource: the server responded with a status of 404 (File not found)
+  [net-fail] http://127.0.0.1:42687/sdk.js net::ERR_ABORTED
+  [log] [YA] absent
+  [req] ShenzenSolitare_pthread_wasm.js
+  [req] ShenzenSolitare_pthread_wasm.js
+  [req] ShenzenSolitare_pthread.wasm
+  [log] Running...
+  [log] 
+  [log] %c    %c    Made with Defold    %c    %c    https://www.defold.com background: #fd6623; padding:5px 0; border: 5px; background: #272c31; color: #fafafa; padding:5px 0; background: #39a3e4; padding:5px 0; background: #ffffff; color: #000000; padding:5px 0;
+  [req] ShenzenSolitare_pthread_wasm.js
+  [log] [AUDIO] resumed ctx=1 states=running
+  [wait] 1s first game frames
+  [canvas] 960x540 scale=1.000 letterbox=(0,0)
+  [click] game(480,232) css(480,308) PLAY
+  [wait] 2.5s deal settles
+/tmp/shenzhen-check-1105/project/tools/browser-test.py:216: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use get_flattened_data instead.
+  px = list(img.getdata())
+  [probe] column 1 exposed card at depth 4
+  [click] game(907,124) css(907,416) deterministic effects board
+  [wait] 3s tutorial settled
+  [wait] 0.2s pickup
+  [shot] 01-moving-card.png
+  [wait] 0.8s card stops tilting
+  [shadow] felt=61.4, under raised card=44.5
+  [shot] 02-raised-card-shadow.png
+  [wait] 1.2s return and recoil finish
+  [shot] 03-effects-cleared.png
+  [cleanup] unloading game and closing browser
+
+=== scenario=pickupfx viewport=960x540 coi=True ===
+binaries served: ShenzenSolitare_pthread.wasm, ShenzenSolitare_pthread_wasm.js, dmloader.js, sdk.js
+28 events, 0 fatal, 0 failed expectations
+RESULT: PASS

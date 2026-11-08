@@ -1,0 +1,716 @@
+{
+ "scenario": "debugkeys",
+ "viewport": [
+  960,
+  540
+ ],
+ "release": true,
+ "mobile": false,
+ "dpr": 1.0,
+ "cross_origin_isolated": true,
+ "binaries": [
+  "sdk.js",
+  "dmloader.js",
+  "ShenzenSolitare_pthread_wasm.js",
+  "ShenzenSolitare_pthread_wasm.js",
+  "ShenzenSolitare_pthread.wasm",
+  "ShenzenSolitare_pthread_wasm.js"
+ ],
+ "fatal": [],
+ "failures": [
+  "release: \u043a\u043b\u0430\u0432\u0438\u0448\u0430 R \u0432\u0441\u0451 \u0435\u0449\u0451 \u043e\u0442\u0434\u0430\u0451\u0442 \u043f\u0430\u0440\u0442\u0438\u044e \u0430\u0432\u0442\u043e\u0438\u0433\u0440\u043e\u043a\u0443",
+  "release: \u043f\u0440\u043e\u0431\u0435\u043b \u0432\u0441\u0451 \u0435\u0449\u0451 \u043f\u0435\u0440\u0435\u0437\u0430\u043f\u0443\u0441\u043a\u0430\u0435\u0442 \u043f\u0430\u0440\u0442\u0438\u044e"
+ ],
+ "log": [
+  {
+   "t": 0.04,
+   "kind": "req",
+   "text": "sdk.js"
+  },
+  {
+   "t": 0.04,
+   "kind": "req",
+   "text": "dmloader.js"
+  },
+  {
+   "t": 0.05,
+   "kind": "log",
+   "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+  },
+  {
+   "t": 0.05,
+   "kind": "net-fail",
+   "text": "http://127.0.0.1:39993/sdk.js net::ERR_ABORTED"
+  },
+  {
+   "t": 0.06,
+   "kind": "log",
+   "text": "[YA] absent"
+  },
+  {
+   "t": 0.06,
+   "kind": "req",
+   "text": "ShenzenSolitare_pthread_wasm.js"
+  },
+  {
+   "t": 0.07,
+   "kind": "req",
+   "text": "ShenzenSolitare_pthread_wasm.js"
+  },
+  {
+   "t": 0.13,
+   "kind": "req",
+   "text": "ShenzenSolitare_pthread.wasm"
+  },
+  {
+   "t": 0.2,
+   "kind": "log",
+   "text": "Running..."
+  },
+  {
+   "t": 0.21,
+   "kind": "info",
+   "text": "INFO:DLIB: Log server started on port 0\n"
+  },
+  {
+   "t": 0.21,
+   "kind": "info",
+   "text": "INFO:GRAPHICS: Installed graphics device 'ADAPTER_FAMILY_OPENGL'\n"
+  },
+  {
+   "t": 0.21,
+   "kind": "info",
+   "text": "INFO:ENGINE: Defold Engine 1.13.1 (574678c)\n"
+  },
+  {
+   "t": 0.22,
+   "kind": "log",
+   "text": "%c    %c    Made with Defold    %c    %c    https://www.defold.com background: #fd6623; padding:5px 0; border: 5px; background: #272c31; color: #fafafa; padding:5px 0; background: #39a3e4; padding:5px 0; background: #ffffff; color: #000000; padding:5px 0;"
+  },
+  {
+   "t": 0.22,
+   "kind": "info",
+   "text": "INFO:PROFILER: Skipped ProfilerJS profiler due to setting profiler.performance_timeline_enabled\n"
+  },
+  {
+   "t": 0.25,
+   "kind": "info",
+   "text": "INFO:GRAPHICS: Checking ASTC Array support. May produce GL error.\n"
+  },
+  {
+   "t": 0.25,
+   "kind": "info",
+   "text": "INFO:GRAPHICS: Device: OpenGL\n"
+  },
+  {
+   "t": 0.25,
+   "kind": "info",
+   "text": "INFO:GRAPHICS: Renderer: WebKit WebGL\n"
+  },
+  {
+   "t": 0.25,
+   "kind": "info",
+   "text": "INFO:GRAPHICS: Version: OpenGL ES 3.0 (WebGL 2.0 (OpenGL ES 3.0 Chromium))\n"
+  },
+  {
+   "t": 0.26,
+   "kind": "info",
+   "text": "INFO:GRAPHICS: Vendor: WebKit\n"
+  },
+  {
+   "t": 0.26,
+   "kind": "info",
+   "text": "INFO:GRAPHICS: Extensions:\n"
+  },
+  {
+   "t": 0.26,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   EXT_clip_control\n"
+  },
+  {
+   "t": 0.26,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   EXT_color_buffer_float\n"
+  },
+  {
+   "t": 0.26,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   EXT_color_buffer_half_float\n"
+  },
+  {
+   "t": 0.26,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   EXT_conservative_depth\n"
+  },
+  {
+   "t": 0.26,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   EXT_depth_clamp\n"
+  },
+  {
+   "t": 0.26,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   EXT_disjoint_timer_query_webgl2\n"
+  },
+  {
+   "t": 0.26,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   EXT_float_blend\n"
+  },
+  {
+   "t": 0.26,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   EXT_polygon_offset_clamp\n"
+  },
+  {
+   "t": 0.26,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   EXT_texture_compression_bptc\n"
+  },
+  {
+   "t": 0.26,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   EXT_texture_compression_rgtc\n"
+  },
+  {
+   "t": 0.26,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   EXT_texture_filter_anisotropic\n"
+  },
+  {
+   "t": 0.26,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   NV_shader_noperspective_interpolation\n"
+  },
+  {
+   "t": 0.26,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   OES_texture_float_linear\n"
+  },
+  {
+   "t": 0.26,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   WEBGL_clip_cull_distance\n"
+  },
+  {
+   "t": 0.26,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   WEBGL_compressed_texture_astc\n"
+  },
+  {
+   "t": 0.26,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   WEBGL_compressed_texture_etc\n"
+  },
+  {
+   "t": 0.26,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   WEBGL_compressed_texture_etc1\n"
+  },
+  {
+   "t": 0.26,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   WEBGL_compressed_texture_s3tc\n"
+  },
+  {
+   "t": 0.26,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   WEBGL_compressed_texture_s3tc_srgb\n"
+  },
+  {
+   "t": 0.26,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   WEBGL_debug_renderer_info\n"
+  },
+  {
+   "t": 0.27,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   WEBGL_debug_shaders\n"
+  },
+  {
+   "t": 0.27,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   WEBGL_lose_context\n"
+  },
+  {
+   "t": 0.27,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   WEBGL_multi_draw\n"
+  },
+  {
+   "t": 0.27,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   WEBGL_polygon_mode\n"
+  },
+  {
+   "t": 0.27,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   GL_EXT_clip_control\n"
+  },
+  {
+   "t": 0.27,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   GL_EXT_color_buffer_float\n"
+  },
+  {
+   "t": 0.27,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   GL_EXT_color_buffer_half_float\n"
+  },
+  {
+   "t": 0.27,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   GL_EXT_conservative_depth\n"
+  },
+  {
+   "t": 0.27,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   GL_EXT_depth_clamp\n"
+  },
+  {
+   "t": 0.27,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   GL_EXT_disjoint_timer_query_webgl2\n"
+  },
+  {
+   "t": 0.27,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   GL_EXT_float_blend\n"
+  },
+  {
+   "t": 0.27,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   GL_EXT_polygon_offset_clamp\n"
+  },
+  {
+   "t": 0.27,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   GL_EXT_texture_compression_bptc\n"
+  },
+  {
+   "t": 0.27,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   GL_EXT_texture_compression_rgtc\n"
+  },
+  {
+   "t": 0.27,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   GL_EXT_texture_filter_anisotropic\n"
+  },
+  {
+   "t": 0.27,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   GL_NV_shader_noperspective_interpolation\n"
+  },
+  {
+   "t": 0.27,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   GL_OES_texture_float_linear\n"
+  },
+  {
+   "t": 0.27,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   GL_WEBGL_clip_cull_distance\n"
+  },
+  {
+   "t": 0.27,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   GL_WEBGL_compressed_texture_astc\n"
+  },
+  {
+   "t": 0.27,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   GL_WEBGL_compressed_texture_etc\n"
+  },
+  {
+   "t": 0.27,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   GL_WEBGL_compressed_texture_etc1\n"
+  },
+  {
+   "t": 0.27,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   GL_WEBGL_compressed_texture_s3tc\n"
+  },
+  {
+   "t": 0.27,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   GL_WEBGL_compressed_texture_s3tc_srgb\n"
+  },
+  {
+   "t": 0.27,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   GL_WEBGL_debug_renderer_info\n"
+  },
+  {
+   "t": 0.27,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   GL_WEBGL_debug_shaders\n"
+  },
+  {
+   "t": 0.27,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   GL_WEBGL_lose_context\n"
+  },
+  {
+   "t": 0.27,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   GL_WEBGL_multi_draw\n"
+  },
+  {
+   "t": 0.27,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   GL_WEBGL_polygon_mode\n"
+  },
+  {
+   "t": 0.27,
+   "kind": "info",
+   "text": "INFO:GRAPHICS: Context features:\n"
+  },
+  {
+   "t": 0.28,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   CONTEXT_FEATURE_MULTI_TARGET_RENDERING\n"
+  },
+  {
+   "t": 0.28,
+   "kind": "info",
+   "text": "INFO:GRAPHICS:   CONTEXT_FEATURE_TEXTURE_ARRAY\n"
+  },
+  {
+   "t": 0.28,
+   "kind": "info",
+   "text": "INFO:ENGINE: Loading data from: archive:game.dmanifest\n"
+  },
+  {
+   "t": 0.36,
+   "kind": "info",
+   "text": "INFO:SOUND: Info\n"
+  },
+  {
+   "t": 0.36,
+   "kind": "info",
+   "text": "INFO:SOUND:   nSamplesPerSec:   48000\n"
+  },
+  {
+   "t": 0.36,
+   "kind": "info",
+   "text": "INFO:SOUND:   DSP backend: Fallback\n"
+  },
+  {
+   "t": 0.37,
+   "kind": "req",
+   "text": "ShenzenSolitare_pthread_wasm.js"
+  },
+  {
+   "t": 0.37,
+   "kind": "info",
+   "text": "INFO:SOUND: Sound\n"
+  },
+  {
+   "t": 0.37,
+   "kind": "info",
+   "text": "INFO:SOUND:   nSamplesPerSec:   48000\n"
+  },
+  {
+   "t": 0.37,
+   "kind": "info",
+   "text": "INFO:SOUND:        useThread:   1\n"
+  },
+  {
+   "t": 0.37,
+   "kind": "info",
+   "text": "INFO:ENGINE: Initialised sound device 'default'\n"
+  },
+  {
+   "t": 0.37,
+   "kind": "info",
+   "text": "INFO:PHYSICS: Created physics context: Box2D v2.2.1\n"
+  },
+  {
+   "t": 0.52,
+   "kind": "log",
+   "text": "DEBUG:SCRIPT: [DEBUG] dev-\u043a\u043b\u0430\u0432\u0438\u0448\u0438: on\n"
+  },
+  {
+   "t": 0.52,
+   "kind": "log",
+   "text": "DEBUG:SCRIPT: [I18N] \u044f\u0437\u044b\u043a: en\n"
+  },
+  {
+   "t": 0.53,
+   "kind": "log",
+   "text": "[AUDIO] resumed ctx=1 states=running"
+  },
+  {
+   "t": 0.53,
+   "kind": "log",
+   "text": "DEBUG:SCRIPT: [YA] state=absent\n"
+  },
+  {
+   "t": 0.55,
+   "kind": "log",
+   "text": ""
+  },
+  {
+   "t": 6.06,
+   "kind": "wait",
+   "text": "6s \u0434\u0432\u0438\u0436\u043e\u043a \u0433\u0440\u0443\u0437\u0438\u0442\u0441\u044f"
+  },
+  {
+   "t": 6.08,
+   "kind": "canvas",
+   "text": "960x540 scale=1.000 letterbox=(0,0)"
+  },
+  {
+   "t": 6.08,
+   "kind": "match",
+   "text": "\\[DEBUG\\] dev-\u043a\u043b\u0430\u0432\u0438\u0448\u0438: (on|off) <- DEBUG:SCRIPT: [DEBUG] dev-\u043a\u043b\u0430\u0432\u0438\u0448\u0438: on\n"
+  },
+  {
+   "t": 6.08,
+   "kind": "variant",
+   "text": "\u043b\u043e\u0433\u0438: \u0435\u0441\u0442\u044c \u2192 \u0440\u0435\u0436\u0438\u043c release"
+  },
+  {
+   "t": 6.98,
+   "kind": "log",
+   "text": "DEBUG:SCRIPT: [MUSIC] started\n"
+  },
+  {
+   "t": 7.01,
+   "kind": "click",
+   "text": "game(480,232) css(480,308) PLAY"
+  },
+  {
+   "t": 7.06,
+   "kind": "log",
+   "text": "DEBUG:SCRIPT: I am MAIN SCRIPT\n"
+  },
+  {
+   "t": 7.07,
+   "kind": "log",
+   "text": "DEBUG:SCRIPT: [DEAL] fingerprint=0122107984 t=1794068608\n"
+  },
+  {
+   "t": 11.02,
+   "kind": "wait",
+   "text": "4s \u0440\u0430\u0437\u0434\u0430\u0447\u0430 \u043e\u0441\u0435\u043b\u0430"
+  },
+  {
+   "t": 15.02,
+   "kind": "wait",
+   "text": "3s \u0441\u0442\u043e\u043b \u0441\u0442\u043e\u0438\u0442 \u0431\u0435\u0437 \u0432\u0432\u043e\u0434\u0430"
+  },
+  {
+   "t": 16.11,
+   "kind": "log",
+   "text": "DEBUG:SCRIPT: [SOLVER] solving current deal (budget 200000) ...\n"
+  },
+  {
+   "t": 16.28,
+   "kind": "log",
+   "text": "DEBUG:SCRIPT: [SOLVER] SOLVED in 169 moves \u2014 playing:\n"
+  },
+  {
+   "t": 16.29,
+   "kind": "log",
+   "text": "DEBUG:SCRIPT: === seed ? \u2014 move 0/169  \u00b7  deal ===\nFOUND  R:2 B:- G:-    FLOWER:-    DRAGONS R- B- G-\nFREE   [  ] [  ] [  ]\n------------------------------------\n c1  c2  c3  c4  c5  c6  c7  c8  \n GD  R7  G5  R4  G4  BD  B9  G10 \n FL  G9  R6  GD  B4  R3  G3  B8  \n R8  RD  G2  R10 BD  B5  B6  GD  \n B3  B2  R9  RD  G8  G7  BD  RD  \n G6  RD  B10 .   R5  BD  B7  GD  \n"
+  },
+  {
+   "t": 16.4,
+   "kind": "key",
+   "text": "s solver"
+  },
+  {
+   "t": 16.66,
+   "kind": "log",
+   "text": "DEBUG:SCRIPT: === seed ? \u2014 move 1/169  \u00b7  col 1 \u2192 free cell ===\nFOUND  R:2 B:- G:-    FLOWER:-    DRAGONS R- B- G-\nFREE   [G6] [  ] [  ]\n------------------------------------\n c1  c2  c3  c4  c5  c6  c7  c8  \n GD  R7  G5  R4  G4  BD  B9  G10 \n FL  G9  R6  GD  B4  R3  G3  B8  \n R8  RD  G2  R10 BD  B5  B6  GD  \n B3  B2  R9  RD  G8  G7  BD  RD  \n .   RD  B10 .   R5  BD  B7  GD  \n"
+  },
+  {
+   "t": 17.17,
+   "kind": "log",
+   "text": "DEBUG:SCRIPT: === seed ? \u2014 move 2/169  \u00b7  col 1 \u2192 free cell ===\nFOUND  R:2 B:- G:-    FLOWER:-    DRAGONS R- B- G-\nFREE   [G6] [B3] [  ]\n------------------------------------\n c1  c2  c3  c4  c5  c6  c7  c8  \n GD  R7  G5  R4  G4  BD  B9  G10 \n FL  G9  R6  GD  B4  R3  G3  B8  \n R8  RD  G2  R10 BD  B5  B6  GD  \n .   B2  R9  RD  G8  G7  BD  RD  \n .   RD  B10 .   R5  BD  B7  GD  \n"
+  },
+  {
+   "t": 17.6,
+   "kind": "log",
+   "text": "DEBUG:SCRIPT: === seed ? \u2014 move 3/169  \u00b7  col 1 \u2192 free cell ===\nFOUND  R:2 B:- G:-    FLOWER:-    DRAGONS R- B- G-\nFREE   [G6] [B3] [R8]\n------------------------------------\n c1  c2  c3  c4  c5  c6  c7  c8  \n GD  R7  G5  R4  G4  BD  B9  G10 \n FL  G9  R6  GD  B4  R3  G3  B8  \n .   RD  G2  R10 BD  B5  B6  GD  \n .   B2  R9  RD  G8  G7  BD  RD  \n .   RD  B10 .   R5  BD  B7  GD  \n"
+  },
+  {
+   "t": 18.12,
+   "kind": "log",
+   "text": "DEBUG:SCRIPT: === seed ? \u2014 move 4/169  \u00b7  flower \u2192 flower slot ===\nFOUND  R:2 B:- G:-    FLOWER:v    DRAGONS R- B- G-\nFREE   [G6] [B3] [R8]\n------------------------------------\n c1  c2  c3  c4  c5  c6  c7  c8  \n GD  R7  G5  R4  G4  BD  B9  G10 \n .   G9  R6  GD  B4  R3  G3  B8  \n .   RD  G2  R10 BD  B5  B6  GD  \n .   B2  R9  RD  G8  G7  BD  RD  \n .   RD  B10 .   R5  BD  B7  GD  \n"
+  },
+  {
+   "t": 18.55,
+   "kind": "log",
+   "text": "DEBUG:SCRIPT: === seed ? \u2014 move 5/169  \u00b7  free cell 1 \u2192 col 7 ===\nFOUND  R:2 B:- G:-    FLOWER:v    DRAGONS R- B- G-\nFREE   [  ] [B3] [R8]\n------------------------------------\n c1  c2  c3  c4  c5  c6  c7  c8  \n GD  R7  G5  R4  G4  BD  B9  G10 \n .   G9  R6  GD  B4  R3  G3  B8  \n .   RD  G2  R10 BD  B5  B6  GD  \n .   B2  R9  RD  G8  G7  BD  RD  \n .   RD  B10 .   R5  BD  B7  GD  \n .   .   .   .   .   .   G6  .   \n"
+  },
+  {
+   "t": 19.01,
+   "kind": "log",
+   "text": "DEBUG:SCRIPT: === seed ? \u2014 move 6/169  \u00b7  col 1 \u2192 free cell ===\nFOUND  R:2 B:- G:-    FLOWER:v    DRAGONS R- B- G-\nFREE   [GD] [B3] [R8]\n------------------------------------\n c1  c2  c3  c4  c5  c6  c7  c8  \n .   R7  G5  R4  G4  BD  B9  G10 \n .   G9  R6  GD  B4  R3  G3  B8  \n .   RD  G2  R10 BD  B5  B6  GD  \n .   B2  R9  RD  G8  G7  BD  RD  \n .   RD  B10 .   R5  BD  B7  GD  \n .   .   .   .   .   .   G6  .   \n"
+  },
+  {
+   "t": 19.4,
+   "kind": "wait",
+   "text": "3s \u0441\u043e\u043b\u0432\u0435\u0440 \u0443\u0441\u043f\u0435\u043b \u0431\u044b \u043e\u0442\u044b\u0433\u0440\u0430\u0442\u044c"
+  },
+  {
+   "t": 19.5,
+   "kind": "log",
+   "text": "DEBUG:SCRIPT: === seed ? \u2014 move 7/169  \u00b7  free cell 2 \u2192 col 1 ===\nFOUND  R:2 B:- G:-    FLOWER:v    DRAGONS R- B- G-\nFREE   [GD] [  ] [R8]\n------------------------------------\n c1  c2  c3  c4  c5  c6  c7  c8  \n B3  R7  G5  R4  G4  BD  B9  G10 \n .   G9  R6  GD  B4  R3  G3  B8  \n .   RD  G2  R10 BD  B5  B6  GD  \n .   B2  R9  RD  G8  G7  BD  RD  \n .   RD  B10 .   R5  BD  B7  GD  \n .   .   .   .   .   .   G6  .   \n"
+  },
+  {
+   "t": 20.05,
+   "kind": "log",
+   "text": "DEBUG:SCRIPT: === seed ? \u2014 move 8/169  \u00b7  col 2 \u2192 free cell ===\nFOUND  R:2 B:- G:-    FLOWER:v    DRAGONS R- B- G-\nFREE   [GD] [RD] [R8]\n------------------------------------\n c1  c2  c3  c4  c5  c6  c7  c8  \n B3  R7  G5  R4  G4  BD  B9  G10 \n .   G9  R6  GD  B4  R3  G3  B8  \n .   RD  G2  R10 BD  B5  B6  GD  \n .   B2  R9  RD  G8  G7  BD  RD  \n .   .   B10 .   R5  BD  B7  GD  \n .   .   .   .   .   .   G6  .   \n"
+  },
+  {
+   "t": 20.66,
+   "kind": "log",
+   "text": "DEBUG:SCRIPT: [REPLAY] SOLVED in 169 moves \u2014 driving real cards (169 directives).\n"
+  },
+  {
+   "t": 20.73,
+   "kind": "log",
+   "text": "DEBUG:SCRIPT: === seed ? \u2014 move 9/169  \u00b7  \u2192 foundation (col 2) ===\nFOUND  R:2 B:2 G:-    FLOWER:v    DRAGONS R- B- G-\nFREE   [GD] [RD] [R8]\n------------------------------------\n c1  c2  c3  c4  c5  c6  c7  c8  \n B3  R7  G5  R4  G4  BD  B9  G10 \n .   G9  R6  GD  B4  R3  G3  B8  \n .   RD  G2  R10 BD  B5  B6  GD  \n .   .   R9  RD  G8  G7  BD  RD  \n .   .   B10 .   R5  BD  B7  GD  \n .   .   .   .   .   .   G6  .   \n"
+  },
+  {
+   "t": 20.78,
+   "kind": "key",
+   "text": "r replay"
+  },
+  {
+   "t": 21.11,
+   "kind": "log",
+   "text": "DEBUG:SCRIPT: [REPLAY] d 1/169 to_free_cell\n"
+  },
+  {
+   "t": 21.14,
+   "kind": "log",
+   "text": "DEBUG:SCRIPT: === seed ? \u2014 move 10/169  \u00b7  \u2192 foundation (col 1) ===\nFOUND  R:2 B:3 G:-    FLOWER:v    DRAGONS R- B- G-\nFREE   [GD] [RD] [R8]\n------------------------------------\n c1  c2  c3  c4  c5  c6  c7  c8  \n .   R7  G5  R4  G4  BD  B9  G10 \n .   G9  R6  GD  B4  R3  G3  B8  \n .   RD  G2  R10 BD  B5  B6  GD  \n .   .   R9  RD  G8  G7  BD  RD  \n .   .   B10 .   R5  BD  B7  GD  \n .   .   .   .   .   .   G6  .   \n"
+  },
+  {
+   "t": 21.63,
+   "kind": "log",
+   "text": "DEBUG:SCRIPT: === seed ? \u2014 move 11/169  \u00b7  free cell 1 \u2192 col 1 ===\nFOUND  R:2 B:3 G:-    FLOWER:v    DRAGONS R- B- G-\nFREE   [  ] [RD] [R8]\n------------------------------------\n c1  c2  c3  c4  c5  c6  c7  c8  \n GD  R7  G5  R4  G4  BD  B9  G10 \n .   G9  R6  GD  B4  R3  G3  B8  \n .   RD  G2  R10 BD  B5  B6  GD  \n .   .   R9  RD  G8  G7  BD  RD  \n .   .   B10 .   R5  BD  B7  GD  \n .   .   .   .   .   .   G6  .   \n"
+  },
+  {
+   "t": 21.8,
+   "kind": "log",
+   "text": "DEBUG:SCRIPT: [REPLAY] d 2/169 to_free_cell\n"
+  },
+  {
+   "t": 22.07,
+   "kind": "log",
+   "text": "DEBUG:SCRIPT: === seed ? \u2014 move 12/169  \u00b7  col 2 \u2192 free cell ===\nFOUND  R:2 B:3 G:-    FLOWER:v    DRAGONS R- B- G-\nFREE   [RD] [RD] [R8]\n------------------------------------\n c1  c2  c3  c4  c5  c6  c7  c8  \n GD  R7  G5  R4  G4  BD  B9  G10 \n .   G9  R6  GD  B4  R3  G3  B8  \n .   .   G2  R10 BD  B5  B6  GD  \n .   .   R9  RD  G8  G7  BD  RD  \n .   .   B10 .   R5  BD  B7  GD  \n .   .   .   .   .   .   G6  .   \n"
+  },
+  {
+   "t": 22.44,
+   "kind": "log",
+   "text": "DEBUG:SCRIPT: [REPLAY] d 3/169 to_free_cell\n"
+  },
+  {
+   "t": 22.51,
+   "kind": "log",
+   "text": "DEBUG:SCRIPT: === seed ? \u2014 move 13/169  \u00b7  free cell 3 \u2192 col 2 ===\nFOUND  R:2 B:3 G:-    FLOWER:v    DRAGONS R- B- G-\nFREE   [RD] [RD] [  ]\n------------------------------------\n c1  c2  c3  c4  c5  c6  c7  c8  \n GD  R7  G5  R4  G4  BD  B9  G10 \n .   G9  R6  GD  B4  R3  G3  B8  \n .   R8  G2  R10 BD  B5  B6  GD  \n .   .   R9  RD  G8  G7  BD  RD  \n .   .   B10 .   R5  BD  B7  GD  \n .   .   .   .   .   .   G6  .   \n"
+  },
+  {
+   "t": 22.95,
+   "kind": "log",
+   "text": "DEBUG:SCRIPT: === seed ? \u2014 move 14/169  \u00b7  col 1 \u2192 free cell ===\nFOUND  R:2 B:3 G:-    FLOWER:v    DRAGONS R- B- G-\nFREE   [RD] [RD] [GD]\n------------------------------------\n c1  c2  c3  c4  c5  c6  c7  c8  \n .   R7  G5  R4  G4  BD  B9  G10 \n .   G9  R6  GD  B4  R3  G3  B8  \n .   R8  G2  R10 BD  B5  B6  GD  \n .   .   R9  RD  G8  G7  BD  RD  \n .   .   B10 .   R5  BD  B7  GD  \n .   .   .   .   .   .   G6  .   \n"
+  },
+  {
+   "t": 23.09,
+   "kind": "log",
+   "text": "DEBUG:SCRIPT: [REPLAY] d 4/169 flower_auto\n"
+  },
+  {
+   "t": 23.39,
+   "kind": "log",
+   "text": "DEBUG:SCRIPT: === seed ? \u2014 move 15/169  \u00b7  free cell 1 \u2192 col 1 ===\nFOUND  R:2 B:3 G:-    FLOWER:v    DRAGONS R- B- G-\nFREE   [  ] [RD] [GD]\n------------------------------------\n c1  c2  c3  c4  c5  c6  c7  c8  \n RD  R7  G5  R4  G4  BD  B9  G10 \n .   G9  R6  GD  B4  R3  G3  B8  \n .   R8  G2  R10 BD  B5  B6  GD  \n .   .   R9  RD  G8  G7  BD  RD  \n .   .   B10 .   R5  BD  B7  GD  \n .   .   .   .   .   .   G6  .   \n"
+  },
+  {
+   "t": 23.73,
+   "kind": "log",
+   "text": "DEBUG:SCRIPT: [REPLAY] d 5/169 from_free_cell\n"
+  },
+  {
+   "t": 23.83,
+   "kind": "log",
+   "text": "DEBUG:SCRIPT: === seed ? \u2014 move 16/169  \u00b7  col 2 \u2192 free cell ===\nFOUND  R:2 B:3 G:-    FLOWER:v    DRAGONS R- B- G-\nFREE   [R8] [RD] [GD]\n------------------------------------\n c1  c2  c3  c4  c5  c6  c7  c8  \n RD  R7  G5  R4  G4  BD  B9  G10 \n .   G9  R6  GD  B4  R3  G3  B8  \n .   .   G2  R10 BD  B5  B6  GD  \n .   .   R9  RD  G8  G7  BD  RD  \n .   .   B10 .   R5  BD  B7  GD  \n .   .   .   .   .   .   G6  .   \n"
+  },
+  {
+   "t": 24.3,
+   "kind": "log",
+   "text": "DEBUG:SCRIPT: === seed ? \u2014 move 17/169  \u00b7  col 2 \u2192 col 3 ===\nFOUND  R:2 B:3 G:-    FLOWER:v    DRAGONS R- B- G-\nFREE   [R8] [RD] [GD]\n------------------------------------\n c1  c2  c3  c4  c5  c6  c7  c8  \n RD  R7  G5  R4  G4  BD  B9  G10 \n .   .   R6  GD  B4  R3  G3  B8  \n .   .   G2  R10 BD  B5  B6  GD  \n .   .   R9  RD  G8  G7  BD  RD  \n .   .   B10 .   R5  BD  B7  GD  \n .   .   G9  .   .   .   G6  .   \n"
+  },
+  {
+   "t": 24.39,
+   "kind": "log",
+   "text": "DEBUG:SCRIPT: [REPLAY] d 6/169 to_free_cell\n"
+  },
+  {
+   "t": 24.71,
+   "kind": "log",
+   "text": "DEBUG:SCRIPT: === seed ? \u2014 move 18/169  \u00b7  free cell 1 \u2192 col 3 ===\nFOUND  R:2 B:3 G:-    FLOWER:v    DRAGONS R- B- G-\nFREE   [  ] [RD] [GD]\n------------------------------------\n c1  c2  c3  c4  c5  c6  c7  c8  \n RD  R7  G5  R4  G4  BD  B9  G10 \n .   .   R6  GD  B4  R3  G3  B8  \n .   .   G2  R10 BD  B5  B6  GD  \n .   .   R9  RD  G8  G7  BD  RD  \n .   .   B10 .   R5  BD  B7  GD  \n .   .   G9  .   .   .   G6  .   \n .   .   R8  .   .   .   .   .   \n"
+  },
+  {
+   "t": 24.78,
+   "kind": "wait",
+   "text": "4s \u0440\u0435\u043f\u043b\u0435\u0439 \u0443\u0441\u043f\u0435\u043b \u0431\u044b \u043f\u043e\u0432\u0435\u0441\u0442\u0438 \u043a\u0430\u0440\u0442\u044b"
+  },
+  {
+   "t": 25.11,
+   "kind": "log",
+   "text": "DEBUG:SCRIPT: [REPLAY] d 7/169 from_free_cell\n"
+  },
+  {
+   "t": 25.24,
+   "kind": "log",
+   "text": "DEBUG:SCRIPT: === seed ? \u2014 move 19/169  \u00b7  col 1 \u2192 free cell ===\nFOUND  R:2 B:3 G:-    FLOWER:v    DRAGONS R- B- G-\nFREE   [RD] [RD] [GD]\n------------------------------------\n c1  c2  c3  c4  c5  c6  c7  c8  \n .   R7  G5  R4  G4  BD  B9  G10 \n .   .   R6  GD  B4  R3  G3  B8  \n .   .   G2  R10 BD  B5  B6  GD  \n .   .   R9  RD  G8  G7  BD  RD  \n .   .   B10 .   R5  BD  B7  GD  \n .   .   G9  .   .   .   G6  .   \n .   .   R8  .   .   .   .   .   \n"
+  },
+  {
+   "t": 25.81,
+   "kind": "FAIL",
+   "text": "release: \u043a\u043b\u0430\u0432\u0438\u0448\u0430 R \u0432\u0441\u0451 \u0435\u0449\u0451 \u043e\u0442\u0434\u0430\u0451\u0442 \u043f\u0430\u0440\u0442\u0438\u044e \u0430\u0432\u0442\u043e\u0438\u0433\u0440\u043e\u043a\u0443"
+  },
+  {
+   "t": 25.86,
+   "kind": "log",
+   "text": "DEBUG:SCRIPT: I am MAIN SCRIPT\n"
+  },
+  {
+   "t": 25.87,
+   "kind": "log",
+   "text": "DEBUG:SCRIPT: [DEAL] fingerprint=0140270150 t=1794068627\n"
+  },
+  {
+   "t": 26.11,
+   "kind": "key",
+   "text": "Space restart"
+  },
+  {
+   "t": 30.11,
+   "kind": "wait",
+   "text": "4s \u043f\u0435\u0440\u0435\u0441\u0434\u0430\u0447\u0430 \u0443\u0441\u043f\u0435\u043b\u0430 \u0431\u044b \u0441\u043b\u0443\u0447\u0438\u0442\u044c\u0441\u044f"
+  },
+  {
+   "t": 31.15,
+   "kind": "FAIL",
+   "text": "release: \u043f\u0440\u043e\u0431\u0435\u043b \u0432\u0441\u0451 \u0435\u0449\u0451 \u043f\u0435\u0440\u0435\u0437\u0430\u043f\u0443\u0441\u043a\u0430\u0435\u0442 \u043f\u0430\u0440\u0442\u0438\u044e"
+  },
+  {
+   "t": 31.15,
+   "kind": "keys",
+   "text": "release: \u043f\u0440\u043e\u0432\u0435\u0440\u0435\u043d\u044b \u043d\u0435\u043f\u043e\u0434\u0432\u0438\u0436\u043d\u044b\u0435 \u0438\u043d\u0434\u0435\u043a\u0441\u044b \u043f\u043e\u0441\u043b\u0435 S/R/Space; \u0438\u0442\u043e\u0433 \u2014 \u0432 failures"
+  },
+  {
+   "t": 31.15,
+   "kind": "cleanup",
+   "text": "unloading game and closing browser"
+  }
+ ]
+}

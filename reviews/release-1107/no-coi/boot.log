@@ -1,0 +1,24 @@
+serving /tmp/shenzhen-check-1105/bundle-release-1107
+  at http://127.0.0.1:43701/index.html  viewport=960x540 dpr=1.0  cross-origin-isolated=False
+
+  [req] sdk.js
+  [req] dmloader.js
+  [log] Failed to load resource: the server responded with a status of 404 (File not found)
+  [net-fail] http://127.0.0.1:43701/sdk.js net::ERR_ABORTED
+  [log] [YA] absent
+  [req] ShenzenSolitare_wasm.js
+  [req] ShenzenSolitare_wasm.js
+  [req] ShenzenSolitare.wasm
+  [log] Running...
+  [log] %c    %c    Made with Defold    %c    %c    https://www.defold.com background: #fd6623; padding:5px 0; border: 5px; background: #272c31; color: #fafafa; padding:5px 0; background: #39a3e4; padding:5px 0; background: #ffffff; color: #000000; padding:5px 0;
+  [log] [AUDIO] resumed ctx=1 states=running
+  [log] 
+  [wait] 1s first game frames
+  [canvas] 960x540 scale=1.000 letterbox=(0,0)
+  [shot] 01-start-screen.png
+  [cleanup] unloading game and closing browser
+
+=== scenario=boot viewport=960x540 coi=False ===
+binaries served: ShenzenSolitare.wasm, ShenzenSolitare_wasm.js, dmloader.js, sdk.js
+16 events, 0 fatal, 0 failed expectations
+RESULT: PASS

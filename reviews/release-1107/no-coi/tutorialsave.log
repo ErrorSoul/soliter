@@ -1,0 +1,110 @@
+serving /tmp/shenzhen-check-1105/bundle-release-1107
+  at http://127.0.0.1:46555/index.html  viewport=960x540 dpr=1.0  cross-origin-isolated=False
+
+  [req] sdk.js
+  [req] dmloader.js
+  [log] Failed to load resource: the server responded with a status of 404 (File not found)
+  [net-fail] http://127.0.0.1:46555/sdk.js net::ERR_ABORTED
+  [log] [YA] absent
+  [req] ShenzenSolitare_wasm.js
+  [req] ShenzenSolitare_wasm.js
+  [req] ShenzenSolitare.wasm
+  [log] Running...
+  [log] %c    %c    Made with Defold    %c    %c    https://www.defold.com background: #fd6623; padding:5px 0; border: 5px; background: #272c31; color: #fafafa; padding:5px 0; background: #39a3e4; padding:5px 0; background: #ffffff; color: #000000; padding:5px 0;
+  [log] [AUDIO] resumed ctx=1 states=running
+  [log] 
+  [wait] 1s first game frames
+  [canvas] 960x540 scale=1.000 letterbox=(0,0)
+  [click] game(480,232) css(480,308) PLAY
+  [wait] 2.5s deal settles
+/tmp/shenzhen-check-1105/project/tools/browser-test.py:216: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use get_flattened_data instead.
+  px = list(img.getdata())
+  [probe] column 1 exposed card at depth 4
+  [wait] 2s deal settled
+  [probe] column 1 exposed card at depth 4
+  [drag] (65,159)->(65,457) park a card before practice
+  [wait] 3s save flushed
+  [probe] column 1 exposed card at depth 3
+  [probe] column 2 exposed card at depth 4
+  [probe] column 3 exposed card at depth 3
+  [probe] column 4 exposed card at depth 4
+  [probe] column 5 exposed card at depth 2
+  [probe] column 6 exposed card at depth 4
+  [probe] column 7 exposed card at depth 4
+  [probe] column 8 exposed card at depth 4
+  [pixel] parked card luminance=106 vs felt 46
+  [click] game(907,124) css(907,416) practice
+  [wait] 3s tutorial loaded
+  [pixel] practice card rendered luminance=146 vs felt 46
+  [click] game(110,50) css(110,490) skip tutorial
+  [wait] 3s after-skip
+  [probe] column 1 exposed card at depth 3
+  [probe] column 2 exposed card at depth 4
+  [probe] column 3 exposed card at depth 3
+  [probe] column 4 exposed card at depth 4
+  [probe] column 5 exposed card at depth 2
+  [probe] column 6 exposed card at depth 4
+  [probe] column 7 exposed card at depth 4
+  [probe] column 8 exposed card at depth 4
+  [shot] 01-after-skip.png
+  [click] game(907,124) css(907,416) practice again
+  [wait] 3s tutorial loaded again
+  [drag] (65,159)->(585,457) tutorial move
+  [wait] 1s move settled
+  [drag] (65,194)->(585,457) tutorial move
+  [wait] 1s move settled
+  [drag] (65,229)->(65,457) tutorial move
+  [wait] 1s move settled
+  [drag] (65,264)->(169,299) tutorial move
+  [wait] 1s move settled
+  [click] game(481,508) css(481,32) collect dragons
+  [wait] 2.2s victory and confetti
+  [shot] 02-victory-confetti.png
+  [wait] 0.4s confetti moves
+  [shot] 03-victory-confetti-later.png
+  [wait] 3s confetti expires
+  [wait] 0.4s no permanent particle loop
+  [click] game(480,230) css(480,310) return from tutorial victory
+  [wait] 3s after-practice-win
+  [probe] column 1 exposed card at depth 3
+  [probe] column 2 exposed card at depth 4
+  [probe] column 3 exposed card at depth 3
+  [probe] column 4 exposed card at depth 4
+  [probe] column 5 exposed card at depth 2
+  [probe] column 6 exposed card at depth 4
+  [probe] column 7 exposed card at depth 4
+  [probe] column 8 exposed card at depth 4
+  [shot] 04-after-practice-win.png
+  [req] sdk.js
+  [req] dmloader.js
+  [log] Failed to load resource: the server responded with a status of 404 (File not found)
+  [net-fail] http://127.0.0.1:46555/sdk.js net::ERR_ABORTED
+  [log] [YA] absent
+  [req] ShenzenSolitare_wasm.js
+  [req] ShenzenSolitare_wasm.js
+  [req] ShenzenSolitare.wasm
+  [log] Running...
+  [log] 
+  [log] %c    %c    Made with Defold    %c    %c    https://www.defold.com background: #fd6623; padding:5px 0; border: 5px; background: #272c31; color: #fafafa; padding:5px 0; background: #39a3e4; padding:5px 0; background: #ffffff; color: #000000; padding:5px 0;
+  [log] [AUDIO] resumed ctx=1 states=running
+  [wait] 1s first game frames
+  [canvas] 960x540 scale=1.000 letterbox=(0,0)
+  [click] game(480,232) css(480,308) PLAY
+  [wait] 2.5s deal settles
+  [probe] column 1 exposed card at depth 3
+  [wait] 3s after-page-reload
+  [probe] column 1 exposed card at depth 3
+  [probe] column 2 exposed card at depth 4
+  [probe] column 3 exposed card at depth 3
+  [probe] column 4 exposed card at depth 4
+  [probe] column 5 exposed card at depth 2
+  [probe] column 6 exposed card at depth 4
+  [probe] column 7 exposed card at depth 4
+  [probe] column 8 exposed card at depth 4
+  [shot] 05-after-page-reload.png
+  [cleanup] unloading game and closing browser
+
+=== scenario=tutorialsave viewport=960x540 coi=False ===
+binaries served: ShenzenSolitare.wasm, ShenzenSolitare_wasm.js, dmloader.js, sdk.js
+100 events, 0 fatal, 0 failed expectations
+RESULT: PASS
