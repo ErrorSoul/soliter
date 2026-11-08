@@ -1,0 +1,115 @@
+[
+ {
+  "id": "baseline",
+  "killed": null,
+  "total": "Total: 291 passed / 0 failed",
+  "exit": 0,
+  "first_fail": ""
+ },
+ {
+  "id": "tab-exposed",
+  "killed": true,
+  "total": "Total: 290 passed / 1 failed",
+  "exit": 1,
+  "first_fail": "FAIL  Tableau layout: only covered cards of a long column are compact"
+ },
+ {
+  "id": "tab-compact-true",
+  "killed": true,
+  "total": "Total: 290 passed / 1 failed",
+  "exit": 1,
+  "first_fail": "FAIL  Tableau layout: only covered cards of a long column are compact"
+ },
+ {
+  "id": "tab-compact-100",
+  "killed": true,
+  "total": "Total: 290 passed / 1 failed",
+  "exit": 1,
+  "first_fail": "FAIL  Tableau layout: only covered cards of a long column are compact"
+ },
+ {
+  "id": "tab-compact-0",
+  "killed": true,
+  "total": "Total: 290 passed / 1 failed",
+  "exit": 1,
+  "first_fail": "FAIL  Tableau layout: only covered cards of a long column are compact"
+ },
+ {
+  "id": "card-collected",
+  "killed": true,
+  "total": "Total: 290 passed / 1 failed",
+  "exit": 1,
+  "first_fail": "FAIL  Collected dragons stay still: free cell contract, card contract, whole path"
+ },
+ {
+  "id": "card-collected-flag",
+  "killed": true,
+  "total": "Total: 290 passed / 1 failed",
+  "exit": 1,
+  "first_fail": "FAIL  Collected dragons stay still: free cell contract, card contract, whole path"
+ },
+ {
+  "id": "fc-exposed",
+  "killed": true,
+  "total": "Total: 290 passed / 1 failed",
+  "exit": 1,
+  "first_fail": "FAIL  Collected dragons stay still: free cell contract, card contract, whole path"
+ },
+ {
+  "id": "collected-both-layers",
+  "killed": true,
+  "total": "Total: 290 passed / 1 failed",
+  "exit": 1,
+  "first_fail": "FAIL  Collected dragons stay still: free cell contract, card contract, whole path"
+ },
+ {
+  "id": "dm-repeatwait",
+  "killed": true,
+  "total": "Total: 289 passed / 2 failed",
+  "exit": 1,
+  "first_fail": "FAIL  Portrait repeat timing: 2-6 s while held, rarer when idle"
+ },
+ {
+  "id": "card-stop-startdrag",
+  "killed": false,
+  "total": "Total: 291 passed / 0 failed",
+  "exit": 0,
+  "first_fail": ""
+ },
+ {
+  "id": "card-stop-dropfail-273",
+  "killed": true,
+  "total": "Total: 290 passed / 1 failed",
+  "exit": 1,
+  "first_fail": "FAIL  Real animal card: animates while held, cancels on drop and covered layout"
+ },
+ {
+  "id": "card-held-flag",
+  "killed": true,
+  "total": "Total: 290 passed / 1 failed",
+  "exit": 1,
+  "first_fail": "FAIL  Held card: the next portrait cycle starts 2-6 s after the previous one"
+ },
+ {
+  "id": "card-no-occupy-post",
+  "killed": true,
+  "total": "Total: 290 passed / 1 failed",
+  "exit": 1,
+  "first_fail": "FAIL  Collected dragons stay still: free cell contract, card contract, whole path"
+ },
+ {
+  "id": "baseline-end",
+  "killed": null,
+  "total": "Total: 291 passed / 0 failed",
+  "exit": 0,
+  "first_fail": ""
+ },
+ {
+  "id": "card-stop-dropfail-273 on efa3587 (old test)",
+  "killed": true,
+  "total": "Total: 286 passed / 1 failed",
+  "first_fail": [
+   "reason: EXCEPTION: ./solver/tests/test_dragon_motion.lua:76: failed drop retained animated portrait"
+  ]
+ }
+]

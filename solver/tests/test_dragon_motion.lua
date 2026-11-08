@@ -72,6 +72,15 @@ H.test("Real animal card: animates while held, cancels on drop and covered layou
     assert(seen,"ordinary animal never animates while held")
     assert(portrait_tint and portrait_tint.x==1.15 and portrait_tint.w==1,
         "animated portrait lost the held card tint")
+    -- The drop must land on a RUNNING cycle, or the check below would be vacuous.
+    -- Today it does (deleting stop_dragon from drop_failed fails here, measured
+    -- 2026-11-08), but only because of the current hold delays; the precondition
+    -- keeps it so if the timing changes. The repeat comes within 2-6 s.
+    for _=1,80 do
+        if self.motion.age then break end
+        update(self,.1)
+    end
+    assert(self.motion.age,"precondition: no running portrait cycle to cancel")
     on_message(self,hash("drop_failed"),{position=vmath.vector3(65,159,0.03)})
     assert(not self.motion.age,"failed drop retained animated portrait")
     on_message(self,hash("index_layout"),{compact=true,exposed=false})
@@ -117,6 +126,191 @@ H.test("Foundation: landed and restored cards stay still, including covered rank
     for _,m in ipairs(msg.log) do
         assert(m.id~="play_animation","foundation card started portrait animation")
     end
+    return true
+end)
+
+-- Owner decision 2026-11-06: while a card is held, a finished cycle repeats after
+-- 2-6 s. Idle is only documented as "rare" (INDEX), so no idle numbers are pinned
+-- here: the idle repeat just has to be longer than any held repeat.
+H.test("Portrait repeat timing: 2-6 s while held, rarer when idle",function()
+    local function finish_cycle(held)
+        local lo,hi=math.huge,-math.huge
+        for i=1,30 do
+            local s=motion.new("repeat-"..tostring(held)..i)
+            if held then motion.hold(s) end
+            local done=false
+            for _=1,400 do
+                if motion.update(s,.1,true,held)==0 then done=true; break end
+            end
+            assert(done,"cycle never finished")
+            assert(not s.age,"finished cycle still running")
+            -- A leftover cooldown would hold the next start past the 2-6 s wait.
+            local next_start=math.max(s.wait,s.cooldown)
+            lo=math.min(lo,next_start); hi=math.max(hi,next_start)
+        end
+        return lo,hi
+    end
+    local lo,hi=finish_cycle(true)
+    assert(lo>=2 and hi<=6,("held repeat outside 2-6 s: %.2f..%.2f"):format(lo,hi))
+    local idle_lo=finish_cycle(false)
+    assert(idle_lo>6,("idle repeat not rarer than a held one: %.2f s"):format(idle_lo))
+    return true
+end)
+
+-- The same rule through the real card: card.script must tell the timing module
+-- that the card is held (grok-4.7 review 2026-11-08: passing false there stayed
+-- green, because the module test above sets `held` itself).
+H.test("Held card: the next portrait cycle starts 2-6 s after the previous one",function()
+    local stub=require("solver.tests.defold_stub")
+    stub.install()
+    assert(loadfile("main/Scripts/card.script"))()
+    local self={}; init(self)
+    on_message(self,hash("set_card"),{data={value=7,suit="red"},slot_id="column"})
+    on_message(self,hash("start_drag"),{})
+    local t,started,ended,restarted=0,nil,nil,nil
+    for _=1,250 do
+        msg.clear(); update(self,.1); t=t+.1
+        for _,m in ipairs(msg.log) do
+            if m.id=="play_animation" then
+                local id=tostring(m.data.id)
+                if id:match("^animal_red_motion_") then
+                    if not started then started=t elseif ended and not restarted then restarted=t end
+                elseif started and not ended and id=="7_red" then
+                    ended=t   -- frame 0 restores the still face
+                end
+            end
+        end
+        if restarted then break end
+    end
+    assert(started and ended,"held card never finished a portrait cycle")
+    assert(restarted,"held card did not start a second cycle within 25 s")
+    local gap=restarted-ended
+    assert(gap>=1.9 and gap<=6.15,("held repeat gap %.2f s outside 2-6 s"):format(gap))
+    return true
+end)
+
+-- Owner decision 2026-11-05: compact indices only on covered cards of a long
+-- column; the exposed (last) card keeps the large index and is the only one that
+-- may animate. Asserted from the rule, not from config.stack_offset_y.
+H.test("Tableau layout: only covered cards of a long column are compact",function()
+    local stub=require("solver.tests.defold_stub")
+    stub.install()
+    assert(loadfile("main/Scripts/tableau_script.script"))()
+    local function layout(n)
+        stub.go_self_pos=vmath.vector3(169,299,0)
+        local self={stack={},index=2,cursor="cursor",visible_cards={}}
+        for i=1,n do
+            self.stack[i]={id="c"..i,data={value=2+(i%8),suit=(i%2==0) and "red" or "green"}}
+        end
+        msg.clear()
+        update_visible_cards(self)
+        local got={}
+        for _,m in ipairs(msg.log) do
+            if m.id=="index_layout" then got[m.to]=m.data end
+        end
+        for i=1,n do assert(got["c"..i],"no index_layout for card "..i.." of "..n) end
+        return got
+    end
+    for _,n in ipairs({3,5}) do
+        local got=layout(n)
+        for i=1,n do
+            assert(got["c"..i].compact~=true,("short column of %d: card %d compact"):format(n,i))
+            assert((got["c"..i].exposed~=false)==(i==n),("short column of %d: card %d exposed=%s"):format(n,i,tostring(got["c"..i].exposed)))
+        end
+    end
+    local n=12
+    local got=layout(n)
+    for i=1,n-1 do
+        assert(got["c"..i].compact==true,"long column: covered card "..i.." keeps the large index")
+        assert(got["c"..i].exposed==false,"long column: covered card "..i.." may animate")
+    end
+    assert(got["c"..n].compact~=true,"long column: exposed card got the compact index")
+    assert(got["c"..n].exposed~=false,"long column: exposed card cannot animate")
+    return true
+end)
+
+-- Owner decision 2026-11-06: collected dragons do not animate. Two layers guard
+-- it: free_cell marks a completed landing as not exposed, and the card itself
+-- ignores motion once collected. Each layer is pinned on its own (contract), and
+-- the whole path end to end (behaviour): removing both layers stayed green before.
+H.test("Collected dragons stay still: free cell contract, card contract, whole path",function()
+    local stub=require("solver.tests.defold_stub")
+    stub.install()
+    assert(loadfile("main/Scripts/free_cell.script"))()
+    local cell_message=on_message
+    local trace={red="dragon_button1",blue="dragon_button2",green="dragon_button3"}
+    local function cell_layout(complete)
+        local cell={is_occupied=false,is_blocked=false,cursor="cursor",slot_id="free_slot1",
+            dragon_button_trace=trace}
+        msg.clear()
+        cell_message(cell,hash("occupy_slot"),{complete=complete,animation=false,
+            card={id="d1",data={value="d",suit="red",is_dragon=true}},position=vmath.vector3(65,457,0)},"d1")
+        for _,m in ipairs(msg.log) do
+            if m.id=="index_layout" and m.to=="d1" then return m.data end
+        end
+        error("free cell sent no index_layout")
+    end
+    assert(cell_layout(true).exposed==false,"free cell: collected dragon marked exposed")
+    assert(cell_layout(false).exposed~=false,"free cell: parked dragon lost its exposure")
+
+    assert(loadfile("main/Scripts/card.script"))()
+    local card_init,card_message,card_update=init,on_message,update
+    local function animated(card)
+        msg.clear()
+        card_message(card,hash("dragon_hover"),{})
+        for _=1,450 do card_update(card,.1) end
+        for _,m in ipairs(msg.log) do
+            if m.id=="play_animation" and tostring(m.data.id):match("_motion_") then return true end
+        end
+        return false
+    end
+    local function dragon()
+        local card={}; card_init(card)
+        card_message(card,hash("set_card"),{data={value="d",suit="red",is_dragon=true},slot_id="column"})
+        return card
+    end
+    local function land(card,complete)
+        msg.clear()
+        card_message(card,hash("drop_success"),{position=vmath.vector3(65,457,0),slot_id="free_slot1",
+            card={id="d1",data={value="d",suit="red",is_dragon=true}},complete=complete})
+    end
+
+    -- Positive control: an exposed dragon parked by the player does animate.
+    local parked=dragon(); land(parked,false)
+    card_message(parked,hash("index_layout"),{compact=false,exposed=true})
+    assert(animated(parked),"control: parked dragon never animates, test is blind")
+
+    -- Card contract: collected, even if a slot wrongly reports it exposed.
+    local collected=dragon(); land(collected,true)
+    card_message(collected,hash("index_layout"),{compact=false,exposed=true})
+    assert(not animated(collected),"card: collected dragon animates when reported exposed")
+
+    -- Whole path: the card's landing message reaches the real free cell, and the
+    -- cell's reply reaches the card. Both hops are asserted, not only the outcome
+    -- (grok-4.7 review 2026-11-08: the card's own `collected` kept the outcome
+    -- green even with the occupy_slot post deleted).
+    local real=dragon(); land(real,true)
+    local posted={}
+    for _,m in ipairs(msg.log) do posted[#posted+1]=m end
+    local cell={is_occupied=false,is_blocked=false,cursor="cursor",slot_id="free_slot1",dragon_button_trace=trace}
+    local told_cell,told_card=false,false
+    for _,m in ipairs(posted) do
+        if m.id=="occupy_slot" and m.to=="free_slot1" then
+            told_cell=true
+            msg.clear()
+            cell_message(cell,hash("occupy_slot"),m.data,"d1")
+            for _,r in ipairs(msg.log) do
+                if r.to=="d1" then
+                    if r.id=="index_layout" then told_card=true end
+                    card_message(real,hash(r.id),r.data or {})
+                end
+            end
+        end
+    end
+    assert(told_cell,"landing card never sent occupy_slot to its free cell")
+    assert(told_card,"free cell never answered the card with index_layout")
+    assert(real.exposed==false,"sealed dragon still marked exposed after the cell's reply")
+    assert(not animated(real),"collected dragon in a sealed cell animates")
     return true
 end)
 return H
