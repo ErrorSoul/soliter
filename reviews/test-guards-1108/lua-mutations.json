@@ -1,0 +1,102 @@
+[
+ {
+  "id": "baseline",
+  "killed": null,
+  "total": "Total: 290 passed / 0 failed",
+  "exit": 0,
+  "first_fail": ""
+ },
+ {
+  "id": "tab-exposed",
+  "killed": true,
+  "total": "Total: 289 passed / 1 failed",
+  "exit": 1,
+  "first_fail": "FAIL  Tableau layout: only covered cards of a long column are compact"
+ },
+ {
+  "id": "tab-compact-true",
+  "killed": true,
+  "total": "Total: 289 passed / 1 failed",
+  "exit": 1,
+  "first_fail": "FAIL  Tableau layout: only covered cards of a long column are compact"
+ },
+ {
+  "id": "tab-compact-100",
+  "killed": true,
+  "total": "Total: 289 passed / 1 failed",
+  "exit": 1,
+  "first_fail": "FAIL  Tableau layout: only covered cards of a long column are compact"
+ },
+ {
+  "id": "tab-compact-0",
+  "killed": true,
+  "total": "Total: 289 passed / 1 failed",
+  "exit": 1,
+  "first_fail": "FAIL  Tableau layout: only covered cards of a long column are compact"
+ },
+ {
+  "id": "card-collected",
+  "killed": true,
+  "total": "Total: 289 passed / 1 failed",
+  "exit": 1,
+  "first_fail": "FAIL  Collected dragons stay still: free cell contract, card contract, whole path"
+ },
+ {
+  "id": "card-collected-flag",
+  "killed": true,
+  "total": "Total: 289 passed / 1 failed",
+  "exit": 1,
+  "first_fail": "FAIL  Collected dragons stay still: free cell contract, card contract, whole path"
+ },
+ {
+  "id": "fc-exposed",
+  "killed": true,
+  "total": "Total: 289 passed / 1 failed",
+  "exit": 1,
+  "first_fail": "FAIL  Collected dragons stay still: free cell contract, card contract, whole path"
+ },
+ {
+  "id": "collected-both-layers",
+  "killed": true,
+  "total": "Total: 289 passed / 1 failed",
+  "exit": 1,
+  "first_fail": "FAIL  Collected dragons stay still: free cell contract, card contract, whole path"
+ },
+ {
+  "id": "dm-repeatwait",
+  "killed": true,
+  "total": "Total: 289 passed / 1 failed",
+  "exit": 1,
+  "first_fail": "FAIL  Portrait repeat timing: 2-6 s while held, 18-32 s idle"
+ },
+ {
+  "id": "card-stop-dropfail",
+  "killed": false,
+  "total": "Total: 290 passed / 0 failed",
+  "exit": 0,
+  "first_fail": ""
+ },
+ {
+  "id": "baseline-end",
+  "killed": null,
+  "total": "Total: 290 passed / 0 failed",
+  "exit": 0,
+  "first_fail": ""
+ },
+ {
+  "id": "drop_failed-line273-old-test",
+  "killed": true,
+  "total": "Total: 286 passed / 1 failed",
+  "first_fail": [
+   "reason: EXCEPTION: ./solver/tests/test_dragon_motion.lua:76: failed drop retained animated portrait"
+  ]
+ },
+ {
+  "id": "drop_failed-line273-new-test",
+  "killed": true,
+  "total": "Total: 289 passed / 1 failed",
+  "first_fail": [
+   "reason: EXCEPTION: ./solver/tests/test_dragon_motion.lua:84: failed drop retained animated portrait"
+  ]
+ }
+]

@@ -61,6 +61,8 @@ TABLEAU_TOP_Y = 299         # depth 0; each further card is 35px lower
 CARD_PITCH = 35             # only true while the column fits (config.stack_offset_y)
 FLOWER_SLOT = (377, 457)    # G6: flower moved to column 4, dragon buttons to column 5
 PLAY_BUTTON = (480, 232)
+# Yellow "play again" face on the victory screen, left of its label.
+VICTORY_AGAIN = (400, 232)
 RESTART_BUTTON = (907, 56)   # G6: правый рельс, см. gui/ui.gui
 TUTORIAL_BUTTON = (907, 124)  # тот же рельс, кнопка под RESTART
 BASE_SLOT = {1: (585, 457), 2: (793, 457), 3: (689, 457)}  # порядок id, не слева направо
@@ -1588,6 +1590,12 @@ def scenario_celldrain(s):
     if not s.expect(d is not None, "колонка 1 пуста — бандл собран без DEBUG_CELL_DRAIN?"):
         return
     s.expect(s.logs_matching(r"I am MAIN SCRIPT"), "уровень не загрузился")
+    # Контроль оракула победы: на раздаче в этой точке пустая колонка 4, то есть
+    # тёмный стол. Если она уже светлая, финальная проверка ничего не докажет.
+    again_dealt = s.brightness(*VICTORY_AGAIN, half=10)
+    s.note("pixel", f"точка «ещё раз» на раздаче: luminance={again_dealt:.0f} vs felt {felt:.0f}")
+    s.expect(again_dealt - felt <= s.GAP,
+             "контроль: точка кнопки «ещё раз» светлая уже на раздаче — оракул победы слеп")
 
     s.drag_game(TABLEAU_X[1], TABLEAU_TOP_Y - d * CARD_PITCH, cell[0], cell[1],
                 "3_red -> свободная ячейка 1")
@@ -1622,9 +1630,14 @@ def scenario_celldrain(s):
                         "значит победу дали поверх карты в ячейке")
     s.wait(2.0, "экран победы поднялся")
     s.shot("after")
-    # Экран победы закрывает весь кадр: там, где был стол, теперь иллюстрация.
-    s.expect(s.brightness(TABLEAU_X[8], TABLEAU_TOP_Y) - felt > s.GAP,
-             "экран победы не поднялся — на месте стола по-прежнему фон")
+    # С 7852ac3 фон экрана победы сплошной и тёмный, как стол: прежний оракул
+    # «на месте стола светлая иллюстрация» стал всегда красным (ревью 2026-11-07,
+    # M2). Теперь ищем то, что есть только на экране победы, — жёлтую кнопку
+    # «ещё раз» (в стороне от надписи, чтобы буквы не темнили пятно).
+    again = s.brightness(*VICTORY_AGAIN, half=10)
+    s.note("pixel", f"точка «ещё раз» после победы: luminance={again:.0f} vs felt {felt:.0f}")
+    s.expect(again - felt > s.GAP,
+             "экран победы не поднялся — нет кнопки «ещё раз»")
 
 
 def scenario_tutorialfree(s):
@@ -2564,10 +2577,16 @@ def scenario_buttons(s):
     """Shared button: visible press, release-outside cancellation, then one click.
 
     Uses touch on --mobile and mouse otherwise. No game action may fire on down.
+
+    The compared region lies inside the PLAY face only. Since 2026-11-06 the menu
+    lines move continuously around the button, and the old region (145x33 half
+    sizes) caught them at its edges: "cancel did not restore button" failed 9/9
+    on the final code while the button itself was restored (review 2026-11-07, M1).
     """
     s.boot()
     s.shot("start")
-    before = s.patch(480, 230, 145, 33)
+    face = (480, 230, 90, 20)
+    before = s.patch(*face)
     x, y = s._map(480, 230)
     if s.is_mobile:
         s.touch("touchStart", x, y)
@@ -2576,7 +2595,7 @@ def scenario_buttons(s):
         s.page.mouse.down()
     s.wait(.35, "button held")
     s.shot("pressed")
-    s.expect(s.patch(480, 230, 145, 33) != before, "button has no visible press animation")
+    s.expect(s.patch(*face) != before, "button has no visible press animation")
     s.expect(not s.logs_matching(r"I am MAIN SCRIPT"), "PLAY fired on press")
     ox, oy = s._map(700, 230)
     if s.is_mobile:
@@ -2590,7 +2609,7 @@ def scenario_buttons(s):
     s.wait(.4, "cancel settles")
     s.shot("cancelled")
     s.expect(not s.logs_matching(r"I am MAIN SCRIPT"), "release outside started game")
-    s.expect(s.patch(480, 230, 145, 33) == before, "cancel did not restore button")
+    s.expect(s.patch(*face) == before, "cancel did not restore button")
     s.click_game(617, 230, label="PLAY near right edge: hit area must not shrink")
     s.expect(s.wait_for_log(r"I am MAIN SCRIPT", 20), "edge click did not load game")
     s.wait(2.5, "deal settles")

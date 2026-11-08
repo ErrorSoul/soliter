@@ -1,0 +1,278 @@
+[
+ {
+  "name": "b-buttons-1200",
+  "args": "--scenario buttons --viewport 1200x540",
+  "failures": [],
+  "fatal": 0,
+  "viewport": [
+   1200,
+   540
+  ],
+  "dpr": 1.0,
+  "mobile": false,
+  "wasm_dmanifest_harness_sha16": [
+   "1f7c033af80a24ca",
+   "d83a054540c985ee",
+   "1ad9ac3f79ddfecf"
+  ],
+  "load_average": "11,18, 10,59, 7,34",
+  "foreign_heavy": " 100 ps;98.8 godot;96.1 godot;75.4 ruby;"
+ },
+ {
+  "name": "b-buttons-desk-1",
+  "args": "--scenario buttons",
+  "failures": [],
+  "fatal": 0,
+  "viewport": [
+   960,
+   540
+  ],
+  "dpr": 1.0,
+  "mobile": false,
+  "wasm_dmanifest_harness_sha16": [
+   "1f7c033af80a24ca",
+   "d83a054540c985ee",
+   "1ad9ac3f79ddfecf"
+  ],
+  "load_average": "9,25, 8,09, 4,63",
+  "foreign_heavy": "98.7 godot;98.4 godot;75.4 ruby; 1.7 steam;"
+ },
+ {
+  "name": "b-buttons-desk-2",
+  "args": "--scenario buttons",
+  "failures": [],
+  "fatal": 0,
+  "viewport": [
+   960,
+   540
+  ],
+  "dpr": 1.0,
+  "mobile": false,
+  "wasm_dmanifest_harness_sha16": [
+   "1f7c033af80a24ca",
+   "d83a054540c985ee",
+   "1ad9ac3f79ddfecf"
+  ],
+  "load_average": "10,25, 8,67, 5,11",
+  "foreign_heavy": "98.7 godot;98.5 godot;75.4 ruby; 1.7 steam;"
+ },
+ {
+  "name": "b-buttons-desk-3",
+  "args": "--scenario buttons",
+  "failures": [],
+  "fatal": 0,
+  "viewport": [
+   960,
+   540
+  ],
+  "dpr": 1.0,
+  "mobile": false,
+  "wasm_dmanifest_harness_sha16": [
+   "1f7c033af80a24ca",
+   "d83a054540c985ee",
+   "1ad9ac3f79ddfecf"
+  ],
+  "load_average": "10,74, 9,25, 5,64",
+  "foreign_heavy": "98.7 godot;98.6 godot;75.4 ruby; 1.7 steam;"
+ },
+ {
+  "name": "b-buttons-mbtn",
+  "args": "--scenario buttons",
+  "failures": [
+   "PLAY fired on press",
+   "release outside started game",
+   "cancel did not restore button"
+  ],
+  "fatal": 0,
+  "viewport": [
+   960,
+   540
+  ],
+  "dpr": 1.0,
+  "mobile": false,
+  "wasm_dmanifest_harness_sha16": [
+   "1f7c033af80a24ca",
+   "ecd9cadd7f8303e7",
+   "1ad9ac3f79ddfecf"
+  ],
+  "load_average": "10,94, 10,58, 7,44",
+  "foreign_heavy": " 100 ps;98.8 godot;98.3 godot;75.4 ruby;"
+ },
+ {
+  "name": "b-buttons-mob1",
+  "args": "--scenario buttons --mobile --viewport 844x390 --dpr 1",
+  "failures": [],
+  "fatal": 0,
+  "viewport": [
+   844,
+   390
+  ],
+  "dpr": 1.0,
+  "mobile": true,
+  "wasm_dmanifest_harness_sha16": [
+   "1f7c033af80a24ca",
+   "d83a054540c985ee",
+   "1ad9ac3f79ddfecf"
+  ],
+  "load_average": "11,04, 10,54, 7,27",
+  "foreign_heavy": " 100 ps;98.8 godot;98.2 godot;75.4 ruby;"
+ },
+ {
+  "name": "b-buttons-mob3-1",
+  "args": "--scenario buttons --mobile --viewport 844x390 --dpr 3",
+  "failures": [],
+  "fatal": 0,
+  "viewport": [
+   844,
+   390
+  ],
+  "dpr": 3.0,
+  "mobile": true,
+  "wasm_dmanifest_harness_sha16": [
+   "1f7c033af80a24ca",
+   "d83a054540c985ee",
+   "1ad9ac3f79ddfecf"
+  ],
+  "load_average": "11,87, 9,86, 6,10",
+  "foreign_heavy": "98.8 godot;97.6 godot;75.4 ruby; 1.7 steam;"
+ },
+ {
+  "name": "b-buttons-mob3-2",
+  "args": "--scenario buttons --mobile --viewport 844x390 --dpr 3",
+  "failures": [],
+  "fatal": 0,
+  "viewport": [
+   844,
+   390
+  ],
+  "dpr": 3.0,
+  "mobile": true,
+  "wasm_dmanifest_harness_sha16": [
+   "1f7c033af80a24ca",
+   "d83a054540c985ee",
+   "1ad9ac3f79ddfecf"
+  ],
+  "load_average": "12,01, 10,39, 6,62",
+  "foreign_heavy": "99.0 godot;98.8 godot;75.4 ruby; 1.7 steam;"
+ },
+ {
+  "name": "b-buttons-mob3-3",
+  "args": "--scenario buttons --mobile --viewport 844x390 --dpr 3",
+  "failures": [],
+  "fatal": 0,
+  "viewport": [
+   844,
+   390
+  ],
+  "dpr": 3.0,
+  "mobile": true,
+  "wasm_dmanifest_harness_sha16": [
+   "1f7c033af80a24ca",
+   "d83a054540c985ee",
+   "1ad9ac3f79ddfecf"
+  ],
+  "load_average": "11,13, 10,44, 6,98",
+  "foreign_heavy": "98.8 godot;98.4 godot;75.4 ruby; 1.7 steam;"
+ },
+ {
+  "name": "b-buttons-pose-desk",
+  "args": "--scenario buttons",
+  "failures": [
+   "button has no visible press animation"
+  ],
+  "fatal": 0,
+  "viewport": [
+   960,
+   540
+  ],
+  "dpr": 1.0,
+  "mobile": false,
+  "wasm_dmanifest_harness_sha16": [
+   "1f7c033af80a24ca",
+   "65e99900c18a3aeb",
+   "1ad9ac3f79ddfecf"
+  ],
+  "load_average": "10,93, 10,61, 7,55",
+  "foreign_heavy": "98.8 godot;98.3 godot;75.4 ruby; 1.7 steam;"
+ },
+ {
+  "name": "b-buttons-pose-mob3",
+  "args": "--scenario buttons --mobile --viewport 844x390 --dpr 3",
+  "failures": [
+   "button has no visible press animation"
+  ],
+  "fatal": 0,
+  "viewport": [
+   844,
+   390
+  ],
+  "dpr": 3.0,
+  "mobile": true,
+  "wasm_dmanifest_harness_sha16": [
+   "1f7c033af80a24ca",
+   "65e99900c18a3aeb",
+   "1ad9ac3f79ddfecf"
+  ],
+  "load_average": "11,76, 10,89, 7,85",
+  "foreign_heavy": " 200 ps;98.9 godot;98.5 godot;75.4 ruby;"
+ },
+ {
+  "name": "b-celldrain-1",
+  "args": "--scenario celldrain",
+  "failures": [],
+  "fatal": 0,
+  "viewport": [
+   960,
+   540
+  ],
+  "dpr": 1.0,
+  "mobile": false,
+  "wasm_dmanifest_harness_sha16": [
+   "1f7c033af80a24ca",
+   "5ac8aeba05ded3a1",
+   "1ad9ac3f79ddfecf"
+  ],
+  "load_average": "11,33, 11,07, 8,29",
+  "foreign_heavy": "98.7 godot;98.7 godot;75.4 ruby; 1.7 steam;"
+ },
+ {
+  "name": "b-celldrain-2",
+  "args": "--scenario celldrain",
+  "failures": [],
+  "fatal": 0,
+  "viewport": [
+   960,
+   540
+  ],
+  "dpr": 1.0,
+  "mobile": false,
+  "wasm_dmanifest_harness_sha16": [
+   "1f7c033af80a24ca",
+   "5ac8aeba05ded3a1",
+   "1ad9ac3f79ddfecf"
+  ],
+  "load_average": "11,81, 11,25, 8,72",
+  "foreign_heavy": "99.2 godot;98.8 godot;75.4 ruby; 1.7 steam;"
+ },
+ {
+  "name": "b-celldrain-novictory",
+  "args": "--scenario celldrain",
+  "failures": [
+   "экран победы не поднялся — нет кнопки «ещё раз»"
+  ],
+  "fatal": 0,
+  "viewport": [
+   960,
+   540
+  ],
+  "dpr": 1.0,
+  "mobile": false,
+  "wasm_dmanifest_harness_sha16": [
+   "1f7c033af80a24ca",
+   "723d8b2df27ca289",
+   "1ad9ac3f79ddfecf"
+  ],
+  "load_average": "11,12, 11,11, 8,77",
+  "foreign_heavy": " 100 ps;99.3 godot;98.8 godot;75.4 ruby;"
+ }
+]
